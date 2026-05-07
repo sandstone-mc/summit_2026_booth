@@ -1,0 +1,14 @@
+{
+  "pack": {
+    "min_format": 101,
+    "max_format": 101,
+    "description": [
+      "The ",
+      {
+        "text": "Sandstone",
+        "color": "gold"
+      },
+      " booth datapack for Smithed Summit 2026."
+    ]
+  }
+}
