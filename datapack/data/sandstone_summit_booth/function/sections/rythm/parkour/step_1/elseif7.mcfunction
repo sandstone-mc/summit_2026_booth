@@ -1,0 +1,1 @@
+execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/parkour/step_1/elseif7/execute_in

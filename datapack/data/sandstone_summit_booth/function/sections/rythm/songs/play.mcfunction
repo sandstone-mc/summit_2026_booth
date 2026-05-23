@@ -1,0 +1,3 @@
+execute if score $song sandstone_summit_booth.ssb_song matches 0 run return run function sandstone_summit_booth:sections/rythm/songs/tetoris/play
+execute if score $song sandstone_summit_booth.ssb_song matches 1 run return run function sandstone_summit_booth:sections/rythm/songs/machine_love___jamie_paige/play
+execute if score $song sandstone_summit_booth.ssb_song matches 2 run function sandstone_summit_booth:sections/rythm/songs/il_vento_d_oro___jojo/play

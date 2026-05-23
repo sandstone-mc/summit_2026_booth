@@ -1,6 +1,14 @@
 {
   "replace": false,
   "values": [
-    "sandstone_summit_booth:__init__"
+    "sandstone_summit_booth:__init__",
+    "sandstone_summit_booth:sections/rythm/state/init",
+    "sandstone_summit_booth:sections/rythm/wall/init_scores",
+    "__sandstone:ticked/start/wnylbycd",
+    "sandstone_summit_booth:sections/rythm/scoring/init",
+    "sandstone_summit_booth:sections/rythm/parkour_init",
+    "sandstone_summit_booth:sections/rythm/active/nocollide_init",
+    "sandstone_summit_booth:sections/rythm/active/forceload",
+    "sandstone_summit_booth:sections/rythm/buttons/spawn"
   ]
 }

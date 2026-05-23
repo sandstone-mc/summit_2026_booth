@@ -1,0 +1,1 @@
+execute in sandstone_summit_booth:rhythm run kill @e[tag=ssb.wall]

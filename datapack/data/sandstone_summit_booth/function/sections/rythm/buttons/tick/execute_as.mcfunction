@@ -1,0 +1,2 @@
+function sandstone_summit_booth:sections/rythm/buttons/on_cycle
+advancement revoke @s only sandstone_summit_booth:cycle_song

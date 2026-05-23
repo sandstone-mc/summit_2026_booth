@@ -1,0 +1,3 @@
+execute if score @s sandstone_summit_booth.ssb_cmb matches 50 run return run function sandstone_summit_booth:sections/rythm/scoring/tick/if/if/execute_in/if2/0_if/return_run
+execute if score @s sandstone_summit_booth.ssb_cmb matches 25 run return run function sandstone_summit_booth:sections/rythm/scoring/tick/if/if/execute_in/if2/1_elseif/return_run
+execute if score @s sandstone_summit_booth.ssb_cmb matches 10 run return run function sandstone_summit_booth:sections/rythm/scoring/tick/if/if/execute_in/if2/2_elseif/return_run

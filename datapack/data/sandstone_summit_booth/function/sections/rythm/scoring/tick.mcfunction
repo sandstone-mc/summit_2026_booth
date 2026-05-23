@@ -1,0 +1,1 @@
+execute if score $game sandstone_summit_booth.ssb_state matches 2 run function sandstone_summit_booth:sections/rythm/scoring/tick/if

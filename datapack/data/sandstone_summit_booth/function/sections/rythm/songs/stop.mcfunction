@@ -1,0 +1,3 @@
+function sandstone_summit_booth:sections/rythm/songs/tetoris/stop
+function sandstone_summit_booth:sections/rythm/songs/machine_love___jamie_paige/stop
+function sandstone_summit_booth:sections/rythm/songs/il_vento_d_oro___jojo/stop

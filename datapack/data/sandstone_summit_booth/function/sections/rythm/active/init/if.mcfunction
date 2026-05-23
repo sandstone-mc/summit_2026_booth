@@ -1,0 +1,3 @@
+execute if score $song sandstone_summit_booth.ssb_song matches 0 run return run scoreboard players set $time sandstone_summit_booth.ssb_time 2880
+execute if score $song sandstone_summit_booth.ssb_song matches 1 run return run scoreboard players set $time sandstone_summit_booth.ssb_time 4320
+execute if score $song sandstone_summit_booth.ssb_song matches 2 run scoreboard players set $time sandstone_summit_booth.ssb_time 5700

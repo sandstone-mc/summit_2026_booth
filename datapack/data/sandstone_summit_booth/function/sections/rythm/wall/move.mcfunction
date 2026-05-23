@@ -1,0 +1,1 @@
+execute as @e[tag=ssb.wall, tag=ssb.wall.hit, tag=!ssb.wall.init, tag=!ssb.wall.wait] at @s run function sandstone_summit_booth:sections/rythm/wall/move/execute_as

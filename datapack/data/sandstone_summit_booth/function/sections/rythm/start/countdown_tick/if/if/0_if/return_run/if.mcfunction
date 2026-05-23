@@ -1,0 +1,3 @@
+execute if score $cd sandstone_summit_booth.ssb_cd matches 4.. run return run title @a[tag=ssb.player] actionbar [{"text":"Starting in ","color":"green"},{"score":{"name":"$cd","objective":"sandstone_summit_booth.ssb_cd"}}," seconds..."]
+execute if score $cd sandstone_summit_booth.ssb_cd matches 2.. run return run title @a[tag=ssb.player] actionbar [{"text":"Starting in ","color":"yellow"},{"score":{"name":"$cd","objective":"sandstone_summit_booth.ssb_cd"}}," seconds..."]
+title @a[tag=ssb.player] actionbar [{"text":"Starting in ","color":"red"},{"score":{"name":"$cd","objective":"sandstone_summit_booth.ssb_cd"}}," second..."]

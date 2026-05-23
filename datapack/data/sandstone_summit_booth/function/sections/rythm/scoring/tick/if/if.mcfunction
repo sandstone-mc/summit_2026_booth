@@ -1,0 +1,2 @@
+scoreboard players set $beat sandstone_summit_booth.ssb_bf 0
+execute in sandstone_summit_booth:rhythm as @a[tag=ssb.alive, tag=ssb.player, tag=!ssb.hit_tick] at @s run function sandstone_summit_booth:sections/rythm/scoring/tick/if/if/execute_in

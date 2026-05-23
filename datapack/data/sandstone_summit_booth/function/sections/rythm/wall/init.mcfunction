@@ -1,0 +1,1 @@
+execute as @e[tag=ssb.wall, tag=ssb.wall.init, tag=!ssb.wall.hit] run data merge entity @s {interpolation_duration:80i,transformation:{translation:[-0.5f,0f,-40f]},start_interpolation:-2i}

@@ -1,0 +1,1 @@
+function sandstone_summit_booth:sections/rythm/parkour/step_10

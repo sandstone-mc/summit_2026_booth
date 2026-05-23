@@ -1,0 +1,1 @@
+execute if score $game sandstone_summit_booth.ssb_state matches 1 run function sandstone_summit_booth:sections/rythm/start/cancel/if
