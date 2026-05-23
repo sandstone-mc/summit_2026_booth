@@ -384,9 +384,3 @@ Edit `sandstone.config.ts` to change:
 - `packs.datapack.packFormat`: Data pack format version
 - `packs.resourcepack.packFormat`: Resource pack format version
 - `mcmeta`: Minecraft version for type generation (`'latest'` or specific version)
-
-### Pack Formats
-
-**Always check [Pack format](https://minecraft.wiki/w/Pack_format) for current version numbers** - these change frequently with snapshots.
-
-26.1.x will be the first supported stable release. Until 26.1.0 is released, use the latest snapshot pack formats from the wiki.
