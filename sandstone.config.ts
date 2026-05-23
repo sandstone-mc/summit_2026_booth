@@ -9,7 +9,7 @@ export default {
         } as DatapackConfig,
         resourcepack: {
             description: ['A ', { text: 'Sandstone', color: 'gold' }, ' resource pack.'],
-            packFormat: 79,
+            packFormat: 84,
         } as ResourcePackConfig
     },
     onConflict: {
