@@ -1,22 +1,17 @@
-import { MCFunction, Selector } from 'sandstone'
-import { SelectorProperties } from 'sandstone/variables'
+import { functionCmd, MCFunction, Selector } from 'sandstone'
 
-import { ticking } from './shared.ts'
-import './sections/main.ts'
+import { ticking } from './shared'
+import './sections/rythm/index'
 
 MCFunction('main', () => {
-    const all_players = (args: SelectorProperties<false, false, 'minecraft:player'>) => Selector(
-        '@a',
-        { x: 69, y: 69, z: 69, dx: 69, dy: 69, dz: 69, ...args }
-    )
 }, {
-    tags: [ticking]
+	tags: [ticking],
 })
 
 MCFunction('init_player', () => {
-    const player = Selector('@s')
+	functionCmd('sandstone_summit_booth:sections/rythm/init_player')
 })
 
 MCFunction('clean_player', () => {
-    const player = Selector('@s')
+	functionCmd('sandstone_summit_booth:sections/rythm/clean_player')
 })

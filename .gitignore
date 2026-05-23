@@ -4,3 +4,4 @@ node_modules
 .sandstone
 resources/cache
 resources/datapack_dependencies/summit-dp-core
+.cache
