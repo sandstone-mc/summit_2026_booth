@@ -1,5 +1,4 @@
 import { advancement, Advancement, Enchantment, execute, LootTable, MCFunction, NBTInt, Objective, say, Selector, _, functionCmd, raw, dialog, DialogClass, Dialog, data, Data } from "sandstone";
-import { getSelf } from "../../PlayerDB";
 import { SpellLibrary } from "../../spellbook/SpellLibrary";
 import { getSelf, saveSelf, io } from "../../PlayerDB";
 
