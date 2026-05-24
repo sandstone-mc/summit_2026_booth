@@ -1,1 +1,2 @@
 import './Frostbolt'
+import './Blizzard'
