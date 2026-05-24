@@ -39,14 +39,14 @@ export const SpellLibrary: SpellLibraryType = {
             "heatwave": {
                 id: "heatwave",
                 uid: 1,
-                mana_cost: 40,
+                mana_cost: 70,
                 name: "Heatwave",
                 description: ""
             },
             "launch": {
                 id: "launch",
                 uid: 2,
-                mana_cost: 30,
+                mana_cost: 25,
                 name: "Launch",
                 description: ""
             }
@@ -68,7 +68,7 @@ export const SpellLibrary: SpellLibraryType = {
             "blizzard": {
                 id: "blizzard",
                 uid: 1,
-                mana_cost: 70,
+                mana_cost: 50,
                 name: "Blizzard",
                 description: ""
             }
@@ -83,15 +83,22 @@ export const SpellLibrary: SpellLibraryType = {
             "magic_missile": {
                 id: "magic_missile",
                 uid: 0,
-                mana_cost: 1,
+                mana_cost: 15,
                 name: "Magic Missile",
                 description: ""
             },
             "shockwave": {
                 id: "shockwave",
                 uid: 1,
-                mana_cost: 70,
+                mana_cost: 50,
                 name: "Shockwave",
+                description: ""
+            },
+            "blink": {
+                id: "blink",
+                uid: 2,
+                mana_cost: 20,
+                name: "Blink",
                 description: ""
             }
         }
