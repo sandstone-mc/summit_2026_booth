@@ -8,7 +8,7 @@ export interface Spell {
     description: string;
 }
 
-export type SchoolID = "fire" | "ice";
+export type SchoolID = "fire" | "ice" | "arcane";
 
 export interface SpellSchool {
     id: SchoolID;
@@ -23,50 +23,79 @@ type SpellLibraryType = {
 };
 
 export const SpellLibrary: SpellLibraryType = {
-        "fire": {
-            id: "fire",
-            uid: 0,
-            name: "Fire",
-            description: "",
-            spells: {
-                "firebolt": {
-                    id: "firebolt",
-                    uid: 0,
-                    mana_cost: 10,
-                    name: "Firebolt",
-                    description: ""
-                },
-                "heatwave": {
-                    id: "heatwave",
-                    uid: 1,
-                    mana_cost: 40,
-                    name: "Heatwave",
-                    description: ""
-                },
-                "launch": {
-                    id: "launch",
-                    uid: 2,
-                    mana_cost: 30,
-                    name: "Launch",
-                    description: ""
-                }
-            }
-        },
-        "ice": {
-            id: "ice",
-            uid: 1,
-            name: "Ice",
-            description: "",
-            spells: {
-                "frostbolt": {
-                    id: "frostbolt",
-                    uid: 0,
-                    mana_cost: 10,
-                    name: "Frostbolt",
-                    description: ""
-                }
+    "fire": {
+        id: "fire",
+        uid: 0,
+        name: "Fire",
+        description: "",
+        spells: {
+            "firebolt": {
+                id: "firebolt",
+                uid: 0,
+                mana_cost: 10,
+                name: "Firebolt",
+                description: ""
+            },
+            "heatwave": {
+                id: "heatwave",
+                uid: 1,
+                mana_cost: 40,
+                name: "Heatwave",
+                description: ""
+            },
+            "launch": {
+                id: "launch",
+                uid: 2,
+                mana_cost: 30,
+                name: "Launch",
+                description: ""
             }
         }
+    },
+    "ice": {
+        id: "ice",
+        uid: 1,
+        name: "Ice",
+        description: "",
+        spells: {
+            "frostbolt": {
+                id: "frostbolt",
+                uid: 0,
+                mana_cost: 10,
+                name: "Frostbolt",
+                description: ""
+            },
+            "blizzard": {
+                id: "blizzard",
+                uid: 1,
+                mana_cost: 70,
+                name: "Blizzard",
+                description: ""
+            }
+        }
+    },
+    "arcane": {
+        id: "arcane",
+        uid: 2,
+        name: "Arcane",
+        description: "",
+        spells: {
+            "magic_missile": {
+                id: "magic_missile",
+                uid: 0,
+                mana_cost: 1,
+                name: "Magic Missile",
+                description: ""
+            },
+            "shockwave": {
+                id: "shockwave",
+                uid: 1,
+                mana_cost: 70,
+                name: "Shockwave",
+                description: ""
+            }
+        }
+    }
 }
 
 export const SpellIDS = Data('storage', 'magic:ids');

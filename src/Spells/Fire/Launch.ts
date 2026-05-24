@@ -39,9 +39,9 @@ MCFunction(`${spellPath}/cast`, () => {
 
 MCFunction(`${spellPath}/particles`, () => {
     execute.as(Selector('@e', {
-        tag: Caster
+        tag: launching
     })).at('@s').run(() => {
-        particle('dust_color_transition{from_color:[0.93,0.64,0.06],to_color:[0.29,0.29,0.29],scale:1}', rel(0, 0, 0), abs(0.2, 0.2, 0.2), 0.4, 5)
+        particle('dust_color_transition{from_color:[1,0.7,.06],to_color:[0.29,0.29,0.29],scale:1}', rel(0, 0, 0), abs(0.2, 0.2, 0.2), 0.4, 5)
     })
 }, {
     runEveryTick: true

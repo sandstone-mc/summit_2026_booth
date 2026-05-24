@@ -1,6 +1,7 @@
-import { advancement, Advancement, Enchantment, execute, LootTable, MCFunction, NBTInt, Objective, say, Selector, _, functionCmd, raw, dialog, DialogClass, Dialog } from "sandstone";
+import { advancement, Advancement, Enchantment, execute, LootTable, MCFunction, NBTInt, Objective, say, Selector, _, functionCmd, raw, dialog, DialogClass, Dialog, data, Data } from "sandstone";
 import { getSelf } from "../../PlayerDB";
 import { SpellLibrary } from "../../spellbook/SpellLibrary";
+import { getSelf, saveSelf, io } from "../../PlayerDB";
 
 const WAND_PREDICATE = {
     predicates: {
@@ -36,7 +37,7 @@ Enchantment('input/wand_left_click', {
     }
 })
 
-const newLocal = {
+const dialogTemplate = {
     "type": "minecraft:multi_action",
     "title": {
         "text": "$() Spells"
@@ -49,21 +50,32 @@ const newLocal = {
     ]
 };
 
-for (const [ spellKey, spellValue ] of Object.entries(SpellLibrary["fire"].spells)) {
-    newLocal.actions.push({
-        "label": spellValue.name,
-        "action": {
-            "type": "minecraft:run_command",
-            "command": `trigger magic.set_spell_trigger set ${spellValue.uid}`
-        }
-    })
+// Build a dialog per school at compile time
+for (const [schoolKey, school] of Object.entries(SpellLibrary)) {
+  const actions = Object.values(school.spells).map(spellValue => ({
+    label: spellValue.name,
+    action: {
+      type: "minecraft:run_command",
+      command: `trigger magic.set_spell_trigger set ${spellValue.uid}`
+    }
+  }));
+
+  dialogTemplate.title.text = `${school.name} Spells`;
+
+  // Register Dialog keyed by school
+  Dialog(`spell_select_${schoolKey}`, { ...dialogTemplate, actions });
 }
 
+const _openSchoolDialog = MCFunction('input/_open_school_dialog', () => {
+  raw('$dialog show @s magic:spell_select_$(school)');
+}, { lazy: true });
+
 MCFunction('input/on_wand_left_click', () => {
-    say("Left Clicked");
-    
-    dialog.show('@s', newLocal);
-})
+    getSelf();
+    data.modify(Data('storage', 'magic:macro').select('school')).set.from(io.select('current_school'));
+
+    functionCmd(_openSchoolDialog, 'with', 'storage', 'magic:macro');
+});
 
 // Right click detect
 const wandCooldown = Objective.create('wand_cooldown');
