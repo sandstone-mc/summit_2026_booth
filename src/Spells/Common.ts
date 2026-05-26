@@ -2,6 +2,7 @@ import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data
 import { SpellLibrary, Spell, SchoolID } from "../spellbook/SpellLibrary";
 
 import * as player from '../player_handler'
+import { checkHit } from "../utils/hitDetection";
 export const Caster = Label('spell.caster');
 export const Lifetime = Objective.create('lifetime');
 
@@ -103,10 +104,13 @@ export interface ProjectileOptions {
   particles: () => void;
   
   // hit detection
-  hitRadius?: number;
+  hitWidth?: number;
+  hitHeight?: number;
   onHit?: () => void;        // runs as the TARGET
   onExpire?: () => void;     // runs at projectile position
   
+  onStart?: () => void;
+
   blockCollision?: boolean;
   destroyOnHit?: boolean;
 }
@@ -143,20 +147,21 @@ export function createProjectileUpdater(
 
       // Hit detection
       if (opts.onHit) {
-        execute.as(Selector('@e', {
-          distance: [0, opts.hitRadius ?? 1],
-          type: '#arcane_arts:targetable'
-        })).if.entity('@s').run(() => {
-          opts.onHit!();
+        checkHit({
+          width: opts.hitWidth || 0.1,
+          height: opts.hitHeight || 0.1,
+          onHit: () => {
+            opts.onHit!();
 
-          if (opts.destroyOnHit) {
-            execute.as(Selector('@e', {
-              distance: [0, 2],
-              tag: opts.tag
-            })).run(() => {
-              opts.onExpire?.();
-              kill('@s');
-            });
+            if (opts.destroyOnHit) {
+              execute.as(Selector('@e', {
+                distance: [0, 2],
+                tag: opts.tag
+              })).run(() => {
+                opts.onExpire?.();
+                kill('@s');
+              });
+            }
           }
         });
       }
@@ -181,6 +186,14 @@ export function createProjectileSpell(opts: ProjectileSpellOptions) {
     execute.anchored('eyes').rotated.as('@s').run(() => {
       Caster('@s').add();
       opts.spawn(Projectile);
+
+      execute.as(Selector('@e', {
+        tag: Projectile,
+        distance: [0,1]
+      })).run(() => {
+        opts.projectile.onStart?.();
+      });
+
       Caster('@s').remove();
     });
   });
