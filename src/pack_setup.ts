@@ -6,7 +6,7 @@ export const setSpellTrigger = Objective.create("set_spell_trigger", "trigger");
 export const temps = Data('storage', 'arcane_arts:temps');
 
 MCFunction('initialize', () => {
-    tellraw('@a', ["Hello"]);
+    tellraw('@a', ["reloaded"]);
 
     scoreboard.players.enable('@a', setSchoolTrigger);
     scoreboard.players.enable('@a', setSpellTrigger);

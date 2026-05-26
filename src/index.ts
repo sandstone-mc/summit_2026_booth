@@ -7,3 +7,5 @@ import './items/items'
 import './Spells'
 import './StatusEffects'
 import './about'
+
+import './SummitShowcase'
