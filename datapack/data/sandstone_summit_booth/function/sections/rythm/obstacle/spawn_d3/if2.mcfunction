@@ -1,2 +1,0 @@
-execute store result score $pick sandstone_summit_booth.ssb_wpk run random value 0..222 sandstone_summit_booth:wall_pick
-function sandstone_summit_booth:sections/rythm/obstacle/spawn_d3/if2/if

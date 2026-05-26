@@ -1,2 +1,0 @@
-execute store result score $temp sandstone_summit_booth.ssb_pkt run data get entity @s Pos[1] 10
-execute if entity @e[tag=ssb.pk.reward, distance=0..2.5] if score $temp sandstone_summit_booth.ssb_pkt >= $y sandstone_summit_booth.ssb_pky run function sandstone_summit_booth:sections/rythm/parkour/tick/if/execute_in/execute_as/if

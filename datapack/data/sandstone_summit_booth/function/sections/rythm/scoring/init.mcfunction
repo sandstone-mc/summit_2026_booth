@@ -1,1 +1,0 @@
-scoreboard players set $div sandstone_summit_booth.ssb_cdiv 10

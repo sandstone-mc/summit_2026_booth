@@ -1,1 +1,0 @@
-scoreboard players set $active sandstone_summit_booth.ssb_pka 0

@@ -1,2 +1,0 @@
-function sandstone_summit_booth:sections/rythm/buttons/on_start
-advancement revoke @s only sandstone_summit_booth:start_game

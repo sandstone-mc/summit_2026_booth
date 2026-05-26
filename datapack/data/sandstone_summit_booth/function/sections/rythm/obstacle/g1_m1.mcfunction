@@ -1,1 +1,0 @@
-execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/obstacle/g1_m1/execute_in

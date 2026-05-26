@@ -1,1 +1,0 @@
-execute unless entity @s[tag=ssb.wall.cd] if entity @e[tag=ssb.wall.hit, tag=!ssb.parkour, distance=0..0.7] run function sandstone_summit_booth:sections/rythm/collision/hit

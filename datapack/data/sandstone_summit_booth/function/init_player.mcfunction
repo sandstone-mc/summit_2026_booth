@@ -1,1 +1,1 @@
-function sandstone_summit_booth:sections/rythm/init_player
+function sandstone_summit_booth:sections/rhythm/init_player

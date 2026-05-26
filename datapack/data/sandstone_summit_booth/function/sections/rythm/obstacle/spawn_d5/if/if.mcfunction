@@ -1,2 +1,0 @@
-execute if score $pick sandstone_summit_booth.ssb_wpk matches ..69 run return run function sandstone_summit_booth:sections/rythm/obstacle/spawn_d5/if/if/0_if/return_run
-scoreboard players set $last sandstone_summit_booth.ssb_lg 0

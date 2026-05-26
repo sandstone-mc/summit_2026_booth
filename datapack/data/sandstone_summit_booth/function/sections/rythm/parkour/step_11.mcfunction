@@ -1,8 +1,0 @@
-execute if score $path sandstone_summit_booth.ssb_pkp matches 0 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/parkour/step_11/if/return_run/execute_in
-execute if score $path sandstone_summit_booth.ssb_pkp matches 1 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/parkour/step_11/elseif/return_run/execute_in
-execute if score $path sandstone_summit_booth.ssb_pkp matches 2 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/parkour/step_11/elseif2/return_run/execute_in
-execute if score $path sandstone_summit_booth.ssb_pkp matches 3 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/parkour/step_11/elseif3/return_run/execute_in
-execute if score $path sandstone_summit_booth.ssb_pkp matches 4 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/parkour/step_11/elseif4/return_run/execute_in
-execute if score $path sandstone_summit_booth.ssb_pkp matches 5 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/parkour/step_11/elseif5/return_run/execute_in
-execute if score $path sandstone_summit_booth.ssb_pkp matches 6 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rythm/parkour/step_11/elseif6/return_run/execute_in
-execute if score $path sandstone_summit_booth.ssb_pkp matches 7 run function sandstone_summit_booth:sections/rythm/parkour/step_11/elseif7

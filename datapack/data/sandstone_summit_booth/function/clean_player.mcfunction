@@ -1,1 +1,1 @@
-function sandstone_summit_booth:sections/rythm/clean_player
+function sandstone_summit_booth:sections/rhythm/clean_player
