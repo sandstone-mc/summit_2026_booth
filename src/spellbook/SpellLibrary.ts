@@ -105,7 +105,7 @@ export const SpellLibrary: SpellLibraryType = {
     }
 }
 
-export const SpellIDS = Data('storage', 'magic:ids');
+export const SpellIDS = Data('storage', 'arcane_arts:ids');
 
 MCFunction('spellbook/load_spells', () => {
     const schools = SpellIDS.select('schools');

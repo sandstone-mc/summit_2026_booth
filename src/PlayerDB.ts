@@ -7,8 +7,8 @@ import {
 
 export const uid     = Objective.create('pdb.uid', 'dummy')
 const nextId  = uid('#next')
-const macroStore = Data('storage', 'magic:macro')
-export const io  = Data('storage', 'magic:io', 'data')
+const macroStore = Data('storage', 'arcane_arts:macro')
+export const io  = Data('storage', 'arcane_arts:io', 'data')
 
 MCFunction('playerdb/load', () => {
   _.if(nextId.equalTo(0), () => nextId.set(1))
@@ -16,7 +16,7 @@ MCFunction('playerdb/load', () => {
 
 MCFunction('playerdb/tick', () => {
   execute
-    .as(Selector('@a', { scores: { 'magic.pdb.uid': [null, 0] } }))
+    .as(Selector('@a', { scores: { 'arcane_arts.pdb.uid': [null, 0] } }))
     .run(() => {
       uid('@s').set(nextId)
       nextId.add(1)
@@ -24,17 +24,17 @@ MCFunction('playerdb/tick', () => {
     })
 }, { runEveryTick: true })
 
-// Macro functions: raw $ lines, invoked via `function X with storage magic:macro`
+// Macro functions: raw $ lines, invoked via `function X with storage arcane_arts:macro`
 const _initEntry = MCFunction('playerdb/_init_entry', () => {
-  raw('$data modify storage magic:pdb players.$(uid) set value {}')
+  raw('$data modify storage arcane_arts:pdb players.$(uid) set value {}')
 }, { lazy: true })
 
 const _getByUID = MCFunction('playerdb/_get_by_uid', () => {
-  raw('$data modify storage magic:io data set from storage magic:pdb players.$(uid)')
+  raw('$data modify storage arcane_arts:io data set from storage arcane_arts:pdb players.$(uid)')
 }, { lazy: true })
 
 const _saveByUID = MCFunction('playerdb/_save_by_uid', () => {
-  raw('$data modify storage magic:pdb players.$(uid) set from storage magic:io data')
+  raw('$data modify storage arcane_arts:pdb players.$(uid) set from storage arcane_arts:io data')
 }, { lazy: true })
 
 // Store @s uid into macro storage, then invoke fn with macro context
@@ -42,7 +42,7 @@ function _callWithUID(fn: ReturnType<typeof MCFunction>) {
   execute
     .store.result(macroStore.select('uid'))
     .run.scoreboard.players.get('@s', uid)
-  functionCmd(fn, 'with', 'storage', 'magic:macro')
+  functionCmd(fn, 'with', 'storage', 'arcane_arts:macro')
 }
 
 export const getSelf = MCFunction('playerdb/get_self', () => {

@@ -11,7 +11,7 @@ createProjectileSpell({
     particles: () => particle('flame', rel(0, 0, 0), abs(0.1, 0.1, 0.1), 0.01, 5, 'force'),
     onHit: () => { damage('@s', 2, 'on_fire'); Burning.apply(Variable(2)); },
     onExpire: () => {
-      execute.as(Selector('@e', { distance: [0, 4], type: '#magic:targetable' })).run(() => {
+      execute.as(Selector('@e', { distance: [0, 4], type: '#arcane_arts:targetable' })).run(() => {
         damage('@s', 3, 'on_fire');
         Burning.apply(Variable(2));
       });

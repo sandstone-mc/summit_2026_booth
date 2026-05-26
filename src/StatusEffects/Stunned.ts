@@ -11,10 +11,10 @@ const status = createStatusEffect({
         particle('crit', rel(0, 1, 0), abs(0.1, 0.25, 0.1), 0.01, 1, 'force')
     },
     onApply: () => {
-        attribute('@s', "minecraft:movement_speed").add(`magic:stunned`, -0.5, "add_multiplied_total");
+        attribute('@s', "minecraft:movement_speed").add(`arcane_arts:stunned`, -0.5, "add_multiplied_total");
     },
     onEnd: () => {
-        attribute('@s', "minecraft:movement_speed").remove(`magic:stunned`);
+        attribute('@s', "minecraft:movement_speed").remove(`arcane_arts:stunned`);
     },
     onTick: () => {},
 });

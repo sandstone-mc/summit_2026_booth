@@ -16,7 +16,7 @@ Advancement("first_join", {
     description: ""
   },
   rewards: {
-    function: "magic:first_join"
+    function: "arcane_arts:first_join"
   }
 })
 

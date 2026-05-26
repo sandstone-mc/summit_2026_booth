@@ -2,7 +2,7 @@ import { Tag, Dialog } from "sandstone";
 
 Tag("dialog", "smithed:data_packs", [
     {
-      "id": "magic:about",
+      "id": "arcane_arts:about",
       "required": false
     }
 ])
@@ -45,7 +45,7 @@ Dialog("smithed:data_packs", {
 
 Dialog("about", {
   "type": "minecraft:multi_action",
-  "title": "Spartan's Magic",
+  "title": "Arcane Arts",
   "body": [
     {
       "type": "minecraft:plain_message",

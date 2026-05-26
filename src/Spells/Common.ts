@@ -5,7 +5,7 @@ import * as player from '../player_handler'
 export const Caster = Label('spell.caster');
 export const Lifetime = Objective.create('lifetime');
 
-export const TargetableTag = Tag("entity_type", "magic:targetable", [
+export const TargetableTag = Tag("entity_type", "arcane_arts:targetable", [
     "minecraft:allay",
     "minecraft:armadillo",
     "minecraft:axolotl",
@@ -145,7 +145,7 @@ export function createProjectileUpdater(
       if (opts.onHit) {
         execute.as(Selector('@e', {
           distance: [0, opts.hitRadius ?? 1],
-          type: '#magic:targetable'
+          type: '#arcane_arts:targetable'
         })).if.entity('@s').run(() => {
           opts.onHit!();
 

@@ -1,7 +1,7 @@
 import type { DatapackConfig, ResourcePackConfig, SandstoneConfig } from 'sandstone'
 
 export default {
-  name: 'magic',
+  name: 'arcane_arts',
   packs: {
     datapack: {
       description: [ 'A ', { text: 'Sandstone', color: 'gold' }, ' datapack.' ],
@@ -15,8 +15,8 @@ export default {
   onConflict: {
     default: 'warn',
   },
-  namespace: 'magic',
+  namespace: 'arcane_arts',
   packUid: 'MJU1fHcF',
   mcmeta: 'latest',
-  saveOptions: { clientPath: 'D:\\\\Modrinth\\\\profiles\\\\Datapack Development', world: 'New World' },
+  saveOptions: { clientPath: 'D:\\\\Modrinth\\\\profiles\\\\Datapack Development', world: 'Arcane Arts Testing' },
 } as SandstoneConfig

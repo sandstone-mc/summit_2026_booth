@@ -41,7 +41,7 @@ MCFunction(`${spellPath}/update`, () => {
             // Push nearby entities away
             execute.as(Selector('@e', {
                 distance: [0, 1.5],
-                type: '#magic:targetable'
+                type: '#arcane_arts:targetable'
             })).run(() => {
                 // Face toward wave marker then invert — or use facing with wave position
                 raw(`rotate @s facing entity @p feet`);

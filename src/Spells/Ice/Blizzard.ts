@@ -42,7 +42,7 @@ MCFunction(`${spellPath}/update_storms`, () => {
             kill('@s');
         })
 
-        execute.as(Selector('@e', { distance: [0, 6], type: '#magic:targetable' })).run(() => {
+        execute.as(Selector('@e', { distance: [0, 6], type: '#arcane_arts:targetable' })).run(() => {
             damage('@s', 0.1, 'freeze');
             Freezing.apply(Variable(2));
             effect.give('@s', "minecraft:blindness", 2, 1, true);

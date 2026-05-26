@@ -10,36 +10,34 @@ const status = createStatusEffect({
     name: EffectName,
     damageType: 'lightning_bolt',
     damageAmount: 1,
-    damageInterval: 20,
+    damageInterval: 30,
     particles: () => {
         particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.05, 3, 'force');
-        particle('end_rod', rel(0, 0.5, 0), abs(0.1, 0.3, 0.1), 0.01, 1, 'force');
+        // particle('end_rod', rel(0, 0.5, 0), abs(0.1, 0.3, 0.1), 0.01, 1, 'force');
     },
     onApply: () => {},
     onEnd: () => {},
     onTick: () => {
         const nearbyUncharged = Selector('@e', {
-            type: '#magic:targetable',
-            tag: [`!magic.${status.statusTag.name}`],
+            type: '#arcane_arts:targetable',
+            tag: [`!arcane_arts.${status.statusTag.name}`],
             distance: [0, 8],
             limit: 1,
             sort: 'nearest'
         });
 
-        execute.as('@s').at('@s').as(nearbyUncharged).run(() => { say("h")})
-
         // Random roll
-        raw(`execute store result score @s ${rollScore.name} run random value 1..5`);
+        raw(`execute store result score @s ${rollScore.name} run random value 1..20`);
 
         _.if(rollScore('@s').equalTo(1), () => {
             execute.if.entity(nearbyUncharged).run(() => {
                 arcToTarget();
 
                 execute.as(nearbyUncharged).run(() => {
-                    status.apply(Variable(3));
-                    damage('@s', 2, 'lightning_bolt');
+                    status.apply(Variable(1));
+                    // damage('@s', 2, 'lightning_bolt');
                 });
-                damage('@s', 1, 'lightning_bolt');
+                // damage('@s', 1, 'lightning_bolt');
             });
         });
     }
@@ -47,8 +45,8 @@ const status = createStatusEffect({
 
 // Raycast toward nearest uncharged entity for the arc visual
 const nearbyUncharged = Selector('@e', {
-    type: '#magic:targetable',
-    tag: [`!magic.${status.statusTag.name}`],
+    type: '#arcane_arts:targetable',
+    tag: [`!arcane_arts.${status.statusTag.name}`],
     distance: [0, 8],
     limit: 1,
     sort: 'nearest'
@@ -65,10 +63,10 @@ const arcRaycast = fireRaycast(`status/${EffectName}/arc`, {
         particle('electric_spark', rel(0, 0, 0), abs(0.3, 0.8, 0.3), 0.1, 30, 'force');
     },
     onFinish: () => {
-        say("done")
     },
     onStart: () => {
         raw(`rotate @s facing entity ${nearbyUncharged} feet`);
+        tp('@s', rel(0, 1, 0));
     }
 });
 

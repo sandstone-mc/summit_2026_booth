@@ -3,7 +3,7 @@ import { MCFunction, Data, Objective, _, data, tellraw, scoreboard, Tag } from "
 export const setSchoolTrigger = Objective.create("set_school_trigger", "trigger");
 export const setSpellTrigger = Objective.create("set_spell_trigger", "trigger");
 
-export const temps = Data('storage', 'magic:temps');
+export const temps = Data('storage', 'arcane_arts:temps');
 
 MCFunction('initialize', () => {
     tellraw('@a', ["Hello"]);

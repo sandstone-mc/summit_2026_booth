@@ -4,7 +4,7 @@ import { getSelf, saveSelf, io } from "../../PlayerDB";
 
 const WAND_PREDICATE = {
     predicates: {
-        'minecraft:custom_data': { 'magic.item_type': "wand" }
+        'minecraft:custom_data': { 'arcane_arts.item_type': "wand" }
     }
 }
 
@@ -29,7 +29,7 @@ Enchantment('input/wand_left_click', {
             {
                 "effect": {
                     type: "run_function",
-                    function: "magic:input/on_wand_left_click"
+                    function: "arcane_arts:input/on_wand_left_click"
                 }
             }
         ]
@@ -55,7 +55,7 @@ for (const [schoolKey, school] of Object.entries(SpellLibrary)) {
     label: spellValue.name,
     action: {
       type: "minecraft:run_command",
-      command: `trigger magic.set_spell_trigger set ${spellValue.uid}`
+      command: `trigger arcane_arts.set_spell_trigger set ${spellValue.uid}`
     }
   }));
 
@@ -66,14 +66,14 @@ for (const [schoolKey, school] of Object.entries(SpellLibrary)) {
 }
 
 const _openSchoolDialog = MCFunction('input/_open_school_dialog', () => {
-  raw('$dialog show @s magic:spell_select_$(school)');
+  raw('$dialog show @s arcane_arts:spell_select_$(school)');
 }, { lazy: true });
 
 MCFunction('input/on_wand_left_click', () => {
     getSelf();
-    data.modify(Data('storage', 'magic:macro').select('school')).set.from(io.select('current_school'));
+    data.modify(Data('storage', 'arcane_arts:macro').select('school')).set.from(io.select('current_school'));
 
-    functionCmd(_openSchoolDialog, 'with', 'storage', 'magic:macro');
+    functionCmd(_openSchoolDialog, 'with', 'storage', 'arcane_arts:macro');
 });
 
 // Right click detect
@@ -83,7 +83,7 @@ const cooldownAdvancement = Advancement('input/wand_use_cooldown', {
 	"criteria": { "tick": {
 		"trigger": "minecraft:tick"
 	}},
-	"rewards": { "function": "magic:input/wand_use_cooldown" }
+	"rewards": { "function": "arcane_arts:input/wand_use_cooldown" }
 });
 
 const useWandAdvancement = Advancement('input/wand_use', {
@@ -93,7 +93,7 @@ const useWandAdvancement = Advancement('input/wand_use', {
             WAND_PREDICATE
         }}
 	}},
-	"rewards": { "function": "magic:input/wand_use" }
+	"rewards": { "function": "arcane_arts:input/wand_use" }
 })
 
 MCFunction('input/wand_use_cooldown', () => {
@@ -111,8 +111,8 @@ MCFunction('input/wand_use', () => {
         getSelf();
 
         functionCmd(MCFunction('cast_macro', () => {
-            raw(`$function magic:spells/$(current_school)/$(selected_spell)/cast`);
-        }), 'with', 'storage', 'magic:io', 'data');
+            raw(`$function arcane_arts:spells/$(current_school)/$(selected_spell)/cast`);
+        }), 'with', 'storage', 'arcane_arts:io', 'data');
     });
 
     useWandAdvancement.revoke('@s');

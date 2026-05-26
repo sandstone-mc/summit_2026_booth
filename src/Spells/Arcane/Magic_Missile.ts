@@ -8,7 +8,7 @@ createProjectileSpell({
     lifetime: 60,
     move: () => {
         const nearest = Selector('@e', { 
-            type: '#magic:targetable', 
+            type: '#arcane_arts:targetable', 
             limit: 1, 
             sort: 'nearest', 
             distance: [0, 20] 

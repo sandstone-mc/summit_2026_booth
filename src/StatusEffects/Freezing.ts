@@ -8,7 +8,7 @@ const freezeAdvancement = Advancement(`status/freezing`, {
         }
     },
     "rewards": {
-        "function": `magic:status/freezing/tryfreeze`
+        "function": `arcane_arts:status/freezing/tryfreeze`
     }
 });
 
@@ -37,7 +37,7 @@ MCFunction(`status/freezing/tryfreeze`, () => {
 
         _.if(status.statusTime('#snow').equalTo(1), () => {
             summon('marker', rel(0, 1, 0), {
-                Tags: [ `magic.status.freezing.snow` ]
+                Tags: [ `arcane_arts.status.freezing.snow` ]
             })
         })
     })

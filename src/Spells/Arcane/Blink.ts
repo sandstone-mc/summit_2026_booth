@@ -6,9 +6,9 @@ const meta = spellMeta("arcane", "blink");
 
 const blink = fireRaycast(meta.spellPath, {
     maxSteps: 15,
-    // onStep: () => {
-    //     particle('end_rod', rel(0, 0, 0), abs(0, 0, 0), 0, 2, 'force');
-    // },
+    onStep: () => {
+        // particle('end_rod', rel(0, 0, 0), abs(0, 0, 0), 0, 2, 'force');
+    },
     onHit: () => {
         particle('portal', rel(0, 0, 0), abs(0.3, 0.8, 0.3), 0.1, 30, 'force');
     },

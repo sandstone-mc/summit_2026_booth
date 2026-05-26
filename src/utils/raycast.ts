@@ -1,4 +1,4 @@
-import { _, execute, kill, Label, loc, MCFunction, rel, Selector, tp, say, rotate } from "sandstone";
+import { _, execute, kill, Label, loc, MCFunction, rel, Selector, tp, say, rotate, raw } from "sandstone";
 import { BlockStatic, ExecuteItemsCommand } from "sandstone/commands";
 
 interface RaycastOptions {
@@ -55,23 +55,19 @@ export function fireRaycast(
 
     return MCFunction(`${path}/fire_raycast`, () => {
         execute.anchored('eyes').rotated.as('@s').run(() => {
-        const CasterRef = Label(`${path.replaceAll('/', '.')}.ray_caster`);
-        CasterRef('@s').add();
-
+            const CasterRef = Label(`${path.replaceAll('/', '.')}.ray_caster`);
+            CasterRef('@s').add();
+            
         execute.summon('minecraft:marker').run(() => {
             const RayActive = Label(`${path.replaceAll('/', '.')}.ray_active`);
             RayActive('@s').add();
-
-            execute.rotated().as(Selector('@n', {
-                tag: CasterRef
-            })).anchored('eyes').run(() => {
-                tp('@s', rel(0, 1.62, 0), rel(0, 0));
-            })
+            
+            raw(`execute as @e[tag=arcane_arts.${CasterRef.name},limit=1] at @s anchored eyes rotated as @s run rotate @n[tag=arcane_arts.${RayActive.name}] ~ ~`);
 
             opts.onStart?.();
-
+            
             raycast();
-
+            
             // Teleport caster to marker if onFinish provided
             if (opts.onFinish) {
                 execute.at('@s').as(Selector('@e', {
@@ -81,7 +77,7 @@ export function fireRaycast(
                     opts.onFinish!();
                 });
             }
-
+            
             kill('@s');
         });
 
