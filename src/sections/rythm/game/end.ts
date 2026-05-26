@@ -7,7 +7,7 @@ import { parkourCleanup } from './parkour'
 import { Positions, DIM, NAMESPACE } from '../../../shared'
 import { timerScore } from './active'
 
-MCFunction('sections/rythm/timer/tick', () => {
+MCFunction('sections/rhythm/timer/tick', () => {
 	_.if(gameState.equalTo(GameState.ACTIVE), () => {
 		timerScore.remove(1)
 		_.if(timerScore.lessOrEqualThan(0), () => {
@@ -16,17 +16,17 @@ MCFunction('sections/rythm/timer/tick', () => {
 	})
 }, { runEveryTick: true })
 
-export const endGame = MCFunction('sections/rythm/end/run', () => {
+export const endGame = MCFunction('sections/rhythm/end/run', () => {
 	gameState.set(GameState.ENDING)
 
 	stopSong()
 	stopWalls()
 	computeScores()
 
-	schedule.function(`${NAMESPACE}:sections/rythm/end/cleanup`, '3s')
+	schedule.function(`${NAMESPACE}:sections/rhythm/end/cleanup`, '3s')
 }, { lazy: true })
 
-const cleanup = MCFunction('sections/rythm/end/cleanup', () => {
+const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
 	execute.in(DIM).run(() => {
 		clearWalls()
 		parkourCleanup()

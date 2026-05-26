@@ -6,7 +6,7 @@ import { NAMESPACE } from '../../../shared'
 const countdownScore = Objective.create('ssb_cd', 'dummy')
 const cdScore = countdownScore('$cd')
 
-const countdownTick = MCFunction('sections/rythm/start/countdown_tick', () => {
+const countdownTick = MCFunction('sections/rhythm/start/countdown_tick', () => {
 	_.if(gameState.equalTo(GameState.STARTING), () => {
 		_.if(cdScore.greaterThan(0), () => {
 			execute.as(allPlayers).at('@s').run.playsound('minecraft:block.note_block.hat', 'master', '@s')
@@ -20,24 +20,24 @@ const countdownTick = MCFunction('sections/rythm/start/countdown_tick', () => {
 			})
 
 			cdScore.remove(1)
-			schedule.function(`${NAMESPACE}:sections/rythm/start/countdown_tick`, '1s')
+			schedule.function(`${NAMESPACE}:sections/rhythm/start/countdown_tick`, '1s')
 		}).else(() => {
 			setActive()
 		})
 	})
 })
 
-export const startGame = MCFunction('sections/rythm/start/init', () => {
+export const startGame = MCFunction('sections/rhythm/start/init', () => {
 	_.if(gameState.equalTo(GameState.WAITING), () => {
 		gameState.set(GameState.STARTING)
 		cdScore.set(5)
-		schedule.function(`${NAMESPACE}:sections/rythm/start/countdown_tick`, '1s')
+		schedule.function(`${NAMESPACE}:sections/rhythm/start/countdown_tick`, '1s')
 	})
 }, { lazy: true })
 
-export const cancelStart = MCFunction('sections/rythm/start/cancel', () => {
+export const cancelStart = MCFunction('sections/rhythm/start/cancel', () => {
 	_.if(gameState.equalTo(GameState.STARTING), () => {
-		schedule.clear(`${NAMESPACE}:sections/rythm/start/countdown_tick`)
+		schedule.clear(`${NAMESPACE}:sections/rhythm/start/countdown_tick`)
 		gameState.set(GameState.WAITING)
 		title(allPlayers).actionbar({ text: 'Cancelled.', color: 'red' })
 	})

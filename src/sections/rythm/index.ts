@@ -15,10 +15,10 @@ import './game/end'
 import './game/buttons'
 import './game/debug'
 
-MCFunction('sections/rythm/init_player', () => {
+MCFunction('sections/rhythm/init_player', () => {
 	songScore.set(0)
 	title('@s').actionbar({ text: songNames[0] ?? 'No songs loaded', color: 'aqua' })
 })
 
-MCFunction('sections/rythm/clean_player', () => {
+MCFunction('sections/rhythm/clean_player', () => {
 })

@@ -131,7 +131,7 @@ for (let s = 0; s < singles.length; s++) {
 		difficulty: singles[s].difficulty,
 		groupIdx: 0,
 		weight: 1.0,
-		spawnFn: buildObstacleSpawn(singles[s], `sections/rythm/obstacle/s${s}`),
+		spawnFn: buildObstacleSpawn(singles[s], `sections/rhythm/obstacle/s${s}`),
 	})
 }
 
@@ -143,7 +143,7 @@ for (let g = 0; g < groups.length; g++) {
 			difficulty: group.obstacles[m].difficulty,
 			groupIdx: groupIdx1,
 			weight: 1.0,
-			spawnFn: buildObstacleSpawn(group.obstacles[m], `sections/rythm/obstacle/g${g}_m${m}`),
+			spawnFn: buildObstacleSpawn(group.obstacles[m], `sections/rhythm/obstacle/g${g}_m${m}`),
 		})
 	}
 }
@@ -161,7 +161,7 @@ const groupIdxList = [...groupMembersByIdx.keys()].sort((a, b) => a - b)
 
 const groupDispatchFns: (() => void)[] = groupIdxList.map((gIdx, gi) => {
 	const members = groupMembersByIdx.get(gIdx)!
-	return MCFunction(`sections/rythm/obstacle/group_${gIdx}`, () => {
+	return MCFunction(`sections/rhythm/obstacle/group_${gIdx}`, () => {
 		if (members.length === 1) {
 			poolEntries[members[0]].spawnFn()
 		} else {
@@ -207,7 +207,7 @@ function buildWeightedPool(songDifficulty: number): number[] {
 }
 
 function buildDifficultySpawn(songDifficulty: number) {
-	if (poolEntries.length === 0) return MCFunction(`sections/rythm/obstacle/spawn_d${songDifficulty}`, () => {}, { lazy: true })
+	if (poolEntries.length === 0) return MCFunction(`sections/rhythm/obstacle/spawn_d${songDifficulty}`, () => {}, { lazy: true })
 
 	const pool = buildWeightedPool(songDifficulty)
 	const sorted = [...pool].sort((a, b) => a - b)
@@ -216,7 +216,7 @@ function buildDifficultySpawn(songDifficulty: number) {
 		if (i === 0 || sorted[i] !== sorted[i - 1]) ranges.push({ start: i, entryIdx: sorted[i] })
 	}
 
-	return MCFunction(`sections/rythm/obstacle/spawn_d${songDifficulty}`, () => {
+	return MCFunction(`sections/rhythm/obstacle/spawn_d${songDifficulty}`, () => {
 		groupContScore.set(0)
 
 		if (groupDispatchFns.length > 0) {
@@ -268,6 +268,6 @@ export const spawnForDifficulty = [
 	buildDifficultySpawn(5),
 ]
 
-export const clearWalls = MCFunction('sections/rythm/obstacle/clear', () => {
+export const clearWalls = MCFunction('sections/rhythm/obstacle/clear', () => {
 	execute.in(DIM).run.kill(Selector('@e', { tag: Tags.WALL }))
 }, { lazy: true })

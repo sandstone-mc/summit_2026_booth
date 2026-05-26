@@ -6,20 +6,18 @@ import { DIM } from '../../../shared'
 
 const COMBO_BONUS = 5
 
-export const points = Objective.create('ssb_pts', 'dummy')
-export const combo = Objective.create('ssb_cmb', 'dummy')
-export const finalScore = Objective.create('ssb_scr', 'dummy')
+export const points = Objective.create('rhythm.points', 'dummy')
+export const combo = Objective.create('rhythm.combo', 'dummy')
+export const finalScore = Objective.create('rhythm.score', 'dummy')
 
-const comboMod = Objective.create('ssb_cmod', 'dummy')
-const comboModScore = comboMod('$mod')
-const comboDiv = Objective.create('ssb_cdiv', 'dummy')
-const comboDivScore = comboDiv('$div')
+const comboMod = combo('$mod')
+const comboDiv = combo('$div')
 
-MCFunction('sections/rythm/scoring/init', () => {
-	comboDivScore.set(10)
+MCFunction('sections/rhythm/scoring/init', () => {
+	comboDiv.set(10)
 }, { runOnLoad: true })
 
-MCFunction('sections/rythm/scoring/tick', () => {
+MCFunction('sections/rhythm/scoring/tick', () => {
 	_.if(gameState.equalTo(GameState.ACTIVE), () => {
 		execute.as(alivePlayers).run(() => {
 			title('@s').actionbar([
@@ -43,9 +41,9 @@ MCFunction('sections/rythm/scoring/tick', () => {
 				points('@s').add(1)
 				combo('@s').add(1)
 
-				comboModScore.set(combo('@s'))
-				comboModScore.modulo(comboDivScore)
-				_.if(_.and(comboModScore.equalTo(0), combo('@s').greaterThan(0)), () => {
+				comboMod.set(combo('@s'))
+				comboMod.modulo(comboDiv)
+				_.if(_.and(comboMod.equalTo(0), combo('@s').greaterThan(0)), () => {
 					points('@s').add(COMBO_BONUS)
 				})
 
@@ -67,24 +65,18 @@ MCFunction('sections/rythm/scoring/tick', () => {
 	})
 }, { runEveryTick: true })
 
-const maxComboObj = Objective.create('ssb_mc', 'dummy')
-const maxComboScore = maxComboObj('$max')
-const tempCombo = Objective.create('ssb_tc', 'dummy')
+const tempCombo = Objective.create('rhythm.combo_temp', 'dummy')
 const MAX_COMBO = 50
-const maxScoreObj = Objective.create('ssb_ms', 'dummy')
-const maxScoreScore = maxScoreObj('$max')
 
-export const computeScores = MCFunction('sections/rythm/scoring/compute', () => {
-	maxComboScore.set(MAX_COMBO)
-
+export const computeScores = MCFunction('sections/rhythm/scoring/compute', () => {
 	execute.as(allPlayers).run(() => {
 		tempCombo('@s').set(combo('@s'))
-		scoreboard.players.operation(tempCombo('@s'), '<', maxComboScore)
+		tempCombo('@s')['<'](MAX_COMBO)
 		tempCombo('@s').add(MAX_COMBO)
 
 		finalScore('@s').set(points('@s'))
 		finalScore('@s').multiply(tempCombo('@s'))
-		finalScore('@s').divide(maxComboScore)
+		finalScore('@s').divide(MAX_COMBO)
 	})
 
 	title(allPlayers).times(10, 60, 20)

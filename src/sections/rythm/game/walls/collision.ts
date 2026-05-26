@@ -15,7 +15,7 @@ export const wallCd = Objective.create('ssb_wcd', 'dummy')
 
 const HIT_COOLDOWN = 30
 
-const onHit = MCFunction('sections/rythm/collision/hit', () => {
+const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 	wallLives('@s').remove(1)
 
 	tag('@s').add(Tags.HIT_TICK)
@@ -39,7 +39,7 @@ const onHit = MCFunction('sections/rythm/collision/hit', () => {
 	})
 }, { lazy: true })
 
-MCFunction('sections/rythm/collision/tick', () => {
+MCFunction('sections/rhythm/collision/tick', () => {
 	_.if(gameState.equalTo(GameState.ACTIVE), () => {
 		execute.in(DIM).run(() => {
 			execute.as(Selector('@a', { tag: Tags.WALL_CD })).run(() => {

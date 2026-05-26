@@ -7,7 +7,7 @@ import { stopSong, stopWalls } from './songs'
 import { clearWalls } from './walls/spawning'
 import { parkourCleanup } from './parkour'
 
-MCFunction('sections/rythm/debug/setup', () => {
+MCFunction('sections/rhythm/debug/setup', () => {
 	execute.in(DIM).run(() => {
 		const [fxMin, fzMin] = arena.forceloadMin
 		const [fxMax, fzMax] = arena.forceloadMax
@@ -22,7 +22,7 @@ MCFunction('sections/rythm/debug/setup', () => {
 	})
 }, { lazy: true })
 
-MCFunction('sections/rythm/debug/reset', () => {
+MCFunction('sections/rhythm/debug/reset', () => {
 	stopSong()
 	stopWalls()
 	clearWalls()
@@ -45,7 +45,7 @@ MCFunction('sections/rythm/debug/reset', () => {
 	gamemode('creative', '@a')
 }, { lazy: true })
 
-MCFunction('sections/rythm/debug/tp', () => {
+MCFunction('sections/rhythm/debug/tp', () => {
 	execute.in('minecraft:overworld').run(() => {
 		const [x, y, z] = Positions.BOOTH_RETURN
 		tp('@s', abs(x, y, z))

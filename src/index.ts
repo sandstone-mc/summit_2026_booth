@@ -1,7 +1,7 @@
 import { functionCmd, MCFunction, Selector } from 'sandstone'
 
 import { ticking } from './shared'
-import './sections/rythm/index'
+import './sections/rhythm/index'
 
 MCFunction('main', () => {
 }, {
@@ -9,9 +9,9 @@ MCFunction('main', () => {
 })
 
 MCFunction('init_player', () => {
-	functionCmd('sandstone_summit_booth:sections/rythm/init_player')
+	functionCmd('sandstone_summit_booth:sections/rhythm/init_player')
 })
 
 MCFunction('clean_player', () => {
-	functionCmd('sandstone_summit_booth:sections/rythm/clean_player')
+	functionCmd('sandstone_summit_booth:sections/rhythm/clean_player')
 })

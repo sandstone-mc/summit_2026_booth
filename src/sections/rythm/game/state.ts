@@ -38,7 +38,7 @@ export const gameState = state('$game')
 const songSelected = Objective.create('ssb_song', 'dummy')
 export const songScore = songSelected('$song')
 
-MCFunction('sections/rythm/state/init', () => {
+MCFunction('sections/rhythm/state/init', () => {
 	gameState.set(GameState.WAITING)
 	songScore.set(0)
 }, { runOnLoad: true })

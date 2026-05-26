@@ -7,7 +7,7 @@ import { points, combo, finalScore } from './scoring'
 import { playSong, scheduleWalls } from './songs'
 import { DIM } from '../../../shared'
 
-MCFunction('sections/rythm/active/nocollide_init', () => {
+MCFunction('sections/rhythm/active/nocollide_init', () => {
 	team.add('ssb_nocollide')
 	team.modify('ssb_nocollide', 'collisionRule', 'never')
 	team.modify('ssb_nocollide', 'seeFriendlyInvisibles', false)
@@ -16,7 +16,7 @@ MCFunction('sections/rythm/active/nocollide_init', () => {
 export const timer = Objective.create('ssb_time', 'dummy')
 export const timerScore = timer('$time')
 
-MCFunction('sections/rythm/active/forceload', () => {
+MCFunction('sections/rhythm/active/forceload', () => {
 	execute.in(DIM).run(() => {
 		const [fxMin, fzMin] = arena.forceloadMin
 		const [fxMax, fzMax] = arena.forceloadMax
@@ -24,7 +24,7 @@ MCFunction('sections/rythm/active/forceload', () => {
 	})
 }, { runOnLoad: true })
 
-export const setActive = MCFunction('sections/rythm/active/init', () => {
+export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	gameState.set(GameState.ACTIVE)
 
 	execute.in(DIM).run(() => {

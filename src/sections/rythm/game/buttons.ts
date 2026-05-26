@@ -31,7 +31,7 @@ const startGameAdv = Advancement('start_game', {
 	},
 })
 
-const onCycleSong = MCFunction('sections/rythm/buttons/on_cycle', () => {
+const onCycleSong = MCFunction('sections/rhythm/buttons/on_cycle', () => {
 	_.if(gameState.equalTo(GameState.WAITING), () => {
 		songScore.add(1)
 		_.if(songScore.greaterOrEqualThan(songCount), () => {
@@ -54,7 +54,7 @@ const onCycleSong = MCFunction('sections/rythm/buttons/on_cycle', () => {
 	})
 }, { lazy: true })
 
-const onStartGame = MCFunction('sections/rythm/buttons/on_start', () => {
+const onStartGame = MCFunction('sections/rhythm/buttons/on_start', () => {
 	_.if(gameState.equalTo(GameState.WAITING), () => {
 		tag('@s').add(Tags.PLAYER)
 		tag('@s').add(Tags.ALIVE)
@@ -67,7 +67,7 @@ const onStartGame = MCFunction('sections/rythm/buttons/on_start', () => {
 	execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 }, { lazy: true })
 
-MCFunction('sections/rythm/buttons/tick', () => {
+MCFunction('sections/rhythm/buttons/tick', () => {
 	execute.as(Selector('@a', { advancements: { [`sandstone_summit_booth:cycle_song`]: true } })).run(() => {
 		onCycleSong()
 		advancement.revoke('@s').only('sandstone_summit_booth:cycle_song')
@@ -79,7 +79,7 @@ MCFunction('sections/rythm/buttons/tick', () => {
 	})
 }, { runEveryTick: true })
 
-MCFunction('sections/rythm/buttons/spawn', () => {
+MCFunction('sections/rhythm/buttons/spawn', () => {
 	kill(Selector('@e', { tag: Tags.BTN_CYCLE }))
 	kill(Selector('@e', { tag: Tags.BTN_START }))
 	kill(Selector('@e', { tag: Tags.BTN_CYCLE_DISPLAY }))

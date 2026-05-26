@@ -12,7 +12,7 @@ const moveNumScore = moveNum('$num')
 const travelScore = Objective.create('ssb_wtt', 'dummy')
 const travelTicksScore = travelScore('$ticks')
 
-MCFunction('sections/rythm/wall/init_scores', () => {
+MCFunction('sections/rhythm/wall/init_scores', () => {
 	moveNumScore.set(MOVE_NUMERATOR)
 	travelTicksScore.set(WALL_TRAVEL_TICKS)
 }, { runOnLoad: true })
@@ -20,7 +20,7 @@ MCFunction('sections/rythm/wall/init_scores', () => {
 export const beatFlag = Objective.create('ssb_bf', 'dummy')
 export const beatFlagScore = beatFlag('$beat')
 
-const initWalls = MCFunction('sections/rythm/wall/init', () => {
+const initWalls = MCFunction('sections/rhythm/wall/init', () => {
 	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.WALL_HIT}`] })).run(() => {
 		data.merge.entity('@s', {
 			interpolation_duration: NBT.int(WALL_TRAVEL_TICKS),
@@ -30,11 +30,11 @@ const initWalls = MCFunction('sections/rythm/wall/init', () => {
 	})
 }, { lazy: true })
 
-const tpWall = MCFunction('sections/rythm/wall/tp', () => {
+const tpWall = MCFunction('sections/rhythm/wall/tp', () => {
 	raw('$tp @s ~ ~ $(pos)')
 }, { lazy: true })
 
-const moveWalls = MCFunction('sections/rythm/wall/move', () => {
+const moveWalls = MCFunction('sections/rhythm/wall/move', () => {
 	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_HIT, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] })).at('@s').run(() => {
 		wallMoveTemp('@s').set(wallAge('@s'))
 		wallMoveTemp('@s').multiply(moveNumScore)
@@ -44,11 +44,11 @@ const moveWalls = MCFunction('sections/rythm/wall/move', () => {
 		wallPos('@s').add(wallDepth('@s'))
 		execute.store.result.storage('ssb:temp', 'pos', 'double', 0.001)
 			.run.scoreboard.players.get('@s', wallPos.name)
-		raw('function sandstone_summit_booth:sections/rythm/wall/tp with storage ssb:temp')
+		raw('function sandstone_summit_booth:sections/rhythm/wall/tp with storage ssb:temp')
 	})
 }, { lazy: true })
 
-MCFunction('sections/rythm/wall/tick', () => {
+MCFunction('sections/rhythm/wall/tick', () => {
 	_.if(gameState.equalTo(GameState.ACTIVE), () => {
 		execute.in(DIM).run(() => {
 			initWalls()
