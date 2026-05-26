@@ -6,6 +6,7 @@ interface RaycastOptions {
     onStep?: () => void;
     onHit?: () => void;
     onComplete?: () => void;
+    shouldStop?: () => void;
     stepSize?: number; // default 0.5
     passesThrough?: BlockStatic // default minecraft:replaceable
 }
@@ -18,7 +19,7 @@ export const createRaycast = (path: string, opts: RaycastOptions) => {
     const step = MCFunction(`${path}/raycast_step`, () => {
         tp('@s', loc(0, 0, stepSize));
         opts.onStep?.();
-
+        opts.shouldStop?.();
         execute.unless.block(rel(0, 0, 0), passesThrough).run(() => {
             tp('@s', loc(0, 0, -stepSize));
             opts.onHit?.();

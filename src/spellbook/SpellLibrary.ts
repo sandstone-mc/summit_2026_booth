@@ -8,7 +8,7 @@ export interface Spell {
     description: string;
 }
 
-export type SchoolID = "fire" | "ice" | "arcane";
+export type SchoolID = "fire" | "ice" | "arcane" | "lightning";
 
 export interface SpellSchool {
     id: SchoolID;
@@ -99,6 +99,35 @@ export const SpellLibrary: SpellLibraryType = {
                 uid: 2,
                 mana_cost: 20,
                 name: "Blink",
+                description: ""
+            }
+        }
+    },
+    "lightning": {
+        id: "lightning",
+        uid: 3,
+        name: "Lightning",
+        description: "",
+        spells: {
+            "thunderbolt": {
+                id: "thunderbolt",
+                uid: 0,
+                mana_cost: 15,
+                name: "Thunderbolt",
+                description: ""
+            },
+            "ball_lightning": {
+                id: "ball_lightning",
+                uid: 1,
+                mana_cost: 50,
+                name: "Ball Lightning",
+                description: ""
+            },
+            "static_field": {
+                id: "static_field",
+                uid: 2,
+                mana_cost: 30,
+                name: "Static Field",
                 description: ""
             }
         }
