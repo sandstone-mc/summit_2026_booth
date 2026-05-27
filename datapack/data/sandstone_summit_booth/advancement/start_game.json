@@ -5,7 +5,7 @@
       "conditions": {
         "entity": {
           "type": "minecraft:interaction",
-          "nbt": "{Tags:[\"ssb.btn.start\"]}"
+          "nbt": "{Tags:[\"ssb.rhythm.btn.start\"]}"
         }
       }
     }

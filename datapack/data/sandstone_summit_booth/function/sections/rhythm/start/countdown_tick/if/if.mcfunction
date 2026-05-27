@@ -1,2 +1,2 @@
-execute if score $cd sandstone_summit_booth.ssb_cd matches 1.. run return run function sandstone_summit_booth:sections/rhythm/start/countdown_tick/if/if/0_if/return_run
+execute if score $countdown sandstone_summit_booth.rhythm.state matches 1.. run return run function sandstone_summit_booth:sections/rhythm/start/countdown_tick/if/if/0_if/return_run
 return run function sandstone_summit_booth:sections/rhythm/active/init

@@ -1,3 +1,3 @@
-team add ssb_nocollide
-team modify ssb_nocollide collisionRule never
-team modify ssb_nocollide seeFriendlyInvisibles false
+team add ssb.rhythm.nocollide
+team modify ssb.rhythm.nocollide collisionRule never
+team modify ssb.rhythm.nocollide seeFriendlyInvisibles false

@@ -1,2 +1,2 @@
-tag @s add ssb.wall.cd
-scoreboard players set @s sandstone_summit_booth.ssb_wcd 30
+tag @s add ssb.rhythm.wall.cd
+scoreboard players set @s sandstone_summit_booth.rhythm.wall.hit_cooldown 30

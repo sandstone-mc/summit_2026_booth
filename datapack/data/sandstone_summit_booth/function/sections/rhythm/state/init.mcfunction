@@ -1,2 +1,2 @@
-scoreboard players set $game sandstone_summit_booth.ssb_state 0
-scoreboard players set $song sandstone_summit_booth.ssb_song 0
+scoreboard players set $status sandstone_summit_booth.rhythm.state 0
+scoreboard players set $song_select sandstone_summit_booth.rhythm.state 0

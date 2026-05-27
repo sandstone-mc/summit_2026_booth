@@ -1,6 +1,6 @@
 execute store result score $path sandstone_summit_booth.rhythm.parkour run random value 0..7 sandstone_summit_booth:pk_path
 scoreboard players set $active sandstone_summit_booth.rhythm.parkour 1
-execute in sandstone_summit_booth:rhythm as @a[tag=ssb.player, tag=ssb.alive] run function sandstone_summit_booth:sections/rhythm/parkour/step_0/execute_in
+execute in sandstone_summit_booth:rhythm as @a[tag=ssb.rhythm.player, tag=ssb.rhythm.alive] run function sandstone_summit_booth:sections/rhythm/parkour/step_0/execute_in
 execute if score $path sandstone_summit_booth.rhythm.parkour matches 0 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rhythm/parkour/step_0/if/return_run/execute_in
 execute if score $path sandstone_summit_booth.rhythm.parkour matches 1 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rhythm/parkour/step_0/elseif/return_run/execute_in
 execute if score $path sandstone_summit_booth.rhythm.parkour matches 2 run return run execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rhythm/parkour/step_0/elseif2/return_run/execute_in

@@ -1,1 +1,1 @@
-execute if score $game sandstone_summit_booth.ssb_state matches 1 run function sandstone_summit_booth:sections/rhythm/start/countdown_tick/if/if
+execute if score $status sandstone_summit_booth.rhythm.state matches 1 run function sandstone_summit_booth:sections/rhythm/start/countdown_tick/if/if

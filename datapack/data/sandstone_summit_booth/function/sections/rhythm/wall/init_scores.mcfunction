@@ -1,2 +1,2 @@
-scoreboard players set $num sandstone_summit_booth.ssb_mn 40000
-scoreboard players set $ticks sandstone_summit_booth.ssb_wtt 80
+scoreboard players set $numerator sandstone_summit_booth.rhythm.wall_tick 40000
+scoreboard players set $travel sandstone_summit_booth.rhythm.wall_tick 80

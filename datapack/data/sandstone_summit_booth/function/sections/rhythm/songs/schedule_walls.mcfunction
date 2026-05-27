@@ -1,3 +1,3 @@
-execute if score $song sandstone_summit_booth.ssb_song matches 0 run return run function sandstone_summit_booth:sections/rhythm/songs/tetoris/walls
-execute if score $song sandstone_summit_booth.ssb_song matches 1 run return run function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/walls
-execute if score $song sandstone_summit_booth.ssb_song matches 2 run function sandstone_summit_booth:sections/rhythm/songs/il_vento_d_oro___jojo/walls
+execute if score $song_select sandstone_summit_booth.rhythm.state matches 0 run return run function sandstone_summit_booth:sections/rhythm/songs/tetoris/walls
+execute if score $song_select sandstone_summit_booth.rhythm.state matches 1 run return run function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/walls
+execute if score $song_select sandstone_summit_booth.rhythm.state matches 2 run function sandstone_summit_booth:sections/rhythm/songs/il_vento_d_oro___jojo/walls

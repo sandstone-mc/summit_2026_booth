@@ -1,2 +1,2 @@
-execute if score $game sandstone_summit_booth.ssb_state matches 0 run return run function sandstone_summit_booth:sections/rhythm/buttons/on_start/if/0_if/return_run
-execute if score $game sandstone_summit_booth.ssb_state matches 1 run return run function sandstone_summit_booth:sections/rhythm/buttons/on_start/if/1_elseif/return_run
+execute if score $status sandstone_summit_booth.rhythm.state matches 0 run return run function sandstone_summit_booth:sections/rhythm/buttons/on_start/if/0_if/return_run
+execute if score $status sandstone_summit_booth.rhythm.state matches 1 run return run function sandstone_summit_booth:sections/rhythm/buttons/on_start/if/1_elseif/return_run

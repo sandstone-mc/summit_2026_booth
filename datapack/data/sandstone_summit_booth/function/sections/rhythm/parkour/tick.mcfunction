@@ -1,1 +1,1 @@
-execute if score $game sandstone_summit_booth.ssb_state matches 2 if score $active sandstone_summit_booth.rhythm.parkour matches 1.. run function sandstone_summit_booth:sections/rhythm/parkour/tick/if
+execute if score $status sandstone_summit_booth.rhythm.state matches 2 if score $active sandstone_summit_booth.rhythm.parkour matches 1.. run function sandstone_summit_booth:sections/rhythm/parkour/tick/if

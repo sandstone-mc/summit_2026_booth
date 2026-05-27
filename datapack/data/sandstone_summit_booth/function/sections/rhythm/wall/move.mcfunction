@@ -1,1 +1,1 @@
-execute as @e[tag=ssb.wall, tag=ssb.wall.hit, tag=!ssb.wall.init, tag=!ssb.wall.wait] at @s run function sandstone_summit_booth:sections/rhythm/wall/move/execute_as
+execute as @e[tag=ssb.rhythm.wall, tag=ssb.rhythm.wall.hit, tag=!ssb.rhythm.wall.init, tag=!ssb.rhythm.wall.wait] at @s run function sandstone_summit_booth:sections/rhythm/wall/move/execute_as
