@@ -1,20 +1,19 @@
 import { _, abs, attribute, effect, execute, forceload, gamemode, gamerule, MCFunction, NBT, Objective, playsound, Selector, tag, team, title, tp } from 'sandstone'
 import { arena } from '../config/arena'
 import { songCount, songDurations } from '../config/songs'
-import { GameState, allPlayers, alivePlayers, gameState, songScore, livesDefault } from './state'
+import { GameStatus, allPlayers, alivePlayers, status, songSelect, livesDefault } from './state'
 import { wallLives } from './walls/collision'
 import { points, combo, finalScore } from './scoring'
 import { playSong, scheduleWalls } from './songs'
-import { DIM } from '../../../shared'
+import { DIM, state } from '../../../shared'
 
 MCFunction('sections/rhythm/active/nocollide_init', () => {
-	team.add('ssb_nocollide')
-	team.modify('ssb_nocollide', 'collisionRule', 'never')
-	team.modify('ssb_nocollide', 'seeFriendlyInvisibles', false)
+	team.add('ssb.rhythm.nocollide')
+	team.modify('ssb.rhythm.nocollide', 'collisionRule', 'never')
+	team.modify('ssb.rhythm.nocollide', 'seeFriendlyInvisibles', false)
 }, { runOnLoad: true })
 
-export const timer = Objective.create('ssb_time', 'dummy')
-export const timerScore = timer('$time')
+export const timer = state('$timer')
 
 MCFunction('sections/rhythm/active/forceload', () => {
 	execute.in(DIM).run(() => {
@@ -25,7 +24,7 @@ MCFunction('sections/rhythm/active/forceload', () => {
 }, { runOnLoad: true })
 
 export const setActive = MCFunction('sections/rhythm/active/init', () => {
-	gameState.set(GameState.ACTIVE)
+	status.set(GameStatus.ACTIVE)
 
 	execute.in(DIM).run(() => {
 		const [x, y, z] = arena.playerSpawn
@@ -33,7 +32,7 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	})
 
 	gamemode('adventure', allPlayers)
-	team.join('ssb_nocollide', allPlayers)
+	team.join('ssb.rhythm.nocollide', allPlayers)
 
 	execute.as(allPlayers).run(() => {
 		attribute('@s', 'minecraft:movement_speed').baseSet(0.13)
@@ -49,12 +48,12 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	gamerule('natural_health_regeneration', false)
 
 	if (songCount === 1) {
-		timerScore.set(songDurations[0] * 20)
+		timer.set(songDurations[0] * 20)
 	} else {
-		let chain = _.if(songScore.equalTo(0), () => { timerScore.set(songDurations[0] * 20) })
+		let chain = _.if(songSelect.equalTo(0), () => { timer.set(songDurations[0] * 20) })
 		for (let i = 1; i < songCount; i++) {
 			const idx = i
-			chain = chain.elseIf(songScore.equalTo(idx), () => { timerScore.set(songDurations[idx] * 20) })
+			chain = chain.elseIf(songSelect.equalTo(idx), () => { timer.set(songDurations[idx] * 20) })
 		}
 	}
 

@@ -1,5 +1,5 @@
 import { resolve } from 'path'
-import { Tag } from 'sandstone'
+import { Objective, Tag } from 'sandstone'
 import config from '../sandstone.config'
 
 export const NAMESPACE = config.namespace!
@@ -15,3 +15,5 @@ export const Positions: Record<string, [number, number, number]> = {
 	BTN_CYCLE_DISPLAY: [-120, 74.5, -30],
 	BTN_START_DISPLAY: [-116, 74.5, -30],
 }
+
+export const state = Objective.create('rhythm.state', 'dummy')

@@ -1,6 +1,6 @@
 import { _, abs, effect, execute, gamemode, MCFunction, Objective, playsound, Predicate, rel, Selector, tag, title, tp } from 'sandstone'
 import { arena } from '../../config/arena'
-import { GameState, Tags, alivePlayers, gameState } from '../state'
+import { GameStatus, Tags, alivePlayers, status } from '../state'
 import { Positions, DIM } from '../../../../shared'
 import { endGame } from '../end'
 
@@ -10,8 +10,8 @@ const isSneaking = Predicate('is_sneaking', {
 	predicate: { flags: { is_sneaking: true } },
 })
 
-export const wallLives = Objective.create('ssb_wliv', 'dummy')
-export const wallCd = Objective.create('ssb_wcd', 'dummy')
+export const wallLives = Objective.create('rhythm.wall.lives', 'dummy')
+export const wallHitCooldown = Objective.create('rhythm.wall.hit_cooldown', 'dummy')
 
 const HIT_COOLDOWN = 30
 
@@ -23,7 +23,7 @@ const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 	playsound('minecraft:entity.player.hurt', 'master', '@s')
 
 	tag('@s').add(Tags.WALL_CD)
-	wallCd('@s').set(HIT_COOLDOWN)
+	wallHitCooldown('@s').set(HIT_COOLDOWN)
 
 	_.if(wallLives('@s').lessOrEqualThan(0), () => {
 		tag('@s').remove(Tags.ALIVE)
@@ -40,11 +40,11 @@ const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 }, { lazy: true })
 
 MCFunction('sections/rhythm/collision/tick', () => {
-	_.if(gameState.equalTo(GameState.ACTIVE), () => {
+	_.if(status.equalTo(GameStatus.ACTIVE), () => {
 		execute.in(DIM).run(() => {
 			execute.as(Selector('@a', { tag: Tags.WALL_CD })).run(() => {
-				wallCd('@s').remove(1)
-				_.if(wallCd('@s').lessOrEqualThan(0), () => {
+				wallHitCooldown('@s').remove(1)
+				_.if(wallHitCooldown('@s').lessOrEqualThan(0), () => {
 					tag('@s').remove(Tags.WALL_CD)
 				})
 			})

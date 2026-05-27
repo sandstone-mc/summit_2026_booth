@@ -1,5 +1,5 @@
 import { MCFunction, title } from 'sandstone'
-import { songScore } from './game/state'
+import { songSelect } from './game/state'
 import { songNames } from './config/songs'
 
 import './game/state'
@@ -16,7 +16,7 @@ import './game/buttons'
 import './game/debug'
 
 MCFunction('sections/rhythm/init_player', () => {
-	songScore.set(0)
+	songSelect.set(0)
 	title('@s').actionbar({ text: songNames[0] ?? 'No songs loaded', color: 'aqua' })
 })
 

@@ -2,7 +2,7 @@ import { abs, effect, execute, fill, forceload, gamemode, kill, MCFunction, Sele
 import { arena } from '../config/arena'
 import { PATTERN_WIDTH, WALL_SPAWN_AHEAD, WALL_PASS_BEHIND } from '../config/obstacle-pool'
 import { DIM, Positions } from '../../../shared'
-import { GameState, Tags, gameState, songScore } from './state'
+import { GameStatus, Tags, status, songSelect } from './state'
 import { stopSong, stopWalls } from './songs'
 import { clearWalls } from './walls/spawning'
 import { parkourCleanup } from './parkour'
@@ -35,8 +35,8 @@ MCFunction('sections/rhythm/debug/reset', () => {
 		tag('@s').remove(Tags.PLAYER)
 	})
 
-	gameState.set(GameState.WAITING)
-	songScore.set(0)
+	status.set(GameStatus.WAITING)
+	songSelect.set(0)
 
 	execute.in('minecraft:overworld').run(() => {
 		const [x, y, z] = Positions.BOOTH_RETURN

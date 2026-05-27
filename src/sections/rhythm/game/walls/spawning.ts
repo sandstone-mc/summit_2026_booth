@@ -5,15 +5,14 @@ import { singles, groups, type Cell, type Obstacle } from '../../config/obstacle
 import { Tags } from '../state'
 import { DIM } from '../../../../shared'
 
-export const wallAge = Objective.create('ssb_wage', 'dummy')
-export const wallDepth = Objective.create('ssb_wdp', 'dummy')
+export const wallAge = Objective.create('rhythm.wall.age', 'dummy')
+export const wallDepth = Objective.create('rhythm.wall.depth', 'dummy')
 
-const wallPick = Objective.create('ssb_wpk', 'dummy')
-const wallPickScore = wallPick('$pick')
-const lastGroup = Objective.create('ssb_lg', 'dummy')
-const lastGroupScore = lastGroup('$last')
-const groupCont = Objective.create('ssb_gc', 'dummy')
-const groupContScore = groupCont('$cont')
+const wallVariable = Objective.create('rhythm.wall_variable')
+
+const pick = wallVariable('$pick')
+const lastGroup = wallVariable('$last')
+const groupContinue = wallVariable('$continue')
 
 function nameHash(name: string): number {
 	let h = 0
@@ -165,12 +164,12 @@ const groupDispatchFns: (() => void)[] = groupIdxList.map((gIdx, gi) => {
 		if (members.length === 1) {
 			poolEntries[members[0]].spawnFn()
 		} else {
-			execute.store.result.score(wallPickScore.target, wallPickScore.objective)
+			execute.store.result.score(pick.target, pick.objective)
 				.run.random.value([0, members.length - 1], 'wall_pick')
-			let chain = _.if(wallPickScore.equalTo(0), () => poolEntries[members[0]].spawnFn())
+			let chain = _.if(pick.equalTo(0), () => poolEntries[members[0]].spawnFn())
 			for (let m = 1; m < members.length; m++) {
 				const mi = m
-				chain = chain.elseIf(wallPickScore.equalTo(mi), () => poolEntries[members[mi]].spawnFn())
+				chain = chain.elseIf(pick.equalTo(mi), () => poolEntries[members[mi]].spawnFn())
 			}
 		}
 	}, { lazy: true })
@@ -217,42 +216,42 @@ function buildDifficultySpawn(songDifficulty: number) {
 	}
 
 	return MCFunction(`sections/rhythm/obstacle/spawn_d${songDifficulty}`, () => {
-		groupContScore.set(0)
+		groupContinue.set(0)
 
 		if (groupDispatchFns.length > 0) {
-			_.if(lastGroupScore.greaterThan(0), () => {
-				execute.store.result.score(wallPickScore.target, wallPickScore.objective)
+			_.if(lastGroup.greaterThan(0), () => {
+				execute.store.result.score(pick.target, pick.objective)
 					.run.random.value([0, 99], 'wall_pick')
-				_.if(wallPickScore.lessThan(70), () => {
+				_.if(pick.lessThan(70), () => {
 					if (groupIdxList.length === 1) {
 						groupDispatchFns[0]()
 					} else {
-						let chain = _.if(lastGroupScore.equalTo(groupIdxList[0]), () => groupDispatchFns[0]())
+						let chain = _.if(lastGroup.equalTo(groupIdxList[0]), () => groupDispatchFns[0]())
 						for (let g = 1; g < groupIdxList.length; g++) {
 							const gi = g
-							chain = chain.elseIf(lastGroupScore.equalTo(groupIdxList[gi]), () => groupDispatchFns[gi]())
+							chain = chain.elseIf(lastGroup.equalTo(groupIdxList[gi]), () => groupDispatchFns[gi]())
 						}
 					}
-					groupContScore.set(1)
+					groupContinue.set(1)
 				}).else(() => {
-					lastGroupScore.set(0)
+					lastGroup.set(0)
 				})
 			})
 		}
 
-		_.if(groupContScore.equalTo(0), () => {
-			execute.store.result.score(wallPickScore.target, wallPickScore.objective)
+		_.if(groupContinue.equalTo(0), () => {
+			execute.store.result.score(pick.target, pick.objective)
 				.run.random.value([0, sorted.length - 1], 'wall_pick')
 			if (ranges.length > 0) {
-				let chain = _.if(wallPickScore.greaterOrEqualThan(ranges[ranges.length - 1].start), () => {
+				let chain = _.if(pick.greaterOrEqualThan(ranges[ranges.length - 1].start), () => {
 					poolEntries[ranges[ranges.length - 1].entryIdx].spawnFn()
-					lastGroupScore.set(poolEntries[ranges[ranges.length - 1].entryIdx].groupIdx)
+					lastGroup.set(poolEntries[ranges[ranges.length - 1].entryIdx].groupIdx)
 				})
 				for (let i = ranges.length - 2; i >= 0; i--) {
 					const r = ranges[i]
-					chain = chain.elseIf(wallPickScore.greaterOrEqualThan(r.start), () => {
+					chain = chain.elseIf(pick.greaterOrEqualThan(r.start), () => {
 						poolEntries[r.entryIdx].spawnFn()
-						lastGroupScore.set(poolEntries[r.entryIdx].groupIdx)
+						lastGroup.set(poolEntries[r.entryIdx].groupIdx)
 					})
 				}
 			}

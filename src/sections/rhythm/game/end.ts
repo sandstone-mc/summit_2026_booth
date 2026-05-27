@@ -1,23 +1,23 @@
-import { _, abs, attribute, effect, execute, gamemode, gamerule, kill, MCFunction, raw, schedule, Selector, stopsound, tag, team, title, tp } from 'sandstone'
-import { GameState, Tags, allPlayers, alivePlayers, gameState } from './state'
+import { _, abs, attribute, clear, effect, execute, gamemode, gamerule, kill, MCFunction, raw, schedule, Selector, stopsound, tag, team, title, tp } from 'sandstone'
+import { GameStatus, Tags, allPlayers, alivePlayers, status } from './state'
 import { clearWalls } from './walls/spawning'
 import { stopSong, stopWalls } from './songs'
 import { computeScores } from './scoring'
 import { parkourCleanup } from './parkour'
 import { Positions, DIM, NAMESPACE } from '../../../shared'
-import { timerScore } from './active'
+import { timer } from './active'
 
 MCFunction('sections/rhythm/timer/tick', () => {
-	_.if(gameState.equalTo(GameState.ACTIVE), () => {
-		timerScore.remove(1)
-		_.if(timerScore.lessOrEqualThan(0), () => {
+	_.if(status.equalTo(GameStatus.ACTIVE), () => {
+		timer.remove(1)
+		_.if(timer.lessOrEqualThan(0), () => {
 			endGame()
 		})
 	})
 }, { runEveryTick: true })
 
 export const endGame = MCFunction('sections/rhythm/end/run', () => {
-	gameState.set(GameState.ENDING)
+	status.set(GameStatus.ENDING)
 
 	stopSong()
 	stopWalls()
@@ -35,7 +35,7 @@ const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
 	execute.as(allPlayers).run(() => {
 		effect.clear('@s')
 		attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
-		raw('clear @s')
+		clear('@s')
 		tag('@s').remove(Tags.ALIVE)
 		tag('@s').remove(Tags.PLAYER)
 	})
@@ -49,5 +49,5 @@ const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
 	})
 	gamemode('adventure', allPlayers)
 
-	gameState.set(GameState.WAITING)
+	status.set(GameStatus.WAITING)
 }, { lazy: true })

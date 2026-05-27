@@ -1,6 +1,6 @@
 import { _, abs, advancement, Advancement, execute, MCFunction, NBT, Selector, summon, tag, title, kill } from 'sandstone'
 import { songCount, songNames } from '../config/songs'
-import { GameState, Tags, gameState, songScore } from './state'
+import { GameStatus, Tags, status, songSelect } from './state'
 import { startGame, cancelStart } from './start'
 import { Positions } from '../../../shared'
 
@@ -32,19 +32,19 @@ const startGameAdv = Advancement('start_game', {
 })
 
 const onCycleSong = MCFunction('sections/rhythm/buttons/on_cycle', () => {
-	_.if(gameState.equalTo(GameState.WAITING), () => {
-		songScore.add(1)
-		_.if(songScore.greaterOrEqualThan(songCount), () => {
-			songScore.set(0)
+	_.if(status.equalTo(GameStatus.WAITING), () => {
+		songSelect.add(1)
+		_.if(songSelect.greaterOrEqualThan(songCount), () => {
+			songSelect.set(0)
 		})
 
 		if (songNames.length > 0) {
-			let chain = _.if(songScore.equalTo(0), () => {
+			let chain = _.if(songSelect.equalTo(0), () => {
 				title('@s').actionbar({ text: songNames[0], color: 'aqua' })
 			})
 			for (let i = 1; i < songNames.length; i++) {
 				const idx = i
-				chain = chain.elseIf(songScore.equalTo(idx), () => {
+				chain = chain.elseIf(songSelect.equalTo(idx), () => {
 					title('@s').actionbar({ text: songNames[idx], color: 'aqua' })
 				})
 			}
@@ -55,11 +55,11 @@ const onCycleSong = MCFunction('sections/rhythm/buttons/on_cycle', () => {
 }, { lazy: true })
 
 const onStartGame = MCFunction('sections/rhythm/buttons/on_start', () => {
-	_.if(gameState.equalTo(GameState.WAITING), () => {
+	_.if(status.equalTo(GameStatus.WAITING), () => {
 		tag('@s').add(Tags.PLAYER)
 		tag('@s').add(Tags.ALIVE)
 		startGame()
-	}).elseIf(gameState.equalTo(GameState.STARTING), () => {
+	}).elseIf(status.equalTo(GameStatus.STARTING), () => {
 		cancelStart()
 		tag('@s').remove(Tags.PLAYER)
 		tag('@s').remove(Tags.ALIVE)

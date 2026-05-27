@@ -3,9 +3,9 @@ import { WALL_TRAVEL_TICKS, WALL_REACH_TICKS } from '../config/obstacle-pool'
 import { PARKOUR_BONUS, PARKOUR_PATH_COUNT, PARKOUR_PATHS, PARKOUR_STEP_COUNT, STEP_GLASS, STEP_LENGTHS } from '../config/parkour-paths'
 import { arena } from '../config/arena'
 import { wallAge } from './walls/spawning'
-import { wallLives, wallCd } from './walls/collision'
+import { wallLives, wallHitCooldown } from './walls/collision'
 import { points, combo } from './scoring'
-import { GameState, Tags, alivePlayers, gameState } from './state'
+import { GameStatus, Tags, alivePlayers, status } from './state'
 import { DIM } from '../../../shared'
 
 const parkour = Objective.create('rhythm.parkour')
@@ -29,7 +29,7 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 			pkActive.set(1)
 			execute.in(DIM).as(alivePlayers).run(() => {
 				tag('@s').add(Tags.WALL_CD)
-				wallCd('@s').set(30)
+				wallHitCooldown('@s').set(30)
 			})
 		}
 
@@ -104,7 +104,7 @@ export const parkourCleanup = MCFunction('sections/rhythm/parkour/cleanup', () =
 }, { lazy: true })
 
 MCFunction('sections/rhythm/parkour/tick', () => {
-	_.if(_.and(gameState.equalTo(GameState.ACTIVE), pkActive.greaterThan(0)), () => {
+	_.if(_.and(status.equalTo(GameStatus.ACTIVE), pkActive.greaterThan(0)), () => {
 		execute.in(DIM).run(() => {
 			const reach = WALL_REACH_TICKS + 2
 			_.if(_.entity(Selector('@e', {
@@ -130,7 +130,7 @@ MCFunction('sections/rhythm/parkour/tick', () => {
 					_.if(combo('@s').lessThan(10), () => { combo('@s').set(10) })
 
 					tag('@s').add(Tags.WALL_CD)
-					wallCd('@s').set(60)
+					wallHitCooldown('@s').set(60)
 
 					playsound('minecraft:entity.player.levelup', 'master', '@s')
 					title('@s').title({ text: '' })

@@ -1,7 +1,7 @@
 import { _, execute, MCFunction, playsound, schedule, stopsound } from 'sandstone'
 import { songCount, songData, songSafeNames, songSegmentCounts, songAudioOffsets, SEGMENT_TICKS, getSegmentSoundId } from '../config/songs'
 import { PARKOUR_GRACE_TICKS } from '../config/parkour-paths'
-import { gameState, songScore } from './state'
+import { status, songSelect } from './state'
 import { spawnForDifficulty } from './walls/spawning'
 import { stepDispatchFns, parkourCleanup } from './parkour'
 import { DIM, NAMESPACE } from '../../../shared'
@@ -93,10 +93,10 @@ for (let s = 0; s < songCount; s++) {
 
 export const playSong = MCFunction('sections/rhythm/songs/play', () => {
 	if (songCount === 1) { songPlayFns[0](); return }
-	let chain = _.if(songScore.equalTo(0), () => songPlayFns[0]())
+	let chain = _.if(songSelect.equalTo(0), () => songPlayFns[0]())
 	for (let i = 1; i < songCount; i++) {
 		const idx = i
-		chain = chain.elseIf(songScore.equalTo(idx), () => songPlayFns[idx]())
+		chain = chain.elseIf(songSelect.equalTo(idx), () => songPlayFns[idx]())
 	}
 }, { lazy: true })
 
@@ -106,10 +106,10 @@ export const stopSong = MCFunction('sections/rhythm/songs/stop', () => {
 
 export const scheduleWalls = MCFunction('sections/rhythm/songs/schedule_walls', () => {
 	if (songCount === 1) { songWallFns[0](); return }
-	let chain = _.if(songScore.equalTo(0), () => songWallFns[0]())
+	let chain = _.if(songSelect.equalTo(0), () => songWallFns[0]())
 	for (let i = 1; i < songCount; i++) {
 		const idx = i
-		chain = chain.elseIf(songScore.equalTo(idx), () => songWallFns[idx]())
+		chain = chain.elseIf(songSelect.equalTo(idx), () => songWallFns[idx]())
 	}
 }, { lazy: true })
 

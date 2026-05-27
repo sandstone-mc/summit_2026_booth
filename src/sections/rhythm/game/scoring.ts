@@ -1,6 +1,6 @@
 import { _, execute, MCFunction, Objective, playsound, Selector, title, scoreboard } from 'sandstone'
-import { GameState, Tags, allPlayers, alivePlayers, gameState } from './state'
-import { beatFlagScore } from './walls/ticking'
+import { GameStatus, Tags, allPlayers, alivePlayers, status } from './state'
+import { beatFlag } from './walls/ticking'
 import { wallLives } from './walls/collision'
 import { DIM } from '../../../shared'
 
@@ -18,7 +18,7 @@ MCFunction('sections/rhythm/scoring/init', () => {
 }, { runOnLoad: true })
 
 MCFunction('sections/rhythm/scoring/tick', () => {
-	_.if(gameState.equalTo(GameState.ACTIVE), () => {
+	_.if(status.equalTo(GameStatus.ACTIVE), () => {
 		execute.as(alivePlayers).run(() => {
 			title('@s').actionbar([
 				{ text: 'Lives: ', color: 'red' },
@@ -32,8 +32,8 @@ MCFunction('sections/rhythm/scoring/tick', () => {
 			])
 		})
 
-		_.if(beatFlagScore.greaterThan(0), () => {
-			beatFlagScore.set(0)
+		_.if(beatFlag.greaterThan(0), () => {
+			beatFlag.set(0)
 
 			execute.in(DIM).as(Selector('@a', {
 				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.HIT_TICK}`],

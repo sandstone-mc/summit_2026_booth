@@ -1,6 +1,7 @@
-import { MCFunction, Objective, Selector } from 'sandstone'
+import { MCFunction, Selector } from 'sandstone'
+import { state } from '../../../shared';
 
-export enum GameState {
+export enum GameStatus {
 	WAITING,
 	STARTING,
 	ACTIVE,
@@ -8,39 +9,37 @@ export enum GameState {
 }
 
 export enum Tags {
-	PLAYER = 'ssb.player',
-	ALIVE = 'ssb.alive',
+	PLAYER = 'ssb.rhythm.player',
+	ALIVE = 'ssb.rhythm.alive',
 
-	WALL = 'ssb.wall',
-	WALL_NEW = 'ssb.wall.new',
-	WALL_WAIT = 'ssb.wall.wait',
-	WALL_INIT = 'ssb.wall.init',
-	WALL_HIT = 'ssb.wall.hit',
-	WALL_GHAST = 'ssb.wall.ghast',
-	WALL_CD = 'ssb.wall.cd',
-	HIT_TICK = 'ssb.hit_tick',
+	WALL = 'ssb.rhythm.wall',
+	WALL_NEW = 'ssb.rhythm.wall.new',
+	WALL_WAIT = 'ssb.rhythm.wall.wait',
+	WALL_INIT = 'ssb.rhythm.wall.init',
+	WALL_HIT = 'ssb.rhythm.wall.hit',
+	WALL_GHAST = 'ssb.rhythm.wall.ghast',
+	WALL_CD = 'ssb.rhythm.wall.cd',
+	HIT_TICK = 'ssb.rhythm.hit_tick',
 
-	PARKOUR = 'ssb.parkour',
-	PK_REWARD = 'ssb.pk.reward',
-	PK_DONE = 'ssb.pk.done',
-	PK_FRESH = 'ssb.pk.fresh',
-	PK_TRIGGER = 'ssb.pk.trigger',
+	PARKOUR = 'ssb.rhythm.parkour',
+	PK_REWARD = 'ssb.rhythm.pk.reward',
+	PK_DONE = 'ssb.rhythm.pk.done',
+	PK_FRESH = 'ssb.rhythm.pk.fresh',
+	PK_TRIGGER = 'ssb.rhythm.pk.trigger',
 
-	BTN_CYCLE = 'ssb.btn.cycle',
-	BTN_START = 'ssb.btn.start',
-	BTN_CYCLE_DISPLAY = 'ssb.btn.cycle_display',
-	BTN_START_DISPLAY = 'ssb.btn.start_display',
+	BTN_CYCLE = 'ssb.rhythm.btn.cycle',
+	BTN_START = 'ssb.rhythm.btn.start',
+	BTN_CYCLE_DISPLAY = 'ssb.rhythm.btn.cycle_display',
+	BTN_START_DISPLAY = 'ssb.rhythm.btn.start_display',
 }
 
-const state = Objective.create('ssb_state', 'dummy')
-export const gameState = state('$game')
+export const status = state('$status')
 
-const songSelected = Objective.create('ssb_song', 'dummy')
-export const songScore = songSelected('$song')
+export const songSelect = state('$song_select')
 
 MCFunction('sections/rhythm/state/init', () => {
-	gameState.set(GameState.WAITING)
-	songScore.set(0)
+	status.set(GameStatus.WAITING)
+	songSelect.set(0)
 }, { runOnLoad: true })
 
 export const livesDefault = 3
