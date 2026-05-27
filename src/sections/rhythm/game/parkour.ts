@@ -28,7 +28,7 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 				.run.random.value([0, PARKOUR_PATH_COUNT - 1], 'pk_path')
 			pkActive.set(1)
 			execute.in(DIM).as(alivePlayers).run(() => {
-				tag('@s').add(Tags.WALL_CD)
+				tag('@s').add(Tags.WALL_HIT_COOLDOWN)
 				wallHitCooldown('@s').set(30)
 			})
 		}
@@ -73,9 +73,9 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 
 				for (let i = 0; i < platLen; i++) {
 					const ghastTags: string[] = isRewardStep
-						? [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST, Tags.PARKOUR, Tags.PK_REWARD, Tags.PK_FRESH]
-						: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST, Tags.PARKOUR, Tags.PK_FRESH]
-					if (i === Math.floor(platLen / 2)) ghastTags.push(Tags.PK_TRIGGER)
+						? [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST, Tags.PARKOUR, Tags.PARKOUR_REWARD, Tags.PARKOUR_FRESH]
+						: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST, Tags.PARKOUR, Tags.PARKOUR_FRESH]
+					if (i === Math.floor(platLen / 2)) ghastTags.push(Tags.PARKOUR_TRIGGER)
 
 					summon('minecraft:happy_ghast', abs(posX, posY, posZ), {
 						Tags: ghastTags,
@@ -84,8 +84,9 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 					})
 
 					const ageOffset = (i * 2 - (platLen - 1)) * arena.travelSign + 2
-					wallAge(Selector('@e', { tag: Tags.PK_FRESH, limit: 1, sort: 'nearest' })).set(ageOffset)
-					tag(Selector('@e', { tag: Tags.PK_FRESH })).remove(Tags.PK_FRESH)
+					// TODO: These need `distance` or x/y/z+dx/dy/dz
+					wallAge(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).set(ageOffset)
+					tag(Selector('@e', { tag: Tags.PARKOUR_FRESH })).remove(Tags.PARKOUR_FRESH)
 				}
 			})
 		}
@@ -100,7 +101,7 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 export const parkourCleanup = MCFunction('sections/rhythm/parkour/cleanup', () => {
 	pkActive.set(0)
 	execute.in(DIM).run.kill(Selector('@e', { tag: Tags.PARKOUR }))
-	tag('@a').remove(Tags.PK_DONE)
+	tag('@a').remove(Tags.PARKOUR_DONE)
 }, { lazy: true })
 
 MCFunction('sections/rhythm/parkour/tick', () => {
@@ -108,7 +109,7 @@ MCFunction('sections/rhythm/parkour/tick', () => {
 		execute.in(DIM).run(() => {
 			const reach = WALL_REACH_TICKS + 2
 			_.if(_.entity(Selector('@e', {
-				tag: Tags.PK_TRIGGER,
+				tag: Tags.PARKOUR_TRIGGER,
 				scores: { [wallAge.name]: [reach, reach] },
 			})), () => {
 				execute.as('@a').at('@s').run.playsound(
@@ -117,19 +118,19 @@ MCFunction('sections/rhythm/parkour/tick', () => {
 			})
 
 			execute.as(Selector('@a', {
-				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.PK_DONE}`],
+				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.PARKOUR_DONE}`],
 			})).at('@s').run(() => {
 				execute.store.result.score(pkTemp.target, pkTemp.objective)
 					.run.data.get.entity('@s', 'Pos[1]', 10)
 				_.if(_.and(
-					_.entity(Selector('@e', { tag: Tags.PK_REWARD, distance: [0, 2.5] })),
+					_.entity(Selector('@e', { tag: Tags.PARKOUR_REWARD, distance: [0, 2.5] })),
 					pkTemp.greaterOrEqualThan(pkRewardY),
 				), () => {
 					wallLives('@s').add(1)
 					points('@s').add(PARKOUR_BONUS)
 					_.if(combo('@s').lessThan(10), () => { combo('@s').set(10) })
 
-					tag('@s').add(Tags.WALL_CD)
+					tag('@s').add(Tags.WALL_HIT_COOLDOWN)
 					wallHitCooldown('@s').set(60)
 
 					playsound('minecraft:entity.player.levelup', 'master', '@s')
@@ -140,7 +141,7 @@ MCFunction('sections/rhythm/parkour/tick', () => {
 						{ text: `+${PARKOUR_BONUS}pts `, color: 'aqua' },
 						{ text: '+Immunity!', color: 'light_purple' },
 					])
-					tag('@s').add(Tags.PK_DONE)
+					tag('@s').add(Tags.PARKOUR_DONE)
 				})
 			})
 		})

@@ -14,7 +14,7 @@ const cycleSongAdv = Advancement('cycle_song', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.BTN_CYCLE}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.BUTTON_CYCLE}"]}` },
 			},
 		},
 	},
@@ -25,7 +25,7 @@ const startGameAdv = Advancement('start_game', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.BTN_START}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.BUTTON_START}"]}` },
 			},
 		},
 	},
@@ -80,32 +80,33 @@ MCFunction('sections/rhythm/buttons/tick', () => {
 }, { runEveryTick: true })
 
 MCFunction('sections/rhythm/buttons/spawn', () => {
-	kill(Selector('@e', { tag: Tags.BTN_CYCLE }))
-	kill(Selector('@e', { tag: Tags.BTN_START }))
-	kill(Selector('@e', { tag: Tags.BTN_CYCLE_DISPLAY }))
-	kill(Selector('@e', { tag: Tags.BTN_START_DISPLAY }))
+	// TODO: These entities should use hardcoded UUIDs instead of tags
+	kill(Selector('@e', { tag: Tags.BUTTON_CYCLE }))
+	kill(Selector('@e', { tag: Tags.BUTTON_START }))
+	kill(Selector('@e', { tag: Tags.BUTTON_CYCLE_DISPLAY }))
+	kill(Selector('@e', { tag: Tags.BUTTON_START_DISPLAY }))
 
 	summon('minecraft:interaction', CYCLE_POS, {
-		Tags: [Tags.BTN_CYCLE],
+		Tags: [Tags.BUTTON_CYCLE],
 		width: NBT.float(1),
 		height: NBT.float(1),
 	})
 
 	summon('minecraft:interaction', START_POS, {
-		Tags: [Tags.BTN_START],
+		Tags: [Tags.BUTTON_START],
 		width: NBT.float(1),
 		height: NBT.float(1),
 	})
 
 	summon('minecraft:text_display', CYCLE_DISPLAY_POS, {
-		Tags: [Tags.BTN_CYCLE_DISPLAY],
+		Tags: [Tags.BUTTON_CYCLE_DISPLAY],
 		text: { text: 'Song Select', color: 'aqua', bold: true },
 		billboard: 'center',
 		view_range: NBT.float(0.5),
 	})
 
 	summon('minecraft:text_display', START_DISPLAY_POS, {
-		Tags: [Tags.BTN_START_DISPLAY],
+		Tags: [Tags.BUTTON_START_DISPLAY],
 		text: { text: 'Start Game', color: 'green', bold: true },
 		billboard: 'center',
 		view_range: NBT.float(0.5),

@@ -18,19 +18,19 @@ export enum Tags {
 	WALL_INIT = 'ssb.rhythm.wall.init',
 	WALL_HIT = 'ssb.rhythm.wall.hit',
 	WALL_GHAST = 'ssb.rhythm.wall.ghast',
-	WALL_CD = 'ssb.rhythm.wall.cd',
+	WALL_HIT_COOLDOWN = 'ssb.rhythm.wall.cd',
 	HIT_TICK = 'ssb.rhythm.hit_tick',
 
 	PARKOUR = 'ssb.rhythm.parkour',
-	PK_REWARD = 'ssb.rhythm.pk.reward',
-	PK_DONE = 'ssb.rhythm.pk.done',
-	PK_FRESH = 'ssb.rhythm.pk.fresh',
-	PK_TRIGGER = 'ssb.rhythm.pk.trigger',
+	PARKOUR_REWARD = 'ssb.rhythm.pk.reward',
+	PARKOUR_DONE = 'ssb.rhythm.pk.done',
+	PARKOUR_FRESH = 'ssb.rhythm.pk.fresh',
+	PARKOUR_TRIGGER = 'ssb.rhythm.pk.trigger',
 
-	BTN_CYCLE = 'ssb.rhythm.btn.cycle',
-	BTN_START = 'ssb.rhythm.btn.start',
-	BTN_CYCLE_DISPLAY = 'ssb.rhythm.btn.cycle_display',
-	BTN_START_DISPLAY = 'ssb.rhythm.btn.start_display',
+	BUTTON_CYCLE = 'ssb.rhythm.btn.cycle',
+	BUTTON_START = 'ssb.rhythm.btn.start',
+	BUTTON_CYCLE_DISPLAY = 'ssb.rhythm.btn.cycle_display',
+	BUTTON_START_DISPLAY = 'ssb.rhythm.btn.start_display',
 }
 
 export const status = state('$status')

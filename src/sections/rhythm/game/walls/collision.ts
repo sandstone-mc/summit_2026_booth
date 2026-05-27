@@ -22,7 +22,7 @@ const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 	tp('@s', rel(0, 5, 0))
 	playsound('minecraft:entity.player.hurt', 'master', '@s')
 
-	tag('@s').add(Tags.WALL_CD)
+	tag('@s').add(Tags.WALL_HIT_COOLDOWN)
 	wallHitCooldown('@s').set(HIT_COOLDOWN)
 
 	_.if(wallLives('@s').lessOrEqualThan(0), () => {
@@ -42,16 +42,16 @@ const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 MCFunction('sections/rhythm/collision/tick', () => {
 	_.if(status.equalTo(GameStatus.ACTIVE), () => {
 		execute.in(DIM).run(() => {
-			execute.as(Selector('@a', { tag: Tags.WALL_CD })).run(() => {
+			execute.as(Selector('@a', { tag: Tags.WALL_HIT_COOLDOWN })).run(() => {
 				wallHitCooldown('@s').remove(1)
 				_.if(wallHitCooldown('@s').lessOrEqualThan(0), () => {
-					tag('@s').remove(Tags.WALL_CD)
+					tag('@s').remove(Tags.WALL_HIT_COOLDOWN)
 				})
 			})
 
 			execute.as(alivePlayers).at('@s').run(() => {
 				_.if(_.and(
-					_.not(_.entity(Selector('@s', { tag: Tags.WALL_CD }))),
+					_.not(_.entity(Selector('@s', { tag: Tags.WALL_HIT_COOLDOWN }))),
 					_.entity(Selector('@e', { tag: [Tags.WALL_HIT, `!${Tags.PARKOUR}`], distance: [0, 0.7] })),
 				), () => {
 					onHit()
@@ -59,7 +59,7 @@ MCFunction('sections/rhythm/collision/tick', () => {
 			})
 
 			execute.as(Selector('@a', {
-				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.WALL_CD}`, `!${Tags.HIT_TICK}`],
+				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.WALL_HIT_COOLDOWN}`, `!${Tags.HIT_TICK}`],
 			})).at('@s').unless.predicate(isSneaking)
 				.positioned(rel(0, 1, 0))
 				.if.entity(Selector('@e', { tag: [Tags.WALL_HIT, `!${Tags.PARKOUR}`], distance: [0, 0.7] }))
