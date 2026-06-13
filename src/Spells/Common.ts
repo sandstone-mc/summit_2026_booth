@@ -169,7 +169,7 @@ export function createProjectileUpdater(
       // Block collision
       if (opts.blockCollision) {
         execute.unless.block(rel(0, 0, 0), '#minecraft:replaceable').run(() => {
-          particle('explosion', rel(0, 0, 0), abs(0.1, 0.1, 0.1), 0.01, 5, 'force');
+          // particle('explosion', rel(0, 0, 0), abs(0.1, 0.1, 0.1), 0.01, 5, 'force');
           opts.onExpire?.();
           kill('@s');
         });
@@ -243,6 +243,30 @@ export function spawnRingOfBolts(
       );
     });
   }
+}
+
+export function spawnConeOfBolts(
+    projectileTag: ReturnType<typeof Label>,
+    count: number,
+    lifetime: number,
+    spreadAngle = 30 
+) {
+    const halfSpread = spreadAngle / 2;
+    const step = count === 1 ? 0 : spreadAngle / (count - 1);
+
+    for (let i = 0; i < count; i++) {
+        const yaw = -halfSpread + (step * i);
+        execute.summon('minecraft:marker').run(() => {
+            projectileTag('@s').add();
+            Lifetime('@s').set(lifetime);
+            data.modify(Data('entity', '@s').select('data.owner')).set.from(
+                Data('entity', Selector('@n', { tag: Caster })).select('UUID')
+            );
+
+            rotate('@s', rel(yaw, 0));
+            tp('@s', rel(0, 1.6, 0))
+        });
+    }
 }
 
 export function castSpell(spellId: string, schoolId: SchoolID, fn: () => void) {
