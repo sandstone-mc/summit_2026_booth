@@ -1,12 +1,11 @@
-// spells/nature/vine_whip.ts
-import { abs, damage, execute, MCFunction, particle, rel, Selector, tp, Variable, raw, Label, say, rotate } from "sandstone";
+import { abs, Label, MCFunction, particle, raw, rel, tp } from "sandstone";
 import { castSpell, spellMeta } from "../Common";
 import { checkHit } from "../../utils/hitDetection";
 import { fireRaycast } from "../../utils/raycast";
 
 const meta = spellMeta("nature", "vine_whip");
+const VineWhipCaster = Label('spell.nature.vine_whip.caster');
 
-// Raycast to find target, then pull them to caster
 const whipRaycast = fireRaycast(meta.spellPath, {
     maxSteps: 30,
     stepSize: 0.5,
@@ -19,12 +18,8 @@ const whipRaycast = fireRaycast(meta.spellPath, {
             width: 1.5,
             height: 3,
             onHit: () => {
-                // face toward caster then impulse forward
-                execute.at('@a[sort=nearest,limit=1]').run(() => {
-                    raw(`rotate @s facing ~ ~1 ~`);
-                    say("h")
-                    raw(`function pl_impulse:execute {func:"motion", in:{velocity:2}}`);
-                });
+                raw(`rotate @s facing entity @a[tag=arcane_arts.${VineWhipCaster.name},limit=1] eyes`);
+                raw(`function pl_impulse:execute {func:"motion", in:{velocity:2}}`);
             }
         });
     }
@@ -32,6 +27,8 @@ const whipRaycast = fireRaycast(meta.spellPath, {
 
 MCFunction(`${meta.spellPath}/cast`, () => {
     castSpell("vine_whip", "nature", () => {
+        VineWhipCaster('@s').add();
         whipRaycast();
+        VineWhipCaster('@s').remove();
     });
 });

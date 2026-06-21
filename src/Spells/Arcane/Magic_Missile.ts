@@ -65,6 +65,7 @@ createProjectileSpell({
     onHit: () => { 
         damage('@s', 4, 'magic'); 
         particle('reverse_portal', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.2, 30, 'force');
+        Target('@s').remove();
     },
     onExpire: () => {
       execute.as(target).run(() => {

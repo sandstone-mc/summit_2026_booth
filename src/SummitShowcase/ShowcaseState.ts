@@ -1,4 +1,4 @@
-import { Label, Objective, rel, fill, MCFunction, execute, Selector, tp, abs, kill, say, _, raw, scoreboard } from "sandstone";
+import { Label, Objective, rel, fill, MCFunction, execute, Selector, tp, abs, kill, _, raw, scoreboard } from "sandstone";
 
 import { ShowcaseMarker } from ".";
 

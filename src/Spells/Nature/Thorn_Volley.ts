@@ -1,9 +1,6 @@
-// spells/nature/thorn_volley.ts
-import { abs, damage, execute, loc, MCFunction, particle, rel, Selector, tp, Variable } from "sandstone";
-import { castSpell, spellMeta, createProjectileSpell, spawnRingOfBolts, spawnConeOfBolts } from "../Common";
+import { abs, damage, loc, particle, rel, tp, Variable } from "sandstone";
+import { createProjectileSpell, spawnConeOfBolts } from "../Common";
 import { Entangled } from "../../StatusEffects";
-
-const meta = spellMeta("nature", "thorn_volley");
 
 createProjectileSpell({
     schoolId: 'nature',

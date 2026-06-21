@@ -376,3 +376,148 @@ Edit `sandstone.config.ts` to change:
 **Always check [Pack format](https://minecraft.wiki/w/Pack_format) for current version numbers** - these change frequently with snapshots.
 
 26.1.x will be the first supported stable release. Until 26.1.0 is released, use the latest snapshot pack formats from the wiki.
+
+---
+
+## This Project: Arcane Arts
+
+A Minecraft magic system datapack. Namespace: `arcane_arts`.
+
+### Architecture Overview
+
+```
+src/
+├── index.ts                  # Entry point
+├── PlayerDB.ts               # Per-player NBT storage (getSelf/saveSelf)
+├── player_handler.ts         # Mana system (scores: mana, max_mana, mana_regen)
+├── player_first_setup.ts     # First-join initialization
+├── pack_setup.ts             # Load/tick setup
+├── spellbook/
+│   ├── SpellLibrary.ts       # Central spell registry (SchoolID, Spell, SpellLibrary)
+│   └── index.ts
+├── Spells/
+│   ├── Common.ts             # Shared spell utilities (projectile system, castSpell)
+│   ├── Fire/                 # Firebolt, Heatwave, Launch
+│   ├── Ice/                  # Frostbolt, Blizzard
+│   ├── Arcane/               # Magic Missile, Shockwave, Blink
+│   ├── Lightning/            # Thunderbolt, Ball Lightning, Static Field
+│   └── Nature/               # Thorn Volley, Vine Whip, Entangle
+├── StatusEffects/
+│   ├── Common.ts             # createStatusEffect() factory
+│   ├── Burning.ts
+│   ├── Freezing.ts
+│   ├── Stunned.ts
+│   ├── Charged.ts
+│   └── Entangled.ts
+├── items/
+│   ├── wands/
+│   │   ├── Base.ts           # Wand input (left-click enchantment, right-click advancement)
+│   │   ├── Fire.ts
+│   │   └── Ice.ts
+│   └── gems/
+└── utils/
+    ├── raycast.ts
+    └── hitDetection.ts       # checkHit() for projectile collisions
+```
+
+### Key Storage Namespaces
+
+| Storage | Purpose |
+|---|---|
+| `arcane_arts:pdb` | Per-player NBT database (keyed by UID score) |
+| `arcane_arts:io` | Scratch space for reading/writing player data |
+| `arcane_arts:macro` | Temp storage for macro function calls |
+| `arcane_arts:ids` | Spell/school ID mappings (loaded at pack load) |
+
+Player data lives at `arcane_arts:io data` and is read/written via `getSelf()` / `saveSelf()` from `PlayerDB.ts`. Fields include `current_school` and `selected_spell`.
+
+### Spell System
+
+**SpellLibrary** (`src/spellbook/SpellLibrary.ts`) is the source of truth for all schools and spells. Each spell has `id`, `uid` (numeric), `mana_cost`, and `name`.
+
+**SchoolID** type: `"fire" | "ice" | "arcane" | "lightning" | "nature"`
+
+**Adding a new spell school:**
+1. Add to `SchoolID` union type and `SpellLibrary` object in `SpellLibrary.ts`
+2. Create `src/Spells/<School>/index.ts` and individual spell files
+3. Import the school in `src/Spells/index.ts`
+
+**Adding a new spell to an existing school:**
+1. Add entry to the school's `spells` object in `SpellLibrary.ts` (give it a unique `uid`)
+2. Create the spell file in `src/Spells/<School>/`
+3. Import it in the school's `index.ts`
+
+### Projectile Spells
+
+Use `createProjectileSpell()` from `src/Spells/Common.ts` for projectile-based spells. It generates `spawn`, `update`, and `cast` MCFunctions automatically.
+
+```typescript
+import { createProjectileSpell, spawnSingleBolt } from '../Common'
+
+createProjectileSpell({
+  schoolId: 'fire',
+  spellId: 'firebolt',
+  spawn: (tag) => spawnSingleBolt(tag, 40),  // lifetime in ticks
+  projectile: {
+    lifetime: 40,
+    move: () => { /* tp forward each tick */ },
+    particles: () => { /* particle effects */ },
+    hitWidth: 0.5,
+    hitHeight: 0.5,
+    onHit: () => { /* runs as TARGET entity */ },
+    onExpire: () => { /* runs at projectile position */ },
+    destroyOnHit: true,
+    blockCollision: true,
+  }
+})
+```
+
+Spawn helpers in `Common.ts`:
+- `spawnSingleBolt(tag, lifetime, offset?)` — one forward-moving bolt from caster eyes
+- `spawnRingOfBolts(tag, count, lifetime)` — ring of bolts at all angles (Heatwave-style)
+- `spawnConeOfBolts(tag, count, lifetime, spreadAngle?)` — cone spread (default 30°)
+
+Projectiles are `minecraft:marker` entities. The caster's UUID is stored in `data.owner` on each projectile. `Caster` label (`spell.caster`) marks the caster entity during spawn.
+
+`castSpell()` checks mana before running the cast body, deducting `mana_cost` on success or sending a "Insufficient Mana" message on failure.
+
+### Status Effects
+
+Use `createStatusEffect()` from `src/StatusEffects/Common.ts`:
+
+```typescript
+import { createStatusEffect } from './Common'
+
+const { apply, end, statusTag, statusTime } = createStatusEffect({
+  name: 'burning',
+  damageType: 'minecraft:on_fire',
+  damageAmount: 1,
+  damageInterval: 20,   // ticks between damage ticks
+  particles: () => { /* particle fx */ },
+  onApply: () => { /* called when effect is applied to @s */ },
+  onTick: () => { /* called every tick on @s while active */ },
+  onEnd: () => { /* called when effect expires on @s */ },
+})
+
+// Apply: call apply(duration_in_seconds) as the target entity
+// Duration parameter is a Score
+apply(Variable(5))  // 5 seconds
+```
+
+The factory creates `status/<name>/apply`, `status/<name>/end`, and `status/<name>/update` (runs every tick).
+
+### Wand Input
+
+- **Left-click**: Detected via a custom `Enchantment` using `post_piercing_attack` effect → calls `arcane_arts:input/on_wand_left_click` → opens school spell-select `Dialog`
+- **Right-click** (cast): Detected via `Advancement` (`using_item` trigger on items with `arcane_arts.item_type: "wand"`) → macro-dispatches to `spells/$(current_school)/$(selected_spell)/cast`
+- Wands must have custom data `{ 'arcane_arts.item_type': "wand" }` on the item
+
+### Mana System
+
+Scores per player:
+- `mana` — current mana
+- `max_mana` — maximum mana
+- `mana_regen` — regen rate (mana points per second)
+- `mana_regen_timer` — internal countdown
+
+Displayed as actionbar while mana is not full. Managed in `src/player_handler.ts`.

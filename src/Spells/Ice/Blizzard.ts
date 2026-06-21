@@ -1,16 +1,9 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, loc, particle, rel, rotate, say, summon, Variable, tellraw, tp, effect } from "sandstone";
-import { SpellLibrary, Spell, SchoolID } from "../../spellbook/SpellLibrary";
-import * as player from '../../player_handler'
+import { _, abs, damage, data, Data, effect, execute, kill, Label, MCFunction, particle, rel, Selector, Variable } from "sandstone";
 import { Freezing } from "../../StatusEffects"
-import { Lifetime, Caster } from '../Common'
+import { castSpell, Caster, Lifetime } from '../Common'
 
-const SCHOOLID: SchoolID = "ice";
-const SPELLID: string = "blizzard";
-const spell: Spell = SpellLibrary[SCHOOLID].spells[SPELLID];
-
-const spellPath = `spells/${SCHOOLID}/${SPELLID}`;
-
-const Storm = Label(`spell.${SCHOOLID}.${SPELLID}.storm`);
+const spellPath = 'spells/ice/blizzard';
+const Storm = Label('spell.ice.blizzard.storm');
 
 const spawnStorm = MCFunction(`${spellPath}/spawn_bolt`, () => {
     execute.positioned('~ ~-1 ~').run(() => {
@@ -37,7 +30,7 @@ MCFunction(`${spellPath}/update_storms`, () => {
     execute.as(StormSelector).at('@s').run(() => {
         particle('snowflake', rel(0, 3, 0), abs(3, 3, 3), 0.0, 80, 'force');
         Lifetime('@s').remove(5);
-    
+
         _.if(Lifetime('@s').lessOrEqualThan(0), () => {
             kill('@s');
         })
@@ -48,19 +41,8 @@ MCFunction(`${spellPath}/update_storms`, () => {
             effect.give('@s', "minecraft:blindness", 2, 1, true);
         });
     })
-}, {
-    runEvery: 5
-})
+}, { runEvery: 5 })
 
 MCFunction(`${spellPath}/cast`, () => {
-    _.if(player.mana('@s').greaterOrEqualThan(spell.mana_cost), () => {
-        player.mana('@s').remove(spell.mana_cost);
-
-        spawnStorm();
-    }).else(() => {
-        tellraw('@s', {
-            color: "red",
-            text: "Insufficient Mana"
-        })
-    })
+    castSpell('blizzard', 'ice', () => spawnStorm());
 })
