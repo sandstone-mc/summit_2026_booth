@@ -1,8 +1,8 @@
 import { _, abs, execute, kill, Label, MCFunction, NBT, particle, raw, rel, Selector, summon, title } from "sandstone";
 import { SpellLibrary } from "../spellbook/SpellLibrary";
 import { ShowcaseMarker } from ".";
-import { STATES, GlobalState, SessionPlayer } from "./ShowcaseState";
-import { getSelf, saveSelf, io } from "../PlayerDB";
+import { STATES, GlobalState, SessionPlayer, ShowcaseMobs, startSelection } from "./ShowcaseState";
+import { setSchoolTrigger } from "../pack_setup";
 
 interface Pedestal {
   schoolId: keyof typeof SpellLibrary;
@@ -17,9 +17,9 @@ interface Pedestal {
 const PEDESTALS: Pedestal[] = [
   { schoolId: 'fire',      x: 5,    y: 0, z: 22,   color: 'red',          particleType: 'flame',          item: 'minecraft:blaze_rod' },
   { schoolId: 'ice',       x: 7,    y: 0, z: 21,   color: 'aqua',         particleType: 'snowflake',      item: 'minecraft:blue_ice' },
-  { schoolId: 'arcane',    x: 9.6,  y: 0, z: 20.5, color: 'light_purple', particleType: 'portal',         item: 'minecraft:amethyst_shard' },
-  { schoolId: 'lightning', x: 12.2, y: 0, z: 21,   color: 'yellow',       particleType: 'electric_spark', item: 'minecraft:lightning_rod' },
-  { schoolId: 'nature',    x: 14.2, y: 0, z: 22,   color: 'green',        particleType: 'happy_villager', item: 'minecraft:flowering_azalea' },
+  { schoolId: 'arcane',    x: 9.5,  y: 0, z: 20.5, color: 'light_purple', particleType: 'portal',         item: 'minecraft:amethyst_shard' },
+  { schoolId: 'lightning', x: 12, y: 0, z: 21,   color: 'yellow',       particleType: 'electric_spark', item: 'minecraft:lightning_rod' },
+  { schoolId: 'nature',    x: 14, y: 0, z: 22,   color: 'green',        particleType: 'falling_spore_blossom', item: 'minecraft:flowering_azalea' },
 ];
 
 const PedestalLabel = Label('showcase.pedestal');
@@ -30,19 +30,14 @@ for (const ped of PEDESTALS) {
   const school = SpellLibrary[ped.schoolId];
 
   MCFunction(`showcase/selection/select/${ped.schoolId}`, () => {
-    // @s here is the interaction entity that was clicked
-    raw('data remove entity @s interact');
-
-    execute.as(SessionPlayer).run(() => {
-      getSelf();
-      io.select('current_school').set(ped.schoolId);
-      saveSelf();
-    });
+    // @s is the player who right-clicked (via execute on target run)
+    setSchoolTrigger('@s').set(school.uid);
 
     title(SessionPlayer).title([{ text: school.name, color: ped.color, bold: true } as any]);
     title(SessionPlayer).subtitle([{ text: 'School selected!', color: 'gray', italic: true } as any]);
 
     kill(AllPedestals);
+    raw('loot give @s loot arcane_arts:items/magic_wand');
     GlobalState.set(STATES.FIGHTING);
   });
 }
@@ -72,7 +67,7 @@ MCFunction('showcase/selection/spawn_pedestals', () => {
       // School name label above item
       summon('text_display', rel(ped.x, ped.y + 2.8, ped.z), {
         Tags: [commonTag, schoolTag],
-        text: JSON.stringify({ text: school.name, color: ped.color, bold: true }),
+        text: { text: school.name, color: ped.color, bold: true },
         alignment: 'center',
         billboard: 'vertical',
         brightness: { sky: NBT.int(15), block: NBT.int(15) },
@@ -84,12 +79,17 @@ MCFunction('showcase/selection/spawn_pedestals', () => {
         },
       });
 
-      // Clickable hitbox — covers standing player height
+      // Clickable hitbox — Smithed API handles right-click dispatch
       summon('interaction', rel(ped.x, ped.y, ped.z), {
-        Tags: [commonTag, schoolTag],
+        Tags: [commonTag, schoolTag, 'summit.interactable', 'summit.static'],
         width: NBT.float(1.0),
         height: NBT.float(2.5),
         response: false,
+        data: {
+          summit_interactable: {
+            on_right_click: `execute on target run function arcane_arts:showcase/selection/select/${ped.schoolId}`,
+          },
+        },
       });
     }
   });
@@ -101,23 +101,29 @@ MCFunction('showcase/selection/tick', () => {
     // Ambient particles at each pedestal
     execute.as(ShowcaseMarker).at('@s').run(() => {
       for (const ped of PEDESTALS) {
-        particle(ped.particleType as any, rel(ped.x, ped.y + 1.5, ped.z), abs(0.3, 0.5, 0.3), 0.01, 3);
+        particle(ped.particleType as any, rel(ped.x, ped.y + 1.5, ped.z), abs(0.3, 0.5, 0.3), 0.01, 1);
       }
     });
-
-    // Right-click detection per school
-    for (const ped of PEDESTALS) {
-      raw(`execute as @e[type=minecraft:interaction,tag=arcane_arts.showcase.pedestal.${ped.schoolId},limit=1] if data entity @s {interact:{}} run function arcane_arts:showcase/selection/select/${ped.schoolId}`);
-    }
 
     // Proximity actionbar hints — show school name + prompt when within 2.5 blocks
     for (const ped of PEDESTALS) {
       const school = SpellLibrary[ped.schoolId];
-      const actionbarJson = JSON.stringify([
+      const actionbarJson = [
         { text: `* ${school.name} *  `, color: ped.color, bold: true },
         { text: 'Right-click to select', color: 'gray', italic: true },
-      ]);
-      raw(`execute as @a[tag=arcane_arts.showcase.player,limit=1] at @s if entity @e[type=minecraft:interaction,tag=arcane_arts.showcase.pedestal.${ped.schoolId},distance=..2.5] run title @s actionbar ${actionbarJson}`);
+      ];
+      raw(`execute as @a[tag=arcane_arts.showcase.player,limit=1] at @s if entity @e[type=minecraft:interaction,tag=arcane_arts.showcase.pedestal.${ped.schoolId},distance=..2.5] run title @s actionbar ${JSON.stringify(actionbarJson)}`);
     }
   });
 }, { runEveryTick: true });
+
+// Called via Smithed on_right_click — @s is the player
+MCFunction('showcase/selection/change_school', () => {
+  _.if(GlobalState.equalTo(STATES.FIGHTING), () => {
+    raw('clear @s minecraft:stick[custom_data~{"arcane_arts.id":"magic_wand"}]');
+    kill(ShowcaseMobs);
+    kill(AllPedestals);
+    startSelection();
+  });
+});
+
