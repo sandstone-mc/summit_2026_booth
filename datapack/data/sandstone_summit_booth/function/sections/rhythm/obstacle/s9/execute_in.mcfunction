@@ -1,0 +1,4 @@
+summon minecraft:block_display 3 66 30 {Tags:['ssb.rhythm.wall','ssb.rhythm.wall.new'],interpolation_duration:80i,transformation:{translation:[-0.5f,0f,0f],left_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],right_rotation:[0f,0f,0f,1f]},block_state:{Name:'minecraft:mossy_stone_bricks'}}
+summon minecraft:interaction 3 66 30 {Tags:['ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new'],width:0.5f,height:1f}
+summon minecraft:block_display 3 67 30 {Tags:['ssb.rhythm.wall','ssb.rhythm.wall.new'],interpolation_duration:80i,transformation:{translation:[-0.5f,0f,0f],left_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],right_rotation:[0f,0f,0f,1f]},block_state:{Name:'minecraft:cracked_stone_bricks'}}
+summon minecraft:happy_ghast 3 67 30 {Tags:['ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new','ssb.rhythm.wall.ghast'],NoAI:1b,NoGravity:1b,Invulnerable:1b,Silent:1b,attributes:[{id:'minecraft:scale',base:0.25d}]}

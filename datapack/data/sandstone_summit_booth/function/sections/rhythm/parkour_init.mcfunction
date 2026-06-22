@@ -1,0 +1,1 @@
+scoreboard players set $active sandstone_summit_booth.rhythm.parkour 0

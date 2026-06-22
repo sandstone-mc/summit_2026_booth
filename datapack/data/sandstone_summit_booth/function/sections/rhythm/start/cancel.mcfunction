@@ -1,0 +1,1 @@
+execute if score $status sandstone_summit_booth.rhythm.state matches 1 run function sandstone_summit_booth:sections/rhythm/start/cancel/if

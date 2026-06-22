@@ -1,0 +1,3 @@
+execute if score $countdown sandstone_summit_booth.rhythm.state matches 4.. run return run title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"green"},{"score":{"name":"$countdown","objective":"sandstone_summit_booth.rhythm.state"}}," seconds..."]
+execute if score $countdown sandstone_summit_booth.rhythm.state matches 2.. run return run title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"yellow"},{"score":{"name":"$countdown","objective":"sandstone_summit_booth.rhythm.state"}}," seconds..."]
+title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"red"},{"score":{"name":"$countdown","objective":"sandstone_summit_booth.rhythm.state"}}," second..."]

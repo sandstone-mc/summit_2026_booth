@@ -1,0 +1,14 @@
+{
+  "pack": {
+    "min_format": 84,
+    "max_format": 84,
+    "description": [
+      "A ",
+      {
+        "text": "Sandstone",
+        "color": "gold"
+      },
+      " resource pack."
+    ]
+  }
+}
