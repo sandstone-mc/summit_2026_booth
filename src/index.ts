@@ -1,6 +1,7 @@
 import { functionCmd, MCFunction, Selector } from 'sandstone'
 
 import { ticking } from './shared'
+import './version'
 import './sections/rhythm/index'
 
 MCFunction('main', () => {

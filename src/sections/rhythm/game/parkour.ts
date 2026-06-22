@@ -1,8 +1,8 @@
 import { _, abs, execute, kill, MCFunction, NBT, Objective, playsound, scoreboard, Selector, summon, tag, title } from 'sandstone'
-import { WALL_TRAVEL_TICKS, WALL_REACH_TICKS } from '../config/obstacle-pool'
+import { WALL_TRAVEL_TICKS, WALL_REACH_TICKS, MOVE_NUMERATOR } from '../config/obstacle-pool'
 import { PARKOUR_BONUS, PARKOUR_PATH_COUNT, PARKOUR_PATHS, PARKOUR_STEP_COUNT, STEP_GLASS, STEP_LENGTHS } from '../config/parkour-paths'
 import { arena } from '../config/arena'
-import { wallAge } from './walls/spawning'
+import { wallAge, wallDepth } from './walls/spawning'
 import { wallLives, wallHitCooldown } from './walls/collision'
 import { points, combo } from './scoring'
 import { GameStatus, Tags, alivePlayers, status } from './state'
@@ -83,9 +83,9 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 						attributes: [{ id: 'minecraft:scale', base: 0.25 }],
 					})
 
-					const ageOffset = (i * 2 - (platLen - 1)) * arena.travelSign + 2
-					// TODO: These need `distance` or x/y/z+dx/dy/dz
-					wallAge(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).set(ageOffset)
+					const spacingAge = (i * 2 - (platLen - 1)) * arena.travelSign
+					const depthOffset = spacingAge * MOVE_NUMERATOR / WALL_TRAVEL_TICKS
+					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).set(depthOffset)
 					tag(Selector('@e', { tag: Tags.PARKOUR_FRESH })).remove(Tags.PARKOUR_FRESH)
 				}
 			})
