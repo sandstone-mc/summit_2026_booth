@@ -38,3 +38,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           directory: gen
           branch: generated
+      - name: Test
+        env:
+          MCS_MANAGER_COOKIE: ${{ secrets.MCS_MANAGER_COOKIE }}
+        run: |
+          bun run scripts/test.ts
