@@ -1,1 +1,0 @@
-console.log(process.env.MCS_MANAGER_COOKIE?.length)
