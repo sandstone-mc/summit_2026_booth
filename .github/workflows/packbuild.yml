@@ -38,3 +38,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           directory: gen
           branch: generated
+      - name: Temp
+        run: |
+          bun run scripts/test.ts
