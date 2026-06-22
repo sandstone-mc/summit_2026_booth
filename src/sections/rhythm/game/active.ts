@@ -5,6 +5,7 @@ import { GameStatus, allPlayers, alivePlayers, status, songSelect, livesDefault 
 import { wallLives } from './walls/collision'
 import { points, combo, finalScore } from './scoring'
 import { playSong, scheduleWalls } from './songs'
+import { spawnLaneShulkers } from './lane-effects'
 import { DIM, state } from '../../../shared'
 
 MCFunction('sections/rhythm/active/nocollide_init', () => {
@@ -35,6 +36,7 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	team.join('ssb.rhythm.nocollide', allPlayers)
 
 	execute.as(allPlayers).run(() => {
+		attribute("@s", "minecraft:fall_damage_multiplier").baseSet(0)
 		attribute('@s', 'minecraft:movement_speed').baseSet(0.13)
 		wallLives('@s').set(livesDefault)
 		effect.give('@s', 'minecraft:instant_health', 1, 126, true)
@@ -57,6 +59,7 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 		}
 	}
 
+	spawnLaneShulkers()
 	playSong()
 	scheduleWalls()
 

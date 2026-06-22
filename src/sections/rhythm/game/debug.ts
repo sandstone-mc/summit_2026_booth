@@ -6,6 +6,7 @@ import { GameStatus, Tags, status, songSelect } from './state'
 import { stopSong, stopWalls } from './songs'
 import { clearWalls } from './walls/spawning'
 import { parkourCleanup } from './parkour'
+import { clearLaneShulkers, spawnLaneBorder } from './lane-effects'
 
 MCFunction('sections/rhythm/debug/setup', () => {
 	execute.in(DIM).run(() => {
@@ -19,7 +20,13 @@ MCFunction('sections/rhythm/debug/setup', () => {
 			abs(bx + PATTERN_WIDTH, by, WALL_SPAWN_AHEAD),
 			'minecraft:smooth_stone',
 		)
+		fill(
+			abs(bx, by, 0),
+			abs(bx + PATTERN_WIDTH - 1, by, 0),
+			'minecraft:gold_block',
+		)
 	})
+	spawnLaneBorder()
 }, { lazy: true })
 
 MCFunction('sections/rhythm/debug/reset', () => {
@@ -27,6 +34,7 @@ MCFunction('sections/rhythm/debug/reset', () => {
 	stopWalls()
 	clearWalls()
 	parkourCleanup()
+	clearLaneShulkers()
 	stopsound('@a', 'record')
 
 	execute.as(Selector('@a', { tag: Tags.PLAYER })).run(() => {

@@ -2,6 +2,7 @@ import { _, execute, MCFunction, Objective, playsound, Selector, title, scoreboa
 import { GameStatus, Tags, allPlayers, alivePlayers, status } from './state'
 import { beatFlag } from './walls/ticking'
 import { wallLives } from './walls/collision'
+import { beatLaneEffect } from './lane-effects'
 import { DIM } from '../../../shared'
 
 const COMBO_BONUS = 5
@@ -34,6 +35,7 @@ MCFunction('sections/rhythm/scoring/tick', () => {
 
 		_.if(beatFlag.greaterThan(0), () => {
 			beatFlag.set(0)
+			beatLaneEffect()
 
 			execute.in(DIM).as(Selector('@a', {
 				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.HIT_TICK}`],

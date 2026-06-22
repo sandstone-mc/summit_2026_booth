@@ -27,6 +27,10 @@ export enum Tags {
 	PARKOUR_FRESH = 'ssb.rhythm.pk.fresh',
 	PARKOUR_TRIGGER = 'ssb.rhythm.pk.trigger',
 
+	LANE = 'ssb.rhythm.lane',
+	LANE_FRAGMENT = 'ssb.rhythm.lane.frag',
+	LANE_BORDER = 'ssb.rhythm.lane.border',
+
 	BUTTON_CYCLE = 'ssb.rhythm.btn.cycle',
 	BUTTON_START = 'ssb.rhythm.btn.start',
 	BUTTON_CYCLE_DISPLAY = 'ssb.rhythm.btn.cycle_display',

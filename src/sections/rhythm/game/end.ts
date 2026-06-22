@@ -4,6 +4,7 @@ import { clearWalls } from './walls/spawning'
 import { stopSong, stopWalls } from './songs'
 import { computeScores } from './scoring'
 import { parkourCleanup } from './parkour'
+import { clearLaneShulkers } from './lane-effects'
 import { Positions, DIM, NAMESPACE } from '../../../shared'
 import { timer } from './active'
 
@@ -31,6 +32,7 @@ const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
 		clearWalls()
 		parkourCleanup()
 	})
+	clearLaneShulkers()
 
 	execute.as(allPlayers).run(() => {
 		effect.clear('@s')
