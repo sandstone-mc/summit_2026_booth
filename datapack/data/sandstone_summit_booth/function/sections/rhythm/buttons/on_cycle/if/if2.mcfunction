@@ -1,3 +1,0 @@
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 0 run return run title @s actionbar {"text":"Tetoris","color":"aqua"}
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 1 run return run title @s actionbar {"text":"Machine Love - Jamie Paige","color":"aqua"}
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 2 run title @s actionbar {"text":"Il Vento D'oro - JoJo","color":"aqua"}

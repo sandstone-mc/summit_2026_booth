@@ -1,1 +1,0 @@
-execute as @e[tag=ssb.rhythm.wall, tag=ssb.rhythm.wall.init, tag=!ssb.rhythm.wall.hit] run data merge entity @s {interpolation_duration:80i,transformation:{translation:[-0.5f,0f,-40f]},start_interpolation:-2i}

@@ -1,3 +1,0 @@
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 0 run return run scoreboard players set $timer sandstone_summit_booth.rhythm.state 2880
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 1 run return run scoreboard players set $timer sandstone_summit_booth.rhythm.state 4320
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 2 run scoreboard players set $timer sandstone_summit_booth.rhythm.state 5700

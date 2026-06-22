@@ -1,1 +1,0 @@
-scoreboard players set $div sandstone_summit_booth.rhythm.combo 10

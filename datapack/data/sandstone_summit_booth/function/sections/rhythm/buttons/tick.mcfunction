@@ -1,2 +1,0 @@
-execute as @a[advancements={sandstone_summit_booth:cycle_song=true}] run function sandstone_summit_booth:sections/rhythm/buttons/tick/execute_as
-execute as @a[advancements={sandstone_summit_booth:start_game=true}] run function sandstone_summit_booth:sections/rhythm/buttons/tick/execute_as2
