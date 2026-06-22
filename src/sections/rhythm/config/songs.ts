@@ -1,4 +1,5 @@
 import { Midi } from '@tonejs/midi'
+import { fromArrayBuffer } from '@nbsjs/core'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { WALL_TRAVEL_OFFSET, WALL_SPEED } from './obstacle-pool'
@@ -10,6 +11,8 @@ import { PROJECT_ROOT } from '../../../shared'
 export interface SongNote {
 	tick: number
 	sound: string
+	pitch: number
+	volume: number
 }
 
 export interface SongChart {
@@ -23,9 +26,90 @@ export interface SongData {
 	difficulty: number
 	notes: SongNote[]
 	chart: SongChart
+	usesNoteBlocks: boolean
 }
 
-const SONGS_DIR = join(PROJECT_ROOT, 'songs')
+const SONGS_DIRS = [
+	join(PROJECT_ROOT, 'songs/public'),
+	join(PROJECT_ROOT, 'songs/private'),
+]
+
+function findSongFile(filename: string): string | undefined {
+	for (const dir of SONGS_DIRS) {
+		const path = join(dir, filename)
+		if (existsSync(path)) return path
+	}
+	return undefined
+}
+
+interface NbsInstrument {
+	sound: string
+	octaveShift: number
+}
+
+const NBS_INSTRUMENTS: NbsInstrument[] = [
+	{ sound: 'block.note_block.harp', octaveShift: 0 },
+	{ sound: 'block.note_block.bass', octaveShift: -2 },
+	{ sound: 'block.note_block.basedrum', octaveShift: 0 },
+	{ sound: 'block.note_block.snare', octaveShift: 0 },
+	{ sound: 'block.note_block.hat', octaveShift: 0 },
+	{ sound: 'block.note_block.guitar', octaveShift: -1 },
+	{ sound: 'block.note_block.flute', octaveShift: 1 },
+	{ sound: 'block.note_block.bell', octaveShift: 2 },
+	{ sound: 'block.note_block.chime', octaveShift: 2 },
+	{ sound: 'block.note_block.xylophone', octaveShift: 2 },
+	{ sound: 'block.note_block.iron_xylophone', octaveShift: 0 },
+	{ sound: 'block.note_block.cow_bell', octaveShift: 1 },
+	{ sound: 'block.note_block.didgeridoo', octaveShift: -2 },
+	{ sound: 'block.note_block.bit', octaveShift: 0 },
+	{ sound: 'block.note_block.banjo', octaveShift: 0 },
+	{ sound: 'block.note_block.pling', octaveShift: 0 },
+]
+
+const PERCUSSION_IDS = new Set([2, 3, 4])
+
+const instrumentsByOctave = new Map<number, number[]>()
+for (let i = 0; i < NBS_INSTRUMENTS.length; i++) {
+	if (PERCUSSION_IDS.has(i)) continue
+	const shift = NBS_INSTRUMENTS[i].octaveShift
+	if (!instrumentsByOctave.has(shift)) instrumentsByOctave.set(shift, [])
+	instrumentsByOctave.get(shift)!.push(i)
+}
+
+function resolveNbsNote(instrumentId: number, key: number): { sound: string, pitch: number } | null {
+	if (instrumentId >= NBS_INSTRUMENTS.length) return null
+
+	const semitones = key - 45
+	if (semitones >= -12 && semitones <= 12) {
+		return { sound: NBS_INSTRUMENTS[instrumentId].sound, pitch: Math.pow(2, semitones / 12) }
+	}
+
+	if (PERCUSSION_IDS.has(instrumentId)) {
+		const clamped = Math.max(-12, Math.min(12, semitones))
+		return { sound: NBS_INSTRUMENTS[instrumentId].sound, pitch: Math.pow(2, clamped / 12) }
+	}
+
+	const sourceShift = NBS_INSTRUMENTS[instrumentId].octaveShift
+	const octavesNeeded = semitones > 12
+		? Math.ceil((semitones - 12) / 12)
+		: Math.floor((semitones + 12) / 12)
+	const targetOctave = sourceShift + octavesNeeded
+	const candidates = instrumentsByOctave.get(targetOctave)
+
+	if (candidates && candidates.length > 0) {
+		const targetId = candidates.includes(instrumentId) ? instrumentId : candidates[0]
+		const newKey = key - octavesNeeded * 12
+		const newSemitones = newKey - 45
+		if (newSemitones >= -12 && newSemitones <= 12) {
+			return { sound: NBS_INSTRUMENTS[targetId].sound, pitch: Math.pow(2, newSemitones / 12) }
+		}
+	}
+
+	let folded = semitones
+	while (folded < -12) folded += 12
+	while (folded > 12) folded -= 12
+	return { sound: NBS_INSTRUMENTS[instrumentId].sound, pitch: Math.pow(2, folded / 12) }
+}
 
 const allSoundKeys: SoundKey[] = []
 
@@ -47,7 +131,7 @@ function parseMidi(filePath: string, displayName: string, difficulty: number, ha
 				durationBucket: nearestDurationBucket(note.duration),
 			}
 			if (!hasAudio) allSoundKeys.push(key)
-			notes.push({ tick: gameTick, sound: hasAudio ? '' : getSoundId(key) })
+			notes.push({ tick: gameTick, sound: hasAudio ? '' : getSoundId(key), pitch: 1.0, volume: 1.0 })
 		}
 	}
 
@@ -57,7 +141,41 @@ function parseMidi(filePath: string, displayName: string, difficulty: number, ha
 	const stepInterval = parkourStepIntervalForSpeed(WALL_SPEED)
 	const chart = generateChart(notes, durationTicks, bpm, difficulty, WALL_TRAVEL_OFFSET, stepInterval)
 
-	return { name: displayName, difficulty, notes, chart }
+	return { name: displayName, difficulty, notes, chart, usesNoteBlocks: false }
+}
+
+function parseNbs(filePath: string, displayName: string, difficulty: number): SongData {
+	const buffer = readFileSync(filePath)
+	const song = fromArrayBuffer(buffer.buffer)
+
+	const nbsTps = song.getTempo()
+	const gameTicksPerNbsTick = 20 / nbsTps
+
+	const notes: SongNote[] = []
+	for (const layer of song.layers.all) {
+		const layerVol = (layer.volume ?? 100) / 100
+		for (const [tick, note] of Object.entries(layer.notes.all)) {
+			const instrumentId = note.instrument
+			const nbsTick = Number(tick)
+			const gameTick = Math.round(nbsTick * gameTicksPerNbsTick)
+
+			const finePitchSemitones = (note.pitch ?? 0) / 100
+			const resolved = resolveNbsNote(instrumentId, (note.key ?? 45) + finePitchSemitones)
+			if (!resolved) continue
+
+			const volume = Math.min(1.0, layerVol * ((note.velocity ?? 100) / 100))
+			notes.push({ tick: gameTick, sound: resolved.sound, pitch: resolved.pitch, volume })
+		}
+	}
+
+	notes.sort((a, b) => a.tick - b.tick)
+	const timeSignature = song.timeSignature ?? 4
+	const bpm = nbsTps * 60 / timeSignature
+	const durationTicks = notes.length > 0 ? notes[notes.length - 1].tick + 20 : 0
+	const stepInterval = parkourStepIntervalForSpeed(WALL_SPEED)
+	const chart = generateChart(notes, durationTicks, bpm, difficulty, WALL_TRAVEL_OFFSET, stepInterval)
+
+	return { name: displayName, difficulty, notes, chart, usesNoteBlocks: true }
 }
 
 const DIFFICULTY_SPAWN_TIERS: Record<number, {
@@ -102,21 +220,28 @@ function generateChart(
 	const beatTicks: number[] = []
 	const tier = DIFFICULTY_SPAWN_TIERS[difficulty] ?? DIFFICULTY_SPAWN_TIERS[3]
 
-	for (let i = 0; i < totalBeats; i++) {
-		const localAvg = rollingAvg[i]
+	const SECTION_BEATS = 16
+	const sectionCount = Math.ceil(totalBeats / SECTION_BEATS)
+	for (let sec = 0; sec < sectionCount; sec++) {
+		const secStart = sec * SECTION_BEATS
+		const secEnd = Math.min((sec + 1) * SECTION_BEATS, totalBeats)
+
+		let secAvg = 0
+		for (let i = secStart; i < secEnd; i++) secAvg += rollingAvg[i]
+		secAvg /= (secEnd - secStart)
+
 		let spawnEvery: number
-		if (localAvg > meanDensity * tier.highThreshold) spawnEvery = tier.intervals[0]
-		else if (localAvg > meanDensity * tier.lowThreshold) spawnEvery = tier.intervals[1]
+		if (secAvg > meanDensity * tier.highThreshold) spawnEvery = tier.intervals[0]
+		else if (secAvg > meanDensity * tier.lowThreshold) spawnEvery = tier.intervals[1]
 		else spawnEvery = tier.intervals[2]
 
-		if (i % spawnEvery !== 0) continue
-		if (notesPerBeat[i] === 0) continue
-
-		const spawnTick = Math.round(i * beatIntervalExact) - wallTravelOffset
-		if (spawnTick < 0) continue
-		if (beatTicks.length > 0 && spawnTick - beatTicks[beatTicks.length - 1] < MIN_SPAWN_GAP_TICKS) continue
-
-		beatTicks.push(spawnTick)
+		for (let i = secStart; i < secEnd; i += spawnEvery) {
+			if (notesPerBeat[i] === 0) continue
+			const spawnTick = Math.round(i * beatIntervalExact) - wallTravelOffset
+			if (spawnTick < 0) continue
+			if (beatTicks.length > 0 && spawnTick - beatTicks[beatTicks.length - 1] < MIN_SPAWN_GAP_TICKS) continue
+			beatTicks.push(spawnTick)
+		}
 	}
 
 	if (beatTicks.length === 0 && durationTicks > 0) {
@@ -176,25 +301,36 @@ interface SongLoadResult {
 function loadAllSongs(): SongLoadResult {
 	const songs: SongData[] = []
 	for (const config of songList) {
-		const filePath = join(SONGS_DIR, config.file)
-		if (!existsSync(filePath)) {
-			console.warn(`[songs] MIDI file not found: ${config.file}`)
+		const filePath = findSongFile(config.file)
+		if (!filePath) {
+			console.warn(`[songs] Song file not found: ${config.file}`)
 			continue
 		}
-		songs.push(parseMidi(filePath, config.name, config.difficulty, !!config.audio))
+		const isNbs = config.file.toLowerCase().endsWith('.nbs')
+		if (isNbs) {
+			songs.push(parseNbs(filePath, config.name, config.difficulty))
+		} else {
+			songs.push(parseMidi(filePath, config.name, config.difficulty, !!config.audio))
+		}
 	}
 
 	renderAllSounds(allSoundKeys)
 
 	const fullSongEntries = songList
-		.filter(config => existsSync(join(SONGS_DIR, config.file)))
-		.map(config => ({
-			midiPath: join(SONGS_DIR, config.file),
-			safeName: config.name.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
-			audioPath: config.audio ? join(SONGS_DIR, config.audio) : undefined,
-			audioStart: config.audioStart,
-			audioOffset: config.audioOffset,
-		}))
+		.filter(config => {
+			const fp = findSongFile(config.file)
+			return fp && !config.file.toLowerCase().endsWith('.nbs')
+		})
+		.map(config => {
+			const audioPath = config.audio ? findSongFile(config.audio) : undefined
+			return {
+				midiPath: findSongFile(config.file)!,
+				safeName: config.name.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+				audioPath,
+				audioStart: config.audioStart,
+				audioOffset: config.audioOffset,
+			}
+		})
 	const songInfos = renderFullSongs(fullSongEntries)
 	return { songs, songInfos }
 }
@@ -225,5 +361,7 @@ export const songAudioOffsets = songSafeNames.map(name => {
 	const info = allSongInfos.find(i => i.safeName === name)
 	return info?.audioOffsetTicks ?? 0
 })
+
+export const songUsesNoteBlocks = allSongs.map(s => s.usesNoteBlocks)
 
 export { SEGMENT_TICKS, getSegmentSoundId } from './render-sounds'

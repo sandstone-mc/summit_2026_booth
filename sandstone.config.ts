@@ -18,5 +18,5 @@ export default {
     namespace: 'sandstone_summit_booth',
     packUid: 'WnYlBycD',
     mcmeta: 'latest',
-    saveOptions: {},
+    saveOptions: process.env.CLIENT_PATH && process.env.WORLD ? { clientPath: process.env.CLIENT_PATH, world: process.env.WORLD } : {},
 } as SandstoneConfig

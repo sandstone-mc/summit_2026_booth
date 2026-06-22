@@ -1,3 +1,7 @@
+import { readFileSync, existsSync } from 'fs'
+import { join } from 'path'
+import { PROJECT_ROOT } from '../../../shared'
+
 export interface SongConfig {
 	file: string
 	name: string
@@ -7,8 +11,13 @@ export interface SongConfig {
 	audioOffset?: number
 }
 
-export const songList: SongConfig[] = [
-	{ file: 'Tetoris.mid', name: 'Tetoris', difficulty: 5, audio: 'Tetoris.mp3', audioOffset: 0 },
-	{ file: 'Jamie Paige ft Kasane Teto - Machine Love - Solo - Coco Melon.mid', name: 'Machine Love - Jamie Paige', difficulty: 5, audio: 'MachineLove.mp3', audioStart: 30 },
-	{ file: "Il Vento D'oro (The Golden Wind) _Giorno's Theme_ - JoJo's Bizarre Adventures.mid", name: "Il Vento D'oro - JoJo", difficulty: 5, audio: "il vento d'oro [U0TXIXTzJEY].mp3", audioOffset: 0 },
+const SONGS_DIRS = [
+	join(PROJECT_ROOT, 'songs/public'),
+	join(PROJECT_ROOT, 'songs/private'),
 ]
+
+export const songList: SongConfig[] = SONGS_DIRS.flatMap(dir => {
+	const jsonPath = join(dir, 'songs.json')
+	if (!existsSync(jsonPath)) return []
+	return JSON.parse(readFileSync(jsonPath, 'utf-8')) as SongConfig[]
+})

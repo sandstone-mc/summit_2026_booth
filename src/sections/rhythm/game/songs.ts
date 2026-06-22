@@ -1,10 +1,12 @@
-import { _, execute, MCFunction, playsound, schedule, stopsound } from 'sandstone'
-import { songCount, songData, songSafeNames, songSegmentCounts, songAudioOffsets, SEGMENT_TICKS, getSegmentSoundId } from '../config/songs'
+import { _, execute, MCFunction, playsound, schedule, Selector, stopsound } from 'sandstone'
+import { songCount, songData, songSafeNames, songSegmentCounts, songAudioOffsets, songUsesNoteBlocks, SEGMENT_TICKS, getSegmentSoundId } from '../config/songs'
 import { PARKOUR_GRACE_TICKS } from '../config/parkour-paths'
 import { status, songSelect } from './state'
 import { spawnForDifficulty } from './walls/spawning'
 import { stepDispatchFns, parkourCleanup } from './parkour'
 import { DIM, NAMESPACE } from '../../../shared'
+
+const NBS_BATCH_TICKS = 200
 
 const songPlayFns: (() => void)[] = []
 const songStopFns: (() => void)[] = []
@@ -15,30 +17,106 @@ for (let s = 0; s < songCount; s++) {
 	const song = songData[s]
 	const safeName = songSafeNames[s]
 	const nsPrefix = `${NAMESPACE}:sections/rhythm/songs/${safeName}`
-	const segmentCount = songSegmentCounts[s]
-	const audioOffset = songAudioOffsets[s]
+	const usesNoteBlocks = songUsesNoteBlocks[s]
 
-	const segmentFns: { tick: number; fn: () => void; name: string }[] = []
-	for (let seg = 0; seg < segmentCount; seg++) {
-		const soundId = getSegmentSoundId(safeName, seg)
-		const fnName = `sections/rhythm/songs/${safeName}/seg${seg}`
-		const fn = MCFunction(fnName, () => {
-			execute.in(DIM).run.playsound(soundId, 'record', '@a', '~ ~ ~', 10000)
-		}, { lazy: true })
-		segmentFns.push({ tick: Math.max(0, seg * SEGMENT_TICKS + audioOffset), fn, name: `${nsPrefix}/seg${seg}` })
-	}
+	type ScheduledEntry = { tick: number; fn: () => void; name: string }
 
-	const playFn = MCFunction(`sections/rhythm/songs/${safeName}/play`, () => {
-		for (const { tick, fn, name } of segmentFns) {
-			if (tick === 0) fn()
-			else schedule.function(name, `${tick}t`)
+	let playFn: () => void
+	let stopFn: () => void
+	let audioEntries: ScheduledEntry[] = []
+
+	if (usesNoteBlocks) {
+		const notesByTick = new Map<number, typeof song.notes>()
+		for (const note of song.notes) {
+			const existing = notesByTick.get(note.tick)
+			if (existing) existing.push(note)
+			else notesByTick.set(note.tick, [note])
 		}
-	}, { lazy: true })
 
-	const stopFn = MCFunction(`sections/rhythm/songs/${safeName}/stop`, () => {
-		for (const { name } of segmentFns) schedule.clear(name)
-		stopsound('@a', 'record')
-	}, { lazy: true })
+		const sortedTicks = [...notesByTick.keys()].sort((a, b) => a - b)
+		const maxTick = sortedTicks.length > 0 ? sortedTicks[sortedTicks.length - 1] : 0
+		const batchCount = Math.ceil((maxTick + 1) / NBS_BATCH_TICKS)
+
+		const batchFns: ScheduledEntry[] = []
+		for (let batch = 0; batch < batchCount; batch++) {
+			const batchStart = batch * NBS_BATCH_TICKS
+			const batchEnd = batchStart + NBS_BATCH_TICKS
+			const ticksInBatch = sortedTicks.filter(t => t >= batchStart && t < batchEnd)
+			if (ticksInBatch.length === 0) continue
+
+			const noteFns: ScheduledEntry[] = []
+			for (const tick of ticksInBatch) {
+				const notes = notesByTick.get(tick)!
+				const offsetInBatch = tick - batchStart
+				const fnName = `sections/rhythm/songs/${safeName}/nb_t${tick}`
+				const fn = MCFunction(fnName, () => {
+					execute.in(DIM).as(Selector('@a')).at('@s').run(() => {
+						for (const note of notes) {
+							playsound(note.sound as any, 'master', '@s', '~ ~ ~',
+								note.volume, note.pitch)
+						}
+					})
+				}, { lazy: true })
+				noteFns.push({ tick: offsetInBatch, fn, name: `${nsPrefix}/nb_t${tick}` })
+			}
+
+			const batchFnName = `sections/rhythm/songs/${safeName}/nb_b${batch}`
+			const batchFn = MCFunction(batchFnName, () => {
+				for (const { tick, fn, name } of noteFns) {
+					if (tick === 0) fn()
+					else schedule.function(name, `${tick}t`)
+				}
+			}, { lazy: true })
+			batchFns.push({ tick: batchStart, fn: batchFn, name: `${nsPrefix}/nb_b${batch}` })
+		}
+
+		audioEntries = batchFns
+
+		playFn = MCFunction(`sections/rhythm/songs/${safeName}/play`, () => {
+			for (const { tick, fn, name } of batchFns) {
+				if (tick === 0) fn()
+				else schedule.function(name, `${tick}t`)
+			}
+		}, { lazy: true })
+
+		const allScheduledNames = batchFns.flatMap(b => {
+			const batchStart = parseInt(b.name.split('nb_b')[1]) * NBS_BATCH_TICKS
+			const ticksInBatch = sortedTicks.filter(t => t >= batchStart && t < batchStart + NBS_BATCH_TICKS)
+			return [b.name, ...ticksInBatch.map(t => `${nsPrefix}/nb_t${t}`)]
+		})
+
+		stopFn = MCFunction(`sections/rhythm/songs/${safeName}/stop`, () => {
+			for (const name of allScheduledNames) schedule.clear(name)
+			stopsound('@a', 'master')
+		}, { lazy: true })
+	} else {
+		const segmentCount = songSegmentCounts[s]
+		const audioOffset = songAudioOffsets[s]
+
+		const segmentFns: ScheduledEntry[] = []
+		for (let seg = 0; seg < segmentCount; seg++) {
+			const soundId = getSegmentSoundId(safeName, seg)
+			const fnName = `sections/rhythm/songs/${safeName}/seg${seg}`
+			const fn = MCFunction(fnName, () => {
+				execute.in(DIM).run.playsound(soundId, 'master', '@a', '~ ~ ~', 10000)
+			}, { lazy: true })
+			segmentFns.push({ tick: Math.max(0, seg * SEGMENT_TICKS + audioOffset), fn, name: `${nsPrefix}/seg${seg}` })
+		}
+
+		audioEntries = segmentFns
+
+		playFn = MCFunction(`sections/rhythm/songs/${safeName}/play`, () => {
+			for (const { tick, fn, name } of segmentFns) {
+				if (tick === 0) fn()
+				else schedule.function(name, `${tick}t`)
+			}
+		}, { lazy: true })
+
+		stopFn = MCFunction(`sections/rhythm/songs/${safeName}/stop`, () => {
+			for (const { name } of segmentFns) schedule.clear(name)
+			stopsound('@a', 'record')
+		}, { lazy: true })
+	}
 
 	const diffIdx = Math.max(0, Math.min(4, song.difficulty - 1))
 	const spawnFn = spawnForDifficulty[diffIdx]

@@ -1,0 +1,5 @@
+[
+	{ "file": "Tetoris.mid", "name": "Tetoris", "difficulty": 5, "audio": "Tetoris.mp3", "audioOffset": 0 },
+	{ "file": "Jamie Paige ft Kasane Teto - Machine Love - Solo - Coco Melon.mid", "name": "Machine Love - Jamie Paige", "difficulty": 5, "audio": "MachineLove.mp3", "audioStart": 30 },
+	{ "file": "Il Vento D'oro (The Golden Wind) _Giorno's Theme_ - JoJo's Bizarre Adventures.mid", "name": "Il Vento D'oro - JoJo", "difficulty": 5, "audio": "il vento d'oro [U0TXIXTzJEY].mp3", "audioOffset": 0 }
+]

@@ -13,6 +13,7 @@ import './game/start'
 import './game/active'
 import './game/end'
 import './game/buttons'
+import './game/lane-effects'
 import './game/debug'
 
 MCFunction('sections/rhythm/init_player', () => {
