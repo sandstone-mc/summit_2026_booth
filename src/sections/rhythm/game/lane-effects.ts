@@ -1,6 +1,7 @@
 import { _, abs, data, effect, execute, kill, MCFunction, NBT, Objective, particle, raw, schedule, Selector, summon, team, tp } from 'sandstone'
 import { arena } from '../config/arena'
 import { PATTERN_WIDTH, WALL_SPAWN_AHEAD, WALL_PASS_BEHIND } from '../config/obstacle-pool'
+import { MAP_SIZE, LANE_X, LANE_Z, LANE_WIDTH } from '../config/maps'
 import { Tags } from './state'
 import { DIM, NAMESPACE } from '../../../shared'
 
@@ -106,8 +107,6 @@ const BORDER_STRIP_COUNT = 10
 const TOTAL_HEIGHT = 1.0
 const BORDER_SCALE_Y = TOTAL_HEIGHT / (BORDER_STRIP_COUNT * 0.25)
 const BORDER_STEP = TOTAL_HEIGHT / BORDER_STRIP_COUNT
-const BORDER_EXTEND = LANE_LENGTH
-const BORDER_TOTAL_LEN = LANE_LENGTH + BORDER_EXTEND * 2
 
 const BORDER_ALPHAS = Array.from({ length: BORDER_STRIP_COUNT }, (_, i) =>
 	i === BORDER_STRIP_COUNT - 1 ? 5 : Math.round(180 * (1 - i / (BORDER_STRIP_COUNT - 1)) ** 2.5)
@@ -128,10 +127,13 @@ const BORDER_COLOR_MAP: Record<string, [number, number, number]> = {
 
 function borderStripTag(i: number) { return `ssb.lane.border.${i}` }
 
-function wallBorderNbt(stripIndex: number, bg: number, yOff: number, facing: number) {
+const BORDER_TEXT = '"' + ' '.repeat(500) + '"'
+
+function wallBorderNbt(stripIndex: number, bg: number, yOff: number, facing: number, scaleX: number) {
 	return {
 		Tags: [Tags.LANE_BORDER, borderStripTag(stripIndex)],
-		text: '" "',
+		text: BORDER_TEXT,
+		alignment: 'center',
 		line_width: NBT.int(9999),
 		text_opacity: NBT.byte(0),
 		background: NBT.int(bg),
@@ -143,29 +145,58 @@ function wallBorderNbt(stripIndex: number, bg: number, yOff: number, facing: num
 			left_rotation: NBT.float([0, 0, 0, 1]),
 			right_rotation: NBT.float([0, 0, 0, 1]),
 			translation: NBT.float([0, yOff, 0]),
-			scale: NBT.float([BORDER_TOTAL_LEN, BORDER_SCALE_Y, 1]),
+			scale: NBT.float([scaleX, BORDER_SCALE_Y, 1]),
 		},
 	}
 }
+
+const laneXMin = baseX
+const laneXMax = baseX + LANE_WIDTH
+const laneZMin = baseZ - LANE_Z - 2
+const laneZMax = baseZ - LANE_Z + MAP_SIZE[2] + 2
+
+const leftX = laneXMin + 0.175 - 3 / 16
+const rightX = laneXMax + 0.175 - 3 / 16
+const sideMidZ = (laneZMin + laneZMax) / 2
+const sideLen = laneZMax - laneZMin
+const frontMidX = (leftX + rightX) / 2
+const frontLen = rightX - leftX + 0.5
+
+const frontZ = baseZ - LANE_Z + 0.05
+const backZ = baseZ - LANE_Z + MAP_SIZE[2] + 0.5
+
+const TEXT_BASE_WIDTH = 500 * 4 / 36
+const sideScale = sideLen / TEXT_BASE_WIDTH
+const frontScale = frontLen / TEXT_BASE_WIDTH
 
 export const spawnLaneBorder = MCFunction('sections/rhythm/lane/border_spawn', () => {
 	execute.in(DIM).run(() => {
 		kill(borderSelector)
 
-		const leftX = baseX - 1 + 0.175 - 3/16
-		const rightX = baseX + PATTERN_WIDTH + 1 + 0.175 - 3/16
-
 		for (let i = 0; i < BORDER_STRIP_COUNT; i++) {
 			const bg = argb(BORDER_ALPHAS[i], ...BORDER_DEFAULT_RGB)
 			const yOff = i * BORDER_STEP - BORDER_STEP / 2
 
-			summon('minecraft:text_display', abs(leftX, baseY + 1, LANE_Z_MID),
-				wallBorderNbt(i, bg, yOff, -90))
-			summon('minecraft:text_display', abs(rightX, baseY + 1, LANE_Z_MID),
-				wallBorderNbt(i, bg, yOff, 90))
+			summon('minecraft:text_display', abs(leftX, baseY + 1, sideMidZ),
+				wallBorderNbt(i, bg, yOff, 90, sideScale))
+			summon('minecraft:text_display', abs(leftX, baseY + 1, sideMidZ),
+				wallBorderNbt(i, bg, yOff, -90, sideScale))
+			summon('minecraft:text_display', abs(rightX, baseY + 1, sideMidZ),
+				wallBorderNbt(i, bg, yOff, 90, sideScale))
+			summon('minecraft:text_display', abs(rightX, baseY + 1, sideMidZ),
+				wallBorderNbt(i, bg, yOff, -90, sideScale))
+
+			summon('minecraft:text_display', abs(frontMidX, baseY + 1, frontZ),
+				wallBorderNbt(i, bg, yOff, 0, frontScale))
+			summon('minecraft:text_display', abs(frontMidX, baseY + 1, frontZ),
+				wallBorderNbt(i, bg, yOff, 180, frontScale))
+			summon('minecraft:text_display', abs(frontMidX, baseY + 1, backZ),
+				wallBorderNbt(i, bg, yOff, 0, frontScale))
+			summon('minecraft:text_display', abs(frontMidX, baseY + 1, backZ),
+				wallBorderNbt(i, bg, yOff, 180, frontScale))
 		}
 	})
-}, { lazy: true })
+}, { runOnLoad: true })
 
 const borderRippleCounter = Objective.create('ssb_brip', 'dummy')
 const rippleStep = borderRippleCounter('$step')
@@ -266,6 +297,17 @@ const doKillLane = MCFunction('sections/rhythm/lane/do_kill', () => {
 		kill(laneSelector)
 		kill(fragmentSelector)
 	})
+}, { lazy: true })
+
+export const clearLaneBorder = MCFunction('sections/rhythm/lane/border_clear', () => {
+	execute.in(DIM).run(() => {
+		tp(borderSelector, abs(0, -64, 0))
+	})
+	schedule.function(`${NAMESPACE}:sections/rhythm/lane/border_do_kill`, '1t')
+}, { lazy: true })
+
+const doKillBorder = MCFunction('sections/rhythm/lane/border_do_kill', () => {
+	execute.in(DIM).run.kill(borderSelector)
 }, { lazy: true })
 
 export const clearLaneShulkers = MCFunction('sections/rhythm/lane/clear', () => {

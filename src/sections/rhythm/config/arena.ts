@@ -1,4 +1,5 @@
 import { WALL_SPAWN_AHEAD, WALL_PASS_BEHIND, WALL_TRAVEL_DISTANCE, PATTERN_WIDTH, MOVE_SCALE } from './obstacle-pool'
+import { MAP_SIZE, LANE_X, LANE_Z, LANE_WIDTH } from './maps'
 
 interface ResolvedArena {
 	spawnOrigin: [number, number, number]
@@ -39,4 +40,14 @@ export const arena: ResolvedArena = {
 		baseY + 4,
 		baseZ,
 	],
+	mapOrigin: [
+		baseX - LANE_X,
+		baseY,
+		baseZ - LANE_Z,
+	] as [number, number, number],
+	mapEnd: [
+		baseX - LANE_X + MAP_SIZE[0] - 1,
+		baseY + MAP_SIZE[1] - 1,
+		baseZ - LANE_Z + MAP_SIZE[2] - 1,
+	] as [number, number, number],
 }

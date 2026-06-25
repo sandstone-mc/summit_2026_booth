@@ -35,6 +35,22 @@ export enum Tags {
 	BUTTON_START = 'ssb.rhythm.btn.start',
 	BUTTON_CYCLE_DISPLAY = 'ssb.rhythm.btn.cycle_display',
 	BUTTON_START_DISPLAY = 'ssb.rhythm.btn.start_display',
+
+	UI_SETTINGS = 'ssb.ui.set',
+	UI_SETTINGS_TXT = 'ssb.ui.set.txt',
+	UI_SONG_INT = 'ssb.ui.set.si',
+	UI_LIVES_INT = 'ssb.ui.set.li',
+	UI_START_INT = 'ssb.ui.set.gi',
+
+	UI_LEADERBOARD = 'ssb.ui.lb',
+	UI_LB_TXT = 'ssb.ui.lb.txt',
+	UI_LB_SONG_INT = 'ssb.ui.lb.si',
+	UI_LB_CAT_INT = 'ssb.ui.lb.ci',
+	UI_LB_MY_INT = 'ssb.ui.lb.mi',
+
+	UI_MAP_INT = 'ssb.ui.set.mi',
+
+	SKYBOX = 'ssb.rhythm.skybox',
 }
 
 export const status = state('$status')
@@ -47,6 +63,11 @@ MCFunction('sections/rhythm/state/init', () => {
 }, { runOnLoad: true })
 
 export const livesDefault = 3
+
+export const mapSelect = state('$map_select')
+
+export const lbSongView = state('$lb_song')
+export const lbCatView = state('$lb_cat')
 
 export const alivePlayers = Selector('@a', { tag: [Tags.PLAYER, Tags.ALIVE] })
 export const allPlayers = Selector('@a', { tag: Tags.PLAYER })

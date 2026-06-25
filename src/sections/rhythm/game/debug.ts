@@ -7,6 +7,7 @@ import { stopSong, stopWalls } from './songs'
 import { clearWalls } from './walls/spawning'
 import { parkourCleanup } from './parkour'
 import { clearLaneShulkers, spawnLaneBorder } from './lane-effects'
+import { spawnSkybox } from './arena-map'
 
 MCFunction('sections/rhythm/debug/setup', () => {
 	execute.in(DIM).run(() => {
@@ -27,6 +28,7 @@ MCFunction('sections/rhythm/debug/setup', () => {
 		)
 	})
 	spawnLaneBorder()
+	spawnSkybox()
 }, { lazy: true })
 
 MCFunction('sections/rhythm/debug/reset', () => {
@@ -46,7 +48,7 @@ MCFunction('sections/rhythm/debug/reset', () => {
 	status.set(GameStatus.WAITING)
 	songSelect.set(0)
 
-	execute.in('minecraft:overworld').run(() => {
+	execute.in(DIM).run(() => {
 		const [x, y, z] = Positions.BOOTH_RETURN
 		tp('@a', abs(x, y, z))
 	})
@@ -54,7 +56,7 @@ MCFunction('sections/rhythm/debug/reset', () => {
 }, { lazy: true })
 
 MCFunction('sections/rhythm/debug/tp', () => {
-	execute.in('minecraft:overworld').run(() => {
+	execute.in(DIM).run(() => {
 		const [x, y, z] = Positions.BOOTH_RETURN
 		tp('@s', abs(x, y, z))
 	})

@@ -1,11 +1,12 @@
 import { _, abs, attribute, effect, execute, forceload, gamemode, gamerule, MCFunction, NBT, Objective, playsound, Selector, tag, team, title, tp } from 'sandstone'
 import { arena } from '../config/arena'
 import { songCount, songDurations } from '../config/songs'
-import { GameStatus, allPlayers, alivePlayers, status, songSelect, livesDefault } from './state'
+import { GameStatus, allPlayers, alivePlayers, status, songSelect } from './state'
 import { wallLives } from './walls/collision'
 import { points, combo, finalScore } from './scoring'
+import { livesSetting, updateSettingsPanel } from './settings'
 import { playSong, scheduleWalls } from './songs'
-import { spawnLaneShulkers } from './lane-effects'
+import { spawnLaneShulkers, spawnLaneBorder } from './lane-effects'
 import { DIM, state } from '../../../shared'
 
 MCFunction('sections/rhythm/active/nocollide_init', () => {
@@ -37,10 +38,9 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 
 	execute.as(allPlayers).run(() => {
 		attribute("@s", "minecraft:fall_damage_multiplier").baseSet(0)
-		attribute('@s', 'minecraft:movement_speed').baseSet(0.13)
-		wallLives('@s').set(livesDefault)
+		attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
+		wallLives('@s').set(livesSetting)
 		effect.give('@s', 'minecraft:instant_health', 1, 126, true)
-		effect.give('@s', 'minecraft:invisibility', 99999, 0, true)
 		effect.give('@s', 'minecraft:saturation', 99999, 0, true)
 		points('@s').set(0)
 		combo('@s').set(0)
@@ -60,8 +60,10 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	}
 
 	spawnLaneShulkers()
+	spawnLaneBorder()
 	playSong()
 	scheduleWalls()
+	updateSettingsPanel()
 
 	execute.as(allPlayers).at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
 }, { lazy: true })
