@@ -1,4 +1,3 @@
-import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { PROJECT_ROOT } from '@shared'
 
@@ -16,8 +15,10 @@ const SONGS_DIRS = [
 	join(PROJECT_ROOT, 'songs/private'),
 ]
 
-export const songList: SongConfig[] = SONGS_DIRS.flatMap(dir => {
-	const jsonPath = join(dir, 'songs.json')
-	if (!existsSync(jsonPath)) return []
-	return JSON.parse(readFileSync(jsonPath, 'utf-8')) as SongConfig[]
-})
+export const songList: SongConfig[] = (await Promise.all(
+	SONGS_DIRS.map(async dir => {
+		const file = Bun.file(join(dir, 'songs.json'))
+		if (!await file.exists()) return []
+		return await file.json() as SongConfig[]
+	})
+)).flat()

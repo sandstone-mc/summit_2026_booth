@@ -1,34 +1,27 @@
-import { createHash } from 'crypto'
-import { readFileSync, readdirSync, existsSync } from 'fs'
-import { join } from 'node:path'
+import { join } from 'path'
 import { MCFunction, raw } from 'sandstone'
 import { PROJECT_ROOT, NAMESPACE } from './shared'
 
-function computePackHash(): string {
-	const hash = createHash('sha256')
+async function computePackHash(): Promise<string> {
+	const hasher = new Bun.CryptoHasher('sha256')
+	const glob = new Bun.Glob('**/*')
 
-	function walkDir(dir: string) {
-		if (!existsSync(dir)) return
-		for (const entry of readdirSync(dir, { withFileTypes: true })) {
-			const full = join(dir, entry.name)
-			if (entry.isDirectory()) walkDir(full)
-			else hash.update(readFileSync(full))
-		}
+	for (const path of glob.scanSync(join(PROJECT_ROOT, 'src'))) {
+		hasher.update(await Bun.file(join(PROJECT_ROOT, 'src', path)).bytes())
 	}
-
-	walkDir(join(PROJECT_ROOT, 'src'))
 
 	for (const songsJson of [
 		join(PROJECT_ROOT, 'songs/public/songs.json'),
 		join(PROJECT_ROOT, 'songs/private/songs.json'),
 	]) {
-		if (existsSync(songsJson)) hash.update(readFileSync(songsJson))
+		const file = Bun.file(songsJson)
+		if (await file.exists()) hasher.update(await file.bytes())
 	}
 
-	return hash.digest('hex').slice(0, 12)
+	return hasher.digest('hex').slice(0, 12)
 }
 
-const PACK_HASH = computePackHash()
+const PACK_HASH = await computePackHash()
 const STORAGE = `${NAMESPACE}:meta`
 
 MCFunction('version_check', () => {

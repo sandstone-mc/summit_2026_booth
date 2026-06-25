@@ -1,6 +1,5 @@
 import { Midi } from '@tonejs/midi'
 import { fromArrayBuffer } from '@nbsjs/core'
-import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { walls, wallMovement } from '..'
 import { PARKOUR_STEP_COUNT, parkourStepIntervalForSpeed } from '../parkour-paths'
@@ -34,10 +33,10 @@ const SONGS_DIRS = [
 	join(PROJECT_ROOT, 'songs/private'),
 ]
 
-function findSongFile(filename: string): string | undefined {
+async function findSongFile(filename: string): Promise<string | undefined> {
 	for (const dir of SONGS_DIRS) {
 		const path = join(dir, filename)
-		if (existsSync(path)) return path
+		if (await Bun.file(path).exists()) return path
 	}
 	return undefined
 }
@@ -113,8 +112,8 @@ function resolveNbsNote(instrumentId: number, key: number): { sound: string, pit
 
 const allSoundKeys: SoundKey[] = []
 
-function parseMidi(filePath: string, displayName: string, difficulty: number, hasAudio: boolean): SongData {
-	const midiData = readFileSync(filePath)
+async function parseMidi(filePath: string, displayName: string, difficulty: number, hasAudio: boolean): Promise<SongData> {
+	const midiData = Buffer.from(await Bun.file(filePath).arrayBuffer())
 	const midi = new Midi(midiData)
 	const notes: SongNote[] = []
 
@@ -144,8 +143,8 @@ function parseMidi(filePath: string, displayName: string, difficulty: number, ha
 	return { name: displayName, difficulty, notes, chart, usesNoteBlocks: false }
 }
 
-function parseNbs(filePath: string, displayName: string, difficulty: number): SongData {
-	const buffer = readFileSync(filePath)
+async function parseNbs(filePath: string, displayName: string, difficulty: number): Promise<SongData> {
+	const buffer = Buffer.from(await Bun.file(filePath).arrayBuffer())
 	const song = fromArrayBuffer(buffer.buffer)
 
 	const nbsTps = song.getTempo()
@@ -298,44 +297,42 @@ interface SongLoadResult {
 	songInfos: { safeName: string; segmentCount: number; audioOffsetTicks: number }[]
 }
 
-function loadAllSongs(): SongLoadResult {
+async function loadAllSongs(): Promise<SongLoadResult> {
 	const songs: SongData[] = []
 	for (const config of songList) {
-		const filePath = findSongFile(config.file)
+		const filePath = await findSongFile(config.file)
 		if (!filePath) {
 			console.warn(`[songs] Song file not found: ${config.file}`)
 			continue
 		}
 		const isNbs = config.file.toLowerCase().endsWith('.nbs')
 		if (isNbs) {
-			songs.push(parseNbs(filePath, config.name, config.difficulty))
+			songs.push(await parseNbs(filePath, config.name, config.difficulty))
 		} else {
-			songs.push(parseMidi(filePath, config.name, config.difficulty, !!config.audio))
+			songs.push(await parseMidi(filePath, config.name, config.difficulty, !!config.audio))
 		}
 	}
 
-	renderAllSounds(allSoundKeys)
+	await renderAllSounds(allSoundKeys)
 
-	const fullSongEntries = songList
-		.filter(config => {
-			const fp = findSongFile(config.file)
-			return fp && !config.file.toLowerCase().endsWith('.nbs')
+	const fullSongEntries: { midiPath: string; safeName: string; audioPath?: string; audioStart?: number; audioOffset?: number }[] = []
+	for (const config of songList) {
+		const fp = await findSongFile(config.file)
+		if (!fp || config.file.toLowerCase().endsWith('.nbs')) continue
+		const audioPath = config.audio ? await findSongFile(config.audio) : undefined
+		fullSongEntries.push({
+			midiPath: fp,
+			safeName: config.name.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
+			audioPath,
+			audioStart: config.audioStart,
+			audioOffset: config.audioOffset,
 		})
-		.map(config => {
-			const audioPath = config.audio ? findSongFile(config.audio) : undefined
-			return {
-				midiPath: findSongFile(config.file)!,
-				safeName: config.name.toLowerCase().replace(/[^a-z0-9_]/g, '_'),
-				audioPath,
-				audioStart: config.audioStart,
-				audioOffset: config.audioOffset,
-			}
-		})
-	const songInfos = renderFullSongs(fullSongEntries)
+	}
+	const songInfos = await renderFullSongs(fullSongEntries)
 	return { songs, songInfos }
 }
 
-const { songs: allSongs, songInfos: allSongInfos } = loadAllSongs()
+const { songs: allSongs, songInfos: allSongInfos } = await loadAllSongs()
 
 export const songCount = allSongs.length
 export const songNames = allSongs.map(s => s.name)

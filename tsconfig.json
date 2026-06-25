@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "lib": ["ESNext"],
+    "types": ["@types/bun"],
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
