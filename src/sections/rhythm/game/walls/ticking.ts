@@ -1,5 +1,5 @@
-import { _, abs, data, Data, execute, kill, MCFunction, NBT, Objective, raw, Selector, tag, tp } from 'sandstone'
-import { WALL_TRAVEL_TICKS, WALL_REACH_TICKS, WALL_LIFETIME, MOVE_NUMERATOR, MOVE_SCALE } from '../../config/obstacle-pool'
+import { _, abs, data, Data, execute, kill, MCFunction, NBT, Objective, particle, raw, Selector, tag, tp } from 'sandstone'
+import { PATTERN_WIDTH, PATTERN_HEIGHT, WALL_TRAVEL_TICKS, WALL_REACH_TICKS, WALL_LIFETIME, WALL_TRAVEL_DISTANCE, MOVE_NUMERATOR, MOVE_SCALE } from '../../config/obstacle-pool'
 import { arena } from '../../config/arena'
 import { wallAge, wallDepth } from './spawning'
 import { GameStatus, Tags, status } from '../state'
@@ -20,11 +20,20 @@ MCFunction('sections/rhythm/wall/init_scores', () => {
 
 export const beatFlag = state('$beat_flag')
 
+const widthOnX = arena.posPath === 'Pos[2]'
+
 const initWalls = MCFunction('sections/rhythm/wall/init', () => {
-	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.WALL_HIT}`] })).run(() => {
+	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.WALL_HIT}`, `!${Tags.PARKOUR}`] })).run(() => {
 		data.merge.entity('@s', {
 			interpolation_duration: NBT.int(WALL_TRAVEL_TICKS),
-			transformation: { translation: NBT.float(arena.interpolationTranslation) },
+			transformation: { translation: NBT.float([0, 0, -WALL_TRAVEL_DISTANCE]) },
+			start_interpolation: NBT.int(-2),
+		})
+	})
+	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, Tags.PARKOUR] })).run(() => {
+		data.merge.entity('@s', {
+			interpolation_duration: NBT.int(WALL_TRAVEL_TICKS),
+			transformation: { translation: NBT.float([-0.5, 0, -0.5 - WALL_TRAVEL_DISTANCE]) },
 			start_interpolation: NBT.int(-2),
 		})
 	})
@@ -71,6 +80,10 @@ MCFunction('sections/rhythm/wall/tick', () => {
 				tag('@s').remove(Tags.WALL_NEW)
 			})
 
+			execute.as(Selector('@e', { type: 'minecraft:item_display', tag: Tags.WALL })).at('@s').run(() => {
+				particle('minecraft:flame', '~ ~ ~', [0, 0, 0], 0, 1)
+			})
+
 			moveWalls()
 
 			execute.as(Selector('@e', { tag: [Tags.WALL, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] })).run(() => {
@@ -82,9 +95,9 @@ MCFunction('sections/rhythm/wall/tick', () => {
 			})
 
 			execute.as(Selector('@e', { tag: Tags.WALL, scores: { [wallAge.name]: [WALL_LIFETIME, WALL_LIFETIME] } })).run(() => {
-				tp('@s', abs(0, -10, 0))
+				tp('@s', abs(0, -64, 0))
 			})
-			kill(Selector('@e', { tag: Tags.WALL, scores: { [wallAge.name]: [WALL_LIFETIME + 2, Infinity] } }))
+			kill(Selector('@e', { tag: Tags.WALL, scores: { [wallAge.name]: [WALL_LIFETIME + 1, Infinity] } }))
 		})
 	})
 }, { runEveryTick: true })

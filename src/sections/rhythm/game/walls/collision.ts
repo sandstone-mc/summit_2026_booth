@@ -1,4 +1,4 @@
-import { _, abs, effect, execute, gamemode, MCFunction, Objective, playsound, Predicate, rel, Selector, tag, title, tp } from 'sandstone'
+import { _, abs, effect, execute, gamemode, kill, MCFunction, Objective, particle, playsound, Predicate, rel, Selector, tag, title, tp } from 'sandstone'
 import { arena } from '../../config/arena'
 import { GameStatus, Tags, alivePlayers, status } from '../state'
 import { Positions, DIM } from '../../../../shared'
@@ -14,16 +14,27 @@ export const wallLives = Objective.create('rhythm.wall.lives', 'dummy')
 export const wallHitCooldown = Objective.create('rhythm.wall.hit_cooldown', 'dummy')
 
 const HIT_COOLDOWN = 30
+const FLASH_INTERVAL = 3
+const flashPhase = Objective.create('ssb_flash')
+
+const breakNearbyWall = MCFunction('sections/rhythm/collision/break_wall', () => {
+	execute.at('@s').run(() => {
+		kill(Selector('@e', { tag: Tags.WALL, distance: [0, 1.5] }))
+		playsound('minecraft:block.glass.break', 'master', '@a', '~ ~ ~', 2.0, 1.0)
+		particle('minecraft:block{block_state:"minecraft:white_stained_glass"}', rel(0, 0.5, 0), [0.5, 0.5, 0.5], 0.1, 20)
+	})
+}, { lazy: true })
 
 const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 	wallLives('@s').remove(1)
 
 	tag('@s').add(Tags.HIT_TICK)
-	tp('@s', rel(0, 5, 0))
+	breakNearbyWall()
 	playsound('minecraft:entity.player.hurt', 'master', '@s')
 
 	tag('@s').add(Tags.WALL_HIT_COOLDOWN)
 	wallHitCooldown('@s').set(HIT_COOLDOWN)
+	effect.give('@s', 'minecraft:invisibility', 1, 0, true)
 
 	_.if(wallLives('@s').lessOrEqualThan(0), () => {
 		tag('@s').remove(Tags.ALIVE)
@@ -46,6 +57,15 @@ MCFunction('sections/rhythm/collision/tick', () => {
 				wallHitCooldown('@s').remove(1)
 				_.if(wallHitCooldown('@s').lessOrEqualThan(0), () => {
 					tag('@s').remove(Tags.WALL_HIT_COOLDOWN)
+					effect.clear('@s', 'minecraft:invisibility')
+				}).else(() => {
+					flashPhase('@s').set(wallHitCooldown('@s'))
+					flashPhase('@s').modulo(FLASH_INTERVAL * 2)
+					_.if(flashPhase('@s').lessThan(FLASH_INTERVAL), () => {
+						effect.give('@s', 'minecraft:invisibility', 1, 0, true)
+					}).else(() => {
+						effect.clear('@s', 'minecraft:invisibility')
+					})
 				})
 			})
 

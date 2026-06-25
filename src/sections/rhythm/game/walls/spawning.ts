@@ -1,9 +1,11 @@
-import { _, abs, execute, kill, MCFunction, NBT, Objective, Selector, summon, tag, tp, schedule } from 'sandstone'
+import { _, abs, execute, kill, MCFunction, NBT, Objective, schedule, Selector, summon, tag, tp } from 'sandstone'
 import { PATTERN_WIDTH, PATTERN_HEIGHT, WALL_TRAVEL_TICKS, MOVE_SCALE } from '../../config/obstacle-pool'
 import { arena } from '../../config/arena'
 import { singles, groups, type Cell, type Obstacle } from '../../config/obstacles'
 import { Tags } from '../state'
-import { DIM } from '../../../../shared'
+import { DIM, NAMESPACE } from '../../../../shared'
+import { wallModelNames } from '../../config/generate-wall-models'
+import { wallTintColor } from '../../config/wall-colors'
 
 export const wallAge = Objective.create('rhythm.wall.age', 'dummy')
 export const wallDepth = Objective.create('rhythm.wall.depth', 'dummy')
@@ -18,24 +20,6 @@ function nameHash(name: string): number {
 	let h = 0
 	for (let i = 0; i < name.length; i++) h = ((h << 5) - h + name.charCodeAt(i)) | 0
 	return h >>> 0
-}
-
-const BLOCK_PALETTE = [
-	{ Name: 'minecraft:stone_bricks' },
-	{ Name: 'minecraft:mossy_stone_bricks' },
-	{ Name: 'minecraft:cracked_stone_bricks' },
-]
-
-const SLAB_PALETTE = [
-	{ Name: 'minecraft:stone_brick_slab' },
-]
-
-function blockState(cell: NonNullable<Cell>, x: number, y: number, seed: number) {
-	const hash = ((x * 7 + y * 13 + seed * 31) >>> 0)
-	if (cell === 'full') return BLOCK_PALETTE[hash % BLOCK_PALETTE.length]
-	const slab = SLAB_PALETTE[hash % SLAB_PALETTE.length]
-	const type = cell === 'slab_top' ? 'top' : 'bottom'
-	return { Name: slab.Name, Properties: { type } }
 }
 
 function cellInteractionHeight(cell: NonNullable<Cell>): number {
@@ -67,44 +51,56 @@ function gridToWorld(x: number, y: number): [number, number, number] {
 	return [originX, originY + y, originZ + x]
 }
 
-const displayBase = {
-	Tags: [Tags.WALL, Tags.WALL_NEW],
-	interpolation_duration: NBT.int(WALL_TRAVEL_TICKS),
-	transformation: {
-		translation: NBT.float(arena.initialTranslation),
-		left_rotation: NBT.float([0, 0, 0, 1]),
-		scale: NBT.float([1, 1, 1]),
-		right_rotation: NBT.float([0, 0, 0, 1]),
-	},
-}
-
 function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 	const seed = nameHash(obstacle.name)
+	const tint = wallTintColor(seed)
+	const modelName = wallModelNames.get(obstacle.name)!
 
 	return MCFunction(fnName, () => {
 		execute.in(DIM).run(() => {
+			const [ox, oy, oz] = gridToWorld(0, 0)
+			const ex = ox + (widthOnX ? PATTERN_WIDTH / 2 : 0.5)
+			const ey = oy + PATTERN_HEIGHT / 2
+			const ez = oz + (widthOnX ? 0.5 : PATTERN_WIDTH / 2)
+
+			summon('minecraft:item_display', abs(ex, ey, ez), {
+				Tags: [Tags.WALL, Tags.WALL_NEW],
+				interpolation_duration: NBT.int(WALL_TRAVEL_TICKS),
+				item_display: 'none',
+				transformation: {
+					translation: NBT.float([0, 0, 0]),
+					left_rotation: NBT.float([0, 1, 0, 0]),
+					scale: NBT.float([PATTERN_WIDTH, PATTERN_HEIGHT, PATTERN_WIDTH]),
+					right_rotation: NBT.float([0, 0, 0, 1]),
+				},
+				item: {
+					id: 'minecraft:leather_horse_armor',
+					count: NBT.int(1),
+					components: {
+						'"minecraft:item_model"': modelName,
+						'"minecraft:dyed_color"': NBT.int(tint),
+					},
+				},
+			})
+
 			for (let y = 0; y < PATTERN_HEIGHT; y++) {
 				for (let x = 0; x < PATTERN_WIDTH; x++) {
 					const cell = obstacle.grid[y]?.[x]
 					if (cell == null) continue
-					const [posX, posY, posZ] = gridToWorld(x, y)
-
-					summon('minecraft:block_display', abs(posX, posY, posZ), {
-						...displayBase,
-						block_state: blockState(cell, x, y, seed),
-					})
+					const [hx, hy, hz] = gridToWorld(x, y)
 
 					if (hasHeadroom(obstacle.grid, x, y, cell)) {
-						summon('minecraft:happy_ghast', abs(posX, posY + cellInteractionYOffset(cell), posZ), {
+						summon('minecraft:happy_ghast', abs(hx, hy + cellInteractionYOffset(cell), hz), {
 							Tags: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST],
 							NoAI: NBT.byte(1),
 							NoGravity: NBT.byte(1),
 							Invulnerable: NBT.byte(1),
 							Silent: NBT.byte(1),
 							attributes: [{ id: 'minecraft:scale', base: 0.25 }],
+							active_effects: [{ id: 'minecraft:invisibility', duration: NBT.int(-1), show_particles: NBT.byte(0) }],
 						})
 					} else {
-						summon('minecraft:interaction', abs(posX, posY + cellInteractionYOffset(cell), posZ), {
+						summon('minecraft:interaction', abs(hx, hy + cellInteractionYOffset(cell), hz), {
 							Tags: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW],
 							width: NBT.float(0.5),
 							height: NBT.float(cellInteractionHeight(cell)),
@@ -267,6 +263,11 @@ export const spawnForDifficulty = [
 	buildDifficultySpawn(5),
 ]
 
-export const clearWalls = MCFunction('sections/rhythm/obstacle/clear', () => {
+const doKillWalls = MCFunction('sections/rhythm/obstacle/do_kill', () => {
 	execute.in(DIM).run.kill(Selector('@e', { tag: Tags.WALL }))
+}, { lazy: true })
+
+export const clearWalls = MCFunction('sections/rhythm/obstacle/clear', () => {
+	execute.in(DIM).run.tp(Selector('@e', { tag: Tags.WALL }), abs(0, -64, 0))
+	schedule.function(`${NAMESPACE}:sections/rhythm/obstacle/do_kill`, '1t')
 }, { lazy: true })
