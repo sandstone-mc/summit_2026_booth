@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { PROJECT_ROOT } from '../../../shared'
+import { PROJECT_ROOT } from '@shared'
 
 export interface SongConfig {
 	file: string

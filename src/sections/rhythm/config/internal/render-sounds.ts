@@ -2,7 +2,7 @@ import { Midi } from '@tonejs/midi'
 import { mkdirSync, existsSync, copyFileSync, writeFileSync, readFileSync, unlinkSync } from 'fs'
 import { join } from 'path'
 import { spawnSync } from 'child_process'
-import { NAMESPACE, PROJECT_ROOT } from '../../../shared'
+import { NAMESPACE, PROJECT_ROOT } from '@shared'
 
 const SOUNDFONT = '/usr/share/soundfonts/FluidR3_GM.sf2'
 const CACHE_DIR = join(PROJECT_ROOT, '.cache/sounds')

@@ -2,11 +2,11 @@ import { Midi } from '@tonejs/midi'
 import { fromArrayBuffer } from '@nbsjs/core'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { WALL_TRAVEL_OFFSET, WALL_SPEED } from './obstacle-pool'
-import { PARKOUR_STEP_COUNT, parkourStepIntervalForSpeed } from './parkour-paths'
+import { walls, wallMovement } from '..'
+import { PARKOUR_STEP_COUNT, parkourStepIntervalForSpeed } from '../parkour-paths'
 import { getSoundId, getSegmentSoundId, nearestDurationBucket, renderAllSounds, renderFullSongs, SEGMENT_SECS, SEGMENT_TICKS, type SoundKey, type FullSongInfo } from './render-sounds'
 import { songList } from './song-list'
-import { PROJECT_ROOT } from '../../../shared'
+import { PROJECT_ROOT } from '@shared'
 
 export interface SongNote {
 	tick: number
@@ -138,8 +138,8 @@ function parseMidi(filePath: string, displayName: string, difficulty: number, ha
 	notes.sort((a, b) => a.tick - b.tick)
 	const bpm = midi.header.tempos.length > 0 ? midi.header.tempos[0].bpm : 120
 	const durationTicks = notes.length > 0 ? notes[notes.length - 1].tick + 20 : 0
-	const stepInterval = parkourStepIntervalForSpeed(WALL_SPEED)
-	const chart = generateChart(notes, durationTicks, bpm, difficulty, WALL_TRAVEL_OFFSET, stepInterval)
+	const stepInterval = parkourStepIntervalForSpeed(walls.speed)
+	const chart = generateChart(notes, durationTicks, bpm, difficulty, wallMovement.travelOffset, stepInterval)
 
 	return { name: displayName, difficulty, notes, chart, usesNoteBlocks: false }
 }
@@ -172,8 +172,8 @@ function parseNbs(filePath: string, displayName: string, difficulty: number): So
 	const timeSignature = song.timeSignature ?? 4
 	const bpm = nbsTps * 60 / timeSignature
 	const durationTicks = notes.length > 0 ? notes[notes.length - 1].tick + 20 : 0
-	const stepInterval = parkourStepIntervalForSpeed(WALL_SPEED)
-	const chart = generateChart(notes, durationTicks, bpm, difficulty, WALL_TRAVEL_OFFSET, stepInterval)
+	const stepInterval = parkourStepIntervalForSpeed(walls.speed)
+	const chart = generateChart(notes, durationTicks, bpm, difficulty, wallMovement.travelOffset, stepInterval)
 
 	return { name: displayName, difficulty, notes, chart, usesNoteBlocks: true }
 }
