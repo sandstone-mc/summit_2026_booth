@@ -1,6 +1,6 @@
 import { functionCmd, MCFunction, Selector } from 'sandstone'
 
-import { ticking } from './shared'
+import { NAMESPACE, ticking } from './shared'
 import './version'
 import './sections/rhythm/index'
 
@@ -10,9 +10,9 @@ MCFunction('main', () => {
 })
 
 MCFunction('init_player', () => {
-	functionCmd('sandstone_summit_booth:sections/rhythm/init_player')
+	functionCmd(`${NAMESPACE}:sections/rhythm/init_player`)
 })
 
 MCFunction('clean_player', () => {
-	functionCmd('sandstone_summit_booth:sections/rhythm/clean_player')
+	functionCmd(`${NAMESPACE}:sections/rhythm/clean_player`)
 })

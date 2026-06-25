@@ -1,21 +1,16 @@
 import { _, abs, data, effect, execute, kill, MCFunction, NBT, Objective, particle, raw, schedule, Selector, summon, team, tp } from 'sandstone'
-import { arena } from '../config/arena'
-import { PATTERN_WIDTH, WALL_SPAWN_AHEAD, WALL_PASS_BEHIND } from '../config/obstacle-pool'
-import { MAP_SIZE, LANE_X, LANE_Z, LANE_WIDTH } from '../config/maps'
+import { arena } from '@rhythm/config/internal/arena'
+import { pattern, walls, map, visuals, wallMovement } from '@rhythm/config'
 import { Tags } from './state'
-import { DIM, NAMESPACE } from '../../../shared'
-
-const GLOW_COLORS = [
-	'aqua', 'blue', 'green', 'yellow', 'light_purple', 'red', 'gold', 'white',
-] as const
+import { DIMENSION, NAMESPACE } from '@shared'
 
 const GLOW_DURATION = 1
 
-const glowPick = Objective.create('ssb_glp', 'dummy')
-const glowPickScore = glowPick('$glow')
+const glowPick = Objective.create('ssb.glow_pick', 'dummy')
+const glowColorScore = glowPick('$glow')
 
 MCFunction('sections/rhythm/lane/teams_init', () => {
-	for (const color of GLOW_COLORS) {
+	for (const color of visuals.glowColors) {
 		team.add(`ssb_glow_${color}`)
 		team.modify(`ssb_glow_${color}`, 'color', color as any)
 		team.modify(`ssb_glow_${color}`, 'seeFriendlyInvisibles', false)
@@ -26,8 +21,9 @@ const laneSelector = Selector('@e', { tag: Tags.LANE })
 const fragmentSelector = Selector('@e', { tag: Tags.LANE_FRAGMENT })
 const borderSelector = Selector('@e', { tag: Tags.LANE_BORDER })
 
-const [baseX, baseY, baseZ] = [arena.playAreaMin[0], arena.playAreaMin[1], 0]
-const laneCenter = [baseX + Math.floor(PATTERN_WIDTH / 2), baseY + 1.5, baseZ] as const
+const [baseX, baseY] = [arena.playAreaMin[0], arena.playAreaMin[1]]
+const baseZ = arena.goldLine[2]
+const laneCenter = [baseX + Math.floor(pattern.width / 2), baseY + 1.5, baseZ] as const
 
 const FRAGMENT_BLOCKS = [
 	'minecraft:white_stained_glass',
@@ -60,10 +56,10 @@ const FRAGMENTS: Fragment[] = [
 ]
 
 export const spawnLaneShulkers = MCFunction('sections/rhythm/lane/spawn', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		kill(laneSelector)
 		kill(fragmentSelector)
-		for (let x = 0; x < PATTERN_WIDTH; x++) {
+		for (let x = 0; x < pattern.width; x++) {
 			summon('minecraft:shulker', abs(baseX + x, baseY, baseZ), {
 				Tags: [Tags.LANE],
 				NoAI: NBT.byte(1),
@@ -96,23 +92,18 @@ export const spawnLaneShulkers = MCFunction('sections/rhythm/lane/spawn', () => 
 	})
 }, { lazy: true })
 
-const LANE_LENGTH = WALL_SPAWN_AHEAD + WALL_PASS_BEHIND
-const LANE_Z_MID = -WALL_PASS_BEHIND + LANE_LENGTH / 2
+const LANE_Z_MID = -walls.passDistance + wallMovement.totalDistance / 2
 
 function argb(a: number, r: number, g: number, b: number) {
 	return ((a & 0xFF) << 24 | (r & 0xFF) << 16 | (g & 0xFF) << 8 | (b & 0xFF)) | 0
 }
 
-const BORDER_STRIP_COUNT = 10
-const TOTAL_HEIGHT = 1.0
-const BORDER_SCALE_Y = TOTAL_HEIGHT / (BORDER_STRIP_COUNT * 0.25)
-const BORDER_STEP = TOTAL_HEIGHT / BORDER_STRIP_COUNT
+const BORDER_SCALE_Y = visuals.border.height / (visuals.border.stripCount * 0.25)
+const BORDER_STEP = visuals.border.height / visuals.border.stripCount
 
-const BORDER_ALPHAS = Array.from({ length: BORDER_STRIP_COUNT }, (_, i) =>
-	i === BORDER_STRIP_COUNT - 1 ? 5 : Math.round(180 * (1 - i / (BORDER_STRIP_COUNT - 1)) ** 2.5)
+const BORDER_ALPHAS = Array.from({ length: visuals.border.stripCount }, (_, i) =>
+	i === visuals.border.stripCount - 1 ? 5 : Math.round(180 * (1 - i / (visuals.border.stripCount - 1)) ** 2.5)
 )
-
-const BORDER_DEFAULT_RGB: [number, number, number] = [255, 40, 40]
 
 const BORDER_COLOR_MAP: Record<string, [number, number, number]> = {
 	aqua:         [85, 255, 255],
@@ -151,30 +142,32 @@ function wallBorderNbt(stripIndex: number, bg: number, yOff: number, facing: num
 }
 
 const laneXMin = baseX
-const laneXMax = baseX + LANE_WIDTH
-const laneZMin = baseZ - LANE_Z - 2
-const laneZMax = baseZ - LANE_Z + MAP_SIZE[2] + 2
+const laneXMax = baseX + map.laneWidth
+const laneZMin = baseZ - map.laneOffset.z - 2
+const laneZMax = baseZ - map.laneOffset.z + map.size[2] + 2
 
-const leftX = laneXMin + 0.175 - 3 / 16
-const rightX = laneXMax + 0.175 - 3 / 16
+// Text display rendering offset compensation
+const TEXT_DISPLAY_OFFSET = 0.175 - 3 / 16
+const leftX = laneXMin + TEXT_DISPLAY_OFFSET
+const rightX = laneXMax + TEXT_DISPLAY_OFFSET
 const sideMidZ = (laneZMin + laneZMax) / 2
 const sideLen = laneZMax - laneZMin
 const frontMidX = (leftX + rightX) / 2
 const frontLen = rightX - leftX + 0.5
 
-const frontZ = baseZ - LANE_Z + 0.05
-const backZ = baseZ - LANE_Z + MAP_SIZE[2] + 0.5
+const frontZ = baseZ - map.laneOffset.z + 0.05
+const backZ = baseZ - map.laneOffset.z + map.size[2] + 0.5
 
 const TEXT_BASE_WIDTH = 500 * 4 / 36
 const sideScale = sideLen / TEXT_BASE_WIDTH
 const frontScale = frontLen / TEXT_BASE_WIDTH
 
 export const spawnLaneBorder = MCFunction('sections/rhythm/lane/border_spawn', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		kill(borderSelector)
 
-		for (let i = 0; i < BORDER_STRIP_COUNT; i++) {
-			const bg = argb(BORDER_ALPHAS[i], ...BORDER_DEFAULT_RGB)
+		for (let i = 0; i < visuals.border.stripCount; i++) {
+			const bg = argb(BORDER_ALPHAS[i], ...visuals.border.defaultColor)
 			const yOff = i * BORDER_STEP - BORDER_STEP / 2
 
 			summon('minecraft:text_display', abs(leftX, baseY + 1, sideMidZ),
@@ -198,127 +191,76 @@ export const spawnLaneBorder = MCFunction('sections/rhythm/lane/border_spawn', (
 	})
 }, { runOnLoad: true })
 
-const borderRippleCounter = Objective.create('ssb_brip', 'dummy')
+const borderRippleCounter = Objective.create('ssb.border_ripple', 'dummy')
 const rippleStep = borderRippleCounter('$step')
 const resetStep = borderRippleCounter('$rstep')
-const rippleColorIdx = borderRippleCounter('$color')
+const borderColorIndex = borderRippleCounter('$color')
 
-const borderColorFns = GLOW_COLORS.map((color, ci) => {
+const borderColorFns = visuals.glowColors.map((color, ci) => {
 	const [r, g, b] = BORDER_COLOR_MAP[color]
-	return Array.from({ length: BORDER_STRIP_COUNT }, (_, si) => {
+	return Array.from({ length: visuals.border.stripCount }, (_, si) => {
 		const bg = argb(BORDER_ALPHAS[si], r, g, b)
 		const sel = Selector('@e', { tag: [Tags.LANE_BORDER, borderStripTag(si)] })
 		return MCFunction(`sections/rhythm/lane/border_c${ci}_s${si}`, () => {
-			execute.in(DIM).as(sel).run(() => {
+			execute.in(DIMENSION).as(sel).run(() => {
 				data.merge.entity('@s', { background: NBT.int(bg) })
 			})
 		}, { lazy: true })
 	})
 })
 
-const borderResetFns = Array.from({ length: BORDER_STRIP_COUNT }, (_, si) => {
-	const bg = argb(BORDER_ALPHAS[si], ...BORDER_DEFAULT_RGB)
+const borderResetFns = Array.from({ length: visuals.border.stripCount }, (_, si) => {
+	const bg = argb(BORDER_ALPHAS[si], ...visuals.border.defaultColor)
 	const sel = Selector('@e', { tag: [Tags.LANE_BORDER, borderStripTag(si)] })
 	return MCFunction(`sections/rhythm/lane/border_reset_s${si}`, () => {
-		execute.in(DIM).as(sel).run(() => {
+		execute.in(DIMENSION).as(sel).run(() => {
 			data.merge.entity('@s', { background: NBT.int(bg) })
 		})
 	}, { lazy: true })
 })
 
-// --- Ripple animation (commented out, kept for future use) ---
-// const STRIPS_PER_TICK = 2
-// const RIPPLE_TICKS = Math.ceil(BORDER_STRIP_COUNT / STRIPS_PER_TICK)
-//
-// function buildColorChain(stripIndex: number) {
-// 	let cc = _.if(rippleColorIdx.equalTo(0), () => borderColorFns[0][stripIndex]())
-// 	for (let c = 1; c < GLOW_COLORS.length; c++) {
-// 		const ci = c
-// 		cc = cc.elseIf(rippleColorIdx.equalTo(ci), () => borderColorFns[ci][stripIndex]())
-// 	}
-// }
-//
-// const borderRippleTick = MCFunction('sections/rhythm/lane/border_ripple', () => {
-// 	for (let pair = 0; pair < RIPPLE_TICKS; pair++) {
-// 		const firstStrip = pair * STRIPS_PER_TICK
-// 		_.if(rippleStep.equalTo(pair), () => {
-// 			for (let o = 0; o < STRIPS_PER_TICK && firstStrip + o < BORDER_STRIP_COUNT; o++) {
-// 				buildColorChain(firstStrip + o)
-// 			}
-// 		})
-// 	}
-// 	rippleStep.add(1)
-// 	_.if(rippleStep.lessThan(RIPPLE_TICKS), () => {
-// 		schedule.function(`${NAMESPACE}:sections/rhythm/lane/border_ripple`, '1t')
-// 	})
-// }, { lazy: true })
-//
-// const borderResetRippleTick = MCFunction('sections/rhythm/lane/border_reset_ripple', () => {
-// 	for (let pair = 0; pair < RIPPLE_TICKS; pair++) {
-// 		const firstStrip = pair * STRIPS_PER_TICK
-// 		_.if(resetStep.equalTo(pair), () => {
-// 			for (let o = 0; o < STRIPS_PER_TICK && firstStrip + o < BORDER_STRIP_COUNT; o++) {
-// 				borderResetFns[firstStrip + o]()
-// 			}
-// 		})
-// 	}
-// 	resetStep.add(1)
-// 	_.if(resetStep.lessThan(RIPPLE_TICKS), () => {
-// 		schedule.function(`${NAMESPACE}:sections/rhythm/lane/border_reset_ripple`, '1t')
-// 	})
-// }, { lazy: true })
-//
-// export function triggerBorderRipple() {
-// 	rippleStep.set(0)
-// 	rippleColorIdx.set(glowPickScore)
-// 	borderRippleTick()
-// 	resetStep.set(0)
-// 	schedule.function(`${NAMESPACE}:sections/rhythm/lane/border_reset_ripple`, `${RIPPLE_TICKS + 3}t`)
-// }
-// --- End ripple animation ---
-
 const borderInstantColor = MCFunction('sections/rhythm/lane/border_color_set', () => {
-	for (let si = 0; si < BORDER_STRIP_COUNT; si++) {
-		let cc = _.if(rippleColorIdx.equalTo(0), () => borderColorFns[0][si]())
-		for (let c = 1; c < GLOW_COLORS.length; c++) {
+	for (let si = 0; si < visuals.border.stripCount; si++) {
+		let cc = _.if(borderColorIndex.equalTo(0), () => borderColorFns[0][si]())
+		for (let c = 1; c < visuals.glowColors.length; c++) {
 			const ci = c
-			cc = cc.elseIf(rippleColorIdx.equalTo(ci), () => borderColorFns[ci][si]())
+			cc = cc.elseIf(borderColorIndex.equalTo(ci), () => borderColorFns[ci][si]())
 		}
 	}
 }, { lazy: true })
 
 export function triggerBorderRipple() {
-	rippleColorIdx.set(glowPickScore)
+	borderColorIndex.set(glowColorScore)
 	borderInstantColor()
 }
 
 const doKillLane = MCFunction('sections/rhythm/lane/do_kill', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		kill(laneSelector)
 		kill(fragmentSelector)
 	})
 }, { lazy: true })
 
 export const clearLaneBorder = MCFunction('sections/rhythm/lane/border_clear', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		tp(borderSelector, abs(0, -64, 0))
 	})
 	schedule.function(`${NAMESPACE}:sections/rhythm/lane/border_do_kill`, '1t')
 }, { lazy: true })
 
 const doKillBorder = MCFunction('sections/rhythm/lane/border_do_kill', () => {
-	execute.in(DIM).run.kill(borderSelector)
+	execute.in(DIMENSION).run.kill(borderSelector)
 }, { lazy: true })
 
 export const clearLaneShulkers = MCFunction('sections/rhythm/lane/clear', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		tp(laneSelector, abs(0, -64, 0))
 		tp(fragmentSelector, abs(0, -64, 0))
 	})
 	schedule.function(`${NAMESPACE}:sections/rhythm/lane/do_kill`, '1t')
 }, { lazy: true })
 
-const colorFns = GLOW_COLORS.map((color) =>
+const colorFns = visuals.glowColors.map((color) =>
 	MCFunction(`sections/rhythm/lane/glow_${color}`, () => {
 		team.join(`ssb_glow_${color}`, laneSelector)
 		execute.as(laneSelector).run(() => {
@@ -327,15 +269,12 @@ const colorFns = GLOW_COLORS.map((color) =>
 	}, { lazy: true })
 )
 
-const PULSE_SCALE = 0.55
-const REST_SCALE = 0.2
-
 const pulseUp = MCFunction('sections/rhythm/lane/pulse_up', () => {
-	execute.in(DIM).as(fragmentSelector).run(() => {
+	execute.in(DIMENSION).as(fragmentSelector).run(() => {
 		data.merge.entity('@s', {
 			transformation: {
-				scale: NBT.float([PULSE_SCALE, PULSE_SCALE, PULSE_SCALE]),
-				translation: NBT.float([-PULSE_SCALE / 2, -PULSE_SCALE / 2, -PULSE_SCALE / 2]),
+				scale: NBT.float([visuals.pulse.activeScale, visuals.pulse.activeScale, visuals.pulse.activeScale]),
+				translation: NBT.float([-visuals.pulse.activeScale / 2, -visuals.pulse.activeScale / 2, -visuals.pulse.activeScale / 2]),
 			},
 			start_interpolation: NBT.int(-1),
 			interpolation_duration: NBT.int(3),
@@ -345,11 +284,11 @@ const pulseUp = MCFunction('sections/rhythm/lane/pulse_up', () => {
 }, { lazy: true })
 
 const pulseDown = MCFunction('sections/rhythm/lane/pulse_down', () => {
-	execute.in(DIM).as(fragmentSelector).run(() => {
+	execute.in(DIMENSION).as(fragmentSelector).run(() => {
 		data.merge.entity('@s', {
 			transformation: {
-				scale: NBT.float([REST_SCALE, REST_SCALE, REST_SCALE]),
-				translation: NBT.float([-REST_SCALE / 2, -REST_SCALE / 2, -REST_SCALE / 2]),
+				scale: NBT.float([visuals.pulse.restScale, visuals.pulse.restScale, visuals.pulse.restScale]),
+				translation: NBT.float([-visuals.pulse.restScale / 2, -visuals.pulse.restScale / 2, -visuals.pulse.restScale / 2]),
 			},
 			start_interpolation: NBT.int(-1),
 			interpolation_duration: NBT.int(6),
@@ -358,19 +297,19 @@ const pulseDown = MCFunction('sections/rhythm/lane/pulse_down', () => {
 }, { lazy: true })
 
 export const beatLaneEffect = MCFunction('sections/rhythm/lane/beat', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const prevColor = glowPick('$prev')
-		prevColor.set(glowPickScore)
-		execute.store.result.score(glowPickScore.target, glowPickScore.objective)
-			.run.random.value([0, GLOW_COLORS.length - 2], 'glow_pick')
-		_.if(glowPickScore.greaterOrEqualThan(prevColor), () => {
-			glowPickScore.add(1)
+		prevColor.set(glowColorScore)
+		execute.store.result.score(glowColorScore.target, glowColorScore.objective)
+			.run.random.value([0, visuals.glowColors.length - 2], 'glow_pick')
+		_.if(glowColorScore.greaterOrEqualThan(prevColor), () => {
+			glowColorScore.add(1)
 		})
 
-		let chain = _.if(glowPickScore.equalTo(0), () => colorFns[0]())
+		let chain = _.if(glowColorScore.equalTo(0), () => colorFns[0]())
 		for (let i = 1; i < colorFns.length; i++) {
 			const idx = i
-			chain = chain.elseIf(glowPickScore.equalTo(idx), () => colorFns[idx]())
+			chain = chain.elseIf(glowColorScore.equalTo(idx), () => colorFns[idx]())
 		}
 
 		particle('minecraft:note', abs(laneCenter[0], laneCenter[1], laneCenter[2]), [2.5, 0.3, 0.3], 0, 6)

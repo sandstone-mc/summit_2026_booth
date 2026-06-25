@@ -1,24 +1,25 @@
 import { _, abs, attribute, effect, execute, forceload, gamemode, gamerule, MCFunction, NBT, Objective, playsound, Selector, tag, team, title, tp } from 'sandstone'
-import { arena } from '../config/arena'
-import { songCount, songDurations } from '../config/songs'
-import { GameStatus, allPlayers, alivePlayers, status, songSelect } from './state'
+import { arena } from '@rhythm/config/internal/arena'
+import { songCount, songDurations } from '@rhythm/config/internal/songs'
+import { GameStatus, Tags, allPlayers, alivePlayers, status, songSelect } from './state'
 import { wallLives } from './walls/collision'
 import { points, combo, finalScore } from './scoring'
 import { livesSetting, updateSettingsPanel } from './settings'
 import { playSong, scheduleWalls } from './songs'
 import { spawnLaneShulkers, spawnLaneBorder } from './lane-effects'
-import { DIM, state } from '../../../shared'
+import { DIMENSION, state } from '@shared'
+import { gameplay } from '@rhythm/config'
 
 MCFunction('sections/rhythm/active/nocollide_init', () => {
-	team.add('ssb.rhythm.nocollide')
-	team.modify('ssb.rhythm.nocollide', 'collisionRule', 'never')
-	team.modify('ssb.rhythm.nocollide', 'seeFriendlyInvisibles', false)
+	team.add(Tags.NO_COLLIDE)
+	team.modify(Tags.NO_COLLIDE, 'collisionRule', 'never')
+	team.modify(Tags.NO_COLLIDE, 'seeFriendlyInvisibles', false)
 }, { runOnLoad: true })
 
 export const timer = state('$timer')
 
 MCFunction('sections/rhythm/active/forceload', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const [fxMin, fzMin] = arena.forceloadMin
 		const [fxMax, fzMax] = arena.forceloadMax
 		forceload.add(abs(fxMin, fzMin), abs(fxMax, fzMax))
@@ -28,13 +29,13 @@ MCFunction('sections/rhythm/active/forceload', () => {
 export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	status.set(GameStatus.ACTIVE)
 
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const [x, y, z] = arena.playerSpawn
 		tp(allPlayers, abs(x, y, z), [`${arena.playerYaw}`, '0'])
 	})
 
 	gamemode('adventure', allPlayers)
-	team.join('ssb.rhythm.nocollide', allPlayers)
+	team.join(Tags.NO_COLLIDE, allPlayers)
 
 	execute.as(allPlayers).run(() => {
 		attribute("@s", "minecraft:fall_damage_multiplier").baseSet(0)

@@ -3,9 +3,8 @@ import { GameStatus, Tags, allPlayers, alivePlayers, status } from './state'
 import { beatFlag } from './walls/ticking'
 import { wallLives } from './walls/collision'
 import { beatLaneEffect } from './lane-effects'
-import { DIM } from '../../../shared'
-
-const COMBO_BONUS = 5
+import { DIMENSION } from '@shared'
+import { gameplay } from '@rhythm/config'
 
 export const points = Objective.create('rhythm.points', 'dummy')
 export const combo = Objective.create('rhythm.combo', 'dummy')
@@ -15,7 +14,7 @@ const comboMod = combo('$mod')
 const comboDiv = combo('$div')
 
 MCFunction('sections/rhythm/scoring/init', () => {
-	comboDiv.set(10)
+	comboDiv.set(gameplay.scoring.comboDivisor)
 }, { runOnLoad: true })
 
 MCFunction('sections/rhythm/scoring/tick', () => {
@@ -37,7 +36,7 @@ MCFunction('sections/rhythm/scoring/tick', () => {
 			beatFlag.set(0)
 			beatLaneEffect()
 
-			execute.in(DIM).as(Selector('@a', {
+			execute.in(DIMENSION).as(Selector('@a', {
 				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.HIT_TICK}`],
 			})).at('@s').run(() => {
 				points('@s').add(1)
@@ -46,20 +45,20 @@ MCFunction('sections/rhythm/scoring/tick', () => {
 				comboMod.set(combo('@s'))
 				comboMod.modulo(comboDiv)
 				_.if(_.and(comboMod.equalTo(0), combo('@s').greaterThan(0)), () => {
-					points('@s').add(COMBO_BONUS)
+					points('@s').add(gameplay.scoring.comboBonus)
 				})
 
-				_.if(combo('@s').equalTo(50), () => {
+				_.if(combo('@s').equalTo(gameplay.scoring.milestones[2]), () => {
 					title('@s').title({ text: '' })
-					title('@s').subtitle({ text: '50x COMBO!', color: 'light_purple', bold: true })
+					title('@s').subtitle({ text: `${gameplay.scoring.milestones[2]}x COMBO!`, color: 'light_purple', bold: true })
 					playsound('minecraft:item.totem.use', 'master', '@s')
-				}).elseIf(combo('@s').equalTo(25), () => {
+				}).elseIf(combo('@s').equalTo(gameplay.scoring.milestones[1]), () => {
 					title('@s').title({ text: '' })
-					title('@s').subtitle({ text: '25x COMBO!', color: 'aqua', bold: true })
+					title('@s').subtitle({ text: `${gameplay.scoring.milestones[1]}x COMBO!`, color: 'aqua', bold: true })
 					playsound('minecraft:block.enchantment_table.use', 'master', '@s')
-				}).elseIf(combo('@s').equalTo(10), () => {
+				}).elseIf(combo('@s').equalTo(gameplay.scoring.milestones[0]), () => {
 					title('@s').title({ text: '' })
-					title('@s').subtitle({ text: '10x COMBO!', color: 'yellow', bold: true })
+					title('@s').subtitle({ text: `${gameplay.scoring.milestones[0]}x COMBO!`, color: 'yellow', bold: true })
 					playsound('minecraft:entity.player.levelup', 'master', '@s')
 				})
 			})
@@ -68,17 +67,17 @@ MCFunction('sections/rhythm/scoring/tick', () => {
 }, { runEveryTick: true })
 
 const tempCombo = Objective.create('rhythm.combo_temp', 'dummy')
-const MAX_COMBO = 50
 
 export const computeScores = MCFunction('sections/rhythm/scoring/compute', () => {
 	execute.as(allPlayers).run(() => {
 		tempCombo('@s').set(combo('@s'))
-		tempCombo('@s')['<'](MAX_COMBO)
-		tempCombo('@s').add(MAX_COMBO)
+		// Clamp combo to max (Sandstone's < operator via bracket notation)
+		tempCombo('@s')['<'](gameplay.scoring.maxCombo)
+		tempCombo('@s').add(gameplay.scoring.maxCombo)
 
 		finalScore('@s').set(points('@s'))
 		finalScore('@s').multiply(tempCombo('@s'))
-		finalScore('@s').divide(MAX_COMBO)
+		finalScore('@s').divide(gameplay.scoring.maxCombo)
 	})
 
 	title(allPlayers).times(10, 60, 20)

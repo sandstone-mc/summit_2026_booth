@@ -1,5 +1,5 @@
 import { MCFunction, Selector } from 'sandstone'
-import { state } from '../../../shared';
+import { state } from '@shared';
 
 export enum GameStatus {
 	WAITING,
@@ -51,6 +51,9 @@ export enum Tags {
 	UI_MAP_INT = 'ssb.ui.set.mi',
 
 	SKYBOX = 'ssb.rhythm.skybox',
+
+	LB_SELECTION = 'ssb.lb.sel',
+	NO_COLLIDE = 'ssb.rhythm.nocollide',
 }
 
 export const status = state('$status')
@@ -61,8 +64,6 @@ MCFunction('sections/rhythm/state/init', () => {
 	status.set(GameStatus.WAITING)
 	songSelect.set(0)
 }, { runOnLoad: true })
-
-export const livesDefault = 3
 
 export const mapSelect = state('$map_select')
 

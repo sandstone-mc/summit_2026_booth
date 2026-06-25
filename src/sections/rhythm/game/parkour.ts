@@ -1,12 +1,12 @@
 import { _, abs, execute, kill, MCFunction, NBT, Objective, playsound, scoreboard, Selector, summon, tag, title } from 'sandstone'
-import { WALL_TRAVEL_TICKS, WALL_REACH_TICKS, MOVE_NUMERATOR } from '../config/obstacle-pool'
-import { PARKOUR_BONUS, PARKOUR_PATH_COUNT, PARKOUR_PATHS, PARKOUR_STEP_COUNT, STEP_GLASS, STEP_LENGTHS } from '../config/parkour-paths'
-import { arena } from '../config/arena'
+import { wallMovement, walls } from '@rhythm/config'
+import { PARKOUR_BONUS, PARKOUR_PATH_COUNT, PARKOUR_PATHS, PARKOUR_STEP_COUNT, STEP_GLASS, STEP_LENGTHS } from '@rhythm/config/parkour-paths'
+import { arena } from '@rhythm/config/internal/arena'
 import { wallAge, wallDepth } from './walls/spawning'
 import { wallLives, wallHitCooldown } from './walls/collision'
 import { points, combo } from './scoring'
 import { GameStatus, Tags, alivePlayers, status } from './state'
-import { DIM } from '../../../shared'
+import { DIMENSION } from '@shared'
 
 const parkour = Objective.create('rhythm.parkour')
 const pkPath = parkour('$path')
@@ -19,7 +19,7 @@ MCFunction('sections/rhythm/parkour_init', () => {
 }, { runOnLoad: true })
 
 const [originX, originY, originZ] = arena.spawnOrigin
-const widthOnX = arena.posPath === 'Pos[2]'
+const widthOnX = arena.wallsTravelAlongZ
 
 export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, step) => {
 	return MCFunction(`sections/rhythm/parkour/step_${step}`, () => {
@@ -27,9 +27,9 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 			execute.store.result.score(pkPath.target, pkPath.objective)
 				.run.random.value([0, PARKOUR_PATH_COUNT - 1], 'pk_path')
 			pkActive.set(1)
-			execute.in(DIM).as(alivePlayers).run(() => {
+			execute.in(DIMENSION).as(alivePlayers).run(() => {
 				tag('@s').add(Tags.WALL_HIT_COOLDOWN)
-				wallHitCooldown('@s').set(30)
+				wallHitCooldown('@s').set(walls.cooldownTicks)
 			})
 		}
 
@@ -58,11 +58,11 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 				translation = [ix - (platLen - 1) / 2, iy, iz]
 			}
 
-			execute.in(DIM).run(() => {
+			execute.in(DIMENSION).run(() => {
 				summon('minecraft:block_display', abs(posX, posY, posZ), {
 					Tags: [Tags.WALL, Tags.WALL_NEW, Tags.PARKOUR],
 					block_state: { Name: STEP_GLASS[step] },
-					interpolation_duration: NBT.int(WALL_TRAVEL_TICKS),
+					interpolation_duration: NBT.int(wallMovement.travelTicks),
 					transformation: {
 						translation: NBT.float(translation),
 						left_rotation: NBT.float([0, 0, 0, 1]),
@@ -84,7 +84,7 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 					})
 
 					const spacingAge = (i * 2 - (platLen - 1)) * arena.travelSign
-					const depthOffset = spacingAge * MOVE_NUMERATOR / WALL_TRAVEL_TICKS
+					const depthOffset = spacingAge * wallMovement.moveNumerator / wallMovement.travelTicks
 					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).set(depthOffset)
 					tag(Selector('@e', { tag: Tags.PARKOUR_FRESH })).remove(Tags.PARKOUR_FRESH)
 				}
@@ -100,14 +100,14 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 
 export const parkourCleanup = MCFunction('sections/rhythm/parkour/cleanup', () => {
 	pkActive.set(0)
-	execute.in(DIM).run.kill(Selector('@e', { tag: Tags.PARKOUR }))
+	execute.in(DIMENSION).run.kill(Selector('@e', { tag: Tags.PARKOUR }))
 	tag('@a').remove(Tags.PARKOUR_DONE)
 }, { lazy: true })
 
 MCFunction('sections/rhythm/parkour/tick', () => {
 	_.if(_.and(status.equalTo(GameStatus.ACTIVE), pkActive.greaterThan(0)), () => {
-		execute.in(DIM).run(() => {
-			const reach = WALL_REACH_TICKS + 2
+		execute.in(DIMENSION).run(() => {
+			const reach = wallMovement.reachTicks + 2
 			_.if(_.entity(Selector('@e', {
 				tag: Tags.PARKOUR_TRIGGER,
 				scores: { [wallAge.name]: [reach, reach] },

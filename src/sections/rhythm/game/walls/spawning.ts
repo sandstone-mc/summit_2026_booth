@@ -1,20 +1,19 @@
 import { _, abs, execute, kill, MCFunction, NBT, Objective, schedule, Selector, summon, tag, tp } from 'sandstone'
-import { PATTERN_WIDTH, PATTERN_HEIGHT, WALL_TRAVEL_TICKS, MOVE_SCALE } from '../../config/obstacle-pool'
-import { arena } from '../../config/arena'
-import { singles, groups, type Cell, type Obstacle } from '../../config/obstacles'
-import { Tags } from '../state'
-import { DIM, NAMESPACE } from '../../../../shared'
-import { wallModelNames } from '../../config/generate-wall-models'
-import { wallTintColor } from '../../config/wall-colors'
+import { pattern, wallMovement, walls, Difficulty, wallTintColor } from '@rhythm/config'
+import { arena } from '@rhythm/config/internal/arena'
+import { singles, groups, type Cell, type Obstacle } from '@rhythm/config/obstacles'
+import { Tags } from '@rhythm/game/state'
+import { DIMENSION, NAMESPACE } from '@shared'
+import { wallModelNames } from '@rhythm/config/internal/generate-wall-models'
 
 export const wallAge = Objective.create('rhythm.wall.age', 'dummy')
 export const wallDepth = Objective.create('rhythm.wall.depth', 'dummy')
 
-const wallVariable = Objective.create('rhythm.wall_variable')
+const wallPickState = Objective.create('rhythm.wall_variable')
 
-const pick = wallVariable('$pick')
-const lastGroup = wallVariable('$last')
-const groupContinue = wallVariable('$continue')
+const randomPick = wallPickState('$pick')
+const lastGroupId = wallPickState('$last')
+const shouldContinueGroup = wallPickState('$continue')
 
 function nameHash(name: string): number {
 	let h = 0
@@ -33,7 +32,7 @@ function cellInteractionYOffset(cell: NonNullable<Cell>): number {
 function hasHeadroom(grid: Cell[][], x: number, y: number, cell: NonNullable<Cell>): boolean {
 	const cellTopY = (cell === 'slab_bottom') ? y + 0.5 : y + 1.0
 	const needClearTo = cellTopY + 1.5
-	for (let gy = y + 1; gy < PATTERN_HEIGHT && gy < Math.ceil(needClearTo); gy++) {
+	for (let gy = y + 1; gy < pattern.height && gy < Math.ceil(needClearTo); gy++) {
 		const other = grid[gy]?.[x]
 		if (other == null) continue
 		const otherBottom = (other === 'slab_top') ? gy + 0.5 : gy
@@ -44,10 +43,8 @@ function hasHeadroom(grid: Cell[][], x: number, y: number, cell: NonNullable<Cel
 }
 
 const [originX, originY, originZ] = arena.spawnOrigin
-const widthOnX = arena.posPath === 'Pos[2]'
-
 function gridToWorld(x: number, y: number): [number, number, number] {
-	if (widthOnX) return [originX + x, originY + y, originZ]
+	if (arena.wallsTravelAlongZ) return [originX + x, originY + y, originZ]
 	return [originX, originY + y, originZ + x]
 }
 
@@ -57,20 +54,20 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 	const modelName = wallModelNames.get(obstacle.name)!
 
 	return MCFunction(fnName, () => {
-		execute.in(DIM).run(() => {
+		execute.in(DIMENSION).run(() => {
 			const [ox, oy, oz] = gridToWorld(0, 0)
-			const ex = ox + (widthOnX ? PATTERN_WIDTH / 2 : 0.5)
-			const ey = oy + PATTERN_HEIGHT / 2
-			const ez = oz + (widthOnX ? 0.5 : PATTERN_WIDTH / 2)
+			const ex = ox + (arena.wallsTravelAlongZ ? pattern.width / 2 : 0.5)
+			const ey = oy + pattern.height / 2
+			const ez = oz + (arena.wallsTravelAlongZ ? 0.5 : pattern.width / 2)
 
 			summon('minecraft:item_display', abs(ex, ey, ez), {
 				Tags: [Tags.WALL, Tags.WALL_NEW],
-				interpolation_duration: NBT.int(WALL_TRAVEL_TICKS),
+				interpolation_duration: NBT.int(wallMovement.travelTicks),
 				item_display: 'none',
 				transformation: {
 					translation: NBT.float([0, 0, 0]),
 					left_rotation: NBT.float([0, 1, 0, 0]),
-					scale: NBT.float([PATTERN_WIDTH, PATTERN_HEIGHT, PATTERN_WIDTH]),
+					scale: NBT.float([pattern.width, pattern.height, pattern.width]),
 					right_rotation: NBT.float([0, 0, 0, 1]),
 				},
 				item: {
@@ -83,8 +80,8 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 				},
 			})
 
-			for (let y = 0; y < PATTERN_HEIGHT; y++) {
-				for (let x = 0; x < PATTERN_WIDTH; x++) {
+			for (let y = 0; y < pattern.height; y++) {
+				for (let x = 0; x < pattern.width; x++) {
 					const cell = obstacle.grid[y]?.[x]
 					if (cell == null) continue
 					const [hx, hy, hz] = gridToWorld(x, y)
@@ -121,24 +118,24 @@ interface PoolEntry {
 
 const poolEntries: PoolEntry[] = []
 
-for (let s = 0; s < singles.length; s++) {
+for (let singleIdx = 0; singleIdx < singles.length; singleIdx++) {
 	poolEntries.push({
-		difficulty: singles[s].difficulty,
+		difficulty: singles[singleIdx].difficulty,
 		groupIdx: 0,
 		weight: 1.0,
-		spawnFn: buildObstacleSpawn(singles[s], `sections/rhythm/obstacle/s${s}`),
+		spawnFn: buildObstacleSpawn(singles[singleIdx], `sections/rhythm/obstacle/s${singleIdx}`),
 	})
 }
 
-for (let g = 0; g < groups.length; g++) {
-	const group = groups[g]
-	const groupIdx1 = g + 1
-	for (let m = 0; m < group.obstacles.length; m++) {
+for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
+	const group = groups[groupIdx]
+	const groupIdx1 = groupIdx + 1
+	for (let memberIdx = 0; memberIdx < group.obstacles.length; memberIdx++) {
 		poolEntries.push({
-			difficulty: group.obstacles[m].difficulty,
+			difficulty: group.obstacles[memberIdx].difficulty,
 			groupIdx: groupIdx1,
 			weight: 1.0,
-			spawnFn: buildObstacleSpawn(group.obstacles[m], `sections/rhythm/obstacle/g${g}_m${m}`),
+			spawnFn: buildObstacleSpawn(group.obstacles[memberIdx], `sections/rhythm/obstacle/g${groupIdx}_m${memberIdx}`),
 		})
 	}
 }
@@ -160,37 +157,39 @@ const groupDispatchFns: (() => void)[] = groupIdxList.map((gIdx, gi) => {
 		if (members.length === 1) {
 			poolEntries[members[0]].spawnFn()
 		} else {
-			execute.store.result.score(pick.target, pick.objective)
+			execute.store.result.score(randomPick.target, randomPick.objective)
 				.run.random.value([0, members.length - 1], 'wall_pick')
-			let chain = _.if(pick.equalTo(0), () => poolEntries[members[0]].spawnFn())
-			for (let m = 1; m < members.length; m++) {
-				const mi = m
-				chain = chain.elseIf(pick.equalTo(mi), () => poolEntries[members[mi]].spawnFn())
+			let chain = _.if(randomPick.equalTo(0), () => poolEntries[members[0]].spawnFn())
+			for (let memberIdx = 1; memberIdx < members.length; memberIdx++) {
+				const mi = memberIdx
+				chain = chain.elseIf(randomPick.equalTo(mi), () => poolEntries[members[mi]].spawnFn())
 			}
 		}
 	}, { lazy: true })
 })
 
-const DIFFICULTY_WEIGHTS: Record<number, Record<number, number>> = {
-	1: { 1: 30, 2: 40, 3: 20, 4: 10, 5: 0 },
-	2: { 1: 10, 2: 25, 3: 40, 4: 20, 5: 5 },
-	3: { 1: 5, 2: 10, 3: 25, 4: 40, 5: 20 },
-	4: { 1: 0, 2: 5, 3: 15, 4: 35, 5: 45 },
-	5: { 1: 0, 2: 0, 3: 10, 4: 30, 5: 60 },
+const DIFFICULTY_WEIGHTS: Record<Difficulty, Record<Difficulty, number>> = {
+	[Difficulty.EASY]:   { [Difficulty.EASY]: 30, [Difficulty.NORMAL]: 40, [Difficulty.HARD]: 20, [Difficulty.EXPERT]: 10, [Difficulty.MASTER]: 0 },
+	[Difficulty.NORMAL]: { [Difficulty.EASY]: 10, [Difficulty.NORMAL]: 25, [Difficulty.HARD]: 40, [Difficulty.EXPERT]: 20, [Difficulty.MASTER]: 5 },
+	[Difficulty.HARD]:   { [Difficulty.EASY]: 5,  [Difficulty.NORMAL]: 10, [Difficulty.HARD]: 25, [Difficulty.EXPERT]: 40, [Difficulty.MASTER]: 20 },
+	[Difficulty.EXPERT]: { [Difficulty.EASY]: 0,  [Difficulty.NORMAL]: 5,  [Difficulty.HARD]: 15, [Difficulty.EXPERT]: 35, [Difficulty.MASTER]: 45 },
+	[Difficulty.MASTER]: { [Difficulty.EASY]: 0,  [Difficulty.NORMAL]: 0,  [Difficulty.HARD]: 10, [Difficulty.EXPERT]: 30, [Difficulty.MASTER]: 60 },
 }
 
-const entriesByDifficulty: Record<number, number[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] }
+const entriesByDifficulty: Record<Difficulty, number[]> = {
+	[Difficulty.EASY]: [], [Difficulty.NORMAL]: [], [Difficulty.HARD]: [], [Difficulty.EXPERT]: [], [Difficulty.MASTER]: [],
+}
 for (let i = 0; i < poolEntries.length; i++) {
-	const d = poolEntries[i].difficulty
-	if (entriesByDifficulty[d]) entriesByDifficulty[d].push(i)
+	const difficultyLevel = poolEntries[i].difficulty as Difficulty
+	if (entriesByDifficulty[difficultyLevel]) entriesByDifficulty[difficultyLevel].push(i)
 }
 
-function buildWeightedPool(songDifficulty: number): number[] {
-	const weights = DIFFICULTY_WEIGHTS[songDifficulty] ?? DIFFICULTY_WEIGHTS[3]
+function buildWeightedPool(songDifficulty: Difficulty): number[] {
+	const weights = DIFFICULTY_WEIGHTS[songDifficulty] ?? DIFFICULTY_WEIGHTS[Difficulty.HARD]
 	const pool: number[] = []
-	for (let tier = 1; tier <= 5; tier++) {
-		const tierEntries = entriesByDifficulty[tier]
-		const tierWeight = weights[tier]
+	for (let tier = Difficulty.EASY as number; tier <= Difficulty.MASTER; tier++) {
+		const tierEntries = entriesByDifficulty[tier as Difficulty]
+		const tierWeight = weights[tier as Difficulty]
 		if (tierWeight === 0 || tierEntries.length === 0) continue
 		const baseCount = Math.max(1, Math.round(tierWeight / tierEntries.length))
 		for (const entryIdx of tierEntries) {
@@ -201,7 +200,7 @@ function buildWeightedPool(songDifficulty: number): number[] {
 	return pool.length === 0 ? Array.from({ length: poolEntries.length }, (_, i) => i) : pool
 }
 
-function buildDifficultySpawn(songDifficulty: number) {
+function buildDifficultySpawn(songDifficulty: Difficulty) {
 	if (poolEntries.length === 0) return MCFunction(`sections/rhythm/obstacle/spawn_d${songDifficulty}`, () => {}, { lazy: true })
 
 	const pool = buildWeightedPool(songDifficulty)
@@ -212,42 +211,42 @@ function buildDifficultySpawn(songDifficulty: number) {
 	}
 
 	return MCFunction(`sections/rhythm/obstacle/spawn_d${songDifficulty}`, () => {
-		groupContinue.set(0)
+		shouldContinueGroup.set(0)
 
 		if (groupDispatchFns.length > 0) {
-			_.if(lastGroup.greaterThan(0), () => {
-				execute.store.result.score(pick.target, pick.objective)
+			_.if(lastGroupId.greaterThan(0), () => {
+				execute.store.result.score(randomPick.target, randomPick.objective)
 					.run.random.value([0, 99], 'wall_pick')
-				_.if(pick.lessThan(70), () => {
+				_.if(randomPick.lessThan(walls.groupContinuePercent), () => {
 					if (groupIdxList.length === 1) {
 						groupDispatchFns[0]()
 					} else {
-						let chain = _.if(lastGroup.equalTo(groupIdxList[0]), () => groupDispatchFns[0]())
-						for (let g = 1; g < groupIdxList.length; g++) {
-							const gi = g
-							chain = chain.elseIf(lastGroup.equalTo(groupIdxList[gi]), () => groupDispatchFns[gi]())
+						let chain = _.if(lastGroupId.equalTo(groupIdxList[0]), () => groupDispatchFns[0]())
+						for (let groupIdx = 1; groupIdx < groupIdxList.length; groupIdx++) {
+							const gi = groupIdx
+							chain = chain.elseIf(lastGroupId.equalTo(groupIdxList[gi]), () => groupDispatchFns[gi]())
 						}
 					}
-					groupContinue.set(1)
+					shouldContinueGroup.set(1)
 				}).else(() => {
-					lastGroup.set(0)
+					lastGroupId.set(0)
 				})
 			})
 		}
 
-		_.if(groupContinue.equalTo(0), () => {
-			execute.store.result.score(pick.target, pick.objective)
+		_.if(shouldContinueGroup.equalTo(0), () => {
+			execute.store.result.score(randomPick.target, randomPick.objective)
 				.run.random.value([0, sorted.length - 1], 'wall_pick')
 			if (ranges.length > 0) {
-				let chain = _.if(pick.greaterOrEqualThan(ranges[ranges.length - 1].start), () => {
+				let chain = _.if(randomPick.greaterOrEqualThan(ranges[ranges.length - 1].start), () => {
 					poolEntries[ranges[ranges.length - 1].entryIdx].spawnFn()
-					lastGroup.set(poolEntries[ranges[ranges.length - 1].entryIdx].groupIdx)
+					lastGroupId.set(poolEntries[ranges[ranges.length - 1].entryIdx].groupIdx)
 				})
 				for (let i = ranges.length - 2; i >= 0; i--) {
 					const r = ranges[i]
-					chain = chain.elseIf(pick.greaterOrEqualThan(r.start), () => {
+					chain = chain.elseIf(randomPick.greaterOrEqualThan(r.start), () => {
 						poolEntries[r.entryIdx].spawnFn()
-						lastGroup.set(poolEntries[r.entryIdx].groupIdx)
+						lastGroupId.set(poolEntries[r.entryIdx].groupIdx)
 					})
 				}
 			}
@@ -256,18 +255,18 @@ function buildDifficultySpawn(songDifficulty: number) {
 }
 
 export const spawnForDifficulty = [
-	buildDifficultySpawn(1),
-	buildDifficultySpawn(2),
-	buildDifficultySpawn(3),
-	buildDifficultySpawn(4),
-	buildDifficultySpawn(5),
+	buildDifficultySpawn(Difficulty.EASY),
+	buildDifficultySpawn(Difficulty.NORMAL),
+	buildDifficultySpawn(Difficulty.HARD),
+	buildDifficultySpawn(Difficulty.EXPERT),
+	buildDifficultySpawn(Difficulty.MASTER),
 ]
 
 const doKillWalls = MCFunction('sections/rhythm/obstacle/do_kill', () => {
-	execute.in(DIM).run.kill(Selector('@e', { tag: Tags.WALL }))
+	execute.in(DIMENSION).run.kill(Selector('@e', { tag: Tags.WALL }))
 }, { lazy: true })
 
 export const clearWalls = MCFunction('sections/rhythm/obstacle/clear', () => {
-	execute.in(DIM).run.tp(Selector('@e', { tag: Tags.WALL }), abs(0, -64, 0))
+	execute.in(DIMENSION).run.tp(Selector('@e', { tag: Tags.WALL }), abs(0, -64, 0))
 	schedule.function(`${NAMESPACE}:sections/rhythm/obstacle/do_kill`, '1t')
 }, { lazy: true })

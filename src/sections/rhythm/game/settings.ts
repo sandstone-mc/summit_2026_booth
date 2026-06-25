@@ -1,30 +1,28 @@
 import { _, advancement, Advancement, data, execute, MCFunction, playsound, Selector, kill, tag } from 'sandstone'
-import { songCount, songNames } from '../config/songs'
-import { mapCount, mapNames } from '../config/maps'
-import { SETTINGS, PADDING, MAX_NAME_LEN, RULER, SCROLL_SPEED } from '../config/panels'
+import { songCount, songNames } from '@rhythm/config/internal/songs'
+import { mapCount, mapNames } from '@rhythm/config/internal/maps'
+import { panels, gameplay } from '@rhythm/config'
 import { GameStatus, Tags, status, songSelect, mapSelect } from './state'
 import { startGame, cancelStart } from './start'
 import { placeMap, clearMap, spawnSkybox } from './arena-map'
-import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount } from '../hologram'
-import { DIM, NAMESPACE, state } from '../../../shared'
+import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount } from '@rhythm/hologram'
+import { DIMENSION, NAMESPACE, state } from '@shared'
 
-export const livesOptions = [1, 3, 5] as const
 export const livesSetting = state('$lives')
 const livesIdx = state('$lives_idx')
 
-const T = Tags
 const TOTAL_LINES = 10
 
-const panelSel = Selector('@e', { tag: T.UI_SETTINGS_TXT, limit: 1 })
+const panelSel = Selector('@e', { tag: Tags.UI_SETTINGS_TXT, limit: 1 })
 
 const scrollPos = state('$scroll_set')
 const scrollTimer = state('$scroll_t')
 
 function clampLives(livesI: number): string {
-	const hearts = '❤'.repeat(livesOptions[livesI])
-	const val = `${hearts} ${livesOptions[livesI]}`
-	if (val.length < MAX_NAME_LEN) {
-		const total = MAX_NAME_LEN - val.length
+	const hearts = '❤'.repeat(gameplay.lives.options[livesI])
+	const val = `${hearts} ${gameplay.lives.options[livesI]}`
+	if (val.length < panels.maxNameLength) {
+		const total = panels.maxNameLength - val.length
 		const left = Math.floor(total / 2)
 		const right = total - left
 		return ' '.repeat(left) + val + ' '.repeat(right)
@@ -33,35 +31,33 @@ function clampLives(livesI: number): string {
 }
 
 function settingsText(songIdx: number, livesI: number, mapIdx: number, cancel: boolean, songNameOverride?: string): any[] {
-	const P = PADDING
 	const sName = songNameOverride ?? clampName(songNames[songIdx] ?? 'None')
 	const mName = mapCount > 0 ? clampName(mapNames[mapIdx] ?? 'None') : clampName('No maps')
 	const lName = clampLives(livesI)
 	return [
-		{ text: `${P}⚙ `, color: 'gray' }, { text: `SETTINGS${P}`, color: 'white', bold: true },
+		{ text: `${panels.padding}⚙ `, color: 'gray' }, { text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
 		{ text: '\n\n' },
-		{ text: `${P}♪ Song: `, color: 'gray' }, { text: `${sName}${P}`, color: 'aqua', font: 'monocraft:default' },
+		{ text: `${panels.padding}♪ Song: `, color: 'gray' }, { text: `${sName}${panels.padding}`, color: 'aqua', font: 'monocraft:default' },
 		{ text: '\n\n' },
-		{ text: `${P}  Lives: `, color: 'gray' }, { text: `${lName}${P}`, color: 'red', font: 'monocraft:default' },
+		{ text: `${panels.padding}  Lives: `, color: 'gray' }, { text: `${lName}${panels.padding}`, color: 'red', font: 'monocraft:default' },
 		{ text: '\n\n' },
-		{ text: `${P}🗺 Map: `, color: 'gray' }, { text: `${mName}${P}`, color: 'green', font: 'monocraft:default' },
+		{ text: `${panels.padding}🗺 Map: `, color: 'gray' }, { text: `${mName}${panels.padding}`, color: 'green', font: 'monocraft:default' },
 		{ text: '\n\n\n' },
 		cancel
-			? { text: `${P}✖ CANCEL${P}`, color: 'red', bold: true }
-			: { text: `${P}▶ START${P}`, color: 'green', bold: true },
-		{ text: `\n${RULER}` },
+			? { text: `${panels.padding}✖ CANCEL${panels.padding}`, color: 'red', bold: true }
+			: { text: `${panels.padding}▶ START${panels.padding}`, color: 'green', bold: true },
+		{ text: `\n${panels.ruler}` },
 	]
 }
 
 const mapMax = Math.max(mapCount, 1)
 
 function inProgressText(): any[] {
-	const P = PADDING
 	return [
-		{ text: `${P}⚙ `, color: 'gray' }, { text: `SETTINGS${P}`, color: 'white', bold: true },
+		{ text: `${panels.padding}⚙ `, color: 'gray' }, { text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
 		{ text: '\n\n\n\n' },
-		{ text: `${P}🎵 Match in progress${P}`, color: 'gold', bold: true },
-		{ text: `\n\n\n\n\n\n${RULER}` },
+		{ text: `${panels.padding}🎵 Match in progress${panels.padding}`, color: 'gold', bold: true },
+		{ text: `\n\n\n\n\n\n${panels.ruler}` },
 	]
 }
 
@@ -73,7 +69,7 @@ export const updateSettingsPanel = MCFunction('sections/rhythm/settings/update',
 	}).else(() => {
 		for (let si = 0; si < songCount; si++) {
 			_.if(songSelect.equalTo(si), () => {
-				for (let li = 0; li < livesOptions.length; li++) {
+				for (let li = 0; li < gameplay.lives.options.length; li++) {
 					_.if(livesIdx.equalTo(li), () => {
 						for (let mi = 0; mi < mapMax; mi++) {
 							_.if(mapSelect.equalTo(mi), () => {
@@ -103,7 +99,7 @@ const scrollSettingsUpdate = MCFunction('sections/rhythm/settings/scroll', () =>
 			for (let offset = 0; offset < frames; offset++) {
 				_.if(scrollPos.equalTo(offset), () => {
 					const visible = scrollFrame(name, offset)
-					for (let li = 0; li < livesOptions.length; li++) {
+					for (let li = 0; li < gameplay.lives.options.length; li++) {
 						_.if(livesIdx.equalTo(li), () => {
 							for (let mi = 0; mi < mapMax; mi++) {
 								_.if(mapSelect.equalTo(mi), () => {
@@ -127,7 +123,7 @@ Advancement('ui_song_cycle', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${T.UI_SONG_INT}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_SONG_INT}"]}` },
 			},
 		},
 	},
@@ -138,7 +134,7 @@ Advancement('ui_lives_cycle', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${T.UI_LIVES_INT}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LIVES_INT}"]}` },
 			},
 		},
 	},
@@ -149,7 +145,7 @@ Advancement('ui_map_cycle', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${T.UI_MAP_INT}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_MAP_INT}"]}` },
 			},
 		},
 	},
@@ -160,7 +156,7 @@ Advancement('ui_start_game', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${T.UI_START_INT}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_START_INT}"]}` },
 			},
 		},
 	},
@@ -180,13 +176,13 @@ const onSongCycle = MCFunction('sections/rhythm/settings/on_song', () => {
 const onLivesCycle = MCFunction('sections/rhythm/settings/on_lives', () => {
 	_.if(status.equalTo(GameStatus.WAITING), () => {
 		livesIdx.add(1)
-		_.if(livesIdx.greaterOrEqualThan(livesOptions.length), () => {
+		_.if(livesIdx.greaterOrEqualThan(gameplay.lives.options.length), () => {
 			livesIdx.set(0)
 		})
-		for (let i = 0; i < livesOptions.length; i++) {
+		for (let i = 0; i < gameplay.lives.options.length; i++) {
 			const idx = i
 			_.if(livesIdx.equalTo(idx), () => {
-				livesSetting.set(livesOptions[idx])
+				livesSetting.set(gameplay.lives.options[idx])
 			})
 		}
 		updateSettingsPanel()
@@ -243,7 +239,7 @@ MCFunction('sections/rhythm/settings/tick', () => {
 	})
 
 	scrollTimer.add(1)
-	_.if(scrollTimer.greaterOrEqualThan(SCROLL_SPEED), () => {
+	_.if(scrollTimer.greaterOrEqualThan(panels.scrollSpeed), () => {
 		scrollTimer.set(0)
 		scrollPos.add(1)
 		scrollSettingsUpdate()
@@ -251,8 +247,8 @@ MCFunction('sections/rhythm/settings/tick', () => {
 }, { runEveryTick: true })
 
 MCFunction('sections/rhythm/settings/init', () => {
-	livesSetting.set(3)
-	livesIdx.set(1)
+	livesSetting.set(gameplay.lives.default)
+	livesIdx.set(gameplay.lives.options.indexOf(gameplay.lives.default))
 	mapSelect.set(0)
 	scrollPos.set(0)
 	scrollTimer.set(0)
@@ -263,23 +259,23 @@ MCFunction('sections/rhythm/settings/load_map', () => {
 }, { runOnLoad: true })
 
 MCFunction('sections/rhythm/settings/spawn', () => {
-	execute.in(DIM).run(() => {
-		kill(Selector('@e', { tag: T.UI_SETTINGS }))
+	execute.in(DIMENSION).run(() => {
+		kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
 
-		spawnPanel(SETTINGS,
-			[T.UI_SETTINGS, T.UI_SETTINGS_TXT],
+		spawnPanel(panels.settings,
+			[Tags.UI_SETTINGS, Tags.UI_SETTINGS_TXT],
 			settingsText(0, 1, 0, false), 0)
 
-		const songY = lineY(SETTINGS, TOTAL_LINES, 2)
-		spawnClick(SETTINGS, 0, songY, [T.UI_SETTINGS, T.UI_SONG_INT], 1)
+		const songY = lineY(panels.settings, TOTAL_LINES, 2)
+		spawnClick(panels.settings, 0, songY, [Tags.UI_SETTINGS, Tags.UI_SONG_INT], 1)
 
-		const livesY = lineY(SETTINGS, TOTAL_LINES, 4)
-		spawnClick(SETTINGS, 0, livesY, [T.UI_SETTINGS, T.UI_LIVES_INT], 1)
+		const livesY = lineY(panels.settings, TOTAL_LINES, 4)
+		spawnClick(panels.settings, 0, livesY, [Tags.UI_SETTINGS, Tags.UI_LIVES_INT], 1)
 
-		const mapY = lineY(SETTINGS, TOTAL_LINES, 6)
-		spawnClick(SETTINGS, 0, mapY, [T.UI_SETTINGS, T.UI_MAP_INT], 1)
+		const mapY = lineY(panels.settings, TOTAL_LINES, 6)
+		spawnClick(panels.settings, 0, mapY, [Tags.UI_SETTINGS, Tags.UI_MAP_INT], 1)
 
-		const startY = lineY(SETTINGS, TOTAL_LINES, 9)
-		spawnClick(SETTINGS, 0, startY, [T.UI_SETTINGS, T.UI_START_INT], 1)
+		const startY = lineY(panels.settings, TOTAL_LINES, 9)
+		spawnClick(panels.settings, 0, startY, [Tags.UI_SETTINGS, Tags.UI_START_INT], 1)
 	})
 }, { runOnLoad: true })

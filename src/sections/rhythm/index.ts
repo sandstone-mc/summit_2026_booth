@@ -1,6 +1,6 @@
 import { MCFunction, title } from 'sandstone'
 import { songSelect } from './game/state'
-import { songNames } from './config/songs'
+import { songNames } from './config/internal/songs'
 import { spawnSkybox } from './game/arena-map'
 
 import './game/state'

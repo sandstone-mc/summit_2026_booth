@@ -7,7 +7,7 @@ import { parkourCleanup } from './parkour'
 import { clearLaneShulkers } from './lane-effects'
 import { saveLeaderboard } from './leaderboard'
 import { updateSettingsPanel } from './settings'
-import { Positions, DIM, NAMESPACE } from '../../../shared'
+import { Positions, DIMENSION, NAMESPACE } from '@shared'
 import { timer } from './active'
 
 MCFunction('sections/rhythm/timer/tick', () => {
@@ -31,13 +31,13 @@ export const endGame = MCFunction('sections/rhythm/end/run', () => {
 }, { lazy: true })
 
 const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		clearWalls()
 		parkourCleanup()
 	})
 	clearLaneShulkers()
 
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const [x, y, z] = Positions.BOOTH_RETURN
 		tp(allPlayers, abs(x, y, z))
 	})

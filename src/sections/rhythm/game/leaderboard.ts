@@ -1,14 +1,12 @@
 import { _, advancement, Advancement, data, execute, MCFunction, Objective, scoreboard, Selector, kill, tag } from 'sandstone'
-import { songCount, songNames } from '../config/songs'
-import { LEADERBOARD, PADDING, RULER, SCROLL_SPEED } from '../config/panels'
+import { songCount, songNames } from '@rhythm/config/internal/songs'
+import { panels, leaderboard as lbConfig } from '@rhythm/config'
 import { GameStatus, Tags, status, songSelect, lbSongView, lbCatView, allPlayers } from './state'
 import { finalScore } from './scoring'
 import { wallLives } from './walls/collision'
 import { livesSetting } from './settings'
-import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount } from '../hologram'
-import { DIM, NAMESPACE, state } from '../../../shared'
-
-const T = Tags
+import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount } from '@rhythm/hologram'
+import { DIMENSION, NAMESPACE, state } from '@shared'
 
 const lbBest: ReturnType<typeof Objective.create>[] = []
 const lbNoDeath: ReturnType<typeof Objective.create>[] = []
@@ -19,11 +17,10 @@ for (let i = 0; i < songCount; i++) {
 
 const TOTAL_LINES = 15
 
-const P = LEADERBOARD
-const panelSel = Selector('@e', { tag: T.UI_LB_TXT, limit: 1 })
+const panelSel = Selector('@e', { tag: Tags.UI_LB_TXT, limit: 1 })
 
 const lbSlots: ReturnType<typeof state>[] = []
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < lbConfig.size; i++) {
 	lbSlots.push(state(`#lb${i + 1}`))
 }
 const lbMax = state('$lb_max')
@@ -33,14 +30,14 @@ const lbRank = state('$lb_rank')
 const scrollPos = state('$scroll_lb')
 const scrollTimer = state('$scroll_t_lb')
 
-const LB_SEL = 'ssb.lb.sel'
-const RANK_TAGS = Array.from({ length: 10 }, (_, i) => `ssb.lb.r${i + 1}`)
+const LB_SEL = Tags.LB_SELECTION
+const RANK_TAGS = Array.from({ length: lbConfig.size }, (_, i) => `ssb.lb.r${i + 1}`)
 
 function makeSortFn(si: number, ci: number) {
 	const obj = ci === 0 ? lbBest[si] : lbNoDeath[si]
 	const label = ci === 0 ? 'best' : 'death'
 	return MCFunction(`sections/rhythm/leaderboard/sort/${label}_${si}`, () => {
-		for (let rank = 0; rank < 10; rank++) {
+		for (let rank = 0; rank < lbConfig.size; rank++) {
 			lbMax.set(0)
 			execute.as(Selector('@a', { tag: `!${LB_SEL}` })).run(() => {
 				_.if(obj('@s').greaterThan(lbMax), () => {
@@ -68,7 +65,7 @@ for (let si = 0; si < songCount; si++) {
 }
 
 const sortLeaderboard = MCFunction('sections/rhythm/leaderboard/sort', () => {
-	for (let i = 0; i < 10; i++) {
+	for (let i = 0; i < lbConfig.size; i++) {
 		lbSlots[i].set(0)
 		tag(Selector('@a')).remove(RANK_TAGS[i])
 	}
@@ -83,30 +80,28 @@ const sortLeaderboard = MCFunction('sections/rhythm/leaderboard/sort', () => {
 	}
 }, { lazy: true })
 
-const RANK_COLORS = ['gold', 'gray', 'red', 'dark_gray']
 const STATE_OBJ = `${NAMESPACE}.rhythm.state`
 
 function buildLbText(songIdx: number, catIdx: number, scoreLine: any[], nameOverride?: string): any[] {
-	const pad = PADDING
 	const songName = nameOverride ?? clampName(songNames[songIdx] ?? 'No songs')
 	const catName = catIdx === 0 ? 'Best Score' : 'Deathless'
 	const catColor = catIdx === 0 ? 'gold' : 'light_purple'
 
 	const parts: any[] = [
-		{ text: `${pad}🏆 `, color: 'gold' }, { text: `LEADERBOARD${pad}`, color: 'white', bold: true },
+		{ text: `${panels.padding}🏆 `, color: 'gold' }, { text: `LEADERBOARD${panels.padding}`, color: 'white', bold: true },
 		{ text: '\n' },
-		{ text: `${pad}♪ `, color: 'gold' }, { text: songName, color: 'yellow', font: 'monocraft:default' },
-		{ text: ' - ', color: 'gray' }, { text: `${catName}${pad}`, color: catColor },
+		{ text: `${panels.padding}♪ `, color: 'gold' }, { text: songName, color: 'yellow', font: 'monocraft:default' },
+		{ text: ' - ', color: 'gray' }, { text: `${catName}${panels.padding}`, color: catColor },
 	]
 
-	for (let i = 0; i < 10; i++) {
-		const color = RANK_COLORS[Math.min(i, 3)]
+	for (let i = 0; i < lbConfig.size; i++) {
+		const color = lbConfig.rankColors[Math.min(i, 3)]
 		parts.push({ text: '\n' })
-		parts.push({ text: `${pad}#${i + 1} `, color })
+		parts.push({ text: `${panels.padding}#${i + 1} `, color })
 		parts.push({ selector: `@a[tag=${RANK_TAGS[i]},limit=1]`, color: 'white' })
 		parts.push({ text: ' ' })
 		parts.push({ score: { name: `#lb${i + 1}`, objective: STATE_OBJ } })
-		parts.push({ text: pad })
+		parts.push({ text: panels.padding })
 	}
 
 	if (scoreLine.length > 0) {
@@ -116,12 +111,12 @@ function buildLbText(songIdx: number, catIdx: number, scoreLine: any[], nameOver
 	}
 
 	parts.push({ text: '\n' })
-	parts.push({ text: `${pad}◀ Song ▶`, color: 'aqua' })
+	parts.push({ text: `${panels.padding}◀ Song ▶`, color: 'aqua' })
 	parts.push({ text: '  ' })
-	parts.push({ text: `◀ Cat ▶${pad}`, color: 'light_purple' })
+	parts.push({ text: `◀ Cat ▶${panels.padding}`, color: 'light_purple' })
 	parts.push({ text: '\n' })
-	parts.push({ text: `${pad}📊 My Score${pad}`, color: 'green' })
-	parts.push({ text: `\n${RULER}` })
+	parts.push({ text: `${panels.padding}📊 My Score${panels.padding}`, color: 'green' })
+	parts.push({ text: `\n${panels.ruler}` })
 
 	return parts
 }
@@ -132,11 +127,11 @@ function lbText(si: number, ci: number, nameOverride?: string) {
 
 function lbMyText(si: number, ci: number) {
 	return buildLbText(si, ci, [
-		{ text: `${PADDING}You: `, color: 'green' },
+		{ text: `${panels.padding}You: `, color: 'green' },
 		{ score: { name: '$lb_score', objective: STATE_OBJ } },
 		{ text: ' | #', color: 'gray' },
 		{ score: { name: '$lb_rank', objective: STATE_OBJ } },
-		{ text: PADDING },
+		{ text: panels.padding },
 	])
 }
 
@@ -145,7 +140,7 @@ Advancement('ui_lb_song', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${T.UI_LB_SONG_INT}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_SONG_INT}"]}` },
 			},
 		},
 	},
@@ -156,7 +151,7 @@ Advancement('ui_lb_cat', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${T.UI_LB_CAT_INT}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_CAT_INT}"]}` },
 			},
 		},
 	},
@@ -167,7 +162,7 @@ Advancement('ui_lb_my', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${T.UI_LB_MY_INT}"]}` },
+				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_MY_INT}"]}` },
 			},
 		},
 	},
@@ -311,7 +306,7 @@ MCFunction('sections/rhythm/leaderboard/tick', () => {
 	})
 
 	scrollTimer.add(1)
-	_.if(scrollTimer.greaterOrEqualThan(SCROLL_SPEED), () => {
+	_.if(scrollTimer.greaterOrEqualThan(panels.scrollSpeed), () => {
 		scrollTimer.set(0)
 		scrollPos.add(1)
 		scrollLbUpdate()
@@ -342,18 +337,18 @@ MCFunction('sections/rhythm/leaderboard/init', () => {
 }, { runOnLoad: true })
 
 MCFunction('sections/rhythm/leaderboard/spawn', () => {
-	execute.in(DIM).run(() => {
-		kill(Selector('@e', { tag: T.UI_LEADERBOARD }))
+	execute.in(DIMENSION).run(() => {
+		kill(Selector('@e', { tag: Tags.UI_LEADERBOARD }))
 
-		spawnPanel(P,
-			[T.UI_LEADERBOARD, T.UI_LB_TXT],
+		spawnPanel(panels.leaderboard,
+			[Tags.UI_LEADERBOARD, Tags.UI_LB_TXT],
 			lbText(0, 0), 0)
 
-		const btnY = lineY(P, TOTAL_LINES, 13)
-		spawnClick(P, -0.75, btnY, [T.UI_LEADERBOARD, T.UI_LB_SONG_INT], 1)
-		spawnClick(P, 0.75, btnY, [T.UI_LEADERBOARD, T.UI_LB_CAT_INT], 1)
+		const btnY = lineY(panels.leaderboard, TOTAL_LINES, 13)
+		spawnClick(panels.leaderboard, -0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_SONG_INT], 1)
+		spawnClick(panels.leaderboard, 0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_CAT_INT], 1)
 
-		const myY = lineY(P, TOTAL_LINES, 14)
-		spawnClick(P, 0, myY, [T.UI_LEADERBOARD, T.UI_LB_MY_INT], 1)
+		const myY = lineY(panels.leaderboard, TOTAL_LINES, 14)
+		spawnClick(panels.leaderboard, 0, myY, [Tags.UI_LEADERBOARD, Tags.UI_LB_MY_INT], 1)
 	})
 }, { runOnLoad: true })

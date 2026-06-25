@@ -1,8 +1,8 @@
 import { _, abs, advancement, Advancement, execute, MCFunction, NBT, Selector, summon, tag, title, kill } from 'sandstone'
-import { songCount, songNames } from '../config/songs'
+import { songCount, songNames } from '@rhythm/config/internal/songs'
 import { GameStatus, Tags, status, songSelect } from './state'
 import { startGame, cancelStart } from './start'
-import { Positions } from '../../../shared'
+import { NAMESPACE, Positions } from '@shared'
 
 const CYCLE_POS = abs(...Positions.BTN_CYCLE)
 const START_POS = abs(...Positions.BTN_START)
@@ -68,14 +68,14 @@ const onStartGame = MCFunction('sections/rhythm/buttons/on_start', () => {
 }, { lazy: true })
 
 MCFunction('sections/rhythm/buttons/tick', () => {
-	execute.as(Selector('@a', { advancements: { [`sandstone_summit_booth:cycle_song`]: true } })).run(() => {
+	execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:cycle_song`]: true } })).run(() => {
 		onCycleSong()
-		advancement.revoke('@s').only('sandstone_summit_booth:cycle_song')
+		advancement.revoke('@s').only(`${NAMESPACE}:cycle_song`)
 	})
 
-	execute.as(Selector('@a', { advancements: { [`sandstone_summit_booth:start_game`]: true } })).run(() => {
+	execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:start_game`]: true } })).run(() => {
 		onStartGame()
-		advancement.revoke('@s').only('sandstone_summit_booth:start_game')
+		advancement.revoke('@s').only(`${NAMESPACE}:start_game`)
 	})
 }, { runEveryTick: true })
 

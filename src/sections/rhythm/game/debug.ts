@@ -1,7 +1,7 @@
 import { abs, effect, execute, fill, forceload, gamemode, kill, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
-import { arena } from '../config/arena'
-import { PATTERN_WIDTH, WALL_SPAWN_AHEAD, WALL_PASS_BEHIND } from '../config/obstacle-pool'
-import { DIM, Positions } from '../../../shared'
+import { arena } from '@rhythm/config/internal/arena'
+import { DIMENSION, Positions } from '@shared'
+import { walls, pattern } from '@rhythm/config'
 import { GameStatus, Tags, status, songSelect } from './state'
 import { stopSong, stopWalls } from './songs'
 import { clearWalls } from './walls/spawning'
@@ -10,20 +10,20 @@ import { clearLaneShulkers, spawnLaneBorder } from './lane-effects'
 import { spawnSkybox } from './arena-map'
 
 MCFunction('sections/rhythm/debug/setup', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const [fxMin, fzMin] = arena.forceloadMin
 		const [fxMax, fzMax] = arena.forceloadMax
 		forceload.add(abs(fxMin, fzMin), abs(fxMax, fzMax))
 
-		const [bx, by] = arena.playAreaMin
+		const [blockX, blockY] = arena.playAreaMin
 		fill(
-			abs(bx - 1, by, -WALL_PASS_BEHIND),
-			abs(bx + PATTERN_WIDTH, by, WALL_SPAWN_AHEAD),
+			abs(blockX - 1, blockY, -walls.passDistance),
+			abs(blockX + pattern.width, blockY, walls.spawnDistance),
 			'minecraft:smooth_stone',
 		)
 		fill(
-			abs(bx, by, 0),
-			abs(bx + PATTERN_WIDTH - 1, by, 0),
+			abs(blockX, blockY, 0),
+			abs(blockX + pattern.width - 1, blockY, 0),
 			'minecraft:gold_block',
 		)
 	})
@@ -48,7 +48,7 @@ MCFunction('sections/rhythm/debug/reset', () => {
 	status.set(GameStatus.WAITING)
 	songSelect.set(0)
 
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const [x, y, z] = Positions.BOOTH_RETURN
 		tp('@a', abs(x, y, z))
 	})
@@ -56,7 +56,7 @@ MCFunction('sections/rhythm/debug/reset', () => {
 }, { lazy: true })
 
 MCFunction('sections/rhythm/debug/tp', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const [x, y, z] = Positions.BOOTH_RETURN
 		tp('@s', abs(x, y, z))
 	})

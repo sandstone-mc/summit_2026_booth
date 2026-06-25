@@ -1,7 +1,8 @@
 import { _, execute, MCFunction, Objective, playsound, schedule, title, tp } from 'sandstone'
 import { GameStatus, status, allPlayers } from './state'
 import { setActive } from './active'
-import { NAMESPACE, state } from '../../../shared'
+import { NAMESPACE, state } from '@shared'
+import { gameplay } from '@rhythm/config'
 
 const countdown = state('$countdown')
 
@@ -29,7 +30,7 @@ const countdownTick = MCFunction('sections/rhythm/start/countdown_tick', () => {
 export const startGame = MCFunction('sections/rhythm/start/init', () => {
 	_.if(status.equalTo(GameStatus.WAITING), () => {
 		status.set(GameStatus.STARTING)
-		countdown.set(5)
+		countdown.set(gameplay.countdown)
 		schedule.function(`${NAMESPACE}:sections/rhythm/start/countdown_tick`, '1s')
 	})
 }, { lazy: true })

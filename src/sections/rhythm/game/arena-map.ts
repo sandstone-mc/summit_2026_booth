@@ -1,15 +1,16 @@
 import { _, abs, execute, fill, kill, MCFunction, NBT, schedule, Selector, summon, tp } from 'sandstone'
-import { arena } from '../config/arena'
-import { mapCount, mapSafeNames, MAP_SIZE } from '../config/maps'
+import { arena } from '@rhythm/config/internal/arena'
+import { mapCount, mapSafeNames } from '@rhythm/config/internal/maps'
 import { mapSelect, Tags } from './state'
-import { DIM, NAMESPACE } from '../../../shared'
+import { DIMENSION, NAMESPACE } from '@shared'
+import { map } from '@rhythm/config'
 
 export const placeMap = MCFunction('sections/rhythm/arena/place_map', () => {
 	if (mapCount === 0) return
 	const [ox, oy, oz] = arena.mapOrigin
 	for (let i = 0; i < mapCount; i++) {
 		_.if(mapSelect.equalTo(i), () => {
-			execute.in(DIM).run.place.template(`${NAMESPACE}:maps/${mapSafeNames[i]}`, abs(ox, oy, oz))
+			execute.in(DIMENSION).run.place.template(`${NAMESPACE}:maps/${mapSafeNames[i]}`, abs(ox, oy, oz))
 		})
 	}
 	spawnSkybox()
@@ -19,7 +20,7 @@ export const clearMap = MCFunction('sections/rhythm/arena/clear_map', () => {
 	if (mapCount === 0) return
 	const [ox, oy, oz] = arena.mapOrigin
 	const [ex, ey, ez] = arena.mapEnd
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		fill(abs(ox, oy, oz), abs(ex, ey, ez), 'minecraft:air')
 	})
 	killSkybox()
@@ -30,9 +31,10 @@ const skyboxCenter: [number, number, number] = [
 	(arena.mapOrigin[1] + arena.mapEnd[1]) / 2,
 	(arena.mapOrigin[2] + arena.mapEnd[2]) / 2,
 ]
-const skyboxScaleX = -MAP_SIZE[0]
-const skyboxScaleY = -(MAP_SIZE[1] / 0.9375)
-const skyboxScaleZ = -MAP_SIZE[2]
+const ITEM_DISPLAY_Y_SCALE = 15 / 16
+const skyboxScaleX = -map.size[0]
+const skyboxScaleY = -(map.size[1] / ITEM_DISPLAY_Y_SCALE)
+const skyboxScaleZ = -map.size[2]
 
 const skyboxModels = ['skybox_neon', 'skybox_cave', 'skybox_void']
 
@@ -58,7 +60,7 @@ function skyboxNbt(model: string) {
 export const spawnSkybox = MCFunction('sections/rhythm/arena/spawn_skybox', () => {
 	killSkybox()
 	const [cx, cy, cz] = skyboxCenter
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		if (mapCount <= 1) {
 			summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(skyboxModels[0] ?? 'skybox_neon'))
 		} else {
