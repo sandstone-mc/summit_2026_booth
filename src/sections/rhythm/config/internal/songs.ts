@@ -1,7 +1,7 @@
 import { Midi } from '@tonejs/midi'
 import { fromArrayBuffer } from '@nbsjs/core'
 import { join } from 'path'
-import { walls, wallMovement } from '..'
+import { walls, wallMovement, rendering } from '..'
 import { PARKOUR_STEP_COUNT, parkourStepIntervalForSpeed } from '../parkour-paths'
 import { getSoundId, getSegmentSoundId, nearestDurationBucket, renderAllSounds, renderFullSongs, SEGMENT_SECS, SEGMENT_TICKS, type SoundKey, type FullSongInfo } from './render-sounds'
 import { songList } from './song-list'
@@ -112,10 +112,41 @@ function resolveNbsNote(instrumentId: number, key: number): { sound: string, pit
 
 const allSoundKeys: SoundKey[] = []
 
+// MIDI program → noteblock instrument mapping (for compressed mode)
+function midiToNoteblock(program: number, isPercussion: boolean, midiNote: number): { sound: string; pitch: number } {
+	if (isPercussion) {
+		if (midiNote >= 35 && midiNote <= 41) return { sound: 'block.note_block.basedrum', pitch: 1.0 }
+		if (midiNote >= 42 && midiNote <= 46) return { sound: 'block.note_block.hat', pitch: 1.0 }
+		return { sound: 'block.note_block.snare', pitch: 1.0 }
+	}
+
+	let instrument = 'block.note_block.harp'
+	if (program >= 0 && program <= 7) instrument = 'block.note_block.harp'
+	else if (program >= 8 && program <= 15) instrument = 'block.note_block.chime'
+	else if (program >= 16 && program <= 23) instrument = 'block.note_block.guitar'
+	else if (program >= 24 && program <= 31) instrument = 'block.note_block.guitar'
+	else if (program >= 32 && program <= 39) instrument = 'block.note_block.bass'
+	else if (program >= 40 && program <= 47) instrument = 'block.note_block.bass'
+	else if (program >= 48 && program <= 55) instrument = 'block.note_block.harp'
+	else if (program >= 56 && program <= 63) instrument = 'block.note_block.bit'
+	else if (program >= 64 && program <= 71) instrument = 'block.note_block.flute'
+	else if (program >= 72 && program <= 79) instrument = 'block.note_block.flute'
+	else if (program >= 80 && program <= 95) instrument = 'block.note_block.pling'
+	else if (program >= 104 && program <= 111) instrument = 'block.note_block.banjo'
+	else if (program >= 112 && program <= 119) instrument = 'block.note_block.iron_xylophone'
+
+	const semitones = midiNote - 60
+	let folded = semitones
+	while (folded < -12) folded += 12
+	while (folded > 12) folded -= 12
+	return { sound: instrument, pitch: Math.pow(2, folded / 12) }
+}
+
 async function parseMidi(filePath: string, displayName: string, difficulty: number, hasAudio: boolean): Promise<SongData> {
 	const midiData = Buffer.from(await Bun.file(filePath).arrayBuffer())
 	const midi = new Midi(midiData)
 	const notes: SongNote[] = []
+	const useNoteBlocks = rendering === 'compressed' && !hasAudio
 
 	for (const track of midi.tracks) {
 		const channel = track.channel
@@ -123,14 +154,20 @@ async function parseMidi(filePath: string, displayName: string, difficulty: numb
 		for (const note of track.notes) {
 			const gameTick = Math.round(note.time * 20)
 			const isPercussion = channel === 9
-			const key: SoundKey = {
-				program: isPercussion ? 0 : program,
-				midiNote: note.midi,
-				isPercussion,
-				durationBucket: nearestDurationBucket(note.duration),
+
+			if (useNoteBlocks) {
+				const mapped = midiToNoteblock(program, isPercussion, note.midi)
+				notes.push({ tick: gameTick, sound: mapped.sound, pitch: mapped.pitch, volume: Math.min(1.0, note.velocity + 0.3) })
+			} else {
+				const key: SoundKey = {
+					program: isPercussion ? 0 : program,
+					midiNote: note.midi,
+					isPercussion,
+					durationBucket: nearestDurationBucket(note.duration),
+				}
+				if (!hasAudio) allSoundKeys.push(key)
+				notes.push({ tick: gameTick, sound: hasAudio ? '' : getSoundId(key), pitch: 1.0, volume: 1.0 })
 			}
-			if (!hasAudio) allSoundKeys.push(key)
-			notes.push({ tick: gameTick, sound: hasAudio ? '' : getSoundId(key), pitch: 1.0, volume: 1.0 })
 		}
 	}
 
@@ -140,7 +177,7 @@ async function parseMidi(filePath: string, displayName: string, difficulty: numb
 	const stepInterval = parkourStepIntervalForSpeed(walls.speed)
 	const chart = generateChart(notes, durationTicks, bpm, difficulty, wallMovement.travelOffset, stepInterval)
 
-	return { name: displayName, difficulty, notes, chart, usesNoteBlocks: false }
+	return { name: displayName, difficulty, notes, chart, usesNoteBlocks: useNoteBlocks }
 }
 
 async function parseNbs(filePath: string, displayName: string, difficulty: number): Promise<SongData> {
@@ -313,12 +350,17 @@ async function loadAllSongs(): Promise<SongLoadResult> {
 		}
 	}
 
-	await renderAllSounds(allSoundKeys)
+	if (rendering === 'compressed') {
+		console.log(`[songs] Compressed mode — noteblock sounds, real audio only for songs with audio files`)
+	} else {
+		await renderAllSounds(allSoundKeys)
+	}
 
 	const fullSongEntries: { midiPath: string; safeName: string; audioPath?: string; audioStart?: number; audioOffset?: number }[] = []
 	for (const config of songList) {
 		const fp = await findSongFile(config.file)
 		if (!fp || config.file.toLowerCase().endsWith('.nbs')) continue
+		if (rendering === 'compressed' && !config.audio) continue
 		const audioPath = config.audio ? await findSongFile(config.audio) : undefined
 		fullSongEntries.push({
 			midiPath: fp,

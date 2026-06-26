@@ -6,7 +6,7 @@
   "module": "src/index.ts",
   "scripts": {
     "dev:watch": "sand watch",
-    "dev:build": "sand build",
+    "dev:build": "sand build && bun run scripts/minify-resourcepack.ts",
     "dev:deploy": "bun run scripts/deploy.ts"
   },
   "keywords": [],

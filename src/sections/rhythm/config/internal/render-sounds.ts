@@ -1,12 +1,11 @@
 import { Midi } from '@tonejs/midi'
 import { mkdirSync, unlinkSync } from 'fs'
 import { join } from 'path'
-import { NAMESPACE, PROJECT_ROOT } from '@shared'
+import { NAMESPACE, PROJECT_ROOT, writeGenerated } from '@shared'
+import { rendering } from '..'
 
 const SOUNDFONT = '/usr/share/soundfonts/FluidR3_GM.sf2'
 const CACHE_DIR = join(PROJECT_ROOT, '.cache/sounds')
-const RESOURCE_SOUNDS_DIR = join(PROJECT_ROOT, `resources/resourcepack/assets/${NAMESPACE}/sounds/music`)
-const RESOURCE_BASE = join(PROJECT_ROOT, `resources/resourcepack/assets/${NAMESPACE}`)
 
 export const DURATION_BUCKETS = [0.1, 0.25, 0.5, 1.0, 1.5]
 
@@ -94,7 +93,6 @@ async function renderSound(key: SoundKey): Promise<void> {
 export async function renderAllSounds(keys: SoundKey[]): Promise<void> {
 	if (keys.length === 0) return
 	mkdirSync(CACHE_DIR, { recursive: true })
-	mkdirSync(RESOURCE_SOUNDS_DIR, { recursive: true })
 
 	const keyMap = new Map<string, SoundKey>()
 	for (const key of keys) {
@@ -111,7 +109,7 @@ export async function renderAllSounds(keys: SoundKey[]): Promise<void> {
 		const wasCached = await Bun.file(cachedOgg).exists()
 		await renderSound(key)
 		if (!wasCached) rendered++
-		if (await Bun.file(cachedOgg).exists()) await Bun.write(join(RESOURCE_SOUNDS_DIR, `${name}.ogg`), Bun.file(cachedOgg))
+		if (await Bun.file(cachedOgg).exists()) await writeGenerated('resourcepack', `assets/${NAMESPACE}/sounds/generated/${name}.ogg`, Bun.file(cachedOgg))
 	}
 
 	if (rendered > 0) console.log(`[render-sounds] Rendered ${rendered} new sounds (${uniqueKeys.length - rendered} cached)`)
@@ -121,13 +119,12 @@ export async function renderAllSounds(keys: SoundKey[]): Promise<void> {
 	for (const key of uniqueKeys) {
 		const name = getSoundName(key)
 		const eventName = getSoundId(key).replace(`${NAMESPACE}:`, '')
-		soundsJson[eventName] = { sounds: [{ name: `${NAMESPACE}:music/${name}`, stream: false }] }
+		soundsJson[eventName] = { sounds: [{ name: `${NAMESPACE}:generated/${name}`, stream: false }] }
 	}
-	await Bun.write(join(RESOURCE_BASE, 'sounds.json'), JSON.stringify(soundsJson, null, 2))
+	await writeGenerated('resourcepack', `assets/${NAMESPACE}/sounds.json`, JSON.stringify(soundsJson, null, 2))
 	console.log(`[render-sounds] Written sounds.json with ${uniqueKeys.length} entries`)
 }
 
-const SONGS_FULL_DIR = join(RESOURCE_SOUNDS_DIR, 'songs')
 const SONGS_CACHE_DIR = join(CACHE_DIR, 'songs')
 
 export const SEGMENT_SECS = 10
@@ -184,7 +181,6 @@ export interface SongRenderInput {
 
 export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSongInfo[]> {
 	if (songs.length === 0) return []
-	mkdirSync(SONGS_FULL_DIR, { recursive: true })
 	mkdirSync(SONGS_CACHE_DIR, { recursive: true })
 
 	console.log(`[render-songs] Rendering ${songs.length} songs as ${SEGMENT_SECS}s segments...`)
@@ -246,7 +242,10 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 					const ffmpegResult = Bun.spawnSync(['ffmpeg',
 						'-y', '-ss', `${startSec}`, '-t', `${SEGMENT_SECS}`,
 						'-i', wavPath,
-						'-c:a', 'libvorbis', '-q:a', '5', '-ac', '2', segOgg,
+						...(rendering === 'compressed'
+						? ['-c:a', 'libvorbis', '-q:a', '-1', '-ac', '1', '-ar', '7000']
+						: ['-c:a', 'libvorbis', '-q:a', '5', '-ac', '2']),
+					segOgg,
 					])
 					if (ffmpegResult.success) rendered++
 				}
@@ -257,8 +256,7 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 
 		for (let i = 0; i < segmentCount; i++) {
 			const segOgg = join(SONGS_CACHE_DIR, `${song.safeName}_s${i}.ogg`)
-			const segDest = join(SONGS_FULL_DIR, `${song.safeName}_s${i}.ogg`)
-			if (await Bun.file(segOgg).exists()) await Bun.write(segDest, Bun.file(segOgg))
+			if (await Bun.file(segOgg).exists()) await writeGenerated('resourcepack', `assets/${NAMESPACE}/sounds/generated/songs/${song.safeName}_s${i}.ogg`, Bun.file(segOgg))
 		}
 
 		results.push({ safeName: song.safeName, segmentCount, audioOffsetTicks })
@@ -268,17 +266,17 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 	if (rendered > 0) console.log(`[render-songs] Rendered ${rendered} new segments (${totalSegments} total)`)
 	else console.log(`[render-songs] All ${totalSegments} segments from cache`)
 
-	const soundsJsonPath = join(RESOURCE_BASE, 'sounds.json')
+	const soundsJsonPath = join(PROJECT_ROOT, `resources/resourcepack/assets/${NAMESPACE}/sounds.json`)
 	let soundsJson: Record<string, any> = {}
 	if (await Bun.file(soundsJsonPath).exists()) soundsJson = JSON.parse(await Bun.file(soundsJsonPath).text())
 
 	for (const info of results) {
 		for (let i = 0; i < info.segmentCount; i++) {
 			const eventName = `music.song_${info.safeName}_s${i}`
-			soundsJson[eventName] = { sounds: [{ name: `${NAMESPACE}:music/songs/${info.safeName}_s${i}`, stream: true }] }
+			soundsJson[eventName] = { sounds: [{ name: `${NAMESPACE}:generated/songs/${info.safeName}_s${i}`, stream: true }] }
 		}
 	}
 
-	await Bun.write(soundsJsonPath, JSON.stringify(soundsJson, null, 2))
+	await writeGenerated('resourcepack', `assets/${NAMESPACE}/sounds.json`, JSON.stringify(soundsJson, null, 2))
 	return results
 }

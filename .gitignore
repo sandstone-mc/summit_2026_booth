@@ -4,8 +4,9 @@ node_modules
 .sandstone
 resources/cache
 resources/datapack_dependencies/summit-dp-core
-resources/resourcepack/assets/sandstone_summit_booth/sounds/music/songs
+resources/resourcepack/assets/sandstone_summit_booth/sounds
 resources/resourcepack/assets/sandstone_summit_booth/sounds.json
+resources/datapack/data/sandstone_summit_booth/structure/generated
 .cache
 LilSparten_magic
 Ori_rhythm

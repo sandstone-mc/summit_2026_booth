@@ -1,7 +1,6 @@
-import { mkdirSync } from 'fs'
 import { join } from 'path'
 import { project } from '..'
-import { PROJECT_ROOT } from '@shared'
+import { PROJECT_ROOT, writeGenerated } from '@shared'
 
 export interface MapConfig {
 	file: string
@@ -10,15 +9,11 @@ export interface MapConfig {
 
 export const mapList: MapConfig[] = await Bun.file(join(PROJECT_ROOT, 'maps/maps.json')).json()
 
-const structureDir = join(PROJECT_ROOT, 'resources/datapack/data', project.namespace, 'structure/maps')
-mkdirSync(structureDir, { recursive: true })
-
 for (const map of mapList) {
 	const src = Bun.file(join(PROJECT_ROOT, 'maps', map.file))
 	const safeName = map.file.replace(/\.\w+$/, '')
-	const dest = join(structureDir, `${safeName}.nbt`)
 	if (await src.exists()) {
-		await Bun.write(dest, src)
+		await writeGenerated('datapack', `data/${project.namespace}/structure/generated/maps/${safeName}.nbt`, src)
 	} else {
 		console.warn(`[maps] Map file not found: ${map.file}`)
 	}

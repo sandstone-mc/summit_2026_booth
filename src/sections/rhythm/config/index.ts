@@ -5,6 +5,14 @@
 
 import sandstoneConfig from '@/sandstone.config'
 
+// Rendering Mode
+//
+// "extended"   — Full-quality OGG audio segments (fluidsynth/ffmpeg). Large resource pack.
+// "compressed" — Noteblock playsounds only. No custom audio files. ~1MB resource pack.
+
+export type RenderingMode = 'extended' | 'compressed'
+export const rendering: RenderingMode = 'compressed'
+
 // Project
 
 export const project = {

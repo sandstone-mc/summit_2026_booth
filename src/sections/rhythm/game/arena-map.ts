@@ -10,7 +10,7 @@ export const placeMap = MCFunction('sections/rhythm/arena/place_map', () => {
 	const [ox, oy, oz] = arena.mapOrigin
 	for (let i = 0; i < mapCount; i++) {
 		_.if(mapSelect.equalTo(i), () => {
-			execute.in(DIMENSION).run.place.template(`${NAMESPACE}:maps/${mapSafeNames[i]}`, abs(ox, oy, oz))
+			execute.in(DIMENSION).run.place.template(`${NAMESPACE}:generated/maps/${mapSafeNames[i]}`, abs(ox, oy, oz))
 		})
 	}
 	spawnSkybox()

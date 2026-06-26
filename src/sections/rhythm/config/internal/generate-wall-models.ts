@@ -1,6 +1,6 @@
 import sharp from 'sharp'
-import { Model, ItemModelDefinition, Texture } from 'sandstone'
-import { pattern, CellType, type Cell } from '..'
+import { ItemModelDefinition, Model, Texture } from 'sandstone'
+import { pattern, CellType, project, type Cell } from '..'
 import { singles, groups, type Obstacle } from '../obstacles'
 
 const CELL_SCALE = 16 / pattern.width
@@ -184,9 +184,10 @@ function obstacleToModel(obstacle: Obstacle) {
 		slot++
 	}
 
-	const textures: Record<string, string> = { '0': 'item/glass/white', particle: 'item/glass/white' }
+	const ns = project.namespace
+	const textures: Record<string, string> = { '0': `${ns}:item/generated/glass/white`, particle: `${ns}:item/generated/glass/white` }
 	for (const [f, s] of flagToSlot) {
-		textures[s] = `item/glass/border_${f}`
+		textures[s] = `${ns}:item/generated/glass/border_${f}`
 	}
 
 	const elements: any[] = []
@@ -225,24 +226,24 @@ for (const obstacle of obstacles) {
 	}
 }
 
+const whitePng = sharp(Buffer.from(new Uint8Array(16 * 16 * 4).fill(255)), { raw: { width: 16, height: 16, channels: 4 } }).png().toBuffer()
+Texture('item', 'generated/glass/white', whitePng)
+
 for (const flags of allBorderFlags) {
-	Texture('item', `glass/border_${flags}`, generateBorderTexture(flags))
+	Texture('item', `generated/glass/border_${flags}`, generateBorderTexture(flags))
 }
+
+const ns = project.namespace
 
 for (const obstacle of obstacles) {
 	const name = modelName(obstacle)
-	wallModelNames.set(obstacle.name, name)
+	const genName = `generated/${name}`
+	wallModelNames.set(obstacle.name, `${ns}:${genName}`)
 
-	const modelJson = obstacleToModel(obstacle)
-	Model('item', name, modelJson as any)
-
-	ItemModelDefinition(name, {
-		model: {
-			type: 'minecraft:model',
-			model: `minecraft:item/${name}`,
-			tints: [{ type: 'minecraft:dye', default: 16777215 }],
-		},
-	} as any)
+	Model('item', genName, obstacleToModel(obstacle))
+	ItemModelDefinition(genName, {
+		model: { type: 'minecraft:model', model: `${ns}:item/${genName}`, tints: [{ type: 'minecraft:dye', default: 16777215 }] },
+	})
 }
 
 console.log(`[wall-models] Generated ${obstacles.length} wall models, ${allBorderFlags.size} border textures`)

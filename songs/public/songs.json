@@ -2,9 +2,7 @@
 	{
 		"file": "Tetoris.mid",
 		"name": "Tetoris",
-		"difficulty": 5,
-		"audio": "Tetoris.mp3",
-		"audioOffset": 0
+		"difficulty": 5
 	},
 	{
 		"file": "MachineLove.mid",
@@ -16,8 +14,6 @@
 	{
 		"file": "Il Vento D'oro (The Golden Wind) _Giorno's Theme_ - JoJo's Bizarre Adventures.mid",
 		"name": "Il Vento D'oro - JoJo",
-		"difficulty": 5,
-		"audio": "il vento d'oro [U0TXIXTzJEY].mp3",
-		"audioOffset": 0
+		"difficulty": 5
 	}
 ]
