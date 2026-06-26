@@ -7,7 +7,8 @@
   "scripts": {
     "dev:watch": "sand watch",
     "dev:build": "sand build && bun run scripts/minify-resourcepack.ts",
-    "dev:deploy": "bun run scripts/deploy.ts"
+    "dev:deploy": "bun run scripts/deploy.ts",
+    "package": "bun dev:build && bun run scripts/package.ts"
   },
   "keywords": [],
   "author": "",
