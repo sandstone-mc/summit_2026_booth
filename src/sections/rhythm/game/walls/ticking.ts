@@ -1,5 +1,5 @@
 import { _, abs, data, Data, execute, kill, MCFunction, NBT, Objective, particle, raw, Selector, tag, tp } from 'sandstone'
-import { wallMovement } from '@rhythm/config'
+import { wallMovement } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { wallAge, wallDepth } from './spawning'
 import { GameStatus, Tags, status } from '@rhythm/game/state'
@@ -24,14 +24,22 @@ const initWalls = MCFunction('sections/rhythm/wall/init', () => {
 	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.WALL_HIT}`, `!${Tags.PARKOUR}`] })).run(() => {
 		data.merge.entity('@s', {
 			interpolation_duration: NBT.int(wallMovement.travelTicks),
-			transformation: { translation: NBT.float([0, 0, -wallMovement.totalDistance]) },
+			transformation: {
+				translation: NBT.float(arena.interpolationTranslation),
+				left_rotation: NBT.float(arena.wallRotation),
+				scale: NBT.float(arena.wallScale),
+				right_rotation: NBT.float([0, 0, 0, 1]),
+			},
 			start_interpolation: NBT.int(-2),
 		})
 	})
 	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, Tags.PARKOUR] })).run(() => {
+		const pkTrans: [number, number, number] = arena.wallsTravelAlongZ
+			? [-0.5, 0, -0.5 + arena.travelSign * wallMovement.totalDistance]
+			: [-0.5 + arena.travelSign * wallMovement.totalDistance, 0, -0.5]
 		data.merge.entity('@s', {
 			interpolation_duration: NBT.int(wallMovement.travelTicks),
-			transformation: { translation: NBT.float([-0.5, 0, -0.5 - wallMovement.totalDistance]) },
+			transformation: { translation: NBT.float(pkTrans) },
 			start_interpolation: NBT.int(-2),
 		})
 	})
@@ -40,16 +48,23 @@ const initWalls = MCFunction('sections/rhythm/wall/init', () => {
 // TODO: We're moving an entity, we should be editing its position nbt or (better) moving it with static tp command(s)
 // Also, for future reference, see: https://sandstone.dev/docs/features/macros
 const tpWall = MCFunction('sections/rhythm/wall/tp', () => {
-	raw('$tp @s ~ ~ $(pos)')
+	raw(arena.wallsTravelAlongZ ? '$tp @s ~ ~ $(pos)' : '$tp @s $(pos) ~ ~')
 }, { lazy: true })
+
+const travelSignScore = wallMovementObj('$tsign')
+
+MCFunction('sections/rhythm/wall/init_travel_sign', () => {
+	travelSignScore.set(arena.travelSign)
+}, { runOnLoad: true })
 
 const moveWalls = MCFunction('sections/rhythm/wall/move', () => {
 	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_HIT, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] })).at('@s').run(() => {
 		wallPositionTemp('@s').set(wallAge('@s'))
 		wallPositionTemp('@s').multiply(numeratorScore)
 		wallPositionTemp('@s').divide(travelTicksScore)
+		wallPositionTemp('@s').multiply(travelSignScore)
 		wallPos('@s').set(arena.spawnScaled)
-		wallPos('@s').remove(wallPositionTemp('@s'))
+		wallPos('@s').add(wallPositionTemp('@s'))
 		wallPos('@s').add(wallDepth('@s'))
 		// For future reference, this can be done with this: Data('storage', 'ssb.rhythm:temp', 'pos').set(wallPos('@s'), 'double', 0.001)
 		execute.store.result.storage('ssb.rhythm:temp', 'pos', 'double', 0.001)

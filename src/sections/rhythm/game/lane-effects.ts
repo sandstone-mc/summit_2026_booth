@@ -1,6 +1,6 @@
 import { _, abs, data, effect, execute, kill, MCFunction, NBT, Objective, particle, raw, schedule, Selector, summon, team, tp } from 'sandstone'
 import { arena } from '@rhythm/config/internal/arena'
-import { pattern, walls, map, visuals, wallMovement } from '@rhythm/config'
+import { pattern, visuals } from '@rhythm/config'
 import { Tags } from './state'
 import { DIMENSION, NAMESPACE } from '@shared'
 
@@ -21,9 +21,9 @@ const laneSelector = Selector('@e', { tag: Tags.LANE })
 const fragmentSelector = Selector('@e', { tag: Tags.LANE_FRAGMENT })
 const borderSelector = Selector('@e', { tag: Tags.LANE_BORDER })
 
-const [baseX, baseY] = [arena.playAreaMin[0], arena.playAreaMin[1]]
-const baseZ = arena.goldLine[2]
-const laneCenter = [baseX + Math.floor(pattern.width / 2), baseY + 1.5, baseZ] as const
+const baseY = arena.playAreaMin[1]
+const lane = arena.lane
+const laneCenter = lane.pos(Math.floor(pattern.width / 2), baseY + 1.5, 0)
 
 const FRAGMENT_BLOCKS = [
 	'minecraft:white_stained_glass',
@@ -59,8 +59,9 @@ export const spawnLaneShulkers = MCFunction('sections/rhythm/lane/spawn', () => 
 	execute.in(DIMENSION).run(() => {
 		kill(laneSelector)
 		kill(fragmentSelector)
-		for (let x = 0; x < pattern.width; x++) {
-			summon('minecraft:shulker', abs(baseX + x, baseY, baseZ), {
+		for (let i = 0; i < pattern.width; i++) {
+			const pos = lane.pos(i, 0, 0)
+			summon('minecraft:shulker', abs(pos[0], baseY, pos[2]), {
 				Tags: [Tags.LANE],
 				NoAI: NBT.byte(1),
 				NoGravity: NBT.byte(1),
@@ -76,7 +77,8 @@ export const spawnLaneShulkers = MCFunction('sections/rhythm/lane/spawn', () => 
 			const frag = FRAGMENTS[i]
 			const block = FRAGMENT_BLOCKS[i % FRAGMENT_BLOCKS.length]
 			const [sx, sy, sz] = frag.scale
-			summon('minecraft:block_display', abs(baseX + frag.pos[0], baseY + frag.pos[1], baseZ + frag.pos[2]), {
+			const fragPos = lane.pos(frag.pos[0], baseY + frag.pos[1], frag.pos[2])
+			summon('minecraft:block_display', abs(fragPos[0], fragPos[1], fragPos[2]), {
 				Tags: [Tags.LANE_FRAGMENT],
 				block_state: { Name: block },
 				transformation: {
@@ -92,11 +94,21 @@ export const spawnLaneShulkers = MCFunction('sections/rhythm/lane/spawn', () => 
 	})
 }, { lazy: true })
 
-const LANE_Z_MID = -walls.passDistance + wallMovement.totalDistance / 2
-
 function argb(a: number, r: number, g: number, b: number) {
 	return ((a & 0xFF) << 24 | (r & 0xFF) << 16 | (g & 0xFF) << 8 | (b & 0xFF)) | 0
 }
+
+// Sizing for the border text displays. A run of BORDER_CHARS spaces has a fixed width,
+// and scaleX = length / width makes a light span the given length.
+// A space is 4px wide. The background adds about 0.5px of padding each side.
+// TD_PX_PER_BLOCK was measured in game. The font renders at 36 px/block.
+const TD_PX_PER_BLOCK = 36
+const TD_SPACE_PX = 4
+const TD_BG_PAD_PX = 0.5
+
+const BORDER_CHARS = 8
+const BORDER_BG_WIDTH = (BORDER_CHARS * TD_SPACE_PX + 2 * TD_BG_PAD_PX) / TD_PX_PER_BLOCK
+const fitWidthScale = (length: number) => length / BORDER_BG_WIDTH
 
 const BORDER_SCALE_Y = visuals.border.height / (visuals.border.stripCount * 0.25)
 const BORDER_STEP = visuals.border.height / visuals.border.stripCount
@@ -118,7 +130,7 @@ const BORDER_COLOR_MAP: Record<string, [number, number, number]> = {
 
 function borderStripTag(i: number) { return `ssb.lane.border.${i}` }
 
-const BORDER_TEXT = '"' + ' '.repeat(500) + '"'
+const BORDER_TEXT = ' '.repeat(BORDER_CHARS)
 
 function wallBorderNbt(stripIndex: number, bg: number, yOff: number, facing: number, scaleX: number) {
 	return {
@@ -141,26 +153,18 @@ function wallBorderNbt(stripIndex: number, bg: number, yOff: number, facing: num
 	}
 }
 
-const laneXMin = baseX
-const laneXMax = baseX + map.laneWidth
-const laneZMin = baseZ - map.laneOffset.z - 2
-const laneZMax = baseZ - map.laneOffset.z + map.size[2] + 2
+const leftW = lane.widthMin
+const rightW = lane.widthMax
+const sideMidD = (lane.depthMin + lane.depthMax) / 2
+const sideLen = lane.depthMax - lane.depthMin
+const frontMidW = (leftW + rightW) / 2
+const frontLen = rightW - leftW
 
-// Text display rendering offset compensation
-const TEXT_DISPLAY_OFFSET = 0.175 - 3 / 16
-const leftX = laneXMin + TEXT_DISPLAY_OFFSET
-const rightX = laneXMax + TEXT_DISPLAY_OFFSET
-const sideMidZ = (laneZMin + laneZMax) / 2
-const sideLen = laneZMax - laneZMin
-const frontMidX = (leftX + rightX) / 2
-const frontLen = rightX - leftX + 0.5
+const frontD = lane.frontDepth
+const backD = lane.backDepth
 
-const frontZ = baseZ - map.laneOffset.z + 0.05
-const backZ = baseZ - map.laneOffset.z + map.size[2] + 0.5
-
-const TEXT_BASE_WIDTH = 500 * 4 / 36
-const sideScale = sideLen / TEXT_BASE_WIDTH
-const frontScale = frontLen / TEXT_BASE_WIDTH
+const sideScale = fitWidthScale(sideLen)
+const frontScale = fitWidthScale(frontLen)
 
 export const spawnLaneBorder = MCFunction('sections/rhythm/lane/border_spawn', () => {
 	execute.in(DIMENSION).run(() => {
@@ -170,23 +174,28 @@ export const spawnLaneBorder = MCFunction('sections/rhythm/lane/border_spawn', (
 			const bg = argb(BORDER_ALPHAS[i], ...visuals.border.defaultColor)
 			const yOff = i * BORDER_STEP - BORDER_STEP / 2
 
-			summon('minecraft:text_display', abs(leftX, baseY + 1, sideMidZ),
-				wallBorderNbt(i, bg, yOff, 90, sideScale))
-			summon('minecraft:text_display', abs(leftX, baseY + 1, sideMidZ),
-				wallBorderNbt(i, bg, yOff, -90, sideScale))
-			summon('minecraft:text_display', abs(rightX, baseY + 1, sideMidZ),
-				wallBorderNbt(i, bg, yOff, 90, sideScale))
-			summon('minecraft:text_display', abs(rightX, baseY + 1, sideMidZ),
-				wallBorderNbt(i, bg, yOff, -90, sideScale))
+			const sLeftPos = lane.pos(leftW, baseY + 1, sideMidD)
+			const sRightPos = lane.pos(rightW, baseY + 1, sideMidD)
+			const fFrontPos = lane.pos(frontMidW, baseY + 1, frontD)
+			const fBackPos = lane.pos(frontMidW, baseY + 1, backD)
 
-			summon('minecraft:text_display', abs(frontMidX, baseY + 1, frontZ),
-				wallBorderNbt(i, bg, yOff, 0, frontScale))
-			summon('minecraft:text_display', abs(frontMidX, baseY + 1, frontZ),
-				wallBorderNbt(i, bg, yOff, 180, frontScale))
-			summon('minecraft:text_display', abs(frontMidX, baseY + 1, backZ),
-				wallBorderNbt(i, bg, yOff, 0, frontScale))
-			summon('minecraft:text_display', abs(frontMidX, baseY + 1, backZ),
-				wallBorderNbt(i, bg, yOff, 180, frontScale))
+			summon('minecraft:text_display', abs(...sLeftPos),
+				wallBorderNbt(i, bg, yOff, lane.sideFacing, sideScale))
+			summon('minecraft:text_display', abs(...sLeftPos),
+				wallBorderNbt(i, bg, yOff, lane.sideFacing + 180, sideScale))
+			summon('minecraft:text_display', abs(...sRightPos),
+				wallBorderNbt(i, bg, yOff, lane.sideFacing, sideScale))
+			summon('minecraft:text_display', abs(...sRightPos),
+				wallBorderNbt(i, bg, yOff, lane.sideFacing + 180, sideScale))
+
+			summon('minecraft:text_display', abs(...fFrontPos),
+				wallBorderNbt(i, bg, yOff, lane.frontFacing, frontScale))
+			summon('minecraft:text_display', abs(...fFrontPos),
+				wallBorderNbt(i, bg, yOff, lane.frontFacing + 180, frontScale))
+			summon('minecraft:text_display', abs(...fBackPos),
+				wallBorderNbt(i, bg, yOff, lane.frontFacing, frontScale))
+			summon('minecraft:text_display', abs(...fBackPos),
+				wallBorderNbt(i, bg, yOff, lane.frontFacing + 180, frontScale))
 		}
 	})
 }, { runOnLoad: true })
@@ -312,7 +321,7 @@ export const beatLaneEffect = MCFunction('sections/rhythm/lane/beat', () => {
 			chain = chain.elseIf(glowColorScore.equalTo(idx), () => colorFns[idx]())
 		}
 
-		particle('minecraft:note', abs(laneCenter[0], laneCenter[1], laneCenter[2]), [2.5, 0.3, 0.3], 0, 6)
+		particle('minecraft:note', abs(laneCenter[0], laneCenter[1], laneCenter[2]), arena.particleSpread, 0, 6)
 	})
 	pulseUp()
 	triggerBorderRipple()

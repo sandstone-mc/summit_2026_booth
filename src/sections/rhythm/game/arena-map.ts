@@ -1,16 +1,16 @@
-import { _, abs, execute, fill, kill, MCFunction, NBT, schedule, Selector, summon, tp } from 'sandstone'
+import { _, abs, execute, fill, kill, MCFunction, NBT, raw, schedule, Selector, summon, tp } from 'sandstone'
 import { arena } from '@rhythm/config/internal/arena'
 import { mapCount, mapSafeNames } from '@rhythm/config/internal/maps'
 import { mapSelect, Tags } from './state'
 import { DIMENSION, NAMESPACE } from '@shared'
-import { map } from '@rhythm/config'
 
 export const placeMap = MCFunction('sections/rhythm/arena/place_map', () => {
 	if (mapCount === 0) return
-	const [ox, oy, oz] = arena.mapOrigin
+	const [px, py, pz] = arena.mapPlacement
+	const rotation = arena.structureRotation === 'none' ? undefined : arena.structureRotation
 	for (let i = 0; i < mapCount; i++) {
 		_.if(mapSelect.equalTo(i), () => {
-			execute.in(DIMENSION).run.place.template(`${NAMESPACE}:generated/maps/${mapSafeNames[i]}`, abs(ox, oy, oz))
+			execute.in(DIMENSION).run.place.template(`${NAMESPACE}:generated/maps/${mapSafeNames[i]}`, abs(px, py, pz), rotation, arena.structureMirror)
 		})
 	}
 	spawnSkybox()
@@ -31,10 +31,6 @@ const skyboxCenter: [number, number, number] = [
 	(arena.mapOrigin[1] + arena.mapEnd[1]) / 2,
 	(arena.mapOrigin[2] + arena.mapEnd[2]) / 2,
 ]
-const ITEM_DISPLAY_Y_SCALE = 15 / 16
-const skyboxScaleX = -map.size[0]
-const skyboxScaleY = -(map.size[1] / ITEM_DISPLAY_Y_SCALE)
-const skyboxScaleZ = -map.size[2]
 
 const skyboxModels = ['skybox_neon', 'skybox_cave', 'skybox_void']
 
@@ -42,10 +38,10 @@ function skyboxNbt(model: string) {
 	return {
 		Tags: [Tags.SKYBOX],
 		transformation: {
-			left_rotation: NBT.float([0, 1, 0, 0]),
+			left_rotation: NBT.float(arena.wallRotation),
 			right_rotation: NBT.float([0, 0, 0, 1]),
 			translation: NBT.float([0, 0, 0]),
-			scale: NBT.float([skyboxScaleX, skyboxScaleY, skyboxScaleZ]),
+			scale: NBT.float(arena.skyboxScale),
 		},
 		item: {
 			id: 'minecraft:leather_horse_armor',

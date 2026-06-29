@@ -15,17 +15,35 @@ MCFunction('sections/rhythm/debug/setup', () => {
 		const [fxMax, fzMax] = arena.forceloadMax
 		forceload.add(abs(fxMin, fzMin), abs(fxMax, fzMax))
 
-		const [blockX, blockY] = arena.playAreaMin
-		fill(
-			abs(blockX - 1, blockY, -walls.passDistance),
-			abs(blockX + pattern.width, blockY, walls.spawnDistance),
-			'minecraft:smooth_stone',
-		)
-		fill(
-			abs(blockX, blockY, 0),
-			abs(blockX + pattern.width - 1, blockY, 0),
-			'minecraft:gold_block',
-		)
+		const [gx, gy, gz] = arena.goldLine
+		const sign = -arena.travelSign
+		if (arena.wallsTravelAlongZ) {
+			const zMin = Math.min(gz - sign * walls.passDistance, gz + sign * walls.spawnDistance)
+			const zMax = Math.max(gz - sign * walls.passDistance, gz + sign * walls.spawnDistance)
+			fill(
+				abs(gx - 1, gy, zMin),
+				abs(gx + pattern.width, gy, zMax),
+				'minecraft:smooth_stone',
+			)
+			fill(
+				abs(gx, gy, gz),
+				abs(gx + pattern.width - 1, gy, gz),
+				'minecraft:gold_block',
+			)
+		} else {
+			const xMin = Math.min(gx - sign * walls.passDistance, gx + sign * walls.spawnDistance)
+			const xMax = Math.max(gx - sign * walls.passDistance, gx + sign * walls.spawnDistance)
+			fill(
+				abs(xMin, gy, gz - 1),
+				abs(xMax, gy, gz + pattern.width),
+				'minecraft:smooth_stone',
+			)
+			fill(
+				abs(gx, gy, gz),
+				abs(gx, gy, gz + pattern.width - 1),
+				'minecraft:gold_block',
+			)
+		}
 	})
 	spawnLaneBorder()
 	spawnSkybox()

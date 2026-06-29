@@ -1,5 +1,6 @@
 import { _, abs, execute, kill, MCFunction, NBT, Objective, schedule, Selector, summon, tag, tp } from 'sandstone'
-import { pattern, wallMovement, walls, Difficulty, wallTintColor } from '@rhythm/config'
+import { pattern, walls, Difficulty } from '@rhythm/config'
+import { wallMovement, wallTintColor } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { singles, groups, type Cell, type Obstacle } from '@rhythm/config/obstacles'
 import { Tags } from '@rhythm/game/state'
@@ -66,8 +67,8 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 				item_display: 'none',
 				transformation: {
 					translation: NBT.float([0, 0, 0]),
-					left_rotation: NBT.float([0, 1, 0, 0]),
-					scale: NBT.float([pattern.width, pattern.height, pattern.width]),
+					left_rotation: NBT.float(arena.wallRotation),
+					scale: NBT.float(arena.wallScale),
 					right_rotation: NBT.float([0, 0, 0, 1]),
 				},
 				item: {
@@ -84,7 +85,8 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 				for (let x = 0; x < pattern.width; x++) {
 					const cell = obstacle.grid[y]?.[x]
 					if (cell == null) continue
-					const [hx, hy, hz] = gridToWorld(x, y)
+					const cx = arena.reverseCollisionX ? (pattern.width - 1 - x) : x
+					const [hx, hy, hz] = gridToWorld(cx, y)
 
 					if (hasHeadroom(obstacle.grid, x, y, cell)) {
 						summon('minecraft:happy_ghast', abs(hx, hy + cellInteractionYOffset(cell), hz), {
