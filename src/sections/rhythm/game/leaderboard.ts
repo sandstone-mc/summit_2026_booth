@@ -1,6 +1,7 @@
 import { _, advancement, Advancement, data, execute, MCFunction, Objective, scoreboard, Selector, kill, tag } from 'sandstone'
 import { songCount, songNames } from '@rhythm/config/internal/songs'
-import { panels, leaderboard as lbConfig } from '@rhythm/config'
+import { leaderboard as lbConfig } from '@rhythm/config'
+import { panels } from '@rhythm/config/internal/derived'
 import { GameStatus, Tags, status, songSelect, lbSongView, lbCatView, allPlayers } from './state'
 import { finalScore } from './scoring'
 import { wallLives } from './walls/collision'

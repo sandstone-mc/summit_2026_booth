@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { project } from '..'
+import { project } from './derived'
 import { PROJECT_ROOT, writeGenerated } from '@shared'
 
 export interface MapConfig {

@@ -1,6 +1,7 @@
 import sharp from 'sharp'
 import { ItemModelDefinition, Model, Texture } from 'sandstone'
-import { pattern, CellType, project, type Cell } from '..'
+import { pattern, CellType, type Cell } from '..'
+import { project } from './derived'
 import { singles, groups, type Obstacle } from '../obstacles'
 
 const CELL_SCALE = 16 / pattern.width

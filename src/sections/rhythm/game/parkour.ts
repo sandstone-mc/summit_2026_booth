@@ -1,5 +1,6 @@
 import { _, abs, execute, kill, MCFunction, NBT, Objective, playsound, scoreboard, Selector, summon, tag, title } from 'sandstone'
-import { wallMovement, walls } from '@rhythm/config'
+import { walls } from '@rhythm/config'
+import { wallMovement } from '@rhythm/config/internal/derived'
 import { PARKOUR_BONUS, PARKOUR_PATH_COUNT, PARKOUR_PATHS, PARKOUR_STEP_COUNT, STEP_GLASS, STEP_LENGTHS } from '@rhythm/config/parkour-paths'
 import { arena } from '@rhythm/config/internal/arena'
 import { wallAge, wallDepth } from './walls/spawning'

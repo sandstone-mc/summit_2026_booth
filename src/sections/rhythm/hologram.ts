@@ -1,5 +1,6 @@
 import { abs, NBT, summon } from 'sandstone'
-import { panels, type PanelConfig } from './config'
+import { type PanelConfig } from './config'
+import { panels } from './config/internal/derived'
 
 const BASE_LINE_HEIGHT = 0.25
 
