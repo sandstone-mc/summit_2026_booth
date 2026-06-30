@@ -18,8 +18,8 @@ const chainStrike = MCFunction(`${meta.spellPath}/chain_strike`, () => {
 
 const strikeAtPosition = MCFunction(`${meta.spellPath}/strike_at_position`, () => {
     checkHit({
-        width: 1,
-        height: 2,
+        width: 3,
+        height: 3,
         onHit: () => {
             chainStrike();
         }

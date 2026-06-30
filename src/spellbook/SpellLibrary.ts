@@ -27,28 +27,28 @@ export const SpellLibrary: SpellLibraryType = {
         id: "fire",
         uid: 0,
         name: "Fire",
-        description: "",
+        description: "Scorching magic that burns and blasts",
         spells: {
             "firebolt": {
                 id: "firebolt",
                 uid: 0,
                 mana_cost: 10,
                 name: "Firebolt",
-                description: ""
+                description: "A blazing bolt that deals 2 damage and ignites the target"
             },
             "heatwave": {
                 id: "heatwave",
                 uid: 1,
                 mana_cost: 70,
                 name: "Heatwave",
-                description: ""
+                description: "Erupts a ring of fire bolts in every direction around you"
             },
             "launch": {
                 id: "launch",
                 uid: 2,
                 mana_cost: 25,
                 name: "Launch",
-                description: ""
+                description: "Blasts you forward in your facing direction"
             }
         }
     },
@@ -56,21 +56,28 @@ export const SpellLibrary: SpellLibraryType = {
         id: "ice",
         uid: 1,
         name: "Ice",
-        description: "",
+        description: "Chilling magic that slows and freezes",
         spells: {
             "frostbolt": {
                 id: "frostbolt",
                 uid: 0,
                 mana_cost: 10,
                 name: "Frostbolt",
-                description: ""
+                description: "An icy bolt that deals 1 damage and freezes the target"
             },
             "blizzard": {
                 id: "blizzard",
                 uid: 1,
                 mana_cost: 50,
                 name: "Blizzard",
-                description: ""
+                description: "Summons a snowstorm that blinds and damages nearby enemies for 10s"
+            },
+            "frost_nova": {
+                id: "frost_nova",
+                uid: 2,
+                mana_cost: 25,
+                name: "Frost Nova",
+                description: "Releases a burst of ice dealing 3 damage and freezing targets in front of you"
             }
         }
     },
@@ -78,28 +85,28 @@ export const SpellLibrary: SpellLibraryType = {
         id: "arcane",
         uid: 2,
         name: "Arcane",
-        description: "",
+        description: "Arcane forces that home in on targets and break up crowds",
         spells: {
             "magic_missile": {
                 id: "magic_missile",
                 uid: 0,
                 mana_cost: 15,
                 name: "Magic Missile",
-                description: ""
+                description: "A homing bolt that tracks the enemy you're looking at when casting"
             },
             "shockwave": {
                 id: "shockwave",
                 uid: 1,
                 mana_cost: 50,
                 name: "Shockwave",
-                description: ""
+                description: "Expanding rings that push and damage nearby enemies"
             },
             "blink": {
                 id: "blink",
                 uid: 2,
                 mana_cost: 20,
                 name: "Blink",
-                description: ""
+                description: "Instantly teleports you up to 7 blocks in your facing direction"
             }
         }
     },
@@ -107,28 +114,28 @@ export const SpellLibrary: SpellLibraryType = {
         id: "lightning",
         uid: 3,
         name: "Lightning",
-        description: "",
+        description: "Electric power that stuns and overcharges enemies",
         spells: {
             "thunderbolt": {
                 id: "thunderbolt",
                 uid: 0,
                 mana_cost: 15,
                 name: "Thunderbolt",
-                description: ""
+                description: "Calls a lightning strike at your crosshair, stunning and charging the target"
             },
             "ball_lightning": {
                 id: "ball_lightning",
                 uid: 1,
                 mana_cost: 50,
                 name: "Ball Lightning",
-                description: ""
+                description: "A slow orb that zaps nearby enemies every second, then explodes on impact"
             },
             "static_field": {
                 id: "static_field",
                 uid: 2,
                 mana_cost: 30,
                 name: "Static Field",
-                description: ""
+                description: "Surrounds you with an electric aura that shocks nearby enemies for 10s"
             }
         }
     },
@@ -136,28 +143,28 @@ export const SpellLibrary: SpellLibraryType = {
         id: "nature",
         uid: 4,
         name: "Nature",
-        description: "",
+        description: "Wild growth that ensnares, pulls, and pierces",
         spells: {
             "thorn_volley": {
                 id: "thorn_volley",
                 uid: 0,
                 mana_cost: 25,
                 name: "Thorn Volley",
-                description: ""
+                description: "Fires 5 thorns in a spread cone, each dealing 2 damage and entangling"
             },
             "vine_whip": {
                 id: "vine_whip",
                 uid: 1,
-                mana_cost: 30,
+                mana_cost: 10,
                 name: "Vine Whip",
-                description: ""
+                description: "Launches a vine that pushes struck enemies away from you"
             },
             "entangle": {
                 id: "entangle",
                 uid: 2,
                 mana_cost: 60,
                 name: "Entangle",
-                description: ""
+                description: "Roots enemies in an area, slowing movement and dealing damage over time"
             }
         }
     }

@@ -1,4 +1,4 @@
-import { _, abs, execute, kill, Label, MCFunction, NBT, particle, raw, rel, Selector, summon, title } from "sandstone";
+import { _, abs, execute, kill, Label, MCFunction, NBT, particle, raw, rel, Selector, summon, tellraw, title } from "sandstone";
 import { SpellLibrary } from "../spellbook/SpellLibrary";
 import { ShowcaseMarker } from ".";
 import { STATES, GlobalState, SessionPlayer, ShowcaseMobs, startSelection } from "./ShowcaseState";
@@ -13,6 +13,8 @@ interface Pedestal {
   particleType: string;
   item: string;
 }
+
+const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth';
 
 const PEDESTALS: Pedestal[] = [
   { schoolId: 'fire',      x: 5,    y: 0, z: 22,   color: 'red',          particleType: 'flame',          item: 'minecraft:blaze_rod' },
@@ -39,6 +41,23 @@ for (const ped of PEDESTALS) {
     kill(AllPedestals);
     raw('loot give @s loot arcane_arts:items/magic_wand');
     GlobalState.set(STATES.FIGHTING);
+
+    tellraw(SessionPlayer, [
+      { text: '\n' },
+      { text: '✦ Arcane Arts  ', color: 'light_purple', bold: true },
+      { text: 'Left-click', color: 'yellow', bold: true },
+      { text: ' to select spell  •  ', color: 'gray' },
+      { text: 'Right-click', color: 'yellow', bold: true },
+      { text: ' to cast\n\n', color: 'gray' },
+      { text: `  ${school.name}`, color: ped.color as any, bold: true },
+      { text: `  ${school.description}\n`, color: 'gray', italic: true },
+      ...Object.values(school.spells).flatMap(spell => [
+        { text: '  › ', color: ped.color as any },
+        { text: spell.name, color: 'white', bold: true },
+        { text: `  ${spell.mana_cost}✦  `, color: 'aqua' },
+        { text: spell.description + '\n', color: 'gray' },
+      ]),
+    ] as any);
   });
 }
 
@@ -52,7 +71,7 @@ MCFunction('showcase/selection/spawn_pedestals', () => {
 
       // Floating item at pedestal center
       summon('item_display', rel(ped.x, ped.y + 1.5, ped.z), {
-        Tags: [commonTag, schoolTag],
+        Tags: [commonTag, schoolTag, BOOTH_ENTITY_TAG, 'summit.static'],
         item: { id: ped.item, count: NBT.int(1) },
         item_display: 'fixed',
         transformation: {
@@ -66,7 +85,7 @@ MCFunction('showcase/selection/spawn_pedestals', () => {
 
       // School name label above item
       summon('text_display', rel(ped.x, ped.y + 2.8, ped.z), {
-        Tags: [commonTag, schoolTag],
+        Tags: [commonTag, schoolTag, BOOTH_ENTITY_TAG, 'summit.static'],
         text: { text: school.name, color: ped.color, bold: true },
         alignment: 'center',
         billboard: 'vertical',
@@ -81,7 +100,7 @@ MCFunction('showcase/selection/spawn_pedestals', () => {
 
       // Clickable hitbox — Smithed API handles right-click dispatch
       summon('interaction', rel(ped.x, ped.y, ped.z), {
-        Tags: [commonTag, schoolTag, 'summit.interactable', 'summit.static'],
+        Tags: [commonTag, schoolTag, BOOTH_ENTITY_TAG, 'summit.interactable', 'summit.static'],
         width: NBT.float(1.0),
         height: NBT.float(2.5),
         response: false,

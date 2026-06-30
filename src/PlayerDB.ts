@@ -52,3 +52,7 @@ export const getSelf = MCFunction('playerdb/get_self', () => {
 export const saveSelf = MCFunction('playerdb/save_self', () => {
   execute.as('@s').run(() => _callWithUID(_saveByUID))
 })
+
+export const clearSelf = MCFunction('playerdb/clear_self', () => {
+  execute.as('@s').run(() => _callWithUID(_initEntry))
+})
