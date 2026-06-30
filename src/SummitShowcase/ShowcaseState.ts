@@ -168,7 +168,7 @@ const spawnButtons = MCFunction('showcase/spawn_buttons', () => {
         });
 
         // Change School button — back of room behind the pedestals
-        summon('text_display', rel(9.5, 1.4, 18), {
+        summon('text_display', rel(9.5, 1.5, 18), {
             Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
             text: [{ text: '✦ ', color: 'yellow' }, { text: 'Change School', color: 'white', bold: true }],
             alignment: 'center',
@@ -214,7 +214,7 @@ export const startSession = MCFunction('showcase/session/start', () => {
         saveSelf();
         mana('@s').set(100);
         maxMana('@s').set(100);
-        manaRegen('@s').set(4);
+        manaRegen('@s').set(20);
 
         // Ensure spell/school triggers are enabled
         scoreboard.players.enable('@s', setSchoolTrigger);

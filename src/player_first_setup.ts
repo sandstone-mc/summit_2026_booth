@@ -24,7 +24,7 @@ MCFunction('first_join', () => {
   say("First time joining");
 
   player.mana('@s').set(0);
-  player.manaRegen('@s').set(4);
+  player.manaRegen('@s').set(20);
   player.maxMana('@s').set(100);
 
   getSelf();
