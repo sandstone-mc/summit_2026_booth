@@ -1,1 +1,0 @@
-execute if score $status sandstone_summit_booth.rhythm.state matches 0 run function sandstone_summit_booth:sections/rhythm/start/init/if

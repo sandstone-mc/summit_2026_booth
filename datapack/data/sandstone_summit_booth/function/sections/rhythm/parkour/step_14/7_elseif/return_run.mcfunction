@@ -1,2 +1,0 @@
-scoreboard players set $y sandstone_summit_booth.rhythm.parkour 680
-execute in sandstone_summit_booth:rhythm run function sandstone_summit_booth:sections/rhythm/parkour/step_14/7_elseif/return_run/execute_in

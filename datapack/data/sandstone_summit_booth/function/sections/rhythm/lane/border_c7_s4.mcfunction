@@ -1,1 +1,0 @@
-execute in sandstone_summit_booth:rhythm as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.4] run data merge entity @s {background:704643071i}

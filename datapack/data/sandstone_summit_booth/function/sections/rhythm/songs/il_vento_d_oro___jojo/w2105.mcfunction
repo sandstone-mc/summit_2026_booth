@@ -1,1 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/obstacle/spawn_d5

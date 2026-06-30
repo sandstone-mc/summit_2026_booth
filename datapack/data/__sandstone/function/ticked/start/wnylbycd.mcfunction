@@ -1,1 +1,0 @@
-function __sandstone:ticked/1t
