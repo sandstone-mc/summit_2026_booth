@@ -16,5 +16,39 @@
     "on_player_exit": "sandstone_summit_booth:clean_player",
     "ticking_functions": {
         "#sandstone_summit_booth:ticking": "1t"
+    },
+    "sticker_book": {
+        "background_color": "#b4ae94",
+        "region": "textured_tropics",
+        "stickers": [
+            {
+                "sticker_id": "enter_booth",
+                "sticker_texture": "sandstone_summit_booth:sticker/enter_booth",
+                "sticker_name": "Welcome to Sandstone",
+                "unobtained_text": "Visit the Sandstone booth",
+                "obtained_text": "You visited the Sandstone booth!"
+            },
+            {
+                "sticker_id": "arcane_arts",
+                "sticker_texture": "sandstone_summit_booth:sticker/arcane_arts",
+                "sticker_name": "Arcane Arts",
+                "unobtained_text": "Cast a spell in the Arcane Arts showcase",
+                "obtained_text": "You mastered the arcane arts!"
+            },
+            {
+                "sticker_id": "rhythm",
+                "sticker_texture": "sandstone_summit_booth:sticker/rhythm",
+                "sticker_name": "Rhythm Master",
+                "unobtained_text": "Play the rhythm game showcase",
+                "obtained_text": "You've got the beat!"
+            },
+            {
+                "sticker_id": "hidden",
+                "sticker_texture": "sandstone_summit_booth:sticker/hidden",
+                "sticker_name": "???",
+                "unobtained_text": "Discover the hidden secret...",
+                "obtained_text": "You found the hidden secret!"
+            }
+        ]
     }
 }
