@@ -1,20 +1,20 @@
-import { Label, MCFunction, Objective, Selector, _, damage, execute, particle, rel, abs, Advancement, fill, summon, kill, Score, Macro, raw, Variable } from "sandstone";
-import { createStatusEffect } from "./Common";
+import { Label, MCFunction, Objective, Selector, _, damage, execute, particle, rel, abs, Advancement, fill, summon, kill, Score, Macro, raw, Variable } from 'sandstone'
+import { createStatusEffect } from './Common'
 
 const freezeAdvancement = Advancement(`status/freezing`, {
-    "criteria": {
-        "tick":{
-            "trigger": "minecraft:tick"
+    'criteria': {
+        'tick':{
+            'trigger': 'minecraft:tick'
         }
     },
-    "rewards": {
-        "function": `arcane_arts:status/freezing/tryfreeze`
+    'rewards': {
+        'function': `arcane_arts:status/freezing/tryfreeze`
     }
-});
+})
 
 const status = createStatusEffect({
-    name: "freezing",
-    damageType: "freeze",
+    name: 'freezing',
+    damageType: 'freeze',
     damageAmount: 1,
     damageInterval: 20,
     particles: () => {
@@ -23,16 +23,16 @@ const status = createStatusEffect({
     onApply: () => {},
     onEnd: () => {},
     onTick: () => {},
-});
+})
 
 
 
 MCFunction(`status/freezing/tryfreeze`, () => {
-    freezeAdvancement.revoke('@s');
+    freezeAdvancement.revoke('@s')
 
     _.if(status.statusTag('@s'), () => {
         execute.store.success(status.statusTime('#snow')).run(() => {
-            fill(rel(0, 1, 0), rel(0, 1, 0), 'powder_snow').replace('air');
+            fill(rel(0, 1, 0), rel(0, 1, 0), 'powder_snow').replace('air')
         })
 
         _.if(status.statusTime('#snow').equalTo(1), () => {

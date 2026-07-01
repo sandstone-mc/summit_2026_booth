@@ -36,7 +36,7 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	team.join('ssb.rhythm.nocollide', allPlayers)
 
 	execute.as(allPlayers).run(() => {
-		attribute("@s", "minecraft:fall_damage_multiplier").baseSet(0)
+		attribute('@s', 'minecraft:fall_damage_multiplier').baseSet(0)
 		attribute('@s', 'minecraft:movement_speed').baseSet(0.13)
 		wallLives('@s').set(livesDefault)
 		effect.give('@s', 'minecraft:instant_health', 1, 126, true)

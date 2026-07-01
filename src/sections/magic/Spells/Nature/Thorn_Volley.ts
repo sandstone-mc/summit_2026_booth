@@ -1,6 +1,6 @@
-import { abs, damage, loc, particle, rel, tp, Variable } from "sandstone";
-import { createProjectileSpell, spawnConeOfBolts } from "../Common";
-import { Entangled } from "../../StatusEffects";
+import { abs, damage, loc, particle, rel, tp, Variable } from 'sandstone'
+import { createProjectileSpell, spawnConeOfBolts } from '../Common'
+import { Entangled } from '../../StatusEffects'
 
 createProjectileSpell({
     schoolId: 'nature',
@@ -12,16 +12,16 @@ createProjectileSpell({
         blockCollision: true,
         move: () => tp('@s', loc(0, 0, 0.6)),
         particles: () => {
-            particle('crit', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force');
-            particle('spore_blossom_air', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0, 1, 'force');
+            particle('crit', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force')
+            particle('spore_blossom_air', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0, 1, 'force')
         },
         onHit: () => {
-            damage('@s', 2, 'thorns');
-            Entangled.apply(Variable(2));
-            particle('block{block_state:"minecraft:oak_leaves"}', rel(0, 0, 0), abs(0.3, 0.3, 0.3), 0.1, 10, 'force');
+            damage('@s', 2, 'thorns')
+            Entangled.apply(Variable(2))
+            particle('block{block_state:'minecraft:oak_leaves'}', rel(0, 0, 0), abs(0.3, 0.3, 0.3), 0.1, 10, 'force')
         },
         onExpire: () => {
-            particle('block{block_state:"minecraft:oak_leaves"}', rel(0, 0, 0), abs(0.2, 0.2, 0.2), 0.05, 5, 'force');
+            particle('block{block_state:'minecraft:oak_leaves'}', rel(0, 0, 0), abs(0.2, 0.2, 0.2), 0.05, 5, 'force')
         }
     }
 });

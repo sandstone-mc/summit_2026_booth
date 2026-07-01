@@ -1,5 +1,5 @@
 import { MCFunction, Selector } from 'sandstone'
-import { state } from '../../../shared';
+import { state } from '../../../shared'
 
 export enum GameStatus {
 	WAITING,

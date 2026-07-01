@@ -1,6 +1,6 @@
-import { abs, damage, loc, particle, rel, tp, Variable } from "sandstone";
-import { Burning } from "../../StatusEffects"
-import { createProjectileSpell, spawnSingleBolt } from "../Common";
+import { abs, damage, loc, particle, rel, tp, Variable } from 'sandstone'
+import { Burning } from '../../StatusEffects'
+import { createProjectileSpell, spawnSingleBolt } from '../Common'
 
 createProjectileSpell({
   schoolId: 'fire', spellId: 'firebolt',

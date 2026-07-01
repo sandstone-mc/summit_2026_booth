@@ -1,6 +1,6 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, loc, particle, rel, rotate, say, summon, Variable, tellraw, tp } from "sandstone";
-import { Freezing } from "../../StatusEffects"
-import { createProjectileSpell, spawnSingleBolt } from "../Common";
+import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, loc, particle, rel, rotate, say, summon, Variable, tellraw, tp } from 'sandstone'
+import { Freezing } from '../../StatusEffects'
+import { createProjectileSpell, spawnSingleBolt } from '../Common'
 
 createProjectileSpell({
   schoolId: 'ice', spellId: 'frostbolt',
