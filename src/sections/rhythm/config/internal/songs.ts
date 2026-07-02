@@ -4,7 +4,7 @@ import { join } from 'path'
 import { walls, rendering } from '..'
 import { wallMovement } from './derived'
 import { PARKOUR_STEP_COUNT, parkourStepIntervalForSpeed } from '../parkour-paths'
-import { getSoundId, getSegmentSoundId, nearestDurationBucket, renderAllSounds, renderFullSongs, SEGMENT_SECS, SEGMENT_TICKS, type SoundKey, type FullSongInfo } from './render-sounds'
+import { getSoundId, nearestDurationBucket, renderAllSounds, renderFullSongs, SEGMENT_SECS, type SoundKey } from './render-sounds'
 import { songList } from './song-list'
 import { PROJECT_ROOT } from '@shared'
 
@@ -352,7 +352,7 @@ async function loadAllSongs(): Promise<SongLoadResult> {
 	}
 
 	if (rendering === 'compressed') {
-		console.log(`[songs] Compressed mode — noteblock sounds, real audio only for songs with audio files`)
+		console.log(`[songs] Compressed mode: noteblock sounds, real audio only for songs with audio files`)
 	} else {
 		await renderAllSounds(allSoundKeys)
 	}

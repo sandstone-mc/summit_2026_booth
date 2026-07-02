@@ -1,7 +1,7 @@
 import { _, execute, MCFunction, playsound, schedule, Selector, stopsound } from 'sandstone'
 import { songCount, songData, songSafeNames, songSegmentCounts, songAudioOffsets, songUsesNoteBlocks, SEGMENT_TICKS, getSegmentSoundId } from '@rhythm/config/internal/songs'
 import { PARKOUR_GRACE_TICKS } from '@rhythm/config/parkour-paths'
-import { status, songSelect } from './state'
+import { songSelect } from './state'
 import { spawnForDifficulty } from './walls/spawning'
 import { stepDispatchFns, parkourCleanup } from './parkour'
 import { DIMENSION, NAMESPACE } from '@shared'

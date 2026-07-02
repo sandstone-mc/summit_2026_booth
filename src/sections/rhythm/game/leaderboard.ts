@@ -1,4 +1,5 @@
-import { _, advancement, Advancement, data, execute, MCFunction, Objective, scoreboard, Selector, kill, tag } from 'sandstone'
+import { _, advancement, Advancement, execute, MCFunction, Objective, scoreboard, Selector, kill, tag } from 'sandstone'
+import { type JSONTextComponent } from 'sandstone/arguments'
 import { songCount, songNames } from '@rhythm/config/internal/songs'
 import { leaderboard as lbConfig } from '@rhythm/config'
 import { panels } from '@rhythm/config/internal/derived'
@@ -6,7 +7,7 @@ import { GameStatus, Tags, status, songSelect, lbSongView, lbCatView, allPlayers
 import { finalScore } from './scoring'
 import { wallLives } from './walls/collision'
 import { livesSetting } from './settings'
-import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount } from '@rhythm/hologram'
+import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount, mergeDisplayText } from '@rhythm/hologram'
 import { DIMENSION, NAMESPACE, state } from '@shared'
 
 const lbBest: ReturnType<typeof Objective.create>[] = []
@@ -83,12 +84,12 @@ const sortLeaderboard = MCFunction('sections/rhythm/leaderboard/sort', () => {
 
 const STATE_OBJ = `${NAMESPACE}.rhythm.state`
 
-function buildLbText(songIdx: number, catIdx: number, scoreLine: any[], nameOverride?: string): any[] {
+function buildLbText(songIdx: number, catIdx: number, scoreLine: JSONTextComponent[], nameOverride?: string): JSONTextComponent[] {
 	const songName = nameOverride ?? clampName(songNames[songIdx] ?? 'No songs')
 	const catName = catIdx === 0 ? 'Best Score' : 'Deathless'
 	const catColor = catIdx === 0 ? 'gold' : 'light_purple'
 
-	const parts: any[] = [
+	const parts: JSONTextComponent[] = [
 		{ text: `${panels.padding}🏆 `, color: 'gold' }, { text: `LEADERBOARD${panels.padding}`, color: 'white', bold: true },
 		{ text: '\n' },
 		{ text: `${panels.padding}♪ `, color: 'gold' }, { text: songName, color: 'yellow', font: 'monocraft:default' },
@@ -189,9 +190,9 @@ const updateDisplay = MCFunction('sections/rhythm/leaderboard/update', () => {
 	for (let si = 0; si < songCount; si++) {
 		_.if(lbSongView.equalTo(si), () => {
 			_.if(lbCatView.equalTo(0), () => {
-				data.merge.entity(panelSel, { text: lbText(si, 0) })
+				mergeDisplayText(panelSel, lbText(si, 0))
 			}).else(() => {
-				data.merge.entity(panelSel, { text: lbText(si, 1) })
+				mergeDisplayText(panelSel, lbText(si, 1))
 			})
 		})
 	}
@@ -211,9 +212,9 @@ const scrollLbUpdate = MCFunction('sections/rhythm/leaderboard/scroll', () => {
 				_.if(scrollPos.equalTo(offset), () => {
 					const visible = scrollFrame(name, offset)
 					_.if(lbCatView.equalTo(0), () => {
-						data.merge.entity(panelSel, { text: lbText(si, 0, visible) })
+						mergeDisplayText(panelSel, lbText(si, 0, visible))
 					}).else(() => {
-						data.merge.entity(panelSel, { text: lbText(si, 1, visible) })
+						mergeDisplayText(panelSel, lbText(si, 1, visible))
 					})
 				})
 			}
@@ -255,7 +256,7 @@ const onMyScore = MCFunction('sections/rhythm/leaderboard/on_myscore', () => {
 						lbRank.add(1)
 					})
 				})
-				data.merge.entity(panelSel, { text: lbMyText(si, 0) })
+				mergeDisplayText(panelSel, lbMyText(si, 0))
 			}).else(() => {
 				lbScore.set(lbNoDeath[si]('@s'))
 				lbRank.set(1)
@@ -264,7 +265,7 @@ const onMyScore = MCFunction('sections/rhythm/leaderboard/on_myscore', () => {
 						lbRank.add(1)
 					})
 				})
-				data.merge.entity(panelSel, { text: lbMyText(si, 1) })
+				mergeDisplayText(panelSel, lbMyText(si, 1))
 			})
 		})
 	}

@@ -1,15 +1,21 @@
 import sharp from 'sharp'
-import { ItemModelDefinition, Model, Texture } from 'sandstone'
+import { ItemModelDefinition, Model, NBT, Texture } from 'sandstone'
 import { pattern, CellType, type Cell } from '..'
 import { project } from './derived'
 import { singles, groups, type Obstacle } from '../obstacles'
+
+type ModelDef = NonNullable<Parameters<typeof Model>[2]>
+type Vec3 = [number, number, number]
+type FaceName = 'north' | 'south' | 'east' | 'west' | 'up' | 'down'
+interface ModelFace { uv: [number, number, number, number]; texture: string; tintindex?: number }
+interface WallElement { from: Vec3; to: Vec3; faces: Partial<Record<FaceName, ModelFace>> }
 
 const CELL_SCALE = 16 / pattern.width
 const HALF_CELL = CELL_SCALE / 2
 const Z_OFFSET = 8 + CELL_SCALE - 0.3 * 16 / pattern.width
 const round = (v: number) => Math.round(v * 1000) / 1000
 
-// Border flags — bitfield describing which edges/corners need a border line
+// Bitfield of which edges and corners need a border line
 const BORDER_LEFT   = 1,    BORDER_RIGHT  = 2,    BORDER_TOP    = 4,    BORDER_BOTTOM = 8
 const CORNER_TL     = 16,   CORNER_TR     = 32,   CORNER_BL     = 64,  CORNER_BR     = 128
 const HALF_LEFT_TOP = 256,  HALF_LEFT_BOT = 512,  HALF_RIGHT_TOP = 1024, HALF_RIGHT_BOT = 2048
@@ -112,7 +118,7 @@ function generateBorderTexture(flags: number): Promise<Buffer> {
 		.toBuffer()
 }
 
-function cellToElements(cell: NonNullable<Cell>, x: number, y: number, grid: Cell[][], borderSlot: string): any {
+function cellToElements(cell: NonNullable<Cell>, x: number, y: number, grid: Cell[][], borderSlot: string): WallElement {
 	const x0 = round(x * CELL_SCALE)
 	const x1 = round(x0 + CELL_SCALE)
 	const z0 = round(Z_OFFSET)
@@ -126,12 +132,12 @@ function cellToElements(cell: NonNullable<Cell>, x: number, y: number, grid: Cel
 	const below = grid[y - 1]?.[x] ?? null
 	const above = grid[y + 1]?.[x] ?? null
 
-	const faces: Record<string, any> = {}
-	const fullUV = { uv: [0, 0, 16, 16], texture: '#0', tintindex: 0 }
-	const borderFaceUV = { uv: [0, 0, 16, 16], texture: `#${borderSlot}`, tintindex: 0 }
+	const faces: Partial<Record<FaceName, ModelFace>> = {}
+	const fullUV: ModelFace = { uv: [0, 0, 16, 16], texture: '#0', tintindex: 0 }
+	const borderFaceUV: ModelFace = { uv: [0, 0, 16, 16], texture: `#${borderSlot}`, tintindex: 0 }
 
 	if (cell === CellType.FULL) {
-		const sideUV = { uv: [0, 0, 16, 16], texture: '#0', tintindex: 0 }
+		const sideUV: ModelFace = { uv: [0, 0, 16, 16], texture: '#0', tintindex: 0 }
 		if (!coversRange(left, myBottom, myTop)) faces.west = sideUV
 		if (!coversRange(right, myBottom, myTop)) faces.east = sideUV
 		if (!above || cellBottom(above) > 0) faces.up = fullUV
@@ -149,7 +155,7 @@ function cellToElements(cell: NonNullable<Cell>, x: number, y: number, grid: Cel
 	const isTop = cell === CellType.SLAB_TOP
 	const y0 = round(y * CELL_SCALE + (isTop ? HALF_CELL : 0))
 	const y1 = round(y0 + HALF_CELL)
-	const sideUV = { uv: [0, isTop ? 0 : 8, 16, isTop ? 8 : 16], texture: '#0', tintindex: 0 }
+	const sideUV: ModelFace = { uv: [0, isTop ? 0 : 8, 16, isTop ? 8 : 16], texture: '#0', tintindex: 0 }
 
 	if (!coversRange(left, myBottom, myTop)) faces.west = sideUV
 	if (!coversRange(right, myBottom, myTop)) faces.east = sideUV
@@ -167,7 +173,7 @@ function cellToElements(cell: NonNullable<Cell>, x: number, y: number, grid: Cel
 	return { from: [x0, y0, z0], to: [x1, y1, z1], faces }
 }
 
-function obstacleToModel(obstacle: Obstacle) {
+function obstacleToModel(obstacle: Obstacle): ModelDef {
 	const borderFlagsPerCell: { x: number; y: number; cell: NonNullable<Cell>; flags: number }[] = []
 	for (let y = 0; y < pattern.height; y++) {
 		for (let x = 0; x < pattern.width; x++) {
@@ -191,13 +197,14 @@ function obstacleToModel(obstacle: Obstacle) {
 		textures[s] = `${ns}:item/generated/glass/border_${f}`
 	}
 
-	const elements: any[] = []
+	const elements: WallElement[] = []
 	for (const { x, y, cell, flags } of borderFlagsPerCell) {
 		const el = cellToElements(cell, x, y, obstacle.grid, flagToSlot.get(flags)!)
 		if (Object.keys(el.faces).length > 0) elements.push(el)
 	}
 
-	return { textures, elements }
+	// Sandstone's Model type wraps coordinates in NBTList. This plain model JSON is valid at runtime.
+	return { textures, elements } as unknown as ModelDef
 }
 
 function modelName(obstacle: Obstacle): string {
@@ -243,7 +250,7 @@ for (const obstacle of obstacles) {
 
 	Model('item', genName, obstacleToModel(obstacle))
 	ItemModelDefinition(genName, {
-		model: { type: 'minecraft:model', model: `${ns}:item/${genName}`, tints: [{ type: 'minecraft:dye', default: 16777215 }] },
+		model: { type: 'minecraft:model', model: `${ns}:item/${genName}`, tints: [{ type: 'minecraft:dye', default: NBT.int(16777215) }] },
 	})
 }
 

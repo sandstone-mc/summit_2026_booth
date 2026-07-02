@@ -1,4 +1,4 @@
-import { _, execute, MCFunction, Objective, playsound, Selector, title, scoreboard } from 'sandstone'
+import { _, execute, MCFunction, Objective, playsound, Selector, title } from 'sandstone'
 import { GameStatus, Tags, allPlayers, alivePlayers, status } from './state'
 import { beatFlag } from './walls/ticking'
 import { wallLives } from './walls/collision'

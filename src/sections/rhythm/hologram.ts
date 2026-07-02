@@ -1,4 +1,5 @@
-import { abs, NBT, summon } from 'sandstone'
+import { abs, data, NBT, summon } from 'sandstone'
+import { type JSONTextComponent } from 'sandstone/arguments'
 import { type PanelConfig } from './config'
 import { panels } from './config/internal/derived'
 
@@ -36,7 +37,11 @@ export function lineY(panel: PanelConfig, totalLines: number, lineIdx: number) {
 	return panel.y + (totalLines - 1 - lineIdx) * lineHeight(panel) + lineHeight(panel) / 2
 }
 
-export function spawnPanel(panel: PanelConfig, tags: string[], text: any, bg = panels.background) {
+export function mergeDisplayText(target: Parameters<typeof data.merge.entity>[0], text: JSONTextComponent) {
+	data.merge.entity(target, { text } as unknown as Parameters<typeof data.merge.entity>[1])
+}
+
+export function spawnPanel(panel: PanelConfig, tags: string[], text: JSONTextComponent, bg = panels.background) {
 	const nbt: Record<string, any> = {
 		Tags: tags,
 		text,

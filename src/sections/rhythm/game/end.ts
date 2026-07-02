@@ -1,5 +1,5 @@
-import { _, abs, attribute, clear, effect, execute, gamemode, gamerule, kill, MCFunction, schedule, Selector, stopsound, tag, team, title, tp } from 'sandstone'
-import { GameStatus, Tags, allPlayers, alivePlayers, status } from './state'
+import { _, abs, attribute, effect, execute, gamemode, gamerule, MCFunction, raw, schedule, Selector, tag, team, tp } from 'sandstone'
+import { GameStatus, Tags, allPlayers, status } from './state'
 import { clearWalls } from './walls/spawning'
 import { stopSong, stopWalls } from './songs'
 import { computeScores } from './scoring'
@@ -45,7 +45,7 @@ const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
 	execute.as(allPlayers).run(() => {
 		effect.clear('@s')
 		attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
-		clear('@s', '*')
+		raw('clear @s')
 		tag('@s').remove(Tags.ALIVE)
 		tag('@s').remove(Tags.PLAYER)
 		tag('@s').remove(Tags.WALL_HIT_COOLDOWN)

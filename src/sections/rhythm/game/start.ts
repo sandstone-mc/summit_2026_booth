@@ -1,4 +1,4 @@
-import { _, execute, MCFunction, Objective, playsound, schedule, title, tp } from 'sandstone'
+import { _, execute, MCFunction, schedule, title } from 'sandstone'
 import { GameStatus, status, allPlayers } from './state'
 import { setActive } from './active'
 import { NAMESPACE, state } from '@shared'

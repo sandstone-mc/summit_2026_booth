@@ -1,5 +1,3 @@
-// Arena positions, all derived from goldLine and goldLineDirection in config/index.ts.
-
 import { goldLine, goldLineDirection, pattern, walls } from '..'
 import { wallMovement, map } from './derived'
 

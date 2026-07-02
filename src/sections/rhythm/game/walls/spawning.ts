@@ -1,4 +1,4 @@
-import { _, abs, execute, kill, MCFunction, NBT, Objective, schedule, Selector, summon, tag, tp } from 'sandstone'
+import { _, abs, execute, MCFunction, NBT, Objective, schedule, Selector, summon } from 'sandstone'
 import { pattern, walls, Difficulty } from '@rhythm/config'
 import { wallMovement, wallTintColor } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'

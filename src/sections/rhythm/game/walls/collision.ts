@@ -1,5 +1,4 @@
 import { _, abs, effect, execute, gamemode, kill, MCFunction, Objective, particle, playsound, Predicate, rel, Selector, tag, title, tp } from 'sandstone'
-import { arena } from '@rhythm/config/internal/arena'
 import { walls } from '@rhythm/config'
 import { GameStatus, Tags, alivePlayers, status } from '@rhythm/game/state'
 import { Positions, DIMENSION } from '@shared'

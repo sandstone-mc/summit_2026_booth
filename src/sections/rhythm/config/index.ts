@@ -1,6 +1,5 @@
 import type { RhythmConfig } from './internal/types'
 
-// Re-exported so callers can keep importing types from the config entry point.
 export { Difficulty, CellType } from './internal/types'
 export type { RenderingMode, GoldLineDirection, Cell, PanelConfig, RhythmConfig } from './internal/types'
 
@@ -82,8 +81,6 @@ const config: RhythmConfig = {
 }
 
 export default config
-
-// Named exports of the config fields, for callers that import a single setting.
 
 export const rendering = config.rendering
 export const goldLine = config.goldLine

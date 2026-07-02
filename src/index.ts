@@ -1,4 +1,4 @@
-import { functionCmd, MCFunction, Selector } from 'sandstone'
+import { functionCmd, MCFunction } from 'sandstone'
 
 import { NAMESPACE, ticking } from './shared'
 import './version'

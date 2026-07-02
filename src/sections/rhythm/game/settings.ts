@@ -1,12 +1,13 @@
-import { _, advancement, Advancement, data, execute, MCFunction, playsound, Selector, kill, tag } from 'sandstone'
+import { _, advancement, Advancement, execute, MCFunction, Selector, kill, tag } from 'sandstone'
+import { type JSONTextComponent } from 'sandstone/arguments'
 import { songCount, songNames } from '@rhythm/config/internal/songs'
 import { mapCount, mapNames } from '@rhythm/config/internal/maps'
 import { gameplay } from '@rhythm/config'
 import { panels } from '@rhythm/config/internal/derived'
 import { GameStatus, Tags, status, songSelect, mapSelect } from './state'
 import { startGame, cancelStart } from './start'
-import { placeMap, clearMap, spawnSkybox } from './arena-map'
-import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount } from '@rhythm/hologram'
+import { placeMap, clearMap } from './arena-map'
+import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount, mergeDisplayText } from '@rhythm/hologram'
 import { DIMENSION, NAMESPACE, state } from '@shared'
 
 export const livesSetting = state('$lives')
@@ -31,7 +32,7 @@ function clampLives(livesI: number): string {
 	return val
 }
 
-function settingsText(songIdx: number, livesI: number, mapIdx: number, cancel: boolean, songNameOverride?: string): any[] {
+function settingsText(songIdx: number, livesI: number, mapIdx: number, cancel: boolean, songNameOverride?: string): JSONTextComponent[] {
 	const sName = songNameOverride ?? clampName(songNames[songIdx] ?? 'None')
 	const mName = mapCount > 0 ? clampName(mapNames[mapIdx] ?? 'None') : clampName('No maps')
 	const lName = clampLives(livesI)
@@ -53,7 +54,7 @@ function settingsText(songIdx: number, livesI: number, mapIdx: number, cancel: b
 
 const mapMax = Math.max(mapCount, 1)
 
-function inProgressText(): any[] {
+function inProgressText(): JSONTextComponent[] {
 	return [
 		{ text: `${panels.padding}⚙ `, color: 'gray' }, { text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
 		{ text: '\n\n\n\n' },
@@ -66,7 +67,7 @@ export const updateSettingsPanel = MCFunction('sections/rhythm/settings/update',
 	scrollPos.set(0)
 	scrollTimer.set(0)
 	_.if(status.greaterOrEqualThan(GameStatus.ACTIVE), () => {
-		data.merge.entity(panelSel, { text: inProgressText() })
+		mergeDisplayText(panelSel, inProgressText())
 	}).else(() => {
 		for (let si = 0; si < songCount; si++) {
 			_.if(songSelect.equalTo(si), () => {
@@ -75,9 +76,9 @@ export const updateSettingsPanel = MCFunction('sections/rhythm/settings/update',
 						for (let mi = 0; mi < mapMax; mi++) {
 							_.if(mapSelect.equalTo(mi), () => {
 								_.if(status.equalTo(GameStatus.STARTING), () => {
-									data.merge.entity(panelSel, { text: settingsText(si, li, mi, true) })
+									mergeDisplayText(panelSel, settingsText(si, li, mi, true))
 								}).else(() => {
-									data.merge.entity(panelSel, { text: settingsText(si, li, mi, false) })
+									mergeDisplayText(panelSel, settingsText(si, li, mi, false))
 								})
 							})
 						}
@@ -105,9 +106,9 @@ const scrollSettingsUpdate = MCFunction('sections/rhythm/settings/scroll', () =>
 							for (let mi = 0; mi < mapMax; mi++) {
 								_.if(mapSelect.equalTo(mi), () => {
 									_.if(status.equalTo(GameStatus.STARTING), () => {
-										data.merge.entity(panelSel, { text: settingsText(si, li, mi, true, visible) })
+										mergeDisplayText(panelSel, settingsText(si, li, mi, true, visible))
 									}).else(() => {
-										data.merge.entity(panelSel, { text: settingsText(si, li, mi, false, visible) })
+										mergeDisplayText(panelSel, settingsText(si, li, mi, false, visible))
 									})
 								})
 							}

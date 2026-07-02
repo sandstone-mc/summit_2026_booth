@@ -1,9 +1,9 @@
-import { _, abs, data, Data, execute, kill, MCFunction, NBT, Objective, particle, raw, Selector, tag, tp } from 'sandstone'
+import { _, abs, data, execute, kill, MCFunction, NBT, Objective, particle, raw, Selector, tag, tp } from 'sandstone'
 import { wallMovement } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { wallAge, wallDepth } from './spawning'
 import { GameStatus, Tags, status } from '@rhythm/game/state'
-import { DIMENSION, state } from '@shared'
+import { DIMENSION, NAMESPACE, state } from '@shared'
 
 const wallMovementObj = Objective.create('rhythm.wall.move')
 
@@ -45,8 +45,6 @@ const initWalls = MCFunction('sections/rhythm/wall/init', () => {
 	})
 }, { lazy: true })
 
-// TODO: We're moving an entity, we should be editing its position nbt or (better) moving it with static tp command(s)
-// Also, for future reference, see: https://sandstone.dev/docs/features/macros
 const tpWall = MCFunction('sections/rhythm/wall/tp', () => {
 	raw(arena.wallsTravelAlongZ ? '$tp @s ~ ~ $(pos)' : '$tp @s $(pos) ~ ~')
 }, { lazy: true })
@@ -66,10 +64,9 @@ const moveWalls = MCFunction('sections/rhythm/wall/move', () => {
 		wallPos('@s').set(arena.spawnScaled)
 		wallPos('@s').add(wallPositionTemp('@s'))
 		wallPos('@s').add(wallDepth('@s'))
-		// For future reference, this can be done with this: Data('storage', 'ssb.rhythm:temp', 'pos').set(wallPos('@s'), 'double', 0.001)
 		execute.store.result.storage('ssb.rhythm:temp', 'pos', 'double', 0.001)
 			.run.scoreboard.players.get('@s', wallPos.name)
-		raw('function sandstone_summit_booth:sections/rhythm/wall/tp with storage ssb.rhythm:temp')
+		raw(`function ${NAMESPACE}:sections/rhythm/wall/tp with storage ssb.rhythm:temp`)
 	})
 }, { lazy: true })
 

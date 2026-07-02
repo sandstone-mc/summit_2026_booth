@@ -1,4 +1,4 @@
-import { abs, effect, execute, fill, forceload, gamemode, kill, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
+import { abs, effect, execute, fill, forceload, gamemode, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
 import { arena } from '@rhythm/config/internal/arena'
 import { DIMENSION, Positions } from '@shared'
 import { walls, pattern } from '@rhythm/config'

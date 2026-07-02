@@ -1,4 +1,3 @@
-// Values computed from the config object. The config file itself stays declarative.
 
 import config from '..'
 import sandstoneConfig from '@/sandstone.config'

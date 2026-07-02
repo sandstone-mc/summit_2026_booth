@@ -1,4 +1,4 @@
-import { _, abs, execute, kill, MCFunction, NBT, Objective, playsound, scoreboard, Selector, summon, tag, title } from 'sandstone'
+import { _, abs, execute, MCFunction, NBT, Objective, playsound, Selector, summon, tag, title } from 'sandstone'
 import { walls } from '@rhythm/config'
 import { wallMovement } from '@rhythm/config/internal/derived'
 import { PARKOUR_BONUS, PARKOUR_PATH_COUNT, PARKOUR_PATHS, PARKOUR_STEP_COUNT, STEP_GLASS, STEP_LENGTHS } from '@rhythm/config/parkour-paths'
@@ -85,7 +85,7 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 					})
 
 					const spacingAge = (i * 2 - (platLen - 1)) * arena.travelSign
-					const depthOffset = spacingAge * wallMovement.moveNumerator / wallMovement.travelTicks
+					const depthOffset = Math.round(spacingAge * wallMovement.moveNumerator / wallMovement.travelTicks)
 					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).set(depthOffset)
 					tag(Selector('@e', { tag: Tags.PARKOUR_FRESH })).remove(Tags.PARKOUR_FRESH)
 				}

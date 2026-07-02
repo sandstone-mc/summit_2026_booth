@@ -1,14 +1,13 @@
-import { _, abs, attribute, effect, execute, forceload, gamemode, gamerule, MCFunction, NBT, Objective, playsound, Selector, tag, team, title, tp } from 'sandstone'
+import { _, abs, attribute, effect, execute, forceload, gamemode, gamerule, MCFunction, team, tp } from 'sandstone'
 import { arena } from '@rhythm/config/internal/arena'
 import { songCount, songDurations } from '@rhythm/config/internal/songs'
-import { GameStatus, Tags, allPlayers, alivePlayers, status, songSelect } from './state'
+import { GameStatus, Tags, allPlayers, status, songSelect } from './state'
 import { wallLives } from './walls/collision'
 import { points, combo, finalScore } from './scoring'
 import { livesSetting, updateSettingsPanel } from './settings'
 import { playSong, scheduleWalls } from './songs'
 import { spawnLaneShulkers, spawnLaneBorder } from './lane-effects'
 import { DIMENSION, state } from '@shared'
-import { gameplay } from '@rhythm/config'
 
 MCFunction('sections/rhythm/active/nocollide_init', () => {
 	team.add(Tags.NO_COLLIDE)
