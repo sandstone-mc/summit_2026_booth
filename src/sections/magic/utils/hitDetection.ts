@@ -1,7 +1,7 @@
 import { execute, rel, Selector } from 'sandstone'
 
 interface HitboxOptions {
-    type?: string;  //default #arcane_arts:targetable
+    type?: string;  //default #sandstone_summit_booth:targetable
     width?: number; // default 0.9
     height?: number; // default 2.0
     onHit: () => void
@@ -10,7 +10,7 @@ interface HitboxOptions {
 export const checkHit = (opts: HitboxOptions) => {
     const w = opts.width || 0.9
     const h = opts.height || 2.0
-    const type = opts.type || '#arcane_arts:targetable'
+    const type = opts.type || '#sandstone_summit_booth:targetable'
 
     execute.positioned(rel(-w, -h / 2, -w)).run(() => {
         execute.as(Selector('@e', {

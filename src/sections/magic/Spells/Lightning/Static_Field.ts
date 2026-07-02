@@ -8,7 +8,7 @@ const meta = spellMeta('lightning', 'static_field')
 const StaticField = Label('status.static_field')
 const fieldDuration = Objective.create('status.static_field_timer', 'dummy')
 
-MCFunction(`${meta.spellPath}/update`, () => {
+MCFunction(`sections/magic/${meta.spellPath}/update`, () => {
     execute.as(Selector('@a', { tag: StaticField })).at('@s').run(() => {
         // Aura particles
         particle('electric_spark', rel(0, 1, 0), abs(0.5, 0.8, 0.5), 0.05, 2, 'force')
@@ -32,7 +32,7 @@ MCFunction(`${meta.spellPath}/update`, () => {
     })
 }, { runEvery: 10 })
 
-const doCast = MCFunction(`${meta.spellPath}/do_cast`, () => {
+const doCast = MCFunction(`sections/magic/${meta.spellPath}/do_cast`, () => {
     StaticField('@s').add()
     fieldDuration('@s').set(200)
     tellraw('@s', { text: 'Static Field activated!', color: 'yellow' })
@@ -44,7 +44,7 @@ const doCast = MCFunction(`${meta.spellPath}/do_cast`, () => {
     })
 }, { asyncContext: true, lazy: true })
 
-MCFunction(`${meta.spellPath}/cast`, () => {
+MCFunction(`sections/magic/${meta.spellPath}/cast`, () => {
     castSpell('static_field', 'lightning', () => {
         _.if(_.not(StaticField('@s')), () => {
             doCast()

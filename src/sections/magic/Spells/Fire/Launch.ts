@@ -1,10 +1,11 @@
-import { functionCmd, MCFunction } from 'sandstone'
+import { functionCmd, MCFunction, raw } from 'sandstone'
 import { castSpell } from '../Common'
 
 const spellPath = 'spells/fire/launch'
 
-MCFunction(`${spellPath}/cast`, () => {
+MCFunction(`sections/magic/${spellPath}/cast`, () => {
     castSpell('launch', 'fire', () => {
-        functionCmd('pl_impulse:execute', { func: 'motion', in: { velocity: 1.5 } })
+        raw("scoreboard players set $strength player_motion.api.launch 10000")
+        functionCmd('player_motion:api/launch_looking')
     })
 })

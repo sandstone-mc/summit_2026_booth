@@ -31,8 +31,8 @@ LootTable('items/' + ITEM_ID, {
                 },
                 'minecraft:rarity': 'epic',
                 'minecraft:custom_data': {
-                  'arcane_arts.id': ITEM_ID,
-                  'arcane_arts.item_type': 'wand'
+                  'sandstone_summit_booth.id': ITEM_ID,
+                  'sandstone_summit_booth.item_type': 'wand'
                 },
                 'minecraft:weapon': {
                   'item_damage_per_attack': 0,
@@ -46,10 +46,10 @@ LootTable('items/' + ITEM_ID, {
                 },
                 'minecraft:use_cooldown': {
                   'seconds': 0.5,
-                  'cooldown_group': 'arcane_arts:wand_use'
+                  'cooldown_group': 'sandstone_summit_booth:wand_use'
                 },
                 'minecraft:enchantments': {
-                    'arcane_arts:input/wand_left_click': 1
+                    'sandstone_summit_booth:input/wand_left_click': 1
                 },
                 'minecraft:unbreakable': {},
                 'minecraft:attribute_modifiers': [

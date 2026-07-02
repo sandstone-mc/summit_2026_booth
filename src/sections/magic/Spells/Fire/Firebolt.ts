@@ -12,8 +12,8 @@ createProjectileSpell({
     move: () => tp('@s', loc(0, 0, 1.2)),
     particles: () => particle('flame', rel(0, 0, 0), abs(0.1, 0.1, 0.1), 0.01, 5, 'force'),
     onHit: () => { 
-      damage('@s', 2, 'on_fire'); 
-      Burning.apply(Variable(2)); 
+      damage('@s', 2, 'on_fire')
+      Burning.apply(Variable(2))
     },
   }
-});
+})

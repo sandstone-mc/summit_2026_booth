@@ -18,20 +18,20 @@ export function createStatusEffect(opts: StatusEffectOptions) {
   const statusTag = Label(`status.${opts.name}`)
   const statusTime = Objective.create(`status.${opts.name}_timer`)
 
-  const apply = MCFunction(`status/${opts.name}/apply`, (_loop: any, duration: Score) => {
+  const apply = MCFunction(`sections/magic/status/${opts.name}/apply`, (_loop: any, duration: Score) => {
     $.scoreboard.players.set('@s', statusTime.name, duration)
     statusTime('@s').multiply(20)
     statusTag('@s').add()
     opts.onApply?.()
   })
 
-  const end = MCFunction(`status/${opts.name}/end`, () => {
+  const end = MCFunction(`sections/magic/status/${opts.name}/end`, () => {
     statusTime('@s').reset()
     statusTag('@s').remove()
     opts.onEnd?.()
   })
 
-  MCFunction(`status/${opts.name}/update`, () => {
+  MCFunction(`sections/magic/status/${opts.name}/update`, () => {
     execute.as(Selector('@e', { tag: statusTag })).at('@s').run(() => {
       opts.particles()
       opts.onTick?.()

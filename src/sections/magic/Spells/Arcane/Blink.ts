@@ -22,8 +22,8 @@ const blink = fireRaycast(meta.spellPath, {
     }
 })
 
-MCFunction(`${meta.spellPath}/cast`, () => {
+MCFunction(`sections/magic/${meta.spellPath}/cast`, () => {
     castSpell('blink', 'arcane', () => {
         blink()
     })
-});
+})

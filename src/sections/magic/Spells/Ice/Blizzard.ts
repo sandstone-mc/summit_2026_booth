@@ -5,7 +5,7 @@ import { castSpell, Caster, Lifetime } from '../Common'
 const spellPath = 'spells/ice/blizzard'
 const Storm = Label('spell.ice.blizzard.storm')
 
-const spawnStorm = MCFunction(`${spellPath}/spawn_bolt`, () => {
+const spawnStorm = MCFunction(`sections/magic/${spellPath}/spawn_bolt`, () => {
     execute.positioned('~ ~-1 ~').run(() => {
         Caster('@s').add()
 
@@ -21,7 +21,7 @@ const spawnStorm = MCFunction(`${spellPath}/spawn_bolt`, () => {
     })
 })
 
-MCFunction(`${spellPath}/update_storms`, () => {
+MCFunction(`sections/magic/${spellPath}/update_storms`, () => {
     const StormSelector = Selector('@e', {
         type: 'minecraft:marker',
         tag: Storm
@@ -35,7 +35,7 @@ MCFunction(`${spellPath}/update_storms`, () => {
             kill('@s')
         })
 
-        execute.as(Selector('@e', { distance: [0, 6], type: '#arcane_arts:targetable' })).run(() => {
+        execute.as(Selector('@e', { distance: [0, 6], type: '#sandstone_summit_booth:targetable' })).run(() => {
             damage('@s', 0.1, 'freeze')
             Freezing.apply(Variable(2))
             effect.give('@s', 'minecraft:blindness', 2, 1, true)
@@ -43,6 +43,6 @@ MCFunction(`${spellPath}/update_storms`, () => {
     })
 }, { runEvery: 5 })
 
-MCFunction(`${spellPath}/cast`, () => {
+MCFunction(`sections/magic/${spellPath}/cast`, () => {
     castSpell('blizzard', 'ice', () => spawnStorm())
 })

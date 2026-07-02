@@ -1,4 +1,4 @@
-import { abs, damage, Label, MCFunction, particle, raw, rel, tp } from 'sandstone'
+import { abs, damage, Label, MCFunction, particle, raw, rel, tp, functionCmd } from 'sandstone'
 import { castSpell, spellMeta } from '../Common'
 import { checkHit } from '../../utils/hitDetection'
 import { fireRaycast } from '../../utils/raycast'
@@ -20,14 +20,15 @@ const whipRaycast = fireRaycast(meta.spellPath, {
             height: 3,
             onHit: () => {
                 damage('@s', 1)
-                raw(`rotate @s facing entity @a[tag=arcane_arts.${VineWhipCaster.name},limit=1] eyes`)
-                raw(`function pl_impulse:execute {func:'motion', in:{velocity:2}}`)
+                raw(`rotate @s facing entity @a[tag=sandstone_summit_booth.${VineWhipCaster.name},limit=1] eyes`)
+                raw("scoreboard players set $strength player_motion.api.launch 15000")
+                functionCmd('player_motion:api/launch_looking')
             }
         })
     }
 })
 
-MCFunction(`${meta.spellPath}/cast`, () => {
+MCFunction(`sections/magic/${meta.spellPath}/cast`, () => {
     castSpell('vine_whip', 'nature', () => {
         VineWhipCaster('@s').add()
         whipRaycast()

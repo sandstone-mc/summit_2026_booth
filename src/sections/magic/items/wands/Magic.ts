@@ -18,8 +18,8 @@ LootTable('items/' + MAGIC_WAND_ID, {
                 'minecraft:item_name': { 'text': 'Magic Wand', 'color': 'light_purple', 'italic': false, 'bold': true },
                 'minecraft:rarity': 'epic',
                 'minecraft:custom_data': {
-                  'arcane_arts.id': MAGIC_WAND_ID,
-                  'arcane_arts.item_type': 'wand'
+                  'sandstone_summit_booth.id': MAGIC_WAND_ID,
+                  'sandstone_summit_booth.item_type': 'wand'
                 },
                 'minecraft:weapon': { 'item_damage_per_attack': 0, 'disable_blocking_for_seconds': 0 },
                 'minecraft:consumable': {
@@ -28,8 +28,8 @@ LootTable('items/' + MAGIC_WAND_ID, {
                   'has_consume_particles': false,
                   'on_consume_effects': []
                 },
-                'minecraft:use_cooldown': { 'seconds': 0.5, 'cooldown_group': 'arcane_arts:wand_use' },
-                'minecraft:enchantments': { 'arcane_arts:input/wand_left_click': 1 },
+                'minecraft:use_cooldown': { 'seconds': 0.5, 'cooldown_group': 'sandstone_summit_booth:wand_use' },
+                'minecraft:enchantments': { 'sandstone_summit_booth:input/wand_left_click': 1 },
                 'minecraft:unbreakable': {},
                 'minecraft:attribute_modifiers': [
                   {

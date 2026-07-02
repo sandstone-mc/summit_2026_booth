@@ -5,14 +5,14 @@ import { Freezing } from '../../StatusEffects'
 const meta = spellMeta('ice', 'frost_nova')
 const NovaMarker = meta.label('arc_center')
 
-MCFunction(`${meta.spellPath}/cast`, () => {
+MCFunction(`sections/magic/${meta.spellPath}/cast`, () => {
     castSpell('frost_nova', 'ice', () => {
         execute.anchored('eyes').rotated.as('@s').run(() => {
-            summon('marker', loc(0, 0, 3), { Tags: [`arcane_arts.${NovaMarker.name}`] })
+            summon('marker', loc(0, 0, 3), { Tags: [`sandstone_summit_booth.${NovaMarker.name}`] })
         })
 
         execute.as(Selector('@e', {
-            type: '#arcane_arts:targetable',
+            type: '#sandstone_summit_booth:targetable',
             distance: [0, 5.5],
         })).at('@s').run(() => {
             execute.if.entity(Selector('@e', {

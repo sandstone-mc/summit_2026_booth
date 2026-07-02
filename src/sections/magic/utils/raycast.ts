@@ -16,7 +16,7 @@ export const createRaycast = (path: string, opts: RaycastOptions) => {
     const stepSize = opts.stepSize ?? 0.5
     let passesThrough: BlockStatic = opts.passesThrough ?? '#minecraft:replaceable'
 
-    const step = MCFunction(`${path}/raycast_step`, () => {
+    const step = MCFunction(`sections/magic/${path}/raycast_step`, () => {
         tp('@s', loc(0, 0, stepSize))
         opts.onStep?.()
         opts.shouldStop?.()
@@ -28,7 +28,7 @@ export const createRaycast = (path: string, opts: RaycastOptions) => {
     }, { lazy: true })
 
     // return a function to start the raycast
-    return MCFunction(`${path}/raycast`, () => {
+    return MCFunction(`sections/magic/${path}/raycast`, () => {
         for (let i = 0; i < opts.maxSteps; i++) {
             _.if(RayActive('@s'), () => {
                 execute.at('@s').run(() => {
@@ -54,7 +54,7 @@ export function fireRaycast(
 ) {
     const raycast = createRaycast(path, opts)
 
-    return MCFunction(`${path}/fire_raycast`, () => {
+    return MCFunction(`sections/magic/${path}/fire_raycast`, () => {
         execute.anchored('eyes').rotated.as('@s').run(() => {
             const CasterRef = Label(`${path.replaceAll('/', '.')}.ray_caster`)
             CasterRef('@s').add()
@@ -63,7 +63,7 @@ export function fireRaycast(
             const RayActive = Label(`${path.replaceAll('/', '.')}.ray_active`)
             RayActive('@s').add()
             
-            raw(`execute as @e[tag=arcane_arts.${CasterRef.name},limit=1] at @s anchored eyes rotated as @s run rotate @n[tag=arcane_arts.${RayActive.name}] ~ ~`)
+            raw(`execute as @e[tag=sandstone_summit_booth.${CasterRef.name},limit=1] at @s anchored eyes rotated as @s run rotate @n[tag=sandstone_summit_booth.${RayActive.name}] ~ ~`)
 
             opts.onStart?.()
             

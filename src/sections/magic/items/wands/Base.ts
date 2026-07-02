@@ -2,12 +2,6 @@ import { advancement, Advancement, Enchantment, execute, LootTable, MCFunction, 
 import { SpellLibrary } from '../../spellbook/SpellLibrary'
 import { getSelf, saveSelf, io } from '../../PlayerDB'
 
-const WAND_PREDICATE = {
-    predicates: {
-        'minecraft:custom_data': { 'arcane_arts.item_type': 'wand' }
-    }
-}
-
 // Left click detect
 Enchantment('input/wand_left_click', {
     description: 'LeftClickDetect',
@@ -29,7 +23,7 @@ Enchantment('input/wand_left_click', {
             {
                 'effect': {
                     type: 'run_function',
-                    function: 'arcane_arts:input/on_wand_left_click'
+                    function: 'sandstone_summit_booth:sections/magic/input/on_wand_left_click'
                 }
             }
         ]
@@ -55,7 +49,7 @@ for (const [schoolKey, school] of Object.entries(SpellLibrary)) {
     label: spellValue.name,
     action: {
       type: 'minecraft:run_command',
-      command: `trigger arcane_arts.set_spell_trigger set ${spellValue.uid}`
+      command: `trigger sandstone_summit_booth.set_spell_trigger set ${spellValue.uid}`
     }
   }))
 
@@ -65,15 +59,15 @@ for (const [schoolKey, school] of Object.entries(SpellLibrary)) {
   Dialog(`spell_select_${schoolKey}`, { ...dialogTemplate, actions })
 }
 
-const _openSchoolDialog = MCFunction('input/_open_school_dialog', () => {
-  raw('$dialog show @s arcane_arts:spell_select_$(school)')
+const _openSchoolDialog = MCFunction('sections/magic/input/_open_school_dialog', () => {
+  raw('$dialog show @s sandstone_summit_booth:spell_select_$(school)')
 }, { lazy: true })
 
-MCFunction('input/on_wand_left_click', () => {
+MCFunction('sections/magic/input/on_wand_left_click', () => {
     getSelf()
-    data.modify(Data('storage', 'arcane_arts:macro').select('school')).set.from(io.select('current_school'))
+    data.modify(Data('storage', 'sandstone_summit_booth:macro').select('school')).set.from(io.select('current_school'))
 
-    functionCmd(_openSchoolDialog, 'with', 'storage', 'arcane_arts:macro')
+    functionCmd(_openSchoolDialog, 'with', 'storage', 'sandstone_summit_booth:macro')
 })
 
 // Right click detect
@@ -83,20 +77,22 @@ const cooldownAdvancement = Advancement('input/wand_use_cooldown', {
 	'criteria': { 'tick': {
 		'trigger': 'minecraft:tick'
 	}},
-	'rewards': { 'function': 'arcane_arts:input/wand_use_cooldown' }
+	'rewards': { 'function': 'sandstone_summit_booth:sections/magic/input/wand_use_cooldown' }
 })
 
 const useWandAdvancement = Advancement('input/wand_use', {
 	'criteria': { 'use_item': {
 		'trigger': 'minecraft:using_item',
-		'conditions': { 'item': { 
-            WAND_PREDICATE
-        }}
+		'conditions': { 'item': {
+            'predicates': {
+                'minecraft:custom_data': { 'sandstone_summit_booth.item_type': 'wand' }
+            }
+        } }
 	}},
-	'rewards': { 'function': 'arcane_arts:input/wand_use' }
+	'rewards': { 'function': 'sandstone_summit_booth:sections/magic/input/wand_use' }
 })
 
-MCFunction('input/wand_use_cooldown', () => {
+MCFunction('sections/magic/input/wand_use_cooldown', () => {
     wandCooldown('@s').remove(1)
     _.if(wandCooldown('@s').greaterOrEqualThan(1), () => {
         cooldownAdvancement.revoke('@s')
@@ -105,14 +101,14 @@ MCFunction('input/wand_use_cooldown', () => {
     })
 })
 
-MCFunction('input/wand_use', () => {
+MCFunction('sections/magic/input/wand_use', () => {
     _.if(_.not(wandCooldown('@s').greaterOrEqualThan(1)), () => {
         // Trigger effects
         getSelf()
 
-        functionCmd(MCFunction('cast_macro', () => {
-            raw(`$function arcane_arts:spells/$(current_school)/$(selected_spell)/cast`)
-        }), 'with', 'storage', 'arcane_arts:io', 'data')
+        functionCmd(MCFunction('sections/magic/cast_macro', () => {
+            raw(`$function sandstone_summit_booth:sections/magic/spells/$(current_school)/$(selected_spell)/cast`)
+        }), 'with', 'storage', 'sandstone_summit_booth:io', 'data')
     })
 
     useWandAdvancement.revoke('@s')

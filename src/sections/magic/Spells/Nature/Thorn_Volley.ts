@@ -18,10 +18,10 @@ createProjectileSpell({
         onHit: () => {
             damage('@s', 2, 'thorns')
             Entangled.apply(Variable(2))
-            particle('block{block_state:'minecraft:oak_leaves'}', rel(0, 0, 0), abs(0.3, 0.3, 0.3), 0.1, 10, 'force')
+            particle('block{block_state:\'minecraft:oak_leaves\'}', rel(0, 0, 0), abs(0.3, 0.3, 0.3), 0.1, 10, 'force')
         },
         onExpire: () => {
-            particle('block{block_state:'minecraft:oak_leaves'}', rel(0, 0, 0), abs(0.2, 0.2, 0.2), 0.05, 5, 'force')
+            particle('block{block_state:\'minecraft:oak_leaves\'}', rel(0, 0, 0), abs(0.2, 0.2, 0.2), 0.05, 5, 'force')
         }
     }
 });

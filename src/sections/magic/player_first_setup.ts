@@ -1,39 +1,41 @@
-import { execute, MCFunction, Objective, scoreboard, Selector, tellraw, _, say, Advancement, Data, UUID, DataVariable } from 'sandstone'
-import * as player from './player_handler'
+// Not needed for summit, the showcase sets up players when the enter
 
-import { getSelf, saveSelf, io } from './PlayerDB'
+// import { execute, MCFunction, Objective, scoreboard, Selector, tellraw, _, say, Advancement, Data, UUID, DataVariable } from 'sandstone'
+// import * as player from './player_handler'
 
-Advancement('first_join', {
-  criteria: {
-    'join': {
-      trigger: 'location',
-    }
-  },
-  display: {
-    announce_to_chat: false,
-    icon: 'blaze_powder',
-    title: 'join',
-    description: ''
-  },
-  rewards: {
-    function: 'arcane_arts:first_join'
-  }
-})
+// import { getSelf, saveSelf, io } from './PlayerDB'
 
-MCFunction('first_join', () => {
-  // say('First time joining')
+// Advancement('first_join', {
+//   criteria: {
+//     'join': {
+//       trigger: 'location',
+//     }
+//   },
+//   display: {
+//     announce_to_chat: false,
+//     icon: 'blaze_powder',
+//     title: 'join',
+//     description: ''
+//   },
+//   rewards: {
+//     function: 'sandstone_summit_booth:sections/magic/first_join'
+//   }
+// })
 
-  player.mana('@s').set(0)
-  player.manaRegen('@s').set(20)
-  player.maxMana('@s').set(100)
+// MCFunction('sections/magic/first_join', () => {
+//   // say('First time joining')
 
-  getSelf()
+//   player.mana('@s').set(0)
+//   player.manaRegen('@s').set(20)
+//   player.maxMana('@s').set(100)
 
-  io.merge({
-    known_spells: [],
-    current_school: 'fire',
-    selected_spell: 'firebolt'
-  })
+//   getSelf()
 
-  saveSelf()
-})
+//   io.merge({
+//     known_spells: [],
+//     current_school: 'fire',
+//     selected_spell: 'firebolt'
+//   })
+
+//   saveSelf()
+// })

@@ -92,7 +92,7 @@ export const SpellLibrary: SpellLibraryType = {
                 uid: 0,
                 mana_cost: 15,
                 name: 'Magic Missile',
-                description: 'A homing bolt that tracks the enemy you're looking at when casting'
+                description: 'A homing bolt that tracks the enemy you\'re looking at when casting'
             },
             'shockwave': {
                 id: 'shockwave',
@@ -170,9 +170,9 @@ export const SpellLibrary: SpellLibraryType = {
     }
 }
 
-export const SpellIDS = Data('storage', 'arcane_arts:ids')
+export const SpellIDS = Data('storage', 'sandstone_summit_booth:ids')
 
-MCFunction('spellbook/load_spells', () => {
+MCFunction('sections/magic/spellbook/load_spells', () => {
     const schools = SpellIDS.select('schools')
 
     for (const [ key, value ] of Object.entries(SpellLibrary)) {
@@ -185,4 +185,4 @@ MCFunction('spellbook/load_spells', () => {
     }
 }, {
     runOnLoad: true
-});
+})

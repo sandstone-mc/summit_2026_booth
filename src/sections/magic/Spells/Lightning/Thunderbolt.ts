@@ -7,7 +7,7 @@ import { fireRaycast } from '../../utils/raycast'
 const meta = spellMeta('lightning', 'thunderbolt')
 const rollScore = Objective.create(`spell.lightning.thunderbolt_roll`, 'dummy')
 
-const chainStrike = MCFunction(`${meta.spellPath}/chain_strike`, () => {
+const chainStrike = MCFunction(`sections/magic/${meta.spellPath}/chain_strike`, () => {
     particle('end_rod', rel(0, 0, 0), abs(0.1, 1, 0.1), 0, 5, 'force')
     particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.2, 20, 'force')
     
@@ -16,7 +16,7 @@ const chainStrike = MCFunction(`${meta.spellPath}/chain_strike`, () => {
     Charged.apply(Variable(2))
 })
 
-const strikeAtPosition = MCFunction(`${meta.spellPath}/strike_at_position`, () => {
+const strikeAtPosition = MCFunction(`sections/magic/${meta.spellPath}/strike_at_position`, () => {
     checkHit({
         width: 3,
         height: 3,
@@ -40,7 +40,7 @@ const boltRaycast = fireRaycast(meta.spellPath, {
     },
 })
 
-MCFunction(`${meta.spellPath}/cast`, () => {
+MCFunction(`sections/magic/${meta.spellPath}/cast`, () => {
     castSpell('thunderbolt', 'lightning', () => {
         boltRaycast()
     })

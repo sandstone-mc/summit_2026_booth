@@ -7,8 +7,8 @@ const EffectName = 'charged'
 const rollScore = Objective.create(`status.${EffectName}_roll`, 'dummy')
 
 const nearbyUncharged = Selector('@e', {
-    type: '#arcane_arts:targetable',
-    tag: [`!arcane_arts.status.${EffectName}`],
+    type: '#sandstone_summit_booth:targetable',
+    tag: [`!sandstone_summit_booth.status.${EffectName}`],
     distance: [0, 8],
     limit: 1,
     sort: 'nearest'
@@ -28,8 +28,8 @@ const arcRaycast = fireRaycast(`status/${EffectName}/arc`, {
 
         // Stop when we reach the target
         execute.if.entity(Selector('@e', {
-            type: '#arcane_arts:targetable',
-            tag: [`!arcane_arts.status.${EffectName}`],
+            type: '#sandstone_summit_booth:targetable',
+            tag: [`!sandstone_summit_booth.status.${EffectName}`],
             distance: [0, 0.6]
         })).run(() => {
             // Burst particles at contact point
@@ -43,7 +43,7 @@ const arcRaycast = fireRaycast(`status/${EffectName}/arc`, {
     }
 })
 
-const arcToTarget = MCFunction(`status/${EffectName}/arc_to_target`, () => {
+const arcToTarget = MCFunction(`sections/magic/status/${EffectName}/arc_to_target`, () => {
     arcRaycast()
 }, { lazy: true })
 
@@ -76,7 +76,7 @@ const status = createStatusEffect({
     }
 })
 
-MCFunction('test/charged', () => {
+MCFunction('sections/magic/test/charged', () => {
     status.apply(Variable(5))
 })
 

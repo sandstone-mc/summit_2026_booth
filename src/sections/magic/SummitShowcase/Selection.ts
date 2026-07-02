@@ -31,7 +31,7 @@ const AllPedestals = Selector('@e', { tag: PedestalLabel })
 for (const ped of PEDESTALS) {
   const school = SpellLibrary[ped.schoolId]
 
-  MCFunction(`showcase/selection/select/${ped.schoolId}`, () => {
+  MCFunction(`sections/magic/showcase/selection/select/${ped.schoolId}`, () => {
     // @s is the player who right-clicked (via execute on target run)
     setSchoolTrigger('@s').set(school.uid)
 
@@ -39,7 +39,7 @@ for (const ped of PEDESTALS) {
     title(SessionPlayer).subtitle([{ text: 'School selected!', color: 'gray', italic: true } as any])
 
     kill(AllPedestals)
-    raw('loot give @s loot arcane_arts:items/magic_wand')
+    raw('loot give @s loot sandstone_summit_booth:items/magic_wand')
     GlobalState.set(STATES.FIGHTING)
 
     tellraw(SessionPlayer, [
@@ -62,12 +62,12 @@ for (const ped of PEDESTALS) {
 }
 
 // Called from ShowcaseState.startSelection via raw
-MCFunction('showcase/selection/spawn_pedestals', () => {
+MCFunction('sections/magic/showcase/selection/spawn_pedestals', () => {
   execute.as(ShowcaseMarker).at('@s').run(() => {
     for (const ped of PEDESTALS) {
       const school = SpellLibrary[ped.schoolId]
-      const commonTag = `arcane_arts.${PedestalLabel.name}`
-      const schoolTag = `arcane_arts.showcase.pedestal.${ped.schoolId}`
+      const commonTag = `sandstone_summit_booth.${PedestalLabel.name}`
+      const schoolTag = `sandstone_summit_booth.showcase.pedestal.${ped.schoolId}`
 
       // Floating item at pedestal center
       summon('item_display', rel(ped.x, ped.y + 1.5, ped.z), {
@@ -106,7 +106,7 @@ MCFunction('showcase/selection/spawn_pedestals', () => {
         response: false,
         data: {
           summit_interactable: {
-            on_right_click: `execute on target run function arcane_arts:showcase/selection/select/${ped.schoolId}`,
+            on_right_click: `execute on target run function sandstone_summit_booth:sections/magic/showcase/selection/select/${ped.schoolId}`,
           },
         },
       })
@@ -115,7 +115,7 @@ MCFunction('showcase/selection/spawn_pedestals', () => {
 })
 
 // Runs every tick; only active during SELECTION state
-MCFunction('showcase/selection/tick', () => {
+MCFunction('sections/magic/showcase/selection/tick', () => {
   _.if(GlobalState.equalTo(STATES.SELECTION), () => {
     // Ambient particles at each pedestal
     execute.as(ShowcaseMarker).at('@s').run(() => {
@@ -131,15 +131,15 @@ MCFunction('showcase/selection/tick', () => {
         { text: `* ${school.name} *  `, color: ped.color, bold: true },
         { text: 'Right-click to select', color: 'gray', italic: true },
       ]
-      raw(`execute as @a[tag=arcane_arts.showcase.player,limit=1] at @s if entity @e[type=minecraft:interaction,tag=arcane_arts.showcase.pedestal.${ped.schoolId},distance=..2.5] run title @s actionbar ${JSON.stringify(actionbarJson)}`)
+      raw(`execute as @a[tag=sandstone_summit_booth.showcase.player,limit=1] at @s if entity @e[type=minecraft:interaction,tag=sandstone_summit_booth.showcase.pedestal.${ped.schoolId},distance=..2.5] run title @s actionbar ${JSON.stringify(actionbarJson)}`)
     }
   })
 }, { runEveryTick: true })
 
 // Called via Smithed on_right_click — @s is the player
-MCFunction('showcase/selection/change_school', () => {
+MCFunction('sections/magic/showcase/selection/change_school', () => {
   _.if(GlobalState.equalTo(STATES.FIGHTING), () => {
-    raw('clear @s minecraft:stick[custom_data~{'arcane_arts.id':'magic_wand'}]')
+    raw('clear @s minecraft:stick[custom_data~{\'sandstone_summit_booth.id\':\'magic_wand\'}]')
     kill(ShowcaseMobs)
     kill(AllPedestals)
     startSelection()

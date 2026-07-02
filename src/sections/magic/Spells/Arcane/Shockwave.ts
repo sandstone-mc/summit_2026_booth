@@ -7,16 +7,16 @@ const SPELLID = 'shockwave'
 const { spell, spellPath } = spellMeta(SCHOOLID, SPELLID)
 
 const Wave = Label(`spell.${SCHOOLID}.${SPELLID}.wave`)
-const waveCount = 12; // number of projectiles in the ring
-const waveRings = 2;  // how many rings expand outward
+const waveCount = 12 // number of projectiles in the ring
+const waveRings = 2  // how many rings expand outward
 
-const spawnWave = MCFunction(`${spellPath}/spawn`, () => {
+const spawnWave = MCFunction(`sections/magic/${spellPath}/spawn`, () => {
     for (let ring = 0; ring < waveRings; ring++) {
         for (let i = 0; i < waveCount; i++) {
             const angle = (i / waveCount) * 360
             execute.summon('minecraft:marker').run(() => {
                 Wave('@s').add()
-                Lifetime('@s').set(ring * 4); // stagger rings so they expand outward
+                Lifetime('@s').set(ring * 4) // stagger rings so they expand outward
                 tp('@s', rel(0, 0, 0))
                 rotate('@s', abs(angle, 0))
             })
@@ -24,7 +24,7 @@ const spawnWave = MCFunction(`${spellPath}/spawn`, () => {
     }
 })
 
-MCFunction(`${spellPath}/update`, () => {
+MCFunction(`sections/magic/${spellPath}/update`, () => {
     execute.as(Selector('@e', {
         type: 'minecraft:marker',
         tag: Wave
@@ -41,14 +41,13 @@ MCFunction(`${spellPath}/update`, () => {
             // Push nearby entities away
             execute.as(Selector('@e', {
                 distance: [0, 1.5],
-                type: '#arcane_arts:targetable'
+                type: '#sandstone_summit_booth:targetable'
             })).run(() => {
-                // Face toward wave marker then invert — or use facing with wave position
                 raw(`rotate @s facing entity @p feet`)
                 raw(`rotate @s ~ -60`)
-                // Now @s faces the wave, so negate velocity to push away
                 execute.rotated().as('@s').run(() => {
-                    functionCmd('pl_impulse:execute', { func:'motion', in: { velocity:1.3 } })
+                    raw("scoreboard players set $strength player_motion.api.launch 15000")
+                    functionCmd('player_motion:api/launch_looking')
                 })
                 damage('@s', 1, 'magic')
             })
@@ -61,8 +60,8 @@ MCFunction(`${spellPath}/update`, () => {
     })
 }, { runEveryTick: true })
 
-MCFunction(`${spellPath}/cast`, () => {
+MCFunction(`sections/magic/${spellPath}/cast`, () => {
     castSpell(SPELLID, SCHOOLID, () => {
         spawnWave()
     })
-});
+})

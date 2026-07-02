@@ -12,10 +12,10 @@ export const ShowcaseMarker = Selector('@e', {
     tag: ShowcaseMarkerLabel
 })
 
-const summonMarker = MCFunction('showcase/summon_marker', () => {
+const summonMarker = MCFunction('sections/magic/showcase/summon_marker', () => {
     execute.align('xyz').run(() => {
         summon('marker', rel(0, 0, 0), {
-            Tags: [`arcane_arts.${ShowcaseMarkerLabel.name}`, BOOTH_ENTITY_TAG, 'summit.static']
+            Tags: [`sandstone_summit_booth.${ShowcaseMarkerLabel.name}`, BOOTH_ENTITY_TAG, 'summit.static']
         })
     })
 })

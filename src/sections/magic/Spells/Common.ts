@@ -1,4 +1,4 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, raw, particle, rel, rotate, say, summon, Variable, tellraw, tp } from 'sandstone'
+import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, raw, particle, rel, rotate, say, summon, Variable, tellraw, tp, advancement } from 'sandstone'
 import { SpellLibrary, Spell, SchoolID } from '../spellbook/SpellLibrary'
 
 import * as player from '../player_handler'
@@ -6,88 +6,88 @@ import { checkHit } from '../utils/hitDetection'
 export const Caster = Label('spell.caster')
 export const Lifetime = Objective.create('lifetime')
 
-export const TargetableTag = Tag('entity_type', 'arcane_arts:targetable', [
-    'minecraft:allay',
-    'minecraft:armadillo',
-    'minecraft:axolotl',
-    'minecraft:bat',
-    'minecraft:bee',
-    'minecraft:blaze',
-    'minecraft:bogged',
-    'minecraft:breeze',
-    'minecraft:camel',
-    'minecraft:cat',
-    'minecraft:cave_spider',
-    'minecraft:chicken',
-    'minecraft:cod',
-    'minecraft:cow',
-    'minecraft:creaking',
-    'minecraft:creeper',
-    'minecraft:dolphin',
-    'minecraft:donkey',
-    'minecraft:drowned',
-    'minecraft:elder_guardian',
-    'minecraft:ender_dragon',
-    'minecraft:enderman',
-    'minecraft:endermite',
-    'minecraft:evoker',
-    'minecraft:fox',
-    'minecraft:frog',
-    'minecraft:ghast',
-    'minecraft:glow_squid',
-    'minecraft:goat',
-    'minecraft:guardian',
-    'minecraft:hoglin',
-    'minecraft:horse',
-    'minecraft:husk',
-    'minecraft:iron_golem',
-    'minecraft:llama',
-    'minecraft:magma_cube',
-    'minecraft:mooshroom',
-    'minecraft:mule',
-    'minecraft:ocelot',
-    'minecraft:panda',
-    'minecraft:parrot',
-    'minecraft:phantom',
-    'minecraft:pig',
-    'minecraft:piglin',
-    'minecraft:piglin_brute',
-    'minecraft:pillager',
-    'minecraft:polar_bear',
-    'minecraft:pufferfish',
-    'minecraft:rabbit',
-    'minecraft:ravager',
-    'minecraft:salmon',
-    'minecraft:sheep',
-    'minecraft:shulker',
-    'minecraft:silverfish',
-    'minecraft:skeleton',
-    'minecraft:skeleton_horse',
-    'minecraft:slime',
-    'minecraft:sniffer',
-    'minecraft:snow_golem',
-    'minecraft:spider',
-    'minecraft:squid',
-    'minecraft:stray',
-    'minecraft:strider',
-    'minecraft:tadpole',
-    'minecraft:trader_llama',
-    'minecraft:tropical_fish',
-    'minecraft:turtle',
-    'minecraft:vex',
-    'minecraft:villager',
-    'minecraft:vindicator',
-    'minecraft:wandering_trader',
-    'minecraft:warden',
-    'minecraft:witch',
-    'minecraft:wither',
-    'minecraft:wither_skeleton',
-    'minecraft:wolf',
-    'minecraft:zoglin',
+export const TargetableTag = Tag('entity_type', 'sandstone_summit_booth:targetable', [
+    // 'minecraft:allay',
+    // 'minecraft:armadillo',
+    // 'minecraft:axolotl',
+    // 'minecraft:bat',
+    // 'minecraft:bee',
+    // 'minecraft:blaze',
+    // 'minecraft:bogged',
+    // 'minecraft:breeze',
+    // 'minecraft:camel',
+    // 'minecraft:cat',
+    // 'minecraft:cave_spider',
+    // 'minecraft:chicken',
+    // 'minecraft:cod',
+    // 'minecraft:cow',
+    // 'minecraft:creaking',
+    // 'minecraft:creeper',
+    // 'minecraft:dolphin',
+    // 'minecraft:donkey',
+    // 'minecraft:drowned',
+    // 'minecraft:elder_guardian',
+    // 'minecraft:ender_dragon',
+    // 'minecraft:enderman',
+    // 'minecraft:endermite',
+    // 'minecraft:evoker',
+    // 'minecraft:fox',
+    // 'minecraft:frog',
+    // 'minecraft:ghast',
+    // 'minecraft:glow_squid',
+    // 'minecraft:goat',
+    // 'minecraft:guardian',
+    // 'minecraft:hoglin',
+    // 'minecraft:horse',
+    // 'minecraft:husk',
+    // 'minecraft:iron_golem',
+    // 'minecraft:llama',
+    // 'minecraft:magma_cube',
+    // 'minecraft:mooshroom',
+    // 'minecraft:mule',
+    // 'minecraft:ocelot',
+    // 'minecraft:panda',
+    // 'minecraft:parrot',
+    // 'minecraft:phantom',
+    // 'minecraft:pig',
+    // 'minecraft:piglin',
+    // 'minecraft:piglin_brute',
+    // 'minecraft:pillager',
+    // 'minecraft:polar_bear',
+    // 'minecraft:pufferfish',
+    // 'minecraft:rabbit',
+    // 'minecraft:ravager',
+    // 'minecraft:salmon',
+    // 'minecraft:sheep',
+    // 'minecraft:shulker',
+    // 'minecraft:silverfish',
+    // 'minecraft:skeleton',
+    // 'minecraft:skeleton_horse',
+    // 'minecraft:slime',
+    // 'minecraft:sniffer',
+    // 'minecraft:snow_golem',
+    // 'minecraft:spider',
+    // 'minecraft:squid',
+    // 'minecraft:stray',
+    // 'minecraft:strider',
+    // 'minecraft:tadpole',
+    // 'minecraft:trader_llama',
+    // 'minecraft:tropical_fish',
+    // 'minecraft:turtle',
+    // 'minecraft:vex',
+    // 'minecraft:villager',
+    // 'minecraft:vindicator',
+    // 'minecraft:wandering_trader',
+    // 'minecraft:warden',
+    // 'minecraft:witch',
+    // 'minecraft:wither',
+    // 'minecraft:wither_skeleton',
+    // 'minecraft:wolf',
+    // 'minecraft:zoglin',
     'minecraft:zombie',
-    'minecraft:zombie_horse',
-    'minecraft:zombie_villager',
-    'minecraft:zombified_piglin',
+    // 'minecraft:zombie_horse',
+    // 'minecraft:zombie_villager',
+    // 'minecraft:zombified_piglin',
     // 'minecraft:player',
 ])
 
@@ -129,7 +129,7 @@ export function createProjectileUpdater(
   path: string,
   opts: ProjectileOptions
 ) {
-  return MCFunction(`${path}/update`, () => {
+  return MCFunction(`sections/magic/${path}/update`, () => {
     const Proj = Selector('@e', { type: 'minecraft:marker', tag: opts.tag })
     execute.as(Proj).at('@s').run(() => {
       // Visuals
@@ -182,7 +182,7 @@ export function createProjectileSpell(opts: ProjectileSpellOptions) {
   const { spell, spellPath, label } = spellMeta(opts.schoolId, opts.spellId)
   const Projectile = label('projectile')
 
-  const spawn = MCFunction(`${spellPath}/spawn`, () => {
+  const spawn = MCFunction(`sections/magic/${spellPath}/spawn`, () => {
     execute.anchored('eyes').rotated.as('@s').run(() => {
       Caster('@s').add()
       opts.spawn(Projectile)
@@ -203,7 +203,7 @@ export function createProjectileSpell(opts: ProjectileSpellOptions) {
     ...opts.projectile
   })
 
-  MCFunction(`${spellPath}/cast`, () => {
+  MCFunction(`sections/magic/${spellPath}/cast`, () => {
     castSpell(opts.spellId, opts.schoolId, () => {
       spawn()
     })
@@ -273,6 +273,11 @@ export function castSpell(spellId: string, schoolId: SchoolID, fn: () => void) {
   const spell = SpellLibrary[schoolId].spells[spellId]
   _.if(player.mana('@s').greaterOrEqualThan(spell.mana_cost), () => {
     player.mana('@s').remove(spell.mana_cost)
+
+    // TODO: uncomment when stickers work
+    // grant the sticker advancement
+    // advancement.grant('@s').only('summit.sticker_book:sandstone_summit_booth/arcane_arts')
+
     fn()
   }).else(() => {
     tellraw('@s', { color: 'red', text: 'Insufficient Mana' })

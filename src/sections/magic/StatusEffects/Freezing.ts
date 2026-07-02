@@ -8,7 +8,7 @@ const freezeAdvancement = Advancement(`status/freezing`, {
         }
     },
     'rewards': {
-        'function': `arcane_arts:status/freezing/tryfreeze`
+        'function': `sandstone_summit_booth:sections/magic/status/freezing/tryfreeze`
     }
 })
 
@@ -27,7 +27,7 @@ const status = createStatusEffect({
 
 
 
-MCFunction(`status/freezing/tryfreeze`, () => {
+MCFunction(`sections/magic/status/freezing/tryfreeze`, () => {
     freezeAdvancement.revoke('@s')
 
     _.if(status.statusTag('@s'), () => {
@@ -37,7 +37,7 @@ MCFunction(`status/freezing/tryfreeze`, () => {
 
         _.if(status.statusTime('#snow').equalTo(1), () => {
             summon('marker', rel(0, 1, 0), {
-                Tags: [ `arcane_arts.status.freezing.snow` ]
+                Tags: [ `sandstone_summit_booth.status.freezing.snow` ]
             })
         })
     })

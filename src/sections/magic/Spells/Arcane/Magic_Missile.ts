@@ -7,7 +7,7 @@ const Target = Label('spell.arcane.magic_missile.target')
 const meta = spellMeta('arcane', 'magic_missile')
 
 const target = Selector('@e', { 
-    type: '#arcane_arts:targetable', 
+    type: '#sandstone_summit_booth:targetable', 
     limit: 1, 
     sort: 'nearest',
     tag: Target
@@ -63,7 +63,7 @@ createProjectileSpell({
     },
     particles: () => particle('dust_color_transition{from_color:[0.63,0.1,.74],to_color:[0.29,0.29,0.29],scale:1}', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 3, 'force'),
     onHit: () => { 
-        damage('@s', 4, 'magic'); 
+        damage('@s', 4, 'magic') 
         particle('reverse_portal', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.2, 30, 'force')
         Target('@s').remove()
     },
@@ -74,4 +74,4 @@ createProjectileSpell({
     },
     blockCollision: true,
   }
-});
+})
