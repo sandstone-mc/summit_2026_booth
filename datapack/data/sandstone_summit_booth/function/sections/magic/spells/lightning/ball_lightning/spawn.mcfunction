@@ -1,0 +1,1 @@
+execute anchored eyes rotated as @s run function sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/spawn/execute_anchored

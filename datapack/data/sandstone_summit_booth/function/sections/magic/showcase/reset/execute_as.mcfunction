@@ -1,0 +1,2 @@
+execute as @a[tag=sandstone_summit_booth.showcase.in_booth] run function sandstone_summit_booth:sections/magic/showcase/reset/execute_as/execute_as
+execute as @a[tag=sandstone_summit_booth.showcase.player] run function sandstone_summit_booth:sections/magic/showcase/reset/execute_as/execute_as2

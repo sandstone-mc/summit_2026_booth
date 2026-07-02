@@ -1,0 +1,1 @@
+execute at @s run function sandstone_summit_booth:sections/magic/spells/nature/vine_whip/raycast_step

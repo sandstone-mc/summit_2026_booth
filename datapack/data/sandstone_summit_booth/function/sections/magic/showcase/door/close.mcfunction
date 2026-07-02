@@ -1,0 +1,1 @@
+execute as @e[tag=sandstone_summit_booth.showcase.marker, type=minecraft:marker] at @s run fill ~8 ~ ~27 ~10 ~2 ~27 minecraft:glass

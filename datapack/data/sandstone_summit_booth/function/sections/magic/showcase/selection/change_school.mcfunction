@@ -1,0 +1,1 @@
+execute if score #global sandstone_summit_booth.showcase.state matches 3 run function sandstone_summit_booth:sections/magic/showcase/selection/change_school/if

@@ -1,0 +1,2 @@
+function sandstone_summit_booth:sections/magic/playerdb/get_self
+return run function sandstone_summit_booth:sections/magic/cast_macro with storage sandstone_summit_booth:io data

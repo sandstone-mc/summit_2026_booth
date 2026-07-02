@@ -1,0 +1,10 @@
+{
+  "criteria": {
+    "tick": {
+      "trigger": "minecraft:tick"
+    }
+  },
+  "rewards": {
+    "function": "sandstone_summit_booth:sections/magic/status/freezing/tryfreeze"
+  }
+}

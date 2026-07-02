@@ -1,0 +1,1 @@
+execute positioned ~-3 ~-1.5 ~-3 run function sandstone_summit_booth:sections/magic/spells/lightning/thunderbolt/strike_at_position/execute_positioned

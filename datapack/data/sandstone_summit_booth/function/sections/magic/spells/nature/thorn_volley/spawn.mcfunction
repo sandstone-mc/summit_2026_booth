@@ -1,0 +1,1 @@
+execute anchored eyes rotated as @s run function sandstone_summit_booth:sections/magic/spells/nature/thorn_volley/spawn/execute_anchored

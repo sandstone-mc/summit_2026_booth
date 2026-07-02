@@ -1,0 +1,19 @@
+{
+  "criteria": {
+    "use_item": {
+      "trigger": "minecraft:using_item",
+      "conditions": {
+        "item": {
+          "predicates": {
+            "minecraft:custom_data": {
+              "sandstone_summit_booth.item_type": "wand"
+            }
+          }
+        }
+      }
+    }
+  },
+  "rewards": {
+    "function": "sandstone_summit_booth:sections/magic/input/wand_use"
+  }
+}

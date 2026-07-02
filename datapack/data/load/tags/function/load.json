@@ -1,6 +1,12 @@
 {
   "replace": false,
   "values": [
-    "sandstone_summit_booth:__init__"
+    "sandstone_summit_booth:__init__",
+    "sandstone_summit_booth:version_check",
+    "sandstone_summit_booth:sections/magic/playerdb/load",
+    "__sandstone:ticked/start/wnylbycd",
+    "sandstone_summit_booth:sections/magic/initialize",
+    "sandstone_summit_booth:sections/magic/spellbook/load_spells",
+    "sandstone_summit_booth:sections/magic/showcase/load"
   ]
 }

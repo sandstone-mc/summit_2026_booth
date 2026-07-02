@@ -1,0 +1,1 @@
+$data modify storage sandstone_summit_booth:io data set from storage sandstone_summit_booth:pdb players.$(uid)

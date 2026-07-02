@@ -1,0 +1,1 @@
+execute as @a[tag=sandstone_summit_booth.status.static_field] at @s run function sandstone_summit_booth:sections/magic/spells/lightning/static_field/update/execute_as

@@ -1,0 +1,2 @@
+scoreboard players remove @s sandstone_summit_booth.lifetime 1
+execute if score @s sandstone_summit_booth.lifetime matches ..0 run function sandstone_summit_booth:sections/magic/spells/arcane/shockwave/update/execute_as/if

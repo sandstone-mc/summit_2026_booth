@@ -1,0 +1,1 @@
+$data modify storage sandstone_summit_booth:io data.selected_spell set from storage sandstone_summit_booth:ids schools.$(schoolID).spells.$(spellID)
