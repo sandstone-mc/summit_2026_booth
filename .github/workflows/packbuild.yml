@@ -14,6 +14,11 @@ jobs:
             ref: ${{ github.ref }}
             fetch-depth: 0
       
+      - name: Setup Fluidsynth
+        run: |
+          sudo apt update
+          sudo apt install fluidsynth fluid-soundfont-gm
+      
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
