@@ -47,7 +47,7 @@ const BOOTH_DX = 19
 const BOOTH_DY = 5
 const BOOTH_DZ = 26
 
-const RESET_POS = rel(9, 1, 27)
+const RESET_POS = rel(9, 0, 27)
 
 // session UI buttons (exit + change school) — spawned on entry, killed on reset
 const ButtonLabel = Label('showcase.button')
@@ -68,25 +68,43 @@ const MOB_ARMOR = [
     { head: 'minecraft:leather_helmet',   chest: 'minecraft:leather_chestplate',   legs: 'minecraft:leather_leggings',   feet: 'minecraft:leather_boots'   },
     { head: 'minecraft:chainmail_helmet', chest: 'minecraft:chainmail_chestplate', legs: 'minecraft:chainmail_leggings', feet: 'minecraft:chainmail_boots' },
     { head: 'minecraft:iron_helmet',      chest: 'minecraft:iron_chestplate',      legs: 'minecraft:iron_leggings',      feet: 'minecraft:iron_boots'      },
-]
+] as const
+
+const MOB_TYPES = ['minecraft:drowned', 'minecraft:bogged'] as const
+
+// random pickers for showcase mob spawning
+const MobTypePick = State('#mob_type_pick')
+const ArmorPick = State('#armor_pick')
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth'
 
-function zombieNbt(armor: (typeof MOB_ARMOR)[0]) {
+function mobNbt(armor: (typeof MOB_ARMOR)[number]) {
     return {
         Tags: [`sandstone_summit_booth.${ShowcaseMobLabel.name}`, BOOTH_ENTITY_TAG],
         PersistenceRequired: true,
         CanPickUpLoot: false,
-        CanBreakDoors: false,
         DeathLootTable: 'sandstone_summit_booth:showcase/empty_mob',
-        // ArmorItems: [
-        //     { id: armor.feet,  count: NBT.int(1) },
-        //     { id: armor.legs,  count: NBT.int(1) },
-        //     { id: armor.chest, count: NBT.int(1) },
-        //     { id: armor.head,  count: NBT.int(1) },
-        // ],
-        // ArmorDropChances: [NBT.float(0), NBT.float(0), NBT.float(0), NBT.float(0)],
-        // HandDropChances:  [NBT.float(0), NBT.float(0)],
+        equipment: {
+            head:  { id: armor.head },
+            chest: { id: armor.chest },
+            legs:  { id: armor.legs },
+            feet:  { id: armor.feet },
+        },
+        drop_chances: {
+            head: NBT.float(0),
+            chest: NBT.float(0),
+            legs: NBT.float(0),
+            feet: NBT.float(0),
+        },
+    }
+}
+
+// summon a mob at pos with a random armor set from MOB_ARMOR
+function withRandomArmor(spawn: (armor: (typeof MOB_ARMOR)[number]) => void) {
+    let chain = _.if(ArmorPick.equalTo(0), () => spawn(MOB_ARMOR[0]))
+    for (let a = 1; a < MOB_ARMOR.length; a++) {
+        const ai = a
+        chain = chain.elseIf(ArmorPick.equalTo(ai), () => spawn(MOB_ARMOR[ai]))
     }
 }
 
@@ -228,7 +246,7 @@ MCFunction('sections/magic/showcase/tick', () => {
     // Update which players are physically inside the booth volume
     InBoothLabel('@p').remove()
     execute.as(ShowcaseMarker).at('@s').run(() => {
-        execute.as(Selector('@a', { dx: BOOTH_DX, dy: BOOTH_DY, dz: BOOTH_DZ })).run(() => {
+        execute.as(Selector('@a', { dx: BOOTH_DX, dy: BOOTH_DY, dz: BOOTH_DZ, gamemode: "!spectator" })).run(() => {
             InBoothLabel('@s').add()
         })
     })
@@ -237,7 +255,8 @@ MCFunction('sections/magic/showcase/tick', () => {
         execute.as(ShowcaseMarker).at('@s').positioned(rel(ENTRANCE_X, ENTRANCE_Y, ENTRANCE_Z - 1)).run(() => {
             execute.as(Selector('@a', {
                 tag: `!sandstone_summit_booth.${SessionPlayerLabel.name}`,
-                dx: ENTRANCE_DX, dy: ENTRANCE_DY, dz: ENTRANCE_DZ - 2
+                dx: ENTRANCE_DX, dy: ENTRANCE_DY, dz: ENTRANCE_DZ - 2,
+                gamemode: "!spectator"
             })).run(() => {
                 startSession()
             })
@@ -250,8 +269,19 @@ MCFunction('sections/magic/showcase/tick', () => {
 
         execute.as(ShowcaseMarker).at('@s').run(() => {
             for (let i = 0; i < Spawners.length; i++) {
+                const pos = Spawners[i]
                 _.if(MobCount.lessThan(9), () => {
-                    summon('zombie', rel(Spawners[i].x, Spawners[i].y, Spawners[i].z), zombieNbt(MOB_ARMOR[i % MOB_ARMOR.length]))
+                    execute.store.result.score(MobTypePick.target, MobTypePick.objective)
+                        .run.random.value([0, MOB_TYPES.length - 1], 'showcase_mob_type')
+                    execute.store.result.score(ArmorPick.target, ArmorPick.objective)
+                        .run.random.value([0, MOB_ARMOR.length - 1], 'showcase_armor')
+
+                    _.if(MobTypePick.equalTo(0), () => {
+                        withRandomArmor((armor) => summon('minecraft:drowned', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
+                    }).else(() => {
+                        withRandomArmor((armor) => summon('minecraft:bogged', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
+                    })
+
                     MobCount.add(1)
                 })
             }
