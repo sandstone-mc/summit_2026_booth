@@ -1,11 +1,11 @@
 import { MCFunction, Selector } from 'sandstone'
 import { SelectorProperties } from 'sandstone/variables'
 
-import { ticking } from './shared.ts'
-import './sections/main.ts'
+import { ticking } from './shared'
+import './sections/main'
 import './version'
-// import './sections/rhythm/index'
-import './sections/magic/index'
+import './sections/rhythm/index'
+// import './sections/magic/index'
 
 MCFunction('main', () => {
     const all_players = (args: SelectorProperties<false, false, 'minecraft:player'>) => Selector(

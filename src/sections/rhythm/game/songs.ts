@@ -1,12 +1,25 @@
-import { _, execute, MCFunction, playsound, schedule, Selector, stopsound } from 'sandstone'
-import { songCount, songData, songSafeNames, songSegmentCounts, songAudioOffsets, songUsesNoteBlocks, SEGMENT_TICKS, getSegmentSoundId } from '../config/songs'
-import { PARKOUR_GRACE_TICKS } from '../config/parkour-paths'
-import { status, songSelect } from './state'
+import { _, abs, execute, MCFunction, playsound, schedule, Selector, stopsound } from 'sandstone'
+import { songCount, songData, songSafeNames, songSegmentCounts, songAudioOffsets, songUsesNoteBlocks, SEGMENT_TICKS, getSegmentSoundId } from '@rhythm/config/internal/songs'
+import { PARKOUR_GRACE_TICKS } from '@rhythm/config/parkour-paths'
+import { music } from '@rhythm/config'
+import { arena } from '@rhythm/config/internal/arena'
+import { songSelect } from './state'
 import { spawnForDifficulty } from './walls/spawning'
 import { stepDispatchFns, parkourCleanup } from './parkour'
-import { DIM, NAMESPACE } from '../../../shared'
+import { DIMENSION, NAMESPACE } from '@shared'
 
 const NBS_BATCH_TICKS = 200
+
+const [musicX, musicY, musicZ] = arena.musicPosition
+const musicPos = abs(musicX, musicY, musicZ)
+const listeners = Selector('@a', {
+	x: musicX - music.hearable.dx / 2,
+	y: musicY - music.hearable.dy / 2,
+	z: musicZ - music.hearable.dz / 2,
+	dx: music.hearable.dx,
+	dy: music.hearable.dy,
+	dz: music.hearable.dz,
+})
 
 const songPlayFns: (() => void)[] = []
 const songStopFns: (() => void)[] = []
@@ -50,9 +63,9 @@ for (let s = 0; s < songCount; s++) {
 				const offsetInBatch = tick - batchStart
 				const fnName = `sections/rhythm/songs/${safeName}/nb_t${tick}`
 				const fn = MCFunction(fnName, () => {
-					execute.in(DIM).as(Selector('@a')).at('@s').run(() => {
+					execute.in(DIMENSION).run(() => {
 						for (const note of notes) {
-							playsound(note.sound as any, 'master', '@s', '~ ~ ~',
+							playsound(note.sound as any, 'master', listeners, musicPos,
 								note.volume, note.pitch)
 						}
 					})
@@ -98,7 +111,7 @@ for (let s = 0; s < songCount; s++) {
 			const soundId = getSegmentSoundId(safeName, seg)
 			const fnName = `sections/rhythm/songs/${safeName}/seg${seg}`
 			const fn = MCFunction(fnName, () => {
-				execute.in(DIM).run.playsound(soundId, 'master', '@a', '~ ~ ~', 10000)
+				execute.in(DIMENSION).run.playsound(soundId, 'master', listeners, musicPos, music.volume)
 			}, { lazy: true })
 			segmentFns.push({ tick: Math.max(0, seg * SEGMENT_TICKS + audioOffset), fn, name: `${nsPrefix}/seg${seg}` })
 		}

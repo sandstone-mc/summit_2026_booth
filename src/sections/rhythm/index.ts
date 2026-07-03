@@ -1,6 +1,7 @@
 import { MCFunction, title } from 'sandstone'
 import { songSelect } from './game/state'
-import { songNames } from './config/songs'
+import { songNames } from './config/internal/songs'
+import { spawnSkybox } from './game/arena-map'
 
 import './game/state'
 import './game/walls/spawning'
@@ -12,9 +13,15 @@ import './game/songs'
 import './game/start'
 import './game/active'
 import './game/end'
-import './game/buttons'
+import './game/settings'
+import './game/leaderboard'
 import './game/lane-effects'
+import './game/arena-map'
 import './game/debug'
+
+MCFunction('sections/rhythm/setup', () => {
+	spawnSkybox()
+}, { runOnLoad: true })
 
 MCFunction('sections/rhythm/init_player', () => {
 	songSelect.set(0)

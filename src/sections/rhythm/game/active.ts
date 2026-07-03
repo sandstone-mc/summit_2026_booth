@@ -1,23 +1,24 @@
-import { _, abs, attribute, effect, execute, forceload, gamemode, gamerule, MCFunction, NBT, Objective, playsound, Selector, tag, team, title, tp } from 'sandstone'
-import { arena } from '../config/arena'
-import { songCount, songDurations } from '../config/songs'
-import { GameStatus, allPlayers, alivePlayers, status, songSelect, livesDefault } from './state'
+import { _, abs, attribute, effect, execute, forceload, gamemode, gamerule, MCFunction, team, tp } from 'sandstone'
+import { arena } from '@rhythm/config/internal/arena'
+import { songCount, songDurations } from '@rhythm/config/internal/songs'
+import { GameStatus, Tags, allPlayers, status, songSelect } from './state'
 import { wallLives } from './walls/collision'
 import { points, combo, finalScore } from './scoring'
+import { livesSetting, updateSettingsPanel } from './settings'
 import { playSong, scheduleWalls } from './songs'
-import { spawnLaneShulkers } from './lane-effects'
-import { DIM, state } from '../../../shared'
+import { spawnLaneShulkers, spawnLaneBorder } from './lane-effects'
+import { DIMENSION, state } from '@shared'
 
 MCFunction('sections/rhythm/active/nocollide_init', () => {
-	team.add('ssb.rhythm.nocollide')
-	team.modify('ssb.rhythm.nocollide', 'collisionRule', 'never')
-	team.modify('ssb.rhythm.nocollide', 'seeFriendlyInvisibles', false)
+	team.add(Tags.NO_COLLIDE)
+	team.modify(Tags.NO_COLLIDE, 'collisionRule', 'never')
+	team.modify(Tags.NO_COLLIDE, 'seeFriendlyInvisibles', false)
 }, { runOnLoad: true })
 
 export const timer = state('$timer')
 
 MCFunction('sections/rhythm/active/forceload', () => {
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const [fxMin, fzMin] = arena.forceloadMin
 		const [fxMax, fzMax] = arena.forceloadMax
 		forceload.add(abs(fxMin, fzMin), abs(fxMax, fzMax))
@@ -27,20 +28,19 @@ MCFunction('sections/rhythm/active/forceload', () => {
 export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	status.set(GameStatus.ACTIVE)
 
-	execute.in(DIM).run(() => {
+	execute.in(DIMENSION).run(() => {
 		const [x, y, z] = arena.playerSpawn
 		tp(allPlayers, abs(x, y, z), [`${arena.playerYaw}`, '0'])
 	})
 
 	gamemode('adventure', allPlayers)
-	team.join('ssb.rhythm.nocollide', allPlayers)
+	team.join(Tags.NO_COLLIDE, allPlayers)
 
 	execute.as(allPlayers).run(() => {
-		attribute('@s', 'minecraft:fall_damage_multiplier').baseSet(0)
-		attribute('@s', 'minecraft:movement_speed').baseSet(0.13)
-		wallLives('@s').set(livesDefault)
+		attribute("@s", "minecraft:fall_damage_multiplier").baseSet(0)
+		attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
+		wallLives('@s').set(livesSetting)
 		effect.give('@s', 'minecraft:instant_health', 1, 126, true)
-		effect.give('@s', 'minecraft:invisibility', 99999, 0, true)
 		effect.give('@s', 'minecraft:saturation', 99999, 0, true)
 		points('@s').set(0)
 		combo('@s').set(0)
@@ -60,8 +60,10 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 	}
 
 	spawnLaneShulkers()
+	spawnLaneBorder()
 	playSong()
 	scheduleWalls()
+	updateSettingsPanel()
 
 	execute.as(allPlayers).at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
 }, { lazy: true })

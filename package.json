@@ -16,11 +16,14 @@
     "adm-zip": "^0.5.17",
     "@types/adm-zip": "^0.5.8",
     "@types/bun": "latest",
-    "sandstone-cli": "^2.4.1",
+    "sandstone-cli": "^2.4.3",
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "sandstone": "^1.0.0-beta.5"
+    "@nbsjs/core": "^6.1.0",
+    "@tonejs/midi": "^2.0.28",
+    "sandstone": "^1.1.1",
+    "sharp": "^0.35.3"
   },
   "trustedDependencies": [
     "@parcel/watcher"

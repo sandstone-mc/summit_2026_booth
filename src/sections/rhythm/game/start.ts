@@ -1,7 +1,8 @@
-import { _, execute, MCFunction, Objective, playsound, schedule, title, tp } from 'sandstone'
+import { _, execute, MCFunction, schedule, title } from 'sandstone'
 import { GameStatus, status, allPlayers } from './state'
 import { setActive } from './active'
-import { NAMESPACE, state } from '../../../shared'
+import { NAMESPACE, state } from '@shared'
+import { gameplay } from '@rhythm/config'
 
 const countdown = state('$countdown')
 
@@ -10,9 +11,9 @@ const countdownTick = MCFunction('sections/rhythm/start/countdown_tick', () => {
 		_.if(countdown.greaterThan(0), () => {
 			execute.as(allPlayers).at('@s').run.playsound('minecraft:block.note_block.hat', 'master', '@s')
 
-			_.if(countdown.greaterOrEqualThan(4), () => {
+			_.if(countdown.greaterThanOrEqualTo(4), () => {
 				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'green' }, countdown, ' seconds...'])
-			}).elseIf(countdown.greaterOrEqualThan(2), () => {
+			}).elseIf(countdown.greaterThanOrEqualTo(2), () => {
 				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'yellow' }, countdown, ' seconds...'])
 			}).else(() => {
 				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'red' }, countdown, ' second...'])
@@ -29,7 +30,7 @@ const countdownTick = MCFunction('sections/rhythm/start/countdown_tick', () => {
 export const startGame = MCFunction('sections/rhythm/start/init', () => {
 	_.if(status.equalTo(GameStatus.WAITING), () => {
 		status.set(GameStatus.STARTING)
-		countdown.set(5)
+		countdown.set(gameplay.countdown)
 		schedule.function(`${NAMESPACE}:sections/rhythm/start/countdown_tick`, '1s')
 	})
 }, { lazy: true })
