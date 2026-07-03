@@ -1,5 +1,6 @@
 import { abs, data, NBT, summon } from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
+import { type Tags } from './game/state'
 import { type PanelConfig } from './config'
 import { panels } from './config/internal/derived'
 
@@ -41,7 +42,7 @@ export function mergeDisplayText(target: Parameters<typeof data.merge.entity>[0]
 	data.merge.entity(target, { text } as unknown as Parameters<typeof data.merge.entity>[1])
 }
 
-export function spawnPanel(panel: PanelConfig, tags: string[], text: JSONTextComponent, bg = panels.background) {
+export function spawnPanel(panel: PanelConfig, tags: Tags[], text: JSONTextComponent, bg = panels.background) {
 	const nbt: Record<string, any> = {
 		Tags: tags,
 		text,
@@ -69,14 +70,14 @@ export function spawnPanel(panel: PanelConfig, tags: string[], text: JSONTextCom
 
 export function spawnClick(
 	panel: PanelConfig, xOffset: number, y: number,
-	tags: string[], width: number, height?: number,
+	tags: Tags[], width: number, yOffset = 0, height?: number,
 ) {
 	const clickHeight = height ?? lineHeight(panel)
 	const rad = panel.facing * Math.PI / 180
 	const interactionX = Math.round((panel.x + xOffset + Math.sin(rad) * 0.45) * 1000) / 1000
 	const interactionZ = Math.round((panel.z - Math.cos(rad) * 0.45) * 1000) / 1000
 
-	summon('minecraft:interaction', abs(interactionX, y - clickHeight / 2, interactionZ), {
+	summon('minecraft:interaction', abs(interactionX, y - clickHeight / 2 + yOffset, interactionZ), {
 		Tags: tags,
 		width: NBT.float(width),
 		height: NBT.float(clickHeight),

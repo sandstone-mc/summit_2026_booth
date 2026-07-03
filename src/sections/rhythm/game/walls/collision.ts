@@ -5,11 +5,12 @@ import { DIMENSION } from '@shared'
 import { boothReturn } from '@rhythm/config/internal/derived'
 import { endGame } from '@rhythm/game/end'
 
+// Sandstone 1.1.1's Predicate type is recursively defined and rejects this valid condition JSON, so we cast.
 const isSneaking = Predicate('is_sneaking', {
 	condition: 'minecraft:entity_properties',
 	entity: 'this',
 	predicate: { flags: { is_sneaking: true } },
-})
+} as any)
 
 export const wallLives = Objective.create('rhythm.wall.lives', 'dummy')
 export const wallHitCooldown = Objective.create('rhythm.wall.hit_cooldown', 'dummy')
@@ -35,9 +36,8 @@ const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 	wallHitCooldown('@s').set(walls.cooldownTicks)
 	effect.give('@s', 'minecraft:invisibility', 1, 0, true)
 
-	_.if(wallLives('@s').lessOrEqualThan(0), () => {
+	_.if(wallLives('@s').lessThanOrEqualTo(0), () => {
 		tag('@s').remove(Tags.ALIVE)
-		tag('@s').remove(Tags.PLAYER)
 		effect.clear('@s')
 		title('@s').actionbar({ text: 'You died! Better luck next time.', color: 'red' })
 		playsound('minecraft:entity.player.hurt', 'master', '@s', '~ ~ ~', 1.0, 0.5)
@@ -54,7 +54,7 @@ MCFunction('sections/rhythm/collision/tick', () => {
 		execute.in(DIMENSION).run(() => {
 			execute.as(Selector('@a', { tag: Tags.WALL_HIT_COOLDOWN })).run(() => {
 				wallHitCooldown('@s').remove(1)
-				_.if(wallHitCooldown('@s').lessOrEqualThan(0), () => {
+				_.if(wallHitCooldown('@s').lessThanOrEqualTo(0), () => {
 					tag('@s').remove(Tags.WALL_HIT_COOLDOWN)
 					effect.clear('@s', 'minecraft:invisibility')
 				}).else(() => {

@@ -19,6 +19,10 @@ for (let i = 0; i < songCount; i++) {
 
 const TOTAL_LINES = 15
 
+// Same calibration as the settings panel: lineY is bottom-anchored and the panel renders an
+// extra (ruler) line, so raise the click boxes ~a line to sit on the text.
+const CLICK_Y_OFFSET = 0.25
+
 const panelSel = Selector('@e', { tag: Tags.UI_LB_TXT, limit: 1 })
 
 const lbSlots: ReturnType<typeof state>[] = []
@@ -142,7 +146,7 @@ Advancement('ui_lb_song', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_SONG_INT}"]}` },
+				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_SONG_INT}"]}` },
 			},
 		},
 	},
@@ -153,7 +157,7 @@ Advancement('ui_lb_cat', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_CAT_INT}"]}` },
+				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_CAT_INT}"]}` },
 			},
 		},
 	},
@@ -164,7 +168,7 @@ Advancement('ui_lb_my', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_MY_INT}"]}` },
+				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_MY_INT}"]}` },
 			},
 		},
 	},
@@ -205,7 +209,7 @@ const scrollLbUpdate = MCFunction('sections/rhythm/leaderboard/scroll', () => {
 		if (!needsScroll(name)) continue
 		_.if(lbSongView.equalTo(si), () => {
 			const frames = scrollFrameCount(name)
-			_.if(scrollPos.greaterOrEqualThan(frames), () => {
+			_.if(scrollPos.greaterThanOrEqualTo(frames), () => {
 				scrollPos.set(0)
 			})
 			for (let offset = 0; offset < frames; offset++) {
@@ -225,7 +229,7 @@ const scrollLbUpdate = MCFunction('sections/rhythm/leaderboard/scroll', () => {
 const onSongCycle = MCFunction('sections/rhythm/leaderboard/on_song', () => {
 	_.if(status.equalTo(GameStatus.WAITING), () => {
 		lbSongView.add(1)
-		_.if(lbSongView.greaterOrEqualThan(songCount), () => {
+		_.if(lbSongView.greaterThanOrEqualTo(songCount), () => {
 			lbSongView.set(0)
 		})
 		updateDisplay()
@@ -280,7 +284,7 @@ export const saveLeaderboard = MCFunction('sections/rhythm/leaderboard/save', ()
 				_.if(finalScore('@s').greaterThan(lbBest[idx]('@s')), () => {
 					lbBest[idx]('@s').set(finalScore('@s'))
 				})
-				_.if(wallLives('@s').greaterOrEqualThan(livesSetting), () => {
+				_.if(wallLives('@s').greaterThanOrEqualTo(livesSetting), () => {
 					_.if(finalScore('@s').greaterThan(lbNoDeath[idx]('@s')), () => {
 						lbNoDeath[idx]('@s').set(finalScore('@s'))
 					})
@@ -308,7 +312,7 @@ MCFunction('sections/rhythm/leaderboard/tick', () => {
 	})
 
 	scrollTimer.add(1)
-	_.if(scrollTimer.greaterOrEqualThan(panels.scrollSpeed), () => {
+	_.if(scrollTimer.greaterThanOrEqualTo(panels.scrollSpeed), () => {
 		scrollTimer.set(0)
 		scrollPos.add(1)
 		scrollLbUpdate()
@@ -347,10 +351,10 @@ MCFunction('sections/rhythm/leaderboard/spawn', () => {
 			lbText(0, 0), 0)
 
 		const btnY = lineY(panels.leaderboard, TOTAL_LINES, 13)
-		spawnClick(panels.leaderboard, -0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_SONG_INT], 1)
-		spawnClick(panels.leaderboard, 0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_CAT_INT], 1)
+		spawnClick(panels.leaderboard, -0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_SONG_INT], 1.5, CLICK_Y_OFFSET)
+		spawnClick(panels.leaderboard, 0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_CAT_INT], 1.5, CLICK_Y_OFFSET)
 
 		const myY = lineY(panels.leaderboard, TOTAL_LINES, 14)
-		spawnClick(panels.leaderboard, 0, myY, [Tags.UI_LEADERBOARD, Tags.UI_LB_MY_INT], 1)
+		spawnClick(panels.leaderboard, 0, myY, [Tags.UI_LEADERBOARD, Tags.UI_LB_MY_INT], 3, CLICK_Y_OFFSET)
 	})
 }, { runOnLoad: true })

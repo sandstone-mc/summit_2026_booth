@@ -14,6 +14,8 @@ export const livesSetting = state('$lives')
 const livesIdx = state('$lives_idx')
 
 const TOTAL_LINES = 10
+const CLICK_WIDTH = 3
+const CLICK_Y_OFFSET = 0.25
 
 const panelSel = Selector('@e', { tag: Tags.UI_SETTINGS_TXT, limit: 1 })
 
@@ -37,7 +39,7 @@ function settingsText(songIdx: number, livesI: number, mapIdx: number, cancel: b
 	const mName = mapCount > 0 ? clampName(mapNames[mapIdx] ?? 'None') : clampName('No maps')
 	const lName = clampLives(livesI)
 	return [
-		{ text: `${panels.padding}⚙ `, color: 'gray' }, { text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
+		{ text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
 		{ text: '\n\n' },
 		{ text: `${panels.padding}♪ Song: `, color: 'gray' }, { text: `${sName}${panels.padding}`, color: 'aqua', font: 'monocraft:default' },
 		{ text: '\n\n' },
@@ -56,7 +58,7 @@ const mapMax = Math.max(mapCount, 1)
 
 function inProgressText(): JSONTextComponent[] {
 	return [
-		{ text: `${panels.padding}⚙ `, color: 'gray' }, { text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
+		{ text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
 		{ text: '\n\n\n\n' },
 		{ text: `${panels.padding}🎵 Match in progress${panels.padding}`, color: 'gold', bold: true },
 		{ text: `\n\n\n\n\n\n${panels.ruler}` },
@@ -66,7 +68,7 @@ function inProgressText(): JSONTextComponent[] {
 export const updateSettingsPanel = MCFunction('sections/rhythm/settings/update', () => {
 	scrollPos.set(0)
 	scrollTimer.set(0)
-	_.if(status.greaterOrEqualThan(GameStatus.ACTIVE), () => {
+	_.if(status.greaterThanOrEqualTo(GameStatus.ACTIVE), () => {
 		mergeDisplayText(panelSel, inProgressText())
 	}).else(() => {
 		for (let si = 0; si < songCount; si++) {
@@ -95,7 +97,7 @@ const scrollSettingsUpdate = MCFunction('sections/rhythm/settings/scroll', () =>
 		if (!needsScroll(name)) continue
 		_.if(songSelect.equalTo(si), () => {
 			const frames = scrollFrameCount(name)
-			_.if(scrollPos.greaterOrEqualThan(frames), () => {
+			_.if(scrollPos.greaterThanOrEqualTo(frames), () => {
 				scrollPos.set(0)
 			})
 			for (let offset = 0; offset < frames; offset++) {
@@ -125,7 +127,7 @@ Advancement('ui_song_cycle', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_SONG_INT}"]}` },
+				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_SONG_INT}"]}` },
 			},
 		},
 	},
@@ -136,7 +138,7 @@ Advancement('ui_lives_cycle', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LIVES_INT}"]}` },
+				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LIVES_INT}"]}` },
 			},
 		},
 	},
@@ -147,7 +149,7 @@ Advancement('ui_map_cycle', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_MAP_INT}"]}` },
+				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_MAP_INT}"]}` },
 			},
 		},
 	},
@@ -158,7 +160,7 @@ Advancement('ui_start_game', {
 		click: {
 			trigger: 'minecraft:player_interacted_with_entity',
 			conditions: {
-				entity: { type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_START_INT}"]}` },
+				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_START_INT}"]}` },
 			},
 		},
 	},
@@ -167,7 +169,7 @@ Advancement('ui_start_game', {
 const onSongCycle = MCFunction('sections/rhythm/settings/on_song', () => {
 	_.if(status.equalTo(GameStatus.WAITING), () => {
 		songSelect.add(1)
-		_.if(songSelect.greaterOrEqualThan(songCount), () => {
+		_.if(songSelect.greaterThanOrEqualTo(songCount), () => {
 			songSelect.set(0)
 		})
 		updateSettingsPanel()
@@ -178,7 +180,7 @@ const onSongCycle = MCFunction('sections/rhythm/settings/on_song', () => {
 const onLivesCycle = MCFunction('sections/rhythm/settings/on_lives', () => {
 	_.if(status.equalTo(GameStatus.WAITING), () => {
 		livesIdx.add(1)
-		_.if(livesIdx.greaterOrEqualThan(gameplay.lives.options.length), () => {
+		_.if(livesIdx.greaterThanOrEqualTo(gameplay.lives.options.length), () => {
 			livesIdx.set(0)
 		})
 		for (let i = 0; i < gameplay.lives.options.length; i++) {
@@ -197,7 +199,7 @@ const onMapCycle = MCFunction('sections/rhythm/settings/on_map', () => {
 		if (mapCount > 0) {
 			clearMap()
 			mapSelect.add(1)
-			_.if(mapSelect.greaterOrEqualThan(mapCount), () => {
+			_.if(mapSelect.greaterThanOrEqualTo(mapCount), () => {
 				mapSelect.set(0)
 			})
 			placeMap()
@@ -241,7 +243,7 @@ MCFunction('sections/rhythm/settings/tick', () => {
 	})
 
 	scrollTimer.add(1)
-	_.if(scrollTimer.greaterOrEqualThan(panels.scrollSpeed), () => {
+	_.if(scrollTimer.greaterThanOrEqualTo(panels.scrollSpeed), () => {
 		scrollTimer.set(0)
 		scrollPos.add(1)
 		scrollSettingsUpdate()
@@ -269,15 +271,15 @@ MCFunction('sections/rhythm/settings/spawn', () => {
 			settingsText(0, 1, 0, false), 0)
 
 		const songY = lineY(panels.settings, TOTAL_LINES, 2)
-		spawnClick(panels.settings, 0, songY, [Tags.UI_SETTINGS, Tags.UI_SONG_INT], 1)
+		spawnClick(panels.settings, 0, songY, [Tags.UI_SETTINGS, Tags.UI_SONG_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
 
 		const livesY = lineY(panels.settings, TOTAL_LINES, 4)
-		spawnClick(panels.settings, 0, livesY, [Tags.UI_SETTINGS, Tags.UI_LIVES_INT], 1)
+		spawnClick(panels.settings, 0, livesY, [Tags.UI_SETTINGS, Tags.UI_LIVES_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
 
 		const mapY = lineY(panels.settings, TOTAL_LINES, 6)
-		spawnClick(panels.settings, 0, mapY, [Tags.UI_SETTINGS, Tags.UI_MAP_INT], 1)
+		spawnClick(panels.settings, 0, mapY, [Tags.UI_SETTINGS, Tags.UI_MAP_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
 
 		const startY = lineY(panels.settings, TOTAL_LINES, 9)
-		spawnClick(panels.settings, 0, startY, [Tags.UI_SETTINGS, Tags.UI_START_INT], 1)
+		spawnClick(panels.settings, 0, startY, [Tags.UI_SETTINGS, Tags.UI_START_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
 	})
 }, { runOnLoad: true })
