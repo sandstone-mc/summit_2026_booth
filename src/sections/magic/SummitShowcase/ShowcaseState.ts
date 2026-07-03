@@ -170,7 +170,13 @@ const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
             Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
             text: [{ text: '↩ ', color: 'red' }, { text: 'Exit Showcase', color: 'white', bold: true }],
             alignment: 'center',
-            billboard: 'center',
+            billboard: 'fixed',
+            transformation: {
+                translation: [NBT.float(0), NBT.float(0), NBT.float(0)],
+                left_rotation: { axis: [NBT.float(0), NBT.float(1), NBT.float(0)], angle: NBT.float(Math.PI) },
+                right_rotation: { axis: [NBT.float(0), NBT.float(1), NBT.float(0)], angle: NBT.float(0) },
+                scale: [NBT.float(1), NBT.float(1), NBT.float(1)],
+            },
             brightness: { sky: NBT.int(15), block: NBT.int(15) },
         })
         summon('interaction', rel(9.5, 0, 27), {
@@ -190,7 +196,13 @@ const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
             Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
             text: [{ text: '✦ ', color: 'yellow' }, { text: 'Change School', color: 'white', bold: true }],
             alignment: 'center',
-            billboard: 'center',
+            billboard: 'fixed',
+            transformation: {
+                translation: [NBT.float(0), NBT.float(0), NBT.float(0)],
+                left_rotation: { axis: [NBT.float(0), NBT.float(1), NBT.float(0)], angle: NBT.float(Math.PI) },
+                right_rotation: { axis: [NBT.float(0), NBT.float(1), NBT.float(0)], angle: NBT.float(0) },
+                scale: [NBT.float(1), NBT.float(1), NBT.float(1)],
+            },
             brightness: { sky: NBT.int(15), block: NBT.int(15) },
         })
         summon('interaction', rel(9.5, 0, 18), {
