@@ -21,6 +21,10 @@ export const clearMap = MCFunction('sections/rhythm/arena/clear_map', () => {
 	const [ox, oy, oz] = arena.mapOrigin
 	const [ex, ey, ez] = arena.mapEnd
 	execute.in(DIMENSION).run(() => {
+		// Foliage (grass, flowers, ...) drops as an item when the block it stands on is
+		// cleared before the plant itself. Clear all replaceable blocks first so nothing is
+		// left to pop off, then clear the whole box.
+		fill(abs(ox, oy, oz), abs(ex, ey, ez), 'minecraft:air').replace('#minecraft:replaceable')
 		fill(abs(ox, oy, oz), abs(ex, ey, ez), 'minecraft:air')
 	})
 	killSkybox()
@@ -34,9 +38,10 @@ const skyboxCenter: [number, number, number] = [
 
 const skyboxModels = ['skybox_neon', 'skybox_cave', 'skybox_void']
 
-function skyboxNbt(model: string) {
+function skyboxNbt(model: string): Record<string, any> {
 	return {
 		Tags: [Tags.SKYBOX],
+		brightness: { sky: NBT.int(15), block: NBT.int(15) },
 		transformation: {
 			left_rotation: NBT.float(arena.wallRotation),
 			right_rotation: NBT.float([0, 0, 0, 1]),

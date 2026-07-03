@@ -58,6 +58,10 @@ MCFunction('sections/rhythm/wall/init_travel_sign', () => {
 const moveWalls = MCFunction('sections/rhythm/wall/move', () => {
 	execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_HIT, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] })).at('@s').run(() => {
 		wallPositionTemp('@s').set(wallAge('@s'))
+		// Stop at the lane end instead of sliding further during the despawn delay.
+		_.if(wallPositionTemp('@s').greaterThan(travelTicksScore), () => {
+			wallPositionTemp('@s').set(travelTicksScore)
+		})
 		wallPositionTemp('@s').multiply(numeratorScore)
 		wallPositionTemp('@s').divide(travelTicksScore)
 		wallPositionTemp('@s').multiply(travelSignScore)
