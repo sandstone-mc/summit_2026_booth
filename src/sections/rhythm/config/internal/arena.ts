@@ -1,4 +1,4 @@
-import { goldLine, goldLineDirection, pattern, walls } from '..'
+import { goldLine, goldLineDirection, pattern, walls, music } from '..'
 import { wallMovement, map } from './derived'
 
 export interface LaneBounds {
@@ -36,6 +36,7 @@ export interface ResolvedArena {
 	mapOrigin: [number, number, number]
 	mapEnd: [number, number, number]
 	mapPlacement: [number, number, number]
+	musicPosition: [number, number, number]
 	structureRotation: 'none' | 'clockwise_90' | 'counterclockwise_90' | '180'
 	structureMirror: 'none' | 'front_back' | 'left_right'
 	skyboxScale: [number, number, number]
@@ -168,32 +169,79 @@ function computeLaneBounds(): LaneBounds {
 		frontFacing: alongZ ? 0 : 90,
 		pos: (wo, y, dO) => {
 			const [x, z] = localToWorldXZ(wo, dO)
-			return [x, y, z]
+			const [sx, sy, sz] = map.laneShift
+			return [x + sx, y + sy, z + sz]
 		},
 	}
 }
 
-// The map is authored facing south. Other directions flip the depth axis with a mirror.
-// In Minecraft's /place the mirror names are backwards: left_right flips Z, front_back
-// flips X. So north uses left_right. East and west still need work.
-const structureRotation: ResolvedArena['structureRotation'] =
+const baseRotation: ResolvedArena['structureRotation'] =
 	alongZ ? 'none' :
 	goldLineDirection === 'east' ? 'counterclockwise_90' :
 	'clockwise_90'
-
-const structureMirror: ResolvedArena['structureMirror'] =
+const baseMirror: ResolvedArena['structureMirror'] =
 	goldLineDirection === 'north' ? 'left_right' : 'none'
 
-// /place puts the structure's (0,0,0) corner at this position. We place it so the
-// structure's gold line lands on the world gold line.
-const mapPlacement: [number, number, number] = (() => {
-	const [x, z] = localToWorldXZ(-map.laneOffset.x, -map.laneOffset.z)
-	return [x, baseY, z]
+type Mat2 = [[number, number], [number, number]]
+const rotMat = (r: ResolvedArena['structureRotation']): Mat2 =>
+	r === 'clockwise_90' ? [[0, -1], [1, 0]] :
+	r === '180' ? [[-1, 0], [0, -1]] :
+	r === 'counterclockwise_90' ? [[0, 1], [-1, 0]] :
+	[[1, 0], [0, 1]]
+const mirMat = (m: ResolvedArena['structureMirror']): Mat2 =>
+	m === 'left_right' ? [[1, 0], [0, -1]] :
+	m === 'front_back' ? [[-1, 0], [0, 1]] :
+	[[1, 0], [0, 1]]
+const matMul = (a: Mat2, b: Mat2): Mat2 => [
+	[a[0][0] * b[0][0] + a[0][1] * b[1][0], a[0][0] * b[0][1] + a[0][1] * b[1][1]],
+	[a[1][0] * b[0][0] + a[1][1] * b[1][0], a[1][0] * b[0][1] + a[1][1] * b[1][1]],
+]
+const matEq = (a: Mat2, b: Mat2) =>
+	a[0][0] === b[0][0] && a[0][1] === b[0][1] && a[1][0] === b[1][0] && a[1][1] === b[1][1]
+
+const flipX: Mat2 = map.mirrorX ? [[-1, 0], [0, 1]] : [[1, 0], [0, 1]]
+const flipZ: Mat2 = map.mirrorZ ? [[1, 0], [0, -1]] : [[1, 0], [0, 1]]
+const placeMatrix = matMul(flipX, matMul(flipZ, matMul(rotMat(baseRotation), mirMat(baseMirror))))
+
+const rotationOptions: ResolvedArena['structureRotation'][] = ['none', 'clockwise_90', '180', 'counterclockwise_90']
+const mirrorOptions: ResolvedArena['structureMirror'][] = ['none', 'left_right', 'front_back']
+let structureRotation: ResolvedArena['structureRotation'] = 'none'
+let structureMirror: ResolvedArena['structureMirror'] = 'none'
+for (const r of rotationOptions) {
+	let matched = false
+	for (const m of mirrorOptions) {
+		if (matEq(matMul(rotMat(r), mirMat(m)), placeMatrix)) {
+			structureRotation = r
+			structureMirror = m
+			matched = true
+			break
+		}
+	}
+	if (matched) break
+}
+
+const musicPosition: [number, number, number] = (() => {
+	const [mx, mz] = localToWorldXZ(Math.floor(map.laneWidth / 2), 0)
+	const [ox, oy, oz] = music.offset
+	return [mx + ox, baseY + oy, mz + oz]
 })()
 
 const fl = computeForceload()
 const pa = computePlayArea()
 const mb = computeMapBounds()
+
+const mapPlacement: [number, number, number] = (() => {
+	const [sxSize, , szSize] = map.size
+	const cornersLocal: [number, number][] = [[0, 0], [sxSize - 1, 0], [0, szSize - 1], [sxSize - 1, szSize - 1]]
+	let minOffX = Infinity, minOffZ = Infinity
+	for (const [lx, lz] of cornersLocal) {
+		const ox = placeMatrix[0][0] * lx + placeMatrix[0][1] * lz
+		const oz = placeMatrix[1][0] * lx + placeMatrix[1][1] * lz
+		if (ox < minOffX) minOffX = ox
+		if (oz < minOffZ) minOffZ = oz
+	}
+	return [mb.origin[0] - minOffX, baseY, mb.origin[2] - minOffZ]
+})()
 
 export const arena: ResolvedArena = {
 	goldLine,
@@ -224,6 +272,7 @@ export const arena: ResolvedArena = {
 	mapOrigin: mb.origin,
 	mapEnd: mb.end,
 	mapPlacement,
+	musicPosition,
 
 	structureRotation,
 	structureMirror,

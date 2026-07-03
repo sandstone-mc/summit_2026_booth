@@ -32,7 +32,7 @@ const FRAGMENT_BLOCKS = [
 	'minecraft:cyan_stained_glass',
 	'minecraft:purple_stained_glass',
 	'minecraft:pink_stained_glass',
-]
+] as const
 
 interface Fragment {
 	pos: [number, number, number]
@@ -63,10 +63,10 @@ export const spawnLaneShulkers = MCFunction('sections/rhythm/lane/spawn', () => 
 			const pos = lane.pos(i, 0, 0)
 			summon('minecraft:shulker', abs(pos[0], baseY, pos[2]), {
 				Tags: [Tags.LANE],
-				NoAI: NBT.byte(1),
-				NoGravity: NBT.byte(1),
-				Invulnerable: NBT.byte(1),
-				Silent: NBT.byte(1),
+				NoAI: true,
+				NoGravity: true,
+				Invulnerable: true,
+				Silent: true,
 			})
 		}
 		execute.as(laneSelector).run(() => {
@@ -132,17 +132,17 @@ function borderStripTag(i: number) { return `ssb.lane.border.${i}` }
 
 const BORDER_TEXT = ' '.repeat(BORDER_CHARS)
 
-function wallBorderNbt(stripIndex: number, bg: number, yOff: number, facing: number, scaleX: number) {
+function wallBorderNbt(stripIndex: number, bg: number, yOff: number, facing: number, scaleX: number): Record<string, any> {
 	return {
 		Tags: [Tags.LANE_BORDER, borderStripTag(stripIndex)],
 		text: BORDER_TEXT,
-		alignment: 'center',
+		alignment: 'center' as const,
 		line_width: NBT.int(9999),
 		text_opacity: NBT.byte(0),
 		background: NBT.int(bg),
-		shadow: NBT.byte(0),
-		see_through: NBT.byte(1),
-		billboard: 'fixed',
+		shadow: false,
+		see_through: true,
+		billboard: 'fixed' as const,
 		Rotation: NBT.float([facing, 0]),
 		transformation: {
 			left_rotation: NBT.float([0, 0, 0, 1]),
@@ -163,8 +163,23 @@ const frontLen = rightW - leftW
 const frontD = lane.frontDepth
 const backD = lane.backDepth
 
-const sideScale = fitWidthScale(sideLen)
-const frontScale = fitWidthScale(frontLen)
+const sideScale = fitWidthScale(sideLen) * visuals.border.lengthScale.sides
+const frontScale = fitWidthScale(frontLen) * visuals.border.lengthScale.frontBack
+
+// A billboarded, scaled text_display renders visibly off-position when its X or Z coordinate
+// lands on a whole integer (mc bug). Nudge integer coords off the grid.
+const GRID_NUDGE = 0.001
+const dodgeInt = (c: number): number => (Number.isInteger(c) ? c + GRID_NUDGE : c)
+const applyOffset = (p: [number, number, number], o: [number, number, number]): [number, number, number] =>
+	[dodgeInt(p[0] + o[0]), p[1] + o[1], dodgeInt(p[2] + o[2])]
+
+// The two stacked, opposite-facing displays per strip drift apart along the strip's length axis
+// (a 180-degree fixed billboard renders its centered background offset proportionally to its
+// scaled width), so each facing (a/b) carries its own offset.
+const sideOffA = visuals.border.offset.sides.a
+const sideOffB = visuals.border.offset.sides.b
+const fbOffA = visuals.border.offset.frontBack.a
+const fbOffB = visuals.border.offset.frontBack.b
 
 export const spawnLaneBorder = MCFunction('sections/rhythm/lane/border_spawn', () => {
 	execute.in(DIMENSION).run(() => {
@@ -174,27 +189,27 @@ export const spawnLaneBorder = MCFunction('sections/rhythm/lane/border_spawn', (
 			const bg = argb(BORDER_ALPHAS[i], ...visuals.border.defaultColor)
 			const yOff = i * BORDER_STEP - BORDER_STEP / 2
 
-			const sLeftPos = lane.pos(leftW, baseY + 1, sideMidD)
-			const sRightPos = lane.pos(rightW, baseY + 1, sideMidD)
-			const fFrontPos = lane.pos(frontMidW, baseY + 1, frontD)
-			const fBackPos = lane.pos(frontMidW, baseY + 1, backD)
+			const sLeftBase = lane.pos(leftW, baseY + 1, sideMidD)
+			const sRightBase = lane.pos(rightW, baseY + 1, sideMidD)
+			const fFrontBase = lane.pos(frontMidW, baseY + 1, frontD)
+			const fBackBase = lane.pos(frontMidW, baseY + 1, backD)
 
-			summon('minecraft:text_display', abs(...sLeftPos),
+			summon('minecraft:text_display', abs(...applyOffset(sLeftBase, sideOffA)),
 				wallBorderNbt(i, bg, yOff, lane.sideFacing, sideScale))
-			summon('minecraft:text_display', abs(...sLeftPos),
+			summon('minecraft:text_display', abs(...applyOffset(sLeftBase, sideOffB)),
 				wallBorderNbt(i, bg, yOff, lane.sideFacing + 180, sideScale))
-			summon('minecraft:text_display', abs(...sRightPos),
+			summon('minecraft:text_display', abs(...applyOffset(sRightBase, sideOffA)),
 				wallBorderNbt(i, bg, yOff, lane.sideFacing, sideScale))
-			summon('minecraft:text_display', abs(...sRightPos),
+			summon('minecraft:text_display', abs(...applyOffset(sRightBase, sideOffB)),
 				wallBorderNbt(i, bg, yOff, lane.sideFacing + 180, sideScale))
 
-			summon('minecraft:text_display', abs(...fFrontPos),
+			summon('minecraft:text_display', abs(...applyOffset(fFrontBase, fbOffA)),
 				wallBorderNbt(i, bg, yOff, lane.frontFacing, frontScale))
-			summon('minecraft:text_display', abs(...fFrontPos),
+			summon('minecraft:text_display', abs(...applyOffset(fFrontBase, fbOffB)),
 				wallBorderNbt(i, bg, yOff, lane.frontFacing + 180, frontScale))
-			summon('minecraft:text_display', abs(...fBackPos),
+			summon('minecraft:text_display', abs(...applyOffset(fBackBase, fbOffA)),
 				wallBorderNbt(i, bg, yOff, lane.frontFacing, frontScale))
-			summon('minecraft:text_display', abs(...fBackPos),
+			summon('minecraft:text_display', abs(...applyOffset(fBackBase, fbOffB)),
 				wallBorderNbt(i, bg, yOff, lane.frontFacing + 180, frontScale))
 		}
 	})
@@ -311,7 +326,7 @@ export const beatLaneEffect = MCFunction('sections/rhythm/lane/beat', () => {
 		prevColor.set(glowColorScore)
 		execute.store.result.score(glowColorScore.target, glowColorScore.objective)
 			.run.random.value([0, visuals.glowColors.length - 2], 'glow_pick')
-		_.if(glowColorScore.greaterOrEqualThan(prevColor), () => {
+		_.if(glowColorScore.greaterThanOrEqualTo(prevColor), () => {
 			glowColorScore.add(1)
 		})
 

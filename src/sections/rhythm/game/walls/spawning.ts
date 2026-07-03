@@ -1,5 +1,5 @@
 import { _, abs, execute, MCFunction, NBT, Objective, schedule, Selector, summon } from 'sandstone'
-import { pattern, walls, Difficulty } from '@rhythm/config'
+import { pattern, walls, collisions, Difficulty } from '@rhythm/config'
 import { wallMovement, wallTintColor } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { singles, groups, type Cell, type Obstacle } from '@rhythm/config/obstacles'
@@ -65,6 +65,7 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 				Tags: [Tags.WALL, Tags.WALL_NEW],
 				interpolation_duration: NBT.int(wallMovement.travelTicks),
 				item_display: 'none',
+				brightness: { sky: NBT.int(15), block: NBT.int(15) },
 				transformation: {
 					translation: NBT.float([0, 0, 0]),
 					left_rotation: NBT.float(arena.wallRotation),
@@ -79,7 +80,7 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 						'"minecraft:dyed_color"': NBT.int(tint),
 					},
 				},
-			})
+			} as Record<string, any>)
 
 			for (let y = 0; y < pattern.height; y++) {
 				for (let x = 0; x < pattern.width; x++) {
@@ -88,18 +89,21 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 					const cx = arena.reverseCollisionX ? (pattern.width - 1 - x) : x
 					const [hx, hy, hz] = gridToWorld(cx, y)
 
+					const cellYOffset = hy + cellInteractionYOffset(cell)
 					if (hasHeadroom(obstacle.grid, x, y, cell)) {
-						summon('minecraft:happy_ghast', abs(hx, hy + cellInteractionYOffset(cell), hz), {
+						const [gox, goy, goz] = collisions.ghast
+						summon('minecraft:happy_ghast', abs(hx + gox, cellYOffset + goy, hz + goz), {
 							Tags: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST],
-							NoAI: NBT.byte(1),
-							NoGravity: NBT.byte(1),
-							Invulnerable: NBT.byte(1),
-							Silent: NBT.byte(1),
+							NoAI: true,
+							NoGravity: true,
+							Invulnerable: true,
+							Silent: true,
 							attributes: [{ id: 'minecraft:scale', base: 0.25 }],
-							active_effects: [{ id: 'minecraft:invisibility', duration: NBT.int(-1), show_particles: NBT.byte(0) }],
+							active_effects: [{ id: 'minecraft:invisibility', duration: NBT.int(-1), show_particles: false }],
 						})
 					} else {
-						summon('minecraft:interaction', abs(hx, hy + cellInteractionYOffset(cell), hz), {
+						const [iox, ioy, ioz] = collisions.interact
+						summon('minecraft:interaction', abs(hx + iox, cellYOffset + ioy, hz + ioz), {
 							Tags: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW],
 							width: NBT.float(0.5),
 							height: NBT.float(cellInteractionHeight(cell)),
@@ -240,13 +244,13 @@ function buildDifficultySpawn(songDifficulty: Difficulty) {
 			execute.store.result.score(randomPick.target, randomPick.objective)
 				.run.random.value([0, sorted.length - 1], 'wall_pick')
 			if (ranges.length > 0) {
-				let chain = _.if(randomPick.greaterOrEqualThan(ranges[ranges.length - 1].start), () => {
+				let chain = _.if(randomPick.greaterThanOrEqualTo(ranges[ranges.length - 1].start), () => {
 					poolEntries[ranges[ranges.length - 1].entryIdx].spawnFn()
 					lastGroupId.set(poolEntries[ranges[ranges.length - 1].entryIdx].groupIdx)
 				})
 				for (let i = ranges.length - 2; i >= 0; i--) {
 					const r = ranges[i]
-					chain = chain.elseIf(randomPick.greaterOrEqualThan(r.start), () => {
+					chain = chain.elseIf(randomPick.greaterThanOrEqualTo(r.start), () => {
 						poolEntries[r.entryIdx].spawnFn()
 						lastGroupId.set(poolEntries[r.entryIdx].groupIdx)
 					})

@@ -28,6 +28,9 @@ export const map = {
 	size: config.mapLayout.size,
 	laneWidth: config.mapLayout.laneWidth,
 	boothDepth: config.mapLayout.boothWall,
+	mirrorX: config.mapLayout.mirrorX,
+	mirrorZ: config.mapLayout.mirrorZ,
+	laneShift: config.mapLayout.laneShift,
 	laneOffset: {
 		x: Math.floor((config.mapLayout.size[0] - config.mapLayout.laneWidth) / 2),
 		z: config.mapLayout.playerRoom + config.mapLayout.boothWall,
@@ -79,12 +82,12 @@ export const panels = {
 	background: config.panels.background,
 }
 
-// Where the player is teleported on death or return. Center of the booth, on the floor.
+const BOOTH_SPAWN_GAP = 3
 export const boothReturn: [number, number, number] = (() => {
 	const alongZ = config.goldLineDirection === 'south' || config.goldLineDirection === 'north'
 	const sign = (config.goldLineDirection === 'south' || config.goldLineDirection === 'east') ? 1 : -1
 	const widthCentre = (config.mapLayout.laneWidth - 1) / 2
-	const depthBehind = config.mapLayout.playerRoom + config.mapLayout.boothWall / 2
+	const depthBehind = config.mapLayout.playerRoom + config.mapLayout.boothWall + BOOTH_SPAWN_GAP
 	const x = alongZ ? config.goldLine[0] + widthCentre : config.goldLine[0] - sign * depthBehind
 	const z = alongZ ? config.goldLine[2] - sign * depthBehind : config.goldLine[2] + widthCentre
 	return [x, config.goldLine[1] + 1, z]

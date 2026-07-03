@@ -5,7 +5,7 @@ export type { RenderingMode, GoldLineDirection, Cell, PanelConfig, RhythmConfig 
 
 const config: RhythmConfig = {
 	rendering: 'compressed',
-	goldLine: [2500, 64, 2500],
+	goldLine: [3000, 64, 3000],
 	goldLineDirection: 'north',
 	pattern: {
 		width: 5,
@@ -13,8 +13,8 @@ const config: RhythmConfig = {
 	},
 	walls: {
 		speed: 0.5,
-		spawnDistance: 30,
-		passDistance: 10,
+		spawnDistance: 20,
+		passDistance: 8,
 		despawnDelay: 20,
 		hitRadius: 0.7,
 		breakRadius: 1.5,
@@ -30,12 +30,19 @@ const config: RhythmConfig = {
 			0xF27FA5, // pink
 		],
 	},
+	collisions: {
+		interact: [0, 0, 0],
+		ghast: [0, 0, 0],
+	},
 	mapLayout: {
-		playable: 30,
-		playerRoom: 6,
-		boothWall: 4,
+		playable: 19,
+		playerRoom: 8,
+		boothWall: 1,
 		laneWidth: 5,
-		size: [21, 10, 41],
+		size: [21, 9, 30],
+		mirrorX: true,
+		mirrorZ: true,
+		laneShift: [0, 0, 1],
 	},
 	gameplay: {
 		lives: {
@@ -55,6 +62,14 @@ const config: RhythmConfig = {
 			stripCount: 10,
 			height: 1.0,
 			defaultColor: [255, 40, 40],
+			offset: {
+				sides: { a: [0, 0, -0.35], b: [0, 0, 0.45] },
+				frontBack: { a: [-0.05, 0, 0], b: [0.05, 0, 0] },
+			},
+			lengthScale: {
+				sides: 1.11,
+				frontBack: 1.11,
+			},
 		},
 		glowColors: [
 			'aqua', 'blue', 'green', 'yellow',
@@ -65,13 +80,18 @@ const config: RhythmConfig = {
 			restScale: 0.2,
 		},
 	},
+	music: {
+		offset: [0, 0, 0],
+		volume: 10000,
+		hearable: { dx: 48, dy: 24, dz: 64 },
+	},
 	leaderboard: {
 		size: 10,
 		rankColors: ['gold', 'gray', 'red', 'dark_gray'],
 	},
 	panels: {
-		settingsOffset: [0, 2, -5],
-		leaderboardOffset: [-4, 2, -5],
+		settingsOffset: [0, 2, -10],
+		leaderboardOffset: [-4, 2, -10],
 		maxNameLength: 18,
 		scrollSpeed: 4,
 		padding: '  ',
@@ -87,7 +107,9 @@ export const goldLine = config.goldLine
 export const goldLineDirection = config.goldLineDirection
 export const pattern = config.pattern
 export const walls = config.walls
+export const collisions = config.collisions
 export const mapLayout = config.mapLayout
 export const gameplay = config.gameplay
 export const visuals = config.visuals
+export const music = config.music
 export const leaderboard = config.leaderboard

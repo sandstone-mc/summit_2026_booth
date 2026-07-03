@@ -67,6 +67,14 @@ export interface RhythmConfig {
 		colors: number[]
 	}
 
+	/** Fine-tune where the wall collision hitboxes sit, relative to each wall cell (world-space blocks). */
+	collisions: {
+		/** Offset for interaction hitboxes (cells that have a wall directly above them). */
+		interact: [number, number, number]
+		/** Offset for happy_ghast hitboxes (cells with headroom above). */
+		ghast: [number, number, number]
+	}
+
 	/**
 	 * How the map depth is split around the gold line, in blocks.
 	 * playable + playerRoom + boothWall + 1 must equal size[2]. The +1 is the gold line.
@@ -82,6 +90,15 @@ export interface RhythmConfig {
 		laneWidth: number
 		/** Size of the map .nbt. Fixed by the structure file. */
 		size: [number, number, number]
+		/** Mirror the placed map along the X axis (flips it left/right). */
+		mirrorX: boolean
+		/** Mirror the placed map along the Z axis (flips it front/back). */
+		mirrorZ: boolean
+		/**
+		 * World-space shift of the whole lit lane zone (border, shulkers, fragments) relative to
+		 * the gold line. Moves the lights-delimited lane without touching the .nbt map or the walls.
+		 */
+		laneShift: [number, number, number]
 	}
 
 	/** Lives, countdown and scoring. */
@@ -115,6 +132,23 @@ export interface RhythmConfig {
 			height: number
 			/** Default RGB color. */
 			defaultColor: [number, number, number]
+			/**
+			 * World-space offsets for the border light strips. Each strip is two stacked,
+			 * opposite-facing displays (a/b) that must be positioned separately.
+			 */
+			offset: {
+				/** Left + right (side) strips: a = base facing, b = 180°-flipped twin. */
+				sides: { a: [number, number, number]; b: [number, number, number] }
+				/** Front + back strips: a = base facing, b = 180°-flipped twin. */
+				frontBack: { a: [number, number, number]; b: [number, number, number] }
+			}
+			/** Multiplier that corrects the rendered strip length (font pixel calibration). 1 = raw. */
+			lengthScale: {
+				/** Length correction for the left + right (side) strips. */
+				sides: number
+				/** Length correction for the front + back strips. */
+				frontBack: number
+			}
 		}
 		/** Team colors cycled for the lane glow. */
 		glowColors: readonly string[]
@@ -123,6 +157,20 @@ export interface RhythmConfig {
 			activeScale: number
 			/** Fragment scale at rest. */
 			restScale: number
+		}
+	}
+
+	/** Where the song audio plays from and how loud. */
+	music: {
+		/** Offset in blocks from the gold lane middle block where the sound emits. */
+		offset: [number, number, number]
+		/** Playsound volume. Values above 1 grow the audible radius. 10000 reaches the whole booth. */
+		volume: number
+		/** Box, centered on the music position, that a player must be inside to hear the music. */
+		hearable: {
+			dx: number
+			dy: number
+			dz: number
 		}
 	}
 
