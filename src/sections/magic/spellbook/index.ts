@@ -25,14 +25,14 @@ const SetSpell = MCFunction('sections/magic/spellbook/set_spell', [], (_loop: an
 
 MCFunction('sections/magic/spellbook/triggers', () => {
   execute.as('@a').run(() => {
-    _.if(setSchoolTrigger('@s').greaterOrEqualThan(0), () => {
+    _.if(setSchoolTrigger('@s').greaterThanOrEqualTo(0), () => {
       getSelf()
       SetSchool(setSchoolTrigger('@s'))
       saveSelf()
 
       setSchoolTrigger('@s').set(-1)
       scoreboard.players.enable('@s', setSchoolTrigger)
-    }).elseIf(setSpellTrigger('@s').greaterOrEqualThan(0), () => {
+    }).elseIf(setSpellTrigger('@s').greaterThanOrEqualTo(0), () => {
       getSelf()
       SetSpell(setSpellTrigger('@s'))
       saveSelf()

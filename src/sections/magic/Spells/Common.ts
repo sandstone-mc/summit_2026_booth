@@ -140,7 +140,7 @@ export function createProjectileUpdater(
       
       // Lifetime
       Lifetime('@s').remove(1)
-      _.if(Lifetime('@s').lessOrEqualThan(0), () => {
+      _.if(Lifetime('@s').lessThanOrEqualTo(0), () => {
         opts.onExpire?.()
         kill('@s')
       })
@@ -271,7 +271,7 @@ export function spawnConeOfBolts(
 
 export function castSpell(spellId: string, schoolId: SchoolID, fn: () => void) {
   const spell = SpellLibrary[schoolId].spells[spellId]
-  _.if(player.mana('@s').greaterOrEqualThan(spell.mana_cost), () => {
+  _.if(player.mana('@s').greaterThanOrEqualTo(spell.mana_cost), () => {
     player.mana('@s').remove(spell.mana_cost)
 
     // TODO: uncomment when stickers work

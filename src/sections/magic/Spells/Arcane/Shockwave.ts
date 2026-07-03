@@ -31,7 +31,7 @@ MCFunction(`sections/magic/${spellPath}/update`, () => {
     })).at('@s').run(() => {
         Lifetime('@s').remove(1)
 
-        _.if(Lifetime('@s').lessOrEqualThan(0), () => {
+        _.if(Lifetime('@s').lessThanOrEqualTo(0), () => {
             // Visual ring
             particle('dust_color_transition{from_color:[0.63,0.1,.74],to_color:[0.29,0.29,0.29],scale:1}', rel(0, 0.5, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force')
 

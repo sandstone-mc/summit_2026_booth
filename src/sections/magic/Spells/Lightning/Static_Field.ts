@@ -15,7 +15,7 @@ MCFunction(`sections/magic/${meta.spellPath}/update`, () => {
         particle('end_rod', rel(0, 1.6, 0), abs(0.2, 0.5, 0.2), 0.1, 20, 'force')
 
         fieldDuration('@s').remove(10)
-        _.if(fieldDuration('@s').lessOrEqualThan(0), () => {
+        _.if(fieldDuration('@s').lessThanOrEqualTo(0), () => {
             StaticField('@s').remove()
             tellraw('@s', { text: 'Static Field faded.', color: 'gray' })
         })

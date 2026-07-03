@@ -31,7 +31,7 @@ MCFunction(`sections/magic/${spellPath}/update_storms`, () => {
         particle('snowflake', rel(0, 3, 0), abs(3, 3, 3), 0.0, 80, 'force')
         Lifetime('@s').remove(5)
 
-        _.if(Lifetime('@s').lessOrEqualThan(0), () => {
+        _.if(Lifetime('@s').lessThanOrEqualTo(0), () => {
             kill('@s')
         })
 

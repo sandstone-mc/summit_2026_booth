@@ -36,7 +36,7 @@ export function createStatusEffect(opts: StatusEffectOptions) {
       opts.particles()
       opts.onTick?.()
 
-      _.if(statusTime('@s').lessOrEqualThan(0), () => end())
+      _.if(statusTime('@s').lessThanOrEqualTo(0), () => end())
       _.if(statusTime('@s').moduloBy(opts.damageInterval).equalTo(0), () => {
         damage('@s', opts.damageAmount, opts.damageType)
       })

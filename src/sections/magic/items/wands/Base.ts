@@ -94,7 +94,7 @@ const useWandAdvancement = Advancement('input/wand_use', {
 
 MCFunction('sections/magic/input/wand_use_cooldown', () => {
     wandCooldown('@s').remove(1)
-    _.if(wandCooldown('@s').greaterOrEqualThan(1), () => {
+    _.if(wandCooldown('@s').greaterThanOrEqualTo(1), () => {
         cooldownAdvancement.revoke('@s')
     }).else(() => {
         wandCooldown('@s').reset()
@@ -102,7 +102,7 @@ MCFunction('sections/magic/input/wand_use_cooldown', () => {
 })
 
 MCFunction('sections/magic/input/wand_use', () => {
-    _.if(_.not(wandCooldown('@s').greaterOrEqualThan(1)), () => {
+    _.if(_.not(wandCooldown('@s').greaterThanOrEqualTo(1)), () => {
         // Trigger effects
         getSelf()
 

@@ -152,7 +152,8 @@ async function upload_zip(buffer: ArrayBuffer, filename: string) {
 
 // Main pack
 const main_pack_zip = new AdmZip()
-await main_pack_zip.addLocalFolderPromise(path.join(process.cwd(), '.sandstone/output/datapack'), { zipPath: '/' })
+// await main_pack_zip.addLocalFolderPromise(path.join(process.cwd(), '.sandstone/output/datapack'), { zipPath: '/' })
+await main_pack_zip.addLocalFolderPromise('.sandstone/output/datapack', { zipPath: '/' })
 const main_pack = (await main_pack_zip.toBufferPromise()).buffer
 
 await upload_zip(main_pack, `${SandstoneConfig.namespace}.zip`)
@@ -181,7 +182,10 @@ for (const entry of await fs.promises.readdir(deps_dir, { withFileTypes: true })
         buffer = (await fs.promises.readFile(full_path)).buffer
     } else if (entry.isDirectory()) {
         const dep_zip = new AdmZip()
-        await dep_zip.addLocalFolderPromise(full_path, { zipPath: '/' })
+        await dep_zip.addLocalFolderPromise(path.relative(process.cwd(), full_path), { zipPath: '/' })
+        for (const zip_entry of dep_zip.getEntries()) {
+            console.log(`Zipped: ${zip_entry.entryName}`)
+        }
         buffer = (await dep_zip.toBufferPromise()).buffer
     } else {
         continue
