@@ -1,0 +1,1 @@
+execute as @a run function sandstone_summit_booth:mana_manager/execute_as

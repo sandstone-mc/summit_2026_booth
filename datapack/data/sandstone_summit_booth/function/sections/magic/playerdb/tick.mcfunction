@@ -1,0 +1,1 @@
+execute as @a[scores={sandstone_summit_booth.pdb.uid=..0}] run function sandstone_summit_booth:sections/magic/playerdb/tick/execute_as

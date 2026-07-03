@@ -1,0 +1,1 @@
+execute as @e[type=#sandstone_summit_booth:targetable, dx=6, dy=3, dz=6] if entity @s run function sandstone_summit_booth:sections/magic/spells/lightning/thunderbolt/chain_strike

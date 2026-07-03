@@ -1,0 +1,1 @@
+execute as @e[tag=sandstone_summit_booth.spell.arcane.shockwave.wave, type=minecraft:marker] at @s run function sandstone_summit_booth:sections/magic/spells/arcane/shockwave/update/execute_as

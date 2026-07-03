@@ -1,0 +1,1 @@
+$dialog show @s sandstone_summit_booth:spell_select_$(school)

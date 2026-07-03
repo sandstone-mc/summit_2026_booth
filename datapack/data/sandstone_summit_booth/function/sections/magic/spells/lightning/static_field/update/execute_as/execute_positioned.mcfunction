@@ -1,0 +1,1 @@
+execute as @e[type=#sandstone_summit_booth:targetable, dx=4, dy=3, dz=4] if entity @s run function sandstone_summit_booth:sections/magic/spells/lightning/static_field/update/execute_as/execute_positioned/execute_as

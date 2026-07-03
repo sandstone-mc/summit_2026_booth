@@ -1,0 +1,1 @@
+execute if score @s sandstone_summit_booth.mana < @s sandstone_summit_booth.max_mana run function sandstone_summit_booth:mana_manager/execute_as/if

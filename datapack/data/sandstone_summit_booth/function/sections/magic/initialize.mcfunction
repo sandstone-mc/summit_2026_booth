@@ -1,0 +1,2 @@
+scoreboard players enable @a sandstone_summit_booth.set_school_trigger
+scoreboard players enable @a sandstone_summit_booth.set_spell_trigger

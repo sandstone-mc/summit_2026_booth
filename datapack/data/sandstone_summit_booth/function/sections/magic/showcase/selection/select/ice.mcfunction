@@ -1,0 +1,7 @@
+scoreboard players set @s sandstone_summit_booth.set_school_trigger 1
+title @a[tag=sandstone_summit_booth.showcase.player] title [{"text":"Ice","color":"aqua","bold":true}]
+title @a[tag=sandstone_summit_booth.showcase.player] subtitle [{"text":"School selected!","color":"gray","italic":true}]
+kill @e[tag=sandstone_summit_booth.showcase.pedestal]
+loot give @s loot sandstone_summit_booth:items/magic_wand
+scoreboard players set #global sandstone_summit_booth.showcase.state 3
+tellraw @a[tag=sandstone_summit_booth.showcase.player] [{"text":"\n"},{"text":"✦ Arcane Arts  ","color":"light_purple","bold":true},{"text":"Left-click","color":"yellow","bold":true},{"text":" to select spell  •  ","color":"gray"},{"text":"Right-click","color":"yellow","bold":true},{"text":" to cast\n\n","color":"gray"},{"text":"  Ice","color":"aqua","bold":true},{"text":"  Chilling magic that slows and freezes\n","color":"gray","italic":true},{"text":"  › ","color":"aqua"},{"text":"Frostbolt","color":"white","bold":true},{"text":"  10✦  ","color":"aqua"},{"text":"An icy bolt that deals 1 damage and freezes the target\n","color":"gray"},{"text":"  › ","color":"aqua"},{"text":"Blizzard","color":"white","bold":true},{"text":"  50✦  ","color":"aqua"},{"text":"Summons a snowstorm that blinds and damages nearby enemies for 10s\n","color":"gray"},{"text":"  › ","color":"aqua"},{"text":"Frost Nova","color":"white","bold":true},{"text":"  25✦  ","color":"aqua"},{"text":"Releases a burst of ice dealing 3 damage and freezing targets in front of you\n","color":"gray"}]
