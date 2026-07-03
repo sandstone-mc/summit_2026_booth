@@ -16,7 +16,7 @@ export function parkourStepIntervalForSpeed(wallSpeed: number): number {
 	return Math.max(10, Math.round(5.5 / wallSpeed))
 }
 
-export const STEP_GLASS: string[] = [
+export const STEP_GLASS = [
 	'minecraft:lime_stained_glass',
 	'minecraft:green_stained_glass',
 	'minecraft:cyan_stained_glass',
@@ -32,7 +32,7 @@ export const STEP_GLASS: string[] = [
 	'minecraft:light_blue_stained_glass',
 	'minecraft:blue_stained_glass',
 	'minecraft:yellow_stained_glass',
-]
+] as const
 
 export const STEP_LENGTHS: number[] = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
 

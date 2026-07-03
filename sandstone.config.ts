@@ -5,11 +5,11 @@ export default {
     packs: {
         datapack: {
             description: ['The ', { text: 'Sandstone', color: 'gold' }, ' booth datapack for Smithed Summit 2026.'],
-            packFormat: 101,
+            packFormat: 107.1,
         } as DatapackConfig,
         resourcepack: {
             description: ['A ', { text: 'Sandstone', color: 'gold' }, ' resource pack.'],
-            packFormat: 84,
+            packFormat: 88,
         } as ResourcePackConfig
     },
     onConflict: {
@@ -17,6 +17,6 @@ export default {
     },
     namespace: 'sandstone_summit_booth',
     packUid: 'WnYlBycD',
-    mcmeta: 'latest',
+    mcmeta: '26.2',
     saveOptions: process.env.CLIENT_PATH && process.env.WORLD ? { clientPath: process.env.CLIENT_PATH, world: process.env.WORLD } : {},
 } as SandstoneConfig

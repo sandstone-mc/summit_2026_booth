@@ -73,14 +73,14 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 				})
 
 				for (let i = 0; i < platLen; i++) {
-					const ghastTags: string[] = isRewardStep
+					const ghastTags = isRewardStep
 						? [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST, Tags.PARKOUR, Tags.PARKOUR_REWARD, Tags.PARKOUR_FRESH]
 						: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST, Tags.PARKOUR, Tags.PARKOUR_FRESH]
 					if (i === Math.floor(platLen / 2)) ghastTags.push(Tags.PARKOUR_TRIGGER)
 
 					summon('minecraft:happy_ghast', abs(posX, posY, posZ), {
 						Tags: ghastTags,
-						NoAI: NBT.byte(1), NoGravity: NBT.byte(1), Invulnerable: NBT.byte(1), Silent: NBT.byte(1),
+						NoAI: true, NoGravity: true, Invulnerable: true, Silent: true,
 						attributes: [{ id: 'minecraft:scale', base: 0.25 }],
 					})
 
@@ -125,7 +125,7 @@ MCFunction('sections/rhythm/parkour/tick', () => {
 					.run.data.get.entity('@s', 'Pos[1]', 10)
 				_.if(_.and(
 					_.entity(Selector('@e', { tag: Tags.PARKOUR_REWARD, distance: [0, 2.5] })),
-					pkTemp.greaterOrEqualThan(pkRewardY),
+					pkTemp.greaterThanOrEqualTo(pkRewardY),
 				), () => {
 					wallLives('@s').add(1)
 					points('@s').add(PARKOUR_BONUS)

@@ -14,7 +14,7 @@ import { timer } from './active'
 MCFunction('sections/rhythm/timer/tick', () => {
 	_.if(status.equalTo(GameStatus.ACTIVE), () => {
 		timer.remove(1)
-		_.if(timer.lessOrEqualThan(0), () => {
+		_.if(timer.lessThanOrEqualTo(0), () => {
 			endGame()
 		})
 	})

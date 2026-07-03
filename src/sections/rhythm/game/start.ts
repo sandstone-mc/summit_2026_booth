@@ -11,9 +11,9 @@ const countdownTick = MCFunction('sections/rhythm/start/countdown_tick', () => {
 		_.if(countdown.greaterThan(0), () => {
 			execute.as(allPlayers).at('@s').run.playsound('minecraft:block.note_block.hat', 'master', '@s')
 
-			_.if(countdown.greaterOrEqualThan(4), () => {
+			_.if(countdown.greaterThanOrEqualTo(4), () => {
 				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'green' }, countdown, ' seconds...'])
-			}).elseIf(countdown.greaterOrEqualThan(2), () => {
+			}).elseIf(countdown.greaterThanOrEqualTo(2), () => {
 				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'yellow' }, countdown, ' seconds...'])
 			}).else(() => {
 				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'red' }, countdown, ' second...'])
