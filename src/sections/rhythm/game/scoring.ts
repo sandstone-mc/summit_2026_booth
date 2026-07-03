@@ -71,7 +71,6 @@ const tempCombo = Objective.create('rhythm.combo_temp', 'dummy')
 export const computeScores = MCFunction('sections/rhythm/scoring/compute', () => {
 	execute.as(allPlayers).run(() => {
 		tempCombo('@s').set(combo('@s'))
-		// Clamp combo to max (Sandstone's < operator via bracket notation)
 		tempCombo('@s')['<'](gameplay.scoring.maxCombo)
 		tempCombo('@s').add(gameplay.scoring.maxCombo)
 
