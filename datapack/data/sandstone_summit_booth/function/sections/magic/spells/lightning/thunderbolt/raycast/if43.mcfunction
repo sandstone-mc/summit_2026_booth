@@ -1,1 +1,0 @@
-execute at @s run function sandstone_summit_booth:sections/magic/spells/lightning/thunderbolt/raycast_step

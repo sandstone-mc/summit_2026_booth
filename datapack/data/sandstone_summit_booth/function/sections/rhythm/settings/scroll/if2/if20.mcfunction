@@ -1,0 +1,3 @@
+execute if score $lives_idx sandstone_summit_booth.rhythm.state matches 0 run function sandstone_summit_booth:sections/rhythm/settings/scroll/if2/if20/if
+execute if score $lives_idx sandstone_summit_booth.rhythm.state matches 1 run function sandstone_summit_booth:sections/rhythm/settings/scroll/if2/if20/if2
+execute if score $lives_idx sandstone_summit_booth.rhythm.state matches 2 run function sandstone_summit_booth:sections/rhythm/settings/scroll/if2/if20/if3

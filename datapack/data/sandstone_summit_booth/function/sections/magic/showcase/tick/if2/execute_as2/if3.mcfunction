@@ -1,2 +1,0 @@
-summon zombie ~14.5 ~1.1 ~4.5 {Tags:['sandstone_summit_booth.showcase.mob','summit.booth_entity.sandstone_summit_booth'],PersistenceRequired:true,CanPickUpLoot:false,CanBreakDoors:false,DeathLootTable:'sandstone_summit_booth:showcase/empty_mob'}
-scoreboard players add #mob_count sandstone_summit_booth.showcase.state 1

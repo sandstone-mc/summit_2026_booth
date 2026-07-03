@@ -1,0 +1,1 @@
+scoreboard players set $tsign sandstone_summit_booth.rhythm.wall.move 1

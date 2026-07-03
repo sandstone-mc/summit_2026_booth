@@ -1,2 +1,0 @@
-execute store success score #snow sandstone_summit_booth.status.freezing_timer run fill ~ ~1 ~ ~ ~1 ~ powder_snow replace air
-execute if score #snow sandstone_summit_booth.status.freezing_timer matches 1 run summon marker ~ ~1 ~ {Tags:['sandstone_summit_booth.status.freezing.snow']}

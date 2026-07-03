@@ -1,1 +1,0 @@
-$data modify storage sandstone_summit_booth:pdb players.$(uid) set value {}

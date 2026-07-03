@@ -1,2 +1,0 @@
-particle electric_spark ~ ~ ~ 1 1 1 1 20 force
-execute positioned ~-4 ~-2 ~-4 run function sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/update/execute_as/if/0_if/return_run/execute_positioned

@@ -1,1 +1,0 @@
-execute as @e[tag=sandstone_summit_booth.showcase.marker, type=minecraft:marker] at @s positioned ~8 ~ ~26 run function sandstone_summit_booth:sections/magic/showcase/tick/if/execute_as

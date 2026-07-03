@@ -1,0 +1,1 @@
+execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/parkour/step_10/elseif7/execute_in

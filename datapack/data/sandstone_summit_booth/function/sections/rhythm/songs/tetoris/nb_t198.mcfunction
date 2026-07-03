@@ -1,0 +1,1 @@
+execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/songs/tetoris/nb_t198/execute_in

@@ -1,1 +1,0 @@
-execute as @e[type=#sandstone_summit_booth:targetable, dx=8, dy=4, dz=8] if entity @s run function sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/update/execute_as/if/0_if/return_run/execute_positioned/execute_as

@@ -1,1 +1,0 @@
-execute if entity @e[tag=sandstone_summit_booth.spell.ice.frost_nova.arc_center, distance=0..2.5] run function sandstone_summit_booth:sections/magic/spells/ice/frost_nova/cast/0_if/return_run/execute_as/execute_if

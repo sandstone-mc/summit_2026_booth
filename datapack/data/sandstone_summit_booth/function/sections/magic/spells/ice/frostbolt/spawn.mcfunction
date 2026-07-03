@@ -1,1 +1,0 @@
-execute anchored eyes rotated as @s run function sandstone_summit_booth:sections/magic/spells/ice/frostbolt/spawn/execute_anchored

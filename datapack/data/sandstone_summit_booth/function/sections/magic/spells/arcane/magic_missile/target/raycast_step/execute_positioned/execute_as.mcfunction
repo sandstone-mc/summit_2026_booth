@@ -1,2 +1,0 @@
-tag @s add sandstone_summit_booth.spell.arcane.magic_missile.target
-execute if entity @e[tag=sandstone_summit_booth.spell.arcane.magic_missile.target, type=#sandstone_summit_booth:targetable, limit=1, sort=nearest] at @e[tag=sandstone_summit_booth.spell.arcane.magic_missile.target, type=#sandstone_summit_booth:targetable, limit=1, sort=nearest] run particle end_rod ~ ~ ~ 0.6 1 0.6 0 20 normal @a[tag=sandstone_summit_booth.spell.caster, limit=1, sort=nearest]

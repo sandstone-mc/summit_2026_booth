@@ -1,1 +1,0 @@
-execute as @s run function sandstone_summit_booth:sections/magic/playerdb/get_self/execute_as

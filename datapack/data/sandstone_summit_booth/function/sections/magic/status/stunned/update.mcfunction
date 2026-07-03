@@ -1,1 +1,0 @@
-execute as @e[tag=sandstone_summit_booth.status.stunned] at @s run function sandstone_summit_booth:sections/magic/status/stunned/update/execute_as

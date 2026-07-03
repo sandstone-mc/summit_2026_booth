@@ -1,1 +1,0 @@
-$function sandstone_summit_booth:sections/magic/spells/$(current_school)/$(selected_spell)/cast

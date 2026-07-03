@@ -1,0 +1,1 @@
+execute in minecraft:overworld run kill @e[tag=ssb.rhythm.wall]

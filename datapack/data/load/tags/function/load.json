@@ -3,10 +3,21 @@
   "values": [
     "sandstone_summit_booth:__init__",
     "sandstone_summit_booth:version_check",
-    "sandstone_summit_booth:sections/magic/playerdb/load",
+    "sandstone_summit_booth:sections/rhythm/state/init",
+    "sandstone_summit_booth:sections/rhythm/wall/init_scores",
+    "sandstone_summit_booth:sections/rhythm/wall/init_travel_sign",
     "__sandstone:ticked/start/wnylbycd",
-    "sandstone_summit_booth:sections/magic/initialize",
-    "sandstone_summit_booth:sections/magic/spellbook/load_spells",
-    "sandstone_summit_booth:sections/magic/showcase/load"
+    "sandstone_summit_booth:sections/rhythm/lane/teams_init",
+    "sandstone_summit_booth:sections/rhythm/lane/border_spawn",
+    "sandstone_summit_booth:sections/rhythm/scoring/init",
+    "sandstone_summit_booth:sections/rhythm/parkour_init",
+    "sandstone_summit_booth:sections/rhythm/active/nocollide_init",
+    "sandstone_summit_booth:sections/rhythm/active/forceload",
+    "sandstone_summit_booth:sections/rhythm/settings/init",
+    "sandstone_summit_booth:sections/rhythm/settings/load_map",
+    "sandstone_summit_booth:sections/rhythm/settings/spawn",
+    "sandstone_summit_booth:sections/rhythm/leaderboard/init",
+    "sandstone_summit_booth:sections/rhythm/leaderboard/spawn",
+    "sandstone_summit_booth:sections/rhythm/setup"
   ]
 }

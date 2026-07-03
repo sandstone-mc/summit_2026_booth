@@ -1,0 +1,3 @@
+execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/debug/setup/execute_in
+function sandstone_summit_booth:sections/rhythm/lane/border_spawn
+function sandstone_summit_booth:sections/rhythm/arena/spawn_skybox

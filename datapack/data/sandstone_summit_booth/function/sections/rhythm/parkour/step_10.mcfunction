@@ -1,0 +1,8 @@
+execute if score $path sandstone_summit_booth.rhythm.parkour matches 0 run return run execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/parkour/step_10/if/return_run/execute_in
+execute if score $path sandstone_summit_booth.rhythm.parkour matches 1 run return run execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/parkour/step_10/elseif/return_run/execute_in
+execute if score $path sandstone_summit_booth.rhythm.parkour matches 2 run return run execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/parkour/step_10/elseif2/return_run/execute_in
+execute if score $path sandstone_summit_booth.rhythm.parkour matches 3 run return run execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/parkour/step_10/elseif3/return_run/execute_in
+execute if score $path sandstone_summit_booth.rhythm.parkour matches 4 run return run execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/parkour/step_10/elseif4/return_run/execute_in
+execute if score $path sandstone_summit_booth.rhythm.parkour matches 5 run return run execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/parkour/step_10/elseif5/return_run/execute_in
+execute if score $path sandstone_summit_booth.rhythm.parkour matches 6 run return run execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/parkour/step_10/elseif6/return_run/execute_in
+execute if score $path sandstone_summit_booth.rhythm.parkour matches 7 run function sandstone_summit_booth:sections/rhythm/parkour/step_10/elseif7

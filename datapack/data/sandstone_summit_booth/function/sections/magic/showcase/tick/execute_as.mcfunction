@@ -1,1 +1,0 @@
-execute as @a[dx=19, dy=5, dz=26] run tag @s add sandstone_summit_booth.showcase.in_booth

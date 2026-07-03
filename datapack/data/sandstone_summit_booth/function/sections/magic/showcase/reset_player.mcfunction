@@ -1,1 +1,0 @@
-execute if score #global sandstone_summit_booth.showcase.state matches 1.. run function sandstone_summit_booth:sections/magic/showcase/reset

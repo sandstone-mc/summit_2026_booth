@@ -1,0 +1,2 @@
+function sandstone_summit_booth:sections/rhythm/arena/kill_skybox
+execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/arena/spawn_skybox/execute_in

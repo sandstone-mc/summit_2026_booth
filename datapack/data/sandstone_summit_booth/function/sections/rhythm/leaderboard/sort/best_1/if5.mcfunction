@@ -1,0 +1,2 @@
+scoreboard players operation #lb5 sandstone_summit_booth.rhythm.state = $lb_max sandstone_summit_booth.rhythm.state
+execute as @a[tag=!ssb.lb.sel] run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/best_1/if5/execute_as

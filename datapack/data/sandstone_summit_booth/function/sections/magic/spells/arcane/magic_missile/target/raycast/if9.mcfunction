@@ -1,1 +1,0 @@
-execute at @s run function sandstone_summit_booth:sections/magic/spells/arcane/magic_missile/target/raycast_step

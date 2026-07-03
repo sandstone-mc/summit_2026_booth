@@ -1,0 +1,1 @@
+execute if score @s sandstone_summit_booth.rlb.s2 = #lb7 sandstone_summit_booth.rhythm.state run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/best_2/if7/execute_as/if

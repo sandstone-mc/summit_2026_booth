@@ -1,1 +1,0 @@
-execute as @a[tag=!sandstone_summit_booth.showcase.player, dx=3, dy=3, dz=-1] run function sandstone_summit_booth:sections/magic/showcase/session/start

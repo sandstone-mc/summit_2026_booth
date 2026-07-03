@@ -1,0 +1,1 @@
+execute if score @s sandstone_summit_booth.rlb.s1 > $lb_score sandstone_summit_booth.rhythm.state run scoreboard players add $lb_rank sandstone_summit_booth.rhythm.state 1
