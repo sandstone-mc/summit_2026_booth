@@ -7,7 +7,8 @@ import { parkourCleanup } from './parkour'
 import { clearLaneShulkers } from './lane-effects'
 import { saveLeaderboard } from './leaderboard'
 import { updateSettingsPanel } from './settings'
-import { Positions, DIMENSION, NAMESPACE } from '@shared'
+import { DIMENSION, NAMESPACE } from '@shared'
+import { boothReturn } from '@rhythm/config/internal/derived'
 import { timer } from './active'
 
 MCFunction('sections/rhythm/timer/tick', () => {
@@ -38,7 +39,7 @@ const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
 	clearLaneShulkers()
 
 	execute.in(DIMENSION).run(() => {
-		const [x, y, z] = Positions.BOOTH_RETURN
+		const [x, y, z] = boothReturn
 		tp(allPlayers, abs(x, y, z))
 	})
 

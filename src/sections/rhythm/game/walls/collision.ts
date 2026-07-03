@@ -1,7 +1,8 @@
 import { _, abs, effect, execute, gamemode, kill, MCFunction, Objective, particle, playsound, Predicate, rel, Selector, tag, title, tp } from 'sandstone'
 import { walls } from '@rhythm/config'
 import { GameStatus, Tags, alivePlayers, status } from '@rhythm/game/state'
-import { Positions, DIMENSION } from '@shared'
+import { DIMENSION } from '@shared'
+import { boothReturn } from '@rhythm/config/internal/derived'
 import { endGame } from '@rhythm/game/end'
 
 const isSneaking = Predicate('is_sneaking', {
@@ -41,7 +42,7 @@ const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 		title('@s').actionbar({ text: 'You died! Better luck next time.', color: 'red' })
 		playsound('minecraft:entity.player.hurt', 'master', '@s', '~ ~ ~', 1.0, 0.5)
 		execute.in('minecraft:overworld').run(() => {
-			const [x, y, z] = Positions.BOOTH_RETURN
+			const [x, y, z] = boothReturn
 			tp('@s', abs(x, y, z))
 		})
 		gamemode('adventure', '@s')

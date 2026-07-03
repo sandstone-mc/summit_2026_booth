@@ -1,10 +1,10 @@
 import { resolve, join, dirname } from 'path'
 import { mkdirSync } from 'fs'
 import { Objective, Tag } from 'sandstone'
-import { project, boothReturn } from '@rhythm/config/internal/derived'
+import config from '../sandstone.config'
 
-export const NAMESPACE = project.namespace
-export const DIMENSION = project.dimension
+export const NAMESPACE = config.namespace!
+export const DIMENSION = 'minecraft:overworld' as const
 export const PROJECT_ROOT = resolve(import.meta.dirname, '..')
 
 export async function writeGenerated(type: 'resourcepack' | 'datapack', relativePath: string, content: string | Buffer | Blob) {
@@ -14,9 +14,5 @@ export async function writeGenerated(type: 'resourcepack' | 'datapack', relative
 }
 
 export const ticking = Tag('function', 'ticking', [])
-
-export const Positions = {
-	BOOTH_RETURN: boothReturn,
-} as const
 
 export const state = Objective.create('rhythm.state', 'dummy')

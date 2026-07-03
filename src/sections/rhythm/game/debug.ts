@@ -1,6 +1,7 @@
 import { abs, effect, execute, fill, forceload, gamemode, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
 import { arena } from '@rhythm/config/internal/arena'
-import { DIMENSION, Positions } from '@shared'
+import { boothReturn } from '@rhythm/config/internal/derived'
+import { DIMENSION } from '@shared'
 import { walls, pattern } from '@rhythm/config'
 import { GameStatus, Tags, status, songSelect } from './state'
 import { stopSong, stopWalls } from './songs'
@@ -67,7 +68,7 @@ MCFunction('sections/rhythm/debug/reset', () => {
 	songSelect.set(0)
 
 	execute.in(DIMENSION).run(() => {
-		const [x, y, z] = Positions.BOOTH_RETURN
+		const [x, y, z] = boothReturn
 		tp('@a', abs(x, y, z))
 	})
 	gamemode('creative', '@a')
@@ -75,7 +76,7 @@ MCFunction('sections/rhythm/debug/reset', () => {
 
 MCFunction('sections/rhythm/debug/tp', () => {
 	execute.in(DIMENSION).run(() => {
-		const [x, y, z] = Positions.BOOTH_RETURN
+		const [x, y, z] = boothReturn
 		tp('@s', abs(x, y, z))
 	})
 	gamemode('creative', '@s')
