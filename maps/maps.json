@@ -1,14 +1,14 @@
 [
   {
-    "file": "neon_city.nbt",
-    "name": "Neon City"
+    "file": "sandstone_garden.nbt",
+    "name": "Sandstone Garden"
   },
   {
-    "file": "crystal_cave.nbt",
-    "name": "Crystal Cave"
+    "file": "frostbound_garden.nbt",
+    "name": "Frostbound Garden"
   },
   {
-    "file": "void_arena.nbt",
-    "name": "Void Arena"
+    "file": "crimson_garden.nbt",
+    "name": "Crimson Ember"
   }
 ]
