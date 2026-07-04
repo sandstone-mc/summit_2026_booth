@@ -1,2 +1,0 @@
-advancement revoke @s only sandstone_summit_booth:status/freezing
-execute if entity @s[tag=sandstone_summit_booth.status.freezing] run function sandstone_summit_booth:sections/magic/status/freezing/tryfreeze/if

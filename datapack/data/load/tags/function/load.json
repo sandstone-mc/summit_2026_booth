@@ -12,7 +12,6 @@
     "sandstone_summit_booth:sections/rhythm/scoring/init",
     "sandstone_summit_booth:sections/rhythm/parkour_init",
     "sandstone_summit_booth:sections/magic/playerdb/load",
-    "sandstone_summit_booth:sections/magic/initialize",
     "sandstone_summit_booth:sections/magic/spellbook/load_spells",
     "sandstone_summit_booth:sections/magic/showcase/load",
     "sandstone_summit_booth:sections/rhythm/active/forceload",

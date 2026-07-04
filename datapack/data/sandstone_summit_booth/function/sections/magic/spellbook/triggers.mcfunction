@@ -1,1 +1,1 @@
-execute as @a run function sandstone_summit_booth:sections/magic/spellbook/triggers/execute_as/if
+execute as @a[tag=sandstone_summit_booth.showcase.player] run function sandstone_summit_booth:sections/magic/spellbook/triggers/execute_as/if
