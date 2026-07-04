@@ -1,5 +1,6 @@
 import { _, Data, execute, MCFunction, Objective, say, scoreboard, Selector, tellraw, title, Variable, ObjectiveClass } from 'sandstone'
 import { getSelf, saveSelf, io } from './PlayerDB'
+import { SessionPlayer } from './SummitShowcase/ShowcaseState'
 
 const runInterval = 1
 
@@ -9,8 +10,7 @@ export const manaRegen = Objective.create('mana_regen')
 export const manaRegenTimer = Objective.create('mana_regen_timer')
 
 MCFunction('mana_manager', () => {
-    // TODO: scope this pls
-    execute.as(Selector('@a')).run(() => {
+    execute.as(SessionPlayer).run(() => {
         // if their mana is below max
         _.if(mana('@s').lessThan(maxMana('@s')), () => {
             _.if(manaRegenTimer('@s').lessThanOrEqualTo(0), () => {
