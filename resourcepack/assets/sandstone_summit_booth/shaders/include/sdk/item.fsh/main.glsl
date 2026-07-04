@@ -1,7 +1,0 @@
-vec3 dir = normalize(sdk_vec4.xyz);
-if (sdk_vec4.w < 0.0) discard;
-vec3 sky;
-if (sdk_int == 1) sky = starNest(dir);
-else if (sdk_int == 2) sky = skyVoidArena(dir);
-else sky = skyRainbowsSunshines(dir);
-fragColor = vec4(sky, 1.0);
