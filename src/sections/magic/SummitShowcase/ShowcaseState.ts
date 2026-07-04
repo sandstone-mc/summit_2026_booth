@@ -39,9 +39,14 @@ export const SessionPlayer = Selector('@a', {
 })
 
 // tracks any player physically inside the booth volume (updated every tick)
-const InBoothLabel = Label('showcase.in_booth')
+const InBoothLabel = Label('showcase.in_magic_showcase')
 const InBoothPlayer = Selector('@a', { tag: InBoothLabel })
 const InBoothCount = State('#in_booth_count')
+
+// safeguard: a session player who somehow isn't tagged as inside the showcase volume (e.g. teleported/logged out mid-session)
+const SessionPlayerOutsideBooth = Selector('@a', {
+    tag: [SessionPlayerLabel, `!sandstone_summit_booth.${InBoothLabel.name}` as `${any}${string}`]
+})
 
 // booth interior volume relative to ShowcaseMarker (x 0-19, y 0-5, z 0-26)
 const BOOTH_DX = 19
@@ -337,6 +342,10 @@ MCFunction('sections/magic/showcase/tick', () => {
         InBoothCount.set(0)
         execute.as(InBoothPlayer).run(() => { InBoothCount.add(1); })
         _.if(InBoothCount.greaterThan(1), () => {
+            reset()
+        })
+        // Safeguard: reset if the session player exists but isn't tagged as inside the booth
+        execute.if.entity(SessionPlayerOutsideBooth).run(() => {
             reset()
         })
     })
