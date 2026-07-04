@@ -10,6 +10,8 @@ const Wave = Label(`spell.${SCHOOLID}.${SPELLID}.wave`)
 const waveCount = 12 // number of projectiles in the ring
 const waveRings = 2  // how many rings expand outward
 
+//TODO: refactor to use create spell helper
+
 const spawnWave = MCFunction(`sections/magic/${spellPath}/spawn`, () => {
     for (let ring = 0; ring < waveRings; ring++) {
         for (let i = 0; i < waveCount; i++) {

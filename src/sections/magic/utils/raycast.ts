@@ -62,8 +62,9 @@ export function fireRaycast(
         execute.summon('minecraft:marker').run(() => {
             const RayActive = Label(`${path.replaceAll('/', '.')}.ray_active`)
             RayActive('@s').add()
-            
-            raw(`execute as @e[tag=sandstone_summit_booth.${CasterRef.name},limit=1] at @s anchored eyes rotated as @s run rotate @n[tag=sandstone_summit_booth.${RayActive.name}] ~ ~`)
+
+            execute.as(Selector('@e', {tag: `sandstone_summit_booth.${CasterRef.name}`, limit: 1 })).at('@s')
+                .anchored('eyes').rotated().as('@s').run.rotate(Selector('@n', { tag: `sandstone_summit_booth.${RayActive.name}` }), '~ ~')
 
             opts.onStart?.()
             

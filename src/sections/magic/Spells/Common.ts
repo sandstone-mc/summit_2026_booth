@@ -1,4 +1,4 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, raw, particle, rel, rotate, say, summon, Variable, tellraw, tp, advancement } from 'sandstone'
+import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, raw, particle, rel, rotate, say, summon, Variable, tellraw, tp, advancement, LabelClass } from 'sandstone'
 import { SpellLibrary, Spell, SchoolID } from '../spellbook/SpellLibrary'
 
 import * as player from '../player_handler'
@@ -7,93 +7,13 @@ export const Caster = Label('spell.caster')
 export const Lifetime = Objective.create('lifetime')
 
 export const TargetableTag = Tag('entity_type', 'sandstone_summit_booth:targetable', [
-    // 'minecraft:allay',
-    // 'minecraft:armadillo',
-    // 'minecraft:axolotl',
-    // 'minecraft:bat',
-    // 'minecraft:bee',
-    // 'minecraft:blaze',
     'minecraft:bogged',
-    // 'minecraft:breeze',
-    // 'minecraft:camel',
-    // 'minecraft:cat',
-    // 'minecraft:cave_spider',
-    // 'minecraft:chicken',
-    // 'minecraft:cod',
-    // 'minecraft:cow',
-    // 'minecraft:creaking',
-    // 'minecraft:creeper',
-    // 'minecraft:dolphin',
-    // 'minecraft:donkey',
     'minecraft:drowned',
-    // 'minecraft:elder_guardian',
-    // 'minecraft:ender_dragon',
-    // 'minecraft:enderman',
-    // 'minecraft:endermite',
-    // 'minecraft:evoker',
-    // 'minecraft:fox',
-    // 'minecraft:frog',
-    // 'minecraft:ghast',
-    // 'minecraft:glow_squid',
-    // 'minecraft:goat',
-    // 'minecraft:guardian',
-    // 'minecraft:hoglin',
-    // 'minecraft:horse',
-    // 'minecraft:husk',
-    // 'minecraft:iron_golem',
-    // 'minecraft:llama',
-    // 'minecraft:magma_cube',
-    // 'minecraft:mooshroom',
-    // 'minecraft:mule',
-    // 'minecraft:ocelot',
-    // 'minecraft:panda',
-    // 'minecraft:parrot',
-    // 'minecraft:phantom',
-    // 'minecraft:pig',
-    // 'minecraft:piglin',
-    // 'minecraft:piglin_brute',
-    // 'minecraft:pillager',
-    // 'minecraft:polar_bear',
-    // 'minecraft:pufferfish',
-    // 'minecraft:rabbit',
-    // 'minecraft:ravager',
-    // 'minecraft:salmon',
-    // 'minecraft:sheep',
-    // 'minecraft:shulker',
-    // 'minecraft:silverfish',
-    // 'minecraft:skeleton',
-    // 'minecraft:skeleton_horse',
-    // 'minecraft:slime',
-    // 'minecraft:sniffer',
-    // 'minecraft:snow_golem',
-    // 'minecraft:spider',
-    // 'minecraft:squid',
-    // 'minecraft:stray',
-    // 'minecraft:strider',
-    // 'minecraft:tadpole',
-    // 'minecraft:trader_llama',
-    // 'minecraft:tropical_fish',
-    // 'minecraft:turtle',
-    // 'minecraft:vex',
-    // 'minecraft:villager',
-    // 'minecraft:vindicator',
-    // 'minecraft:wandering_trader',
-    // 'minecraft:warden',
-    // 'minecraft:witch',
-    // 'minecraft:wither',
-    // 'minecraft:wither_skeleton',
-    // 'minecraft:wolf',
-    // 'minecraft:zoglin',
-    // 'minecraft:zombie',
-    // 'minecraft:zombie_horse',
-    // 'minecraft:zombie_villager',
-    // 'minecraft:zombified_piglin',
-    // 'minecraft:player',
 ])
 
 export interface ProjectileOptions {
   // identity
-  tag: ReturnType<typeof Label>
+  tag: LabelClass
   
   // movement - called every tick per projectile
   move: () => void
@@ -120,7 +40,7 @@ export interface ProjectileSpellOptions {
   spellId: string
   
   // How to spawn projectile(s) - runs as caster
-  spawn: (projectileTag: ReturnType<typeof Label>) => void
+  spawn: (projectileTag: LabelClass) => void
   
   projectile: Omit<ProjectileOptions, 'tag'>
 }
@@ -212,7 +132,7 @@ export function createProjectileSpell(opts: ProjectileSpellOptions) {
 
 // Helper: spawn a single forward-moving bolt
 export function spawnSingleBolt(
-  projectileTag: ReturnType<typeof Label>,
+  projectileTag: LabelClass,
   lifetime: number,
   offset = rel(0, 1, 0)
 ) {
@@ -228,7 +148,7 @@ export function spawnSingleBolt(
 
 // Helper: spawn N bolts in a ring (for heatwave-style)
 export function spawnRingOfBolts(
-  projectileTag: ReturnType<typeof Label>,
+  projectileTag: LabelClass,
   count: number,
   lifetime: number
 ) {
@@ -246,7 +166,7 @@ export function spawnRingOfBolts(
 }
 
 export function spawnConeOfBolts(
-    projectileTag: ReturnType<typeof Label>,
+    projectileTag: LabelClass,
     count: number,
     lifetime: number,
     spreadAngle = 30 

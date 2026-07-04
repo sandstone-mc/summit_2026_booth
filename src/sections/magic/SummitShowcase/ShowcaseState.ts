@@ -4,6 +4,7 @@ import { ShowcaseMarker } from '.'
 import { clearSelf, getSelf, saveSelf, io } from '../PlayerDB'
 import { mana, maxMana, manaRegen } from '../player_handler'
 import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
+import { SymbolEntity } from 'sandstone/arguments';
 
 export const State = Objective.create('showcase.state', 'dummy')
 export const GlobalState = State('#global')
@@ -60,8 +61,6 @@ export const ShowcaseMobs = Selector('@e', {
     tag: ShowcaseMobLabel
 })
 
-LootTable('showcase/empty_mob', { type: 'minecraft:entity', pools: [] })
-
 const MobCount = State('#mob_count')
 
 const MOB_ARMOR = [
@@ -76,14 +75,14 @@ const MOB_TYPES = ['minecraft:drowned', 'minecraft:bogged'] as const
 const MobTypePick = State('#mob_type_pick')
 const ArmorPick = State('#armor_pick')
 
-const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth'
+const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth' as `${any}${string}`
 
 function mobNbt(armor: (typeof MOB_ARMOR)[number]) {
-    return {
-        Tags: [`sandstone_summit_booth.${ShowcaseMobLabel.name}`, BOOTH_ENTITY_TAG],
+    const nbt: SymbolEntity['bogged'] = {
+        Tags: [`sandstone_summit_booth.${ShowcaseMobLabel.name}` as `${any}${string}`, BOOTH_ENTITY_TAG],
         PersistenceRequired: true,
         CanPickUpLoot: false,
-        DeathLootTable: 'sandstone_summit_booth:showcase/empty_mob',
+        DeathLootTable: 'minecraft:empty',
         equipment: {
             head:  { id: armor.head },
             chest: { id: armor.chest },
@@ -97,6 +96,7 @@ function mobNbt(armor: (typeof MOB_ARMOR)[number]) {
             feet: NBT.float(0),
         },
     }
+    return nbt
 }
 
 // summon a mob at pos with a random armor set from MOB_ARMOR
@@ -163,7 +163,7 @@ export const reset = MCFunction('sections/magic/showcase/reset', () => {
 
 const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
     execute.as(ShowcaseMarker).at('@s').run(() => {
-        const buttonTag = `sandstone_summit_booth.${ButtonLabel.name}`
+        const buttonTag = `sandstone_summit_booth.${ButtonLabel.name}` as `${any}${string}`
 
         // Exit button — inside face of the entrance door
         summon('text_display', rel(9.5, 1.4, 26.5), {

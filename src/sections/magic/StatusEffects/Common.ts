@@ -1,8 +1,9 @@
 import { MCFunction, Label, Objective, execute, Selector, damage, Score, Macro, _ } from 'sandstone'
+import { Registry } from 'sandstone/arguments'
 
 interface StatusEffectOptions {
     name: string
-    damageType: string
+    damageType: Registry['minecraft:damage_type']
     damageAmount: number
     damageInterval: number // ticks
     particles: () => void

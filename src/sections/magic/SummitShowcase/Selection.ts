@@ -3,15 +3,17 @@ import { SpellLibrary } from '../spellbook/SpellLibrary'
 import { ShowcaseMarker } from '.'
 import { STATES, GlobalState, SessionPlayer, ShowcaseMobs, startSelection } from './ShowcaseState'
 import { setSchoolTrigger } from '../pack_setup'
+import type { Registry } from 'sandstone/arguments'
 
 interface Pedestal {
   schoolId: keyof typeof SpellLibrary
   x: number
   y: number
   z: number
-  color: string
+  // TODO: TextColor once its exported
+  color: any
   particleType: string
-  item: string
+  item: Registry['minecraft:item']
 }
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth'
@@ -66,8 +68,8 @@ MCFunction('sections/magic/showcase/selection/spawn_pedestals', () => {
   execute.as(ShowcaseMarker).at('@s').run(() => {
     for (const ped of PEDESTALS) {
       const school = SpellLibrary[ped.schoolId]
-      const commonTag = `sandstone_summit_booth.${PedestalLabel.name}`
-      const schoolTag = `sandstone_summit_booth.showcase.pedestal.${ped.schoolId}`
+      const commonTag = `sandstone_summit_booth.${PedestalLabel.name}` as `${any}${string}`
+      const schoolTag = `sandstone_summit_booth.showcase.pedestal.${ped.schoolId}` as `${any}${string}`
 
       // Floating item at pedestal center
       summon('item_display', rel(ped.x, ped.y + 1.5, ped.z), {

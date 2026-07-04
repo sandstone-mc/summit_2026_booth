@@ -46,9 +46,9 @@ const dialogTemplate = {
 // Build a dialog per school at compile time
 for (const [schoolKey, school] of Object.entries(SpellLibrary)) {
   const actions = Object.values(school.spells).map(spellValue => ({
-    label: spellValue.name,
+    label: spellValue.name as `${string}:${string}`,
     action: {
-      type: 'minecraft:run_command',
+      type: 'minecraft:run_command' as `${string}:${string}`,
       command: `trigger sandstone_summit_booth.set_spell_trigger set ${spellValue.uid}`
     }
   }))
