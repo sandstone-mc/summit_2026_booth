@@ -118,7 +118,7 @@ const ENTRANCE_DZ = 1
 
 export const closeDoor = MCFunction('sections/magic/showcase/door/close', () => {
     execute.as(ShowcaseMarker).at('@s').run(() => {
-        fill(rel(ENTRANCE_X, ENTRANCE_Y, ENTRANCE_Z), rel(ENTRANCE_X + (ENTRANCE_DX - 1), ENTRANCE_Y + (ENTRANCE_DY - 1), ENTRANCE_Z + (ENTRANCE_DZ - 1)), 'minecraft:glass')
+        fill(rel(ENTRANCE_X, ENTRANCE_Y, ENTRANCE_Z), rel(ENTRANCE_X + (ENTRANCE_DX - 1), ENTRANCE_Y + (ENTRANCE_DY - 1), ENTRANCE_Z + (ENTRANCE_DZ - 1)), 'minecraft:oxidized_copper_trapdoor[open=true]')
     })
 }, { lazy: true })
 
@@ -191,8 +191,17 @@ const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
             },
         })
 
+
+        summon('text_display', rel(9.5, 1.4, 28.5), {
+            Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
+            text: [{ text: '🚫 ', color: 'red' }, { text: 'Showcase Active', color: 'red', bold: true }, { text: ' 🚫', color: 'red' }],
+            alignment: 'center',
+            billboard: 'fixed',
+            brightness: { sky: NBT.int(15), block: NBT.int(15) },
+        })
+
         // Change School button — back of room behind the pedestals
-        summon('text_display', rel(9.5, 1.5, 18), {
+        summon('text_display', rel(9.5, 0.2, 19), {
             Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
             text: [{ text: '✦ ', color: 'yellow' }, { text: 'Change School', color: 'white', bold: true }],
             alignment: 'center',
@@ -205,10 +214,10 @@ const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
             },
             brightness: { sky: NBT.int(15), block: NBT.int(15) },
         })
-        summon('interaction', rel(9.5, 0, 18), {
+        summon('interaction', rel(9.5, 0, 19.95), {
             Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
-            width: NBT.float(1.2),
-            height: NBT.float(3.0),
+            width: NBT.float(2.7),
+            height: NBT.float(0.5),
             response: false,
             data: {
                 summit_interactable: {
