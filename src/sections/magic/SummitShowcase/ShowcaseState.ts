@@ -344,13 +344,13 @@ MCFunction('sections/magic/showcase/tick', () => {
     execute.as(Selector('@a', { scores: { 'sandstone_summit_booth.showcase.reset': [1, null] } })).run(() => {
         reset()
         raw(`scoreboard players reset @s sandstone_summit_booth.showcase.reset`)
-        scoreboard.players.enable('@a', resetTrigger)
+        scoreboard.players.enable('@s', resetTrigger)
     })
 }, { runEveryTick: true })
 
 MCFunction('sections/magic/showcase/load', () => {
     GlobalState.set(STATES.IDLE)
-    scoreboard.players.enable('@a', resetTrigger)
+    scoreboard.players.enable('@s', resetTrigger)
 }, { runOnLoad: true })
 
 // Summit compliance: kill all booth entities (ShowcaseMarker, mobs, buttons, pedestals)

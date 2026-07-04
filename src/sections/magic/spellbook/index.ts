@@ -1,9 +1,9 @@
 // spellbook/index.ts
-import { advancement, MCFunction, Selector, _, execute, scoreboard, DataVariable, data, DataPointClass, Macro, raw, Score, say, functionCmd } from 'sandstone'
-import { SpellLibrary, SpellSchool, Spell, SchoolID, SpellIDS } from './SpellLibrary'
-import { setSchoolTrigger, setSpellTrigger, temps } from '../pack_setup'
+import { MCFunction, _, execute, scoreboard, Macro, raw, Score, functionCmd } from 'sandstone'
+import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
 
 import { getSelf, io, saveSelf } from '../PlayerDB'
+import { SessionPlayer } from '../SummitShowcase/ShowcaseState'
       
 const SetSchool = MCFunction('sections/magic/spellbook/set_school', [], (_loop: any, newSchool: Score) => {
   raw(`$data modify storage sandstone_summit_booth:io ${io.select('current_school').path} set from storage sandstone_summit_booth:ids schools.$(param_0).name`)
@@ -17,14 +17,13 @@ const SetSpell = MCFunction('sections/magic/spellbook/set_spell', [], (_loop: an
   raw(`data modify storage sandstone_summit_booth:temps macro.schoolID set from storage sandstone_summit_booth:io data.current_school_uid`)
   
   functionCmd(MCFunction('sections/magic/spellbook/set_spell/macro', [], () => {
-    // raw(`$say $(spellID) $(schoolID)`)
     raw(`$data modify storage sandstone_summit_booth:io ${io.select('selected_spell').path} set from storage sandstone_summit_booth:ids schools.$(schoolID).spells.$(spellID)`)
   }), 'with', 'storage', 'sandstone_summit_booth:temps', 'macro')
 })
 
 
 MCFunction('sections/magic/spellbook/triggers', () => {
-  execute.as('@a').run(() => {
+  execute.as(SessionPlayer).run(() => {
     _.if(setSchoolTrigger('@s').greaterThanOrEqualTo(0), () => {
       getSelf()
       SetSchool(setSchoolTrigger('@s'))
