@@ -225,6 +225,7 @@ const onStartGame = MCFunction('sections/rhythm/settings/on_start', () => {
 }, { lazy: true })
 
 MCFunction('sections/rhythm/settings/tick', () => {
+	// TODO: Look into optimizing this, also use x/y/z selector
 	execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_song_cycle`]: true } })).run(() => {
 		onSongCycle()
 		advancement.revoke('@s').only(`${NAMESPACE}:ui_song_cycle`)

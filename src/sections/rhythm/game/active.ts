@@ -9,12 +9,6 @@ import { playSong, scheduleWalls } from './songs'
 import { spawnLaneShulkers, spawnLaneBorder } from './lane-effects'
 import { DIMENSION, state } from '@shared'
 
-MCFunction('sections/rhythm/active/nocollide_init', () => {
-	team.add(Tags.NO_COLLIDE)
-	team.modify(Tags.NO_COLLIDE, 'collisionRule', 'never')
-	team.modify(Tags.NO_COLLIDE, 'seeFriendlyInvisibles', false)
-}, { runOnLoad: true })
-
 export const timer = state('$timer')
 
 MCFunction('sections/rhythm/active/forceload', () => {
@@ -33,9 +27,6 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 		tp(allPlayers, abs(x, y, z), [`${arena.playerYaw}`, '0'])
 	})
 
-	gamemode('adventure', allPlayers)
-	team.join(Tags.NO_COLLIDE, allPlayers)
-
 	execute.as(allPlayers).run(() => {
 		attribute("@s", "minecraft:fall_damage_multiplier").baseSet(0)
 		attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
@@ -46,8 +37,6 @@ export const setActive = MCFunction('sections/rhythm/active/init', () => {
 		combo('@s').set(0)
 		finalScore('@s').set(0)
 	})
-
-	gamerule('natural_health_regeneration', false)
 
 	if (songCount === 1) {
 		timer.set(songDurations[0] * 20)

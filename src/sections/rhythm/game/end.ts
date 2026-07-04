@@ -53,10 +53,6 @@ const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
 		tag('@s').remove(Tags.HIT_TICK)
 	})
 
-	team.leave(Selector('@a'))
-	gamerule('natural_health_regeneration', true)
-	gamemode('adventure', Selector('@a'))
-
 	status.set(GameStatus.WAITING)
 	updateSettingsPanel()
 }, { lazy: true })

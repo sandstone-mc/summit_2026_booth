@@ -255,6 +255,7 @@ const onMyScore = MCFunction('sections/rhythm/leaderboard/on_myscore', () => {
 			_.if(lbCatView.equalTo(0), () => {
 				lbScore.set(lbBest[si]('@s'))
 				lbRank.set(1)
+				// TODO: Optimize
 				execute.as(Selector('@a')).run(() => {
 					_.if(lbBest[si]('@s').greaterThan(lbScore), () => {
 						lbRank.add(1)
@@ -264,6 +265,7 @@ const onMyScore = MCFunction('sections/rhythm/leaderboard/on_myscore', () => {
 			}).else(() => {
 				lbScore.set(lbNoDeath[si]('@s'))
 				lbRank.set(1)
+				// TODO: Optimize
 				execute.as(Selector('@a')).run(() => {
 					_.if(lbNoDeath[si]('@s').greaterThan(lbScore), () => {
 						lbRank.add(1)

@@ -3,6 +3,7 @@ import { arena } from '@rhythm/config/internal/arena'
 import { mapCount, mapSafeNames } from '@rhythm/config/internal/maps'
 import { mapSelect, Tags } from './state'
 import { DIMENSION, NAMESPACE } from '@shared'
+import { SymbolEntity } from 'sandstone/arguments';
 
 export const placeMap = MCFunction('sections/rhythm/arena/place_map', () => {
 	if (mapCount === 0) return
@@ -38,7 +39,7 @@ const skyboxCenter: [number, number, number] = [
 
 const skyboxModels = ['skybox_neon', 'skybox_cave', 'skybox_void']
 
-function skyboxNbt(model: string): Record<string, any> {
+function skyboxNbt(model: string): SymbolEntity['item_display'] {
 	return {
 		Tags: [Tags.SKYBOX],
 		brightness: { sky: NBT.int(15), block: NBT.int(15) },
@@ -52,6 +53,7 @@ function skyboxNbt(model: string): Record<string, any> {
 			id: 'minecraft:leather_horse_armor',
 			count: NBT.int(1),
 			components: {
+				/* @ts-ignore */
 				'"minecraft:item_model"': model,
 			},
 		},

@@ -36,6 +36,7 @@ MCFunction('sections/rhythm/scoring/tick', () => {
 			beatFlag.set(0)
 			beatLaneEffect()
 
+			// TODO: optimize; x/y/z selector
 			execute.in(DIMENSION).as(Selector('@a', {
 				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.HIT_TICK}`],
 			})).at('@s').run(() => {

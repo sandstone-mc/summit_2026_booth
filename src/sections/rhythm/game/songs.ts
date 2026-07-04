@@ -100,6 +100,7 @@ for (let s = 0; s < songCount; s++) {
 
 		stopFn = MCFunction(`sections/rhythm/songs/${safeName}/stop`, () => {
 			for (const name of allScheduledNames) schedule.clear(name)
+			// TODO: scope this
 			stopsound('@a', 'master')
 		}, { lazy: true })
 	} else {

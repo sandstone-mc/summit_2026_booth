@@ -102,6 +102,7 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 export const parkourCleanup = MCFunction('sections/rhythm/parkour/cleanup', () => {
 	pkActive.set(0)
 	execute.in(DIMENSION).run.kill(Selector('@e', { tag: Tags.PARKOUR }))
+	// TODO: x/y/z selector
 	tag('@a').remove(Tags.PARKOUR_DONE)
 }, { lazy: true })
 
@@ -113,11 +114,13 @@ MCFunction('sections/rhythm/parkour/tick', () => {
 				tag: Tags.PARKOUR_TRIGGER,
 				scores: { [wallAge.name]: [reach, reach] },
 			})), () => {
+				// TODO: AI slop, this is wrong lol
 				execute.as('@a').at('@s').run.playsound(
 					'minecraft:block.note_block.hat', 'master', '@s', '~ ~ ~', 1.0, 1.0,
 				)
 			})
 
+			// TODO: x/y/z selector
 			execute.as(Selector('@a', {
 				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.PARKOUR_DONE}`],
 			})).at('@s').run(() => {

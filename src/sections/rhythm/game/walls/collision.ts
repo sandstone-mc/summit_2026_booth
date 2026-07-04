@@ -52,6 +52,7 @@ const onHit = MCFunction('sections/rhythm/collision/hit', () => {
 MCFunction('sections/rhythm/collision/tick', () => {
 	_.if(status.equalTo(GameStatus.ACTIVE), () => {
 		execute.in(DIMENSION).run(() => {
+			// TODO: this shouldn't be @a for smithed summit
 			execute.as(Selector('@a', { tag: Tags.WALL_HIT_COOLDOWN })).run(() => {
 				wallHitCooldown('@s').remove(1)
 				_.if(wallHitCooldown('@s').lessThanOrEqualTo(0), () => {
@@ -77,6 +78,7 @@ MCFunction('sections/rhythm/collision/tick', () => {
 				})
 			})
 
+			// TODO: this should have an x/y/z scope
 			execute.as(Selector('@a', {
 				tag: [Tags.ALIVE, Tags.PLAYER, `!${Tags.WALL_HIT_COOLDOWN}`, `!${Tags.HIT_TICK}`],
 			})).at('@s').unless.predicate(isSneaking)
@@ -85,7 +87,7 @@ MCFunction('sections/rhythm/collision/tick', () => {
 				.run(() => {
 					onHit()
 				})
-
+			// TODO: this should have an x/y/z scope
 			tag(Selector('@a', { tag: Tags.HIT_TICK })).remove(Tags.HIT_TICK)
 
 			execute.unless.entity(alivePlayers).run(() => {

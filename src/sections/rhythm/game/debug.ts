@@ -56,6 +56,7 @@ MCFunction('sections/rhythm/debug/reset', () => {
 	clearWalls()
 	parkourCleanup()
 	clearLaneShulkers()
+	// TODO
 	stopsound('@a', 'record')
 
 	execute.as(Selector('@a', { tag: Tags.PLAYER })).run(() => {

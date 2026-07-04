@@ -9,6 +9,7 @@ export const manaRegen = Objective.create('mana_regen')
 export const manaRegenTimer = Objective.create('mana_regen_timer')
 
 MCFunction('mana_manager', () => {
+    // TODO: scope this pls
     execute.as(Selector('@a')).run(() => {
         // if their mana is below max
         _.if(mana('@s').lessThan(maxMana('@s')), () => {

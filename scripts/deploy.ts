@@ -152,7 +152,6 @@ async function upload_zip(buffer: ArrayBuffer, filename: string) {
 
 // Main pack
 const main_pack_zip = new AdmZip()
-// await main_pack_zip.addLocalFolderPromise(path.join(process.cwd(), '.sandstone/output/datapack'), { zipPath: '/' })
 await main_pack_zip.addLocalFolderPromise('.sandstone/output/datapack', { zipPath: '/' })
 const main_pack = (await main_pack_zip.toBufferPromise()).buffer
 

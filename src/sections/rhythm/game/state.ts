@@ -53,7 +53,6 @@ export enum Tags {
 	SKYBOX = 'ssb.rhythm.skybox',
 
 	LB_SELECTION = 'ssb.lb.sel',
-	NO_COLLIDE = 'ssb.rhythm.nocollide',
 }
 
 export const status = state('$status')
@@ -70,5 +69,6 @@ export const mapSelect = state('$map_select')
 export const lbSongView = state('$lb_song')
 export const lbCatView = state('$lb_cat')
 
+// TODO: x/y/z selector
 export const alivePlayers = Selector('@a', { tag: [Tags.PLAYER, Tags.ALIVE] })
 export const allPlayers = Selector('@a', { tag: Tags.PLAYER })
