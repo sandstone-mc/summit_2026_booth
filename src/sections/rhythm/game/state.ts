@@ -1,5 +1,5 @@
 import { MCFunction, Selector } from 'sandstone'
-import { state } from '@shared';
+import { NAMESPACE, state } from '@shared';
 
 export enum GameStatus {
 	WAITING,
@@ -54,6 +54,10 @@ export enum Tags {
 
 	LB_SELECTION = 'ssb.lb.sel',
 }
+
+export const BOOTH_ENTITY_TAG = `summit.booth_entity.${NAMESPACE}`
+export const DYNAMIC_TAG = 'summit.dynamic'
+export const boothTags = (...extra: string[]): Tags[] => [BOOTH_ENTITY_TAG, DYNAMIC_TAG, ...extra] as Tags[]
 
 export const status = state('$status')
 
