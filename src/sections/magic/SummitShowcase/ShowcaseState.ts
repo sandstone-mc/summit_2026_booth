@@ -69,7 +69,7 @@ const MOB_ARMOR = [
     { head: 'minecraft:iron_helmet',      chest: 'minecraft:iron_chestplate',      legs: 'minecraft:iron_leggings',      feet: 'minecraft:iron_boots'      },
 ] as const
 
-const MOB_TYPES = ['minecraft:drowned', 'minecraft:bogged'] as const
+const MOB_TYPES = ['minecraft:zombie', 'minecraft:bogged'] as const
 
 // random pickers for showcase mob spawning
 const MobTypePick = State('#mob_type_pick')
@@ -164,6 +164,25 @@ export const reset = MCFunction('sections/magic/showcase/reset', () => {
 const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
     execute.as(ShowcaseMarker).at('@s').run(() => {
         const buttonTag = `sandstone_summit_booth.${ButtonLabel.name}` as `${any}${string}`
+
+        // helper text
+        summon('text_display', rel(7.5625, 0.15, 22), {
+            Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
+            text: [{ text: 'Left-Click: ', color: 'white' }, { text: 'Select Spell', color: 'light_purple', bold: true }],
+            alignment: 'center',
+            billboard: 'fixed',
+            brightness: { sky: NBT.int(15), block: NBT.int(15) },
+        })
+
+        summon('text_display', rel(11.5, 0.15, 22), {
+            Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
+            text: [{ text: 'Right-Click: ', color: 'white' }, { text: 'Cast Spell', color: 'light_purple', bold: true }],
+            alignment: 'center',
+            billboard: 'fixed',
+            brightness: { sky: NBT.int(15), block: NBT.int(15) },
+        })
+
+
 
         // Exit button — inside face of the entrance door
         summon('text_display', rel(9.5, 1.4, 26.5), {
@@ -298,7 +317,7 @@ MCFunction('sections/magic/showcase/tick', () => {
                         .run.random.value([0, MOB_ARMOR.length - 1], 'showcase_armor')
 
                     _.if(MobTypePick.equalTo(0), () => {
-                        withRandomArmor((armor) => summon('minecraft:drowned', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
+                        withRandomArmor((armor) => summon('minecraft:zombie', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
                     }).else(() => {
                         withRandomArmor((armor) => summon('minecraft:bogged', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
                     })

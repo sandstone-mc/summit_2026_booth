@@ -8,7 +8,7 @@ export const Lifetime = Objective.create('lifetime')
 
 export const TargetableTag = Tag('entity_type', 'sandstone_summit_booth:targetable', [
     'minecraft:bogged',
-    'minecraft:drowned',
+    'minecraft:zombie',
 ])
 
 export interface ProjectileOptions {
