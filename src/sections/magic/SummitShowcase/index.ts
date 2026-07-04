@@ -1,7 +1,7 @@
 import './ShowcaseState'
 import './Selection'
 
-import { execute, Label, MCFunction, rel, Selector, summon, Tag } from 'sandstone'
+import { execute, Label, MCFunction, rel, Selector, summon } from 'sandstone'
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth'
 

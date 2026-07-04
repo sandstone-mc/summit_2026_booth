@@ -1,6 +1,6 @@
-import { advancement, Advancement, Enchantment, execute, LootTable, MCFunction, NBTInt, Objective, say, Selector, _, functionCmd, raw, dialog, DialogClass, Dialog, data, Data } from 'sandstone'
+import { Advancement, Enchantment, MCFunction, NBTInt, Objective, _, functionCmd, raw, Dialog, data, Data } from 'sandstone'
 import { SpellLibrary } from '../../spellbook/SpellLibrary'
-import { getSelf, saveSelf, io } from '../../PlayerDB'
+import { getSelf, io } from '../../PlayerDB'
 
 // Left click detect
 Enchantment('input/wand_left_click', {

@@ -1,4 +1,4 @@
-import { Label, MCFunction, particle, rel, abs, Variable, damage, execute, Selector, tp, raw, Objective, _ } from 'sandstone'
+import { MCFunction, particle, rel, abs, Variable, damage, tp, Objective, _ } from 'sandstone'
 import { castSpell, spellMeta } from '../Common'
 import { Charged, Stunned } from '../../StatusEffects'
 import { checkHit } from '../../utils/hitDetection'

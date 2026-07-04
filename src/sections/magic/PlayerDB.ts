@@ -1,6 +1,3 @@
-// The macro fns need to be invoked via: function <name> with storage mypack:macro
-// Use functionCmd for this
-
 import {
   MCFunction, Objective, Data, execute, _, Selector, raw, functionCmd
 } from 'sandstone'

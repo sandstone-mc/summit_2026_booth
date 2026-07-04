@@ -1,4 +1,4 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, loc, particle, rel, rotate, say, summon, Variable, tellraw, tp } from 'sandstone'
+import { _, abs, damage, loc, particle, rel, Variable, tp } from 'sandstone'
 import { Freezing } from '../../StatusEffects'
 import { createProjectileSpell, spawnSingleBolt } from '../Common'
 

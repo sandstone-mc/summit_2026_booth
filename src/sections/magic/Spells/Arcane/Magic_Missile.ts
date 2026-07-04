@@ -1,4 +1,4 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, loc, particle, rel, rotate, say, summon, Variable, tellraw, tp, raw } from 'sandstone'
+import { Label, Selector, _, abs, damage, execute, loc, particle, rel, tp, raw } from 'sandstone'
 import { Caster, createProjectileSpell, spawnSingleBolt, spellMeta } from '../Common'
 import { fireRaycast } from '../../utils/raycast'
 import { checkHit } from '../../utils/hitDetection'

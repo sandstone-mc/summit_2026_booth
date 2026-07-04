@@ -1,12 +1,10 @@
 import './PlayerDB.ts'
-import './player_first_setup.ts'
 import './pack_setup.ts'
 import './player_handler.ts'
 import './spellbook/index.ts'
 import './items/items'
 import './Spells'
 import './StatusEffects'
-// import './about'
 
 import './SummitShowcase'
 

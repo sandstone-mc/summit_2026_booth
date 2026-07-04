@@ -1,6 +1,6 @@
 import { createStatusEffect } from './Common'
 
-import { Label, MCFunction, Objective, Selector, _, Macro, damage, execute, particle, rel, abs, Score } from 'sandstone'
+import { particle, rel, abs } from 'sandstone'
 
 const status = createStatusEffect({
     name: 'burning',

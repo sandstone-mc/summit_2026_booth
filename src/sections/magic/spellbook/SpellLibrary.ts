@@ -1,4 +1,4 @@
-import { Data, data, MCFunction, NBT } from 'sandstone'
+import { Data, MCFunction } from 'sandstone'
 
 export interface Spell {
     id: string

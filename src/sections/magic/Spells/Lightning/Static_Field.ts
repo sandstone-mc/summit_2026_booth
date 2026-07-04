@@ -2,7 +2,7 @@
 import { Label, MCFunction, Objective, Selector, _, abs, damage, execute, particle, rel, Variable, tellraw, sleep } from 'sandstone'
 import { castSpell, spellMeta } from '../Common'
 import { checkHit } from '../../utils/hitDetection'
-import { Charged, Stunned } from '../../StatusEffects'
+import { Stunned } from '../../StatusEffects'
 
 const meta = spellMeta('lightning', 'static_field')
 const StaticField = Label('status.static_field')

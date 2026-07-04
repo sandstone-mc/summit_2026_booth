@@ -1,5 +1,5 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, damage, data, Data, execute, kill, raw, particle, rel, rotate, say, summon, Variable, tellraw, tp, advancement, LabelClass } from 'sandstone'
-import { SpellLibrary, Spell, SchoolID } from '../spellbook/SpellLibrary'
+import { Label, MCFunction, Objective, Selector, Tag, _, abs, data, Data, execute, kill, rel, rotate, tellraw, tp, LabelClass } from 'sandstone'
+import { SpellLibrary, SchoolID } from '../spellbook/SpellLibrary'
 
 import * as player from '../player_handler'
 import { checkHit } from '../utils/hitDetection'

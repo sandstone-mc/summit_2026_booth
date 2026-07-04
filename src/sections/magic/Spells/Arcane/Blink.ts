@@ -1,6 +1,6 @@
 import { fireRaycast } from '../../utils/raycast'
-import { particle, MCFunction, rel, tp, abs, say } from 'sandstone'
-import { spellMeta, castSpell, Caster } from '../Common'
+import { particle, MCFunction, rel, tp, abs } from 'sandstone'
+import { spellMeta, castSpell } from '../Common'
 
 const meta = spellMeta('arcane', 'blink')
 
@@ -9,9 +9,7 @@ const blink = fireRaycast(meta.spellPath, {
     onStart: () => {
         tp('@s', rel(0, 1.62, 0))
     },
-    onStep: () => {
-        // particle('end_rod', rel(0, 0, 0), abs(0, 0, 0), 0, 2, 'force')
-    },
+    onStep: () => {},
     onHit: () => {
         particle('portal', rel(0, 0, 0), abs(0.3, 0.8, 0.3), 0.1, 30, 'force')
     },

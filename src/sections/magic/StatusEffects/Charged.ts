@@ -1,5 +1,4 @@
-// StatusEffects/Charged.ts
-import { Label, MCFunction, Objective, Selector, _, damage, execute, particle, rel, abs, Score, raw, Variable, tp } from 'sandstone'
+import { MCFunction, Objective, Selector, _, damage, execute, particle, rel, abs, raw, Variable, tp } from 'sandstone'
 import { createStatusEffect } from './Common'
 import { fireRaycast } from '../utils/raycast'
 
@@ -24,7 +23,6 @@ const arcRaycast = fireRaycast(`status/${EffectName}/arc`, {
     },
     onStep: () => {
         particle('electric_spark', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.1, 2, 'force')
-        // particle('end_rod', rel(0, 0, 0), abs(0.02, 0.02, 0.02), 0.01, 1, 'force')
 
         // Stop when we reach the target
         execute.if.entity(Selector('@e', {

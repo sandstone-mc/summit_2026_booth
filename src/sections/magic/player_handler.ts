@@ -1,8 +1,6 @@
-import { _, Data, execute, MCFunction, Objective, say, scoreboard, Selector, tellraw, title, Variable, ObjectiveClass } from 'sandstone'
+import { _, execute, MCFunction, Objective, title, Variable } from 'sandstone'
 import { getSelf, saveSelf, io } from './PlayerDB'
 import { SessionPlayer } from './SummitShowcase/ShowcaseState'
-
-const runInterval = 1
 
 export const mana = Objective.create('mana')
 export const maxMana = Objective.create('max_mana')
@@ -26,5 +24,5 @@ MCFunction('mana_manager', () => {
 
     })
 }, {
-    runEvery: runInterval
+    runEveryTick: true
 })

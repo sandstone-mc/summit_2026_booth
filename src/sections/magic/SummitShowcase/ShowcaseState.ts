@@ -1,4 +1,4 @@
-import { Label, LootTable, NBT, Objective, rel, fill, MCFunction, execute, Selector, summon, tp, abs, kill, _, raw, scoreboard, say, Tag, tellraw } from 'sandstone'
+import { Label, NBT, Objective, rel, fill, MCFunction, execute, Selector, summon, tp, abs, kill, _, raw, scoreboard, Tag } from 'sandstone'
 
 import { ShowcaseMarker } from '.'
 import { clearSelf, getSelf, saveSelf, io } from '../PlayerDB'

@@ -1,6 +1,5 @@
 import { createStatusEffect } from './Common'
-
-import { Label, MCFunction, Objective, Selector, _, Macro, damage, execute, particle, rel, abs, Score, Variable, attribute } from 'sandstone'
+import { particle, rel, abs, attribute } from 'sandstone'
 
 const status = createStatusEffect({
     name: 'entangled',

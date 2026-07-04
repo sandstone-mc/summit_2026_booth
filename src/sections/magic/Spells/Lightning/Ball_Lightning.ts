@@ -1,9 +1,7 @@
-import { Label, MCFunction, Selector, _, abs, damage, execute, particle, rel, Variable, tp, loc, say } from 'sandstone'
-import { castSpell, spellMeta, createProjectileSpell, spawnSingleBolt, Lifetime } from '../Common'
+import { _, abs, damage, particle, rel, Variable, tp, loc } from 'sandstone'
+import { spellMeta, createProjectileSpell, spawnSingleBolt, Lifetime } from '../Common'
 import { checkHit } from '../../utils/hitDetection'
 import { Charged, Stunned } from '../../StatusEffects'
-
-const meta = spellMeta('lightning', 'ball_lightning')
 
 createProjectileSpell({
     schoolId: 'lightning',
