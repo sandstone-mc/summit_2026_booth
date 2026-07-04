@@ -1,4 +1,4 @@
-tag @p remove sandstone_summit_booth.showcase.in_booth
+tag @p remove sandstone_summit_booth.showcase.in_magic_showcase
 execute as @e[tag=sandstone_summit_booth.showcase.marker, type=minecraft:marker] at @s run function sandstone_summit_booth:sections/magic/showcase/tick/execute_as
 execute if score #global sandstone_summit_booth.showcase.state matches 0 run function sandstone_summit_booth:sections/magic/showcase/tick/if
 execute if score #global sandstone_summit_booth.showcase.state matches 3 run function sandstone_summit_booth:sections/magic/showcase/tick/if2
