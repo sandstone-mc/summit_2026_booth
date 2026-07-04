@@ -17,6 +17,8 @@ scoreboard objectives add sandstone_summit_booth.rhythm.parkour dummy
 scoreboard objectives add sandstone_summit_booth.pdb.uid dummy
 scoreboard objectives add sandstone_summit_booth.set_school_trigger trigger
 scoreboard objectives add sandstone_summit_booth.set_spell_trigger trigger
+scoreboard objectives add sandstone_summit_booth.showcase.state dummy
+scoreboard objectives add sandstone_summit_booth.showcase.reset trigger
 scoreboard objectives add sandstone_summit_booth.mana dummy
 scoreboard objectives add sandstone_summit_booth.max_mana dummy
 scoreboard objectives add sandstone_summit_booth.mana_regen dummy
@@ -31,8 +33,6 @@ scoreboard objectives add sandstone_summit_booth.status.entangled_timer dummy
 scoreboard objectives add sandstone_summit_booth.lifetime dummy
 scoreboard objectives add sandstone_summit_booth.spell.lightning.thunderbolt_roll dummy
 scoreboard objectives add sandstone_summit_booth.status.static_field_timer dummy
-scoreboard objectives add sandstone_summit_booth.showcase.state dummy
-scoreboard objectives add sandstone_summit_booth.showcase.reset trigger
 scoreboard objectives add sandstone_summit_booth.rlb.s0 dummy
 scoreboard objectives add sandstone_summit_booth.rlb.s0d dummy
 scoreboard objectives add sandstone_summit_booth.rlb.s1 dummy
