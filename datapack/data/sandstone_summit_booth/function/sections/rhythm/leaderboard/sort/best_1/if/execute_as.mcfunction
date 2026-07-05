@@ -1,1 +1,0 @@
-execute if score @s sandstone_summit_booth.rlb.s1 = #lb1 sandstone_summit_booth.rhythm.state run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/best_1/if/execute_as/if

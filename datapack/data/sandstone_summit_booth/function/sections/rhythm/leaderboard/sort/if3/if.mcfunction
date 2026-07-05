@@ -1,2 +1,0 @@
-execute if score $lb_cat sandstone_summit_booth.rhythm.state matches 0 run return run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/best_2
-return run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/death_2

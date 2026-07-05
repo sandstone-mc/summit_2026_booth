@@ -1,1 +1,0 @@
-execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/songs/il_vento_d_oro___jojo/nb_t2027/execute_in

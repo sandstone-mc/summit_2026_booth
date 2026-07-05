@@ -1,2 +1,0 @@
-execute if score @s sandstone_summit_booth.rhythm.score > @s sandstone_summit_booth.rlb.s0 run scoreboard players operation @s sandstone_summit_booth.rlb.s0 = @s sandstone_summit_booth.rhythm.score
-execute if score @s sandstone_summit_booth.rhythm.wall.lives >= $lives sandstone_summit_booth.rhythm.state run function sandstone_summit_booth:sections/rhythm/leaderboard/save/execute_as/if/if2

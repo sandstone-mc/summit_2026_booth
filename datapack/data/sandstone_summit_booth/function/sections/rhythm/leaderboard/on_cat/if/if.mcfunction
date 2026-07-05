@@ -1,2 +1,0 @@
-execute if score $lb_cat sandstone_summit_booth.rhythm.state matches 0 run return run scoreboard players set $lb_cat sandstone_summit_booth.rhythm.state 1
-scoreboard players set $lb_cat sandstone_summit_booth.rhythm.state 0

@@ -1,1 +1,0 @@
-execute if score @s sandstone_summit_booth.rlb.s0d = #lb6 sandstone_summit_booth.rhythm.state run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/death_0/if6/execute_as/if

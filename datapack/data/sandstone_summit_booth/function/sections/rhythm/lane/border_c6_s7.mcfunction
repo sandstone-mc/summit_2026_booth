@@ -1,1 +1,0 @@
-execute in minecraft:overworld as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.7] run data merge entity @s {background:83864064i}

@@ -1,2 +1,0 @@
-scoreboard players remove $timer sandstone_summit_booth.rhythm.state 1
-execute if score $timer sandstone_summit_booth.rhythm.state matches ..0 run function sandstone_summit_booth:sections/rhythm/end/run

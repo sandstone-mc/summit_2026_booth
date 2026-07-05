@@ -1,1 +1,0 @@
-execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/obstacle/g14_m3/execute_in

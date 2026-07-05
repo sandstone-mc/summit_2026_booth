@@ -1,2 +1,0 @@
-execute unless entity @s[tag=sandstone_summit_booth.status.static_field] run return run function sandstone_summit_booth:sections/magic/spells/lightning/static_field/do_cast
-tellraw @s {"color":"red","text":"Static Field already active!"}

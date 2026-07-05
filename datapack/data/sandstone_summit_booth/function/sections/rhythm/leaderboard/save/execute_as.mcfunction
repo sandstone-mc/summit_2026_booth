@@ -1,3 +1,0 @@
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 0 run function sandstone_summit_booth:sections/rhythm/leaderboard/save/execute_as/if
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 1 run function sandstone_summit_booth:sections/rhythm/leaderboard/save/execute_as/if2
-execute if score $song_select sandstone_summit_booth.rhythm.state matches 2 run function sandstone_summit_booth:sections/rhythm/leaderboard/save/execute_as/if3

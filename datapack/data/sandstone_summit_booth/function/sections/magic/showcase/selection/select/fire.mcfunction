@@ -1,7 +1,0 @@
-scoreboard players set @s sandstone_summit_booth.set_school_trigger 0
-title @a[tag=sandstone_summit_booth.showcase.player] title [{"text":"Fire","color":"red","bold":true}]
-title @a[tag=sandstone_summit_booth.showcase.player] subtitle [{"text":"School selected!","color":"gray","italic":true}]
-kill @e[tag=sandstone_summit_booth.showcase.pedestal]
-loot give @s loot sandstone_summit_booth:items/magic_wand
-scoreboard players set #global sandstone_summit_booth.showcase.state 3
-tellraw @a[tag=sandstone_summit_booth.showcase.player] [{"text":"\n"},{"text":"✦ Arcane Arts  ","color":"light_purple","bold":true},{"text":"Left-click","color":"yellow","bold":true},{"text":" to select spell  •  ","color":"gray"},{"text":"Right-click","color":"yellow","bold":true},{"text":" to cast\n\n","color":"gray"},{"text":"  Fire","color":"red","bold":true},{"text":"  Scorching magic that burns and blasts\n","color":"gray","italic":true},{"text":"  › ","color":"red"},{"text":"Firebolt","color":"white","bold":true},{"text":"  10✦  ","color":"aqua"},{"text":"A blazing bolt that deals 2 damage and ignites the target\n","color":"gray"},{"text":"  › ","color":"red"},{"text":"Heatwave","color":"white","bold":true},{"text":"  70✦  ","color":"aqua"},{"text":"Erupts a ring of fire bolts in every direction around you\n","color":"gray"},{"text":"  › ","color":"red"},{"text":"Launch","color":"white","bold":true},{"text":"  25✦  ","color":"aqua"},{"text":"Blasts you forward in your facing direction\n","color":"gray"}]

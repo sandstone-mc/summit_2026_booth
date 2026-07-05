@@ -1,1 +1,0 @@
-execute anchored eyes rotated as @s run function sandstone_summit_booth:sections/magic/spells/fire/heatwave/spawn/execute_anchored

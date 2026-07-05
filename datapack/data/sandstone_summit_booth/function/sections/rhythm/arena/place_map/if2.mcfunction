@@ -1,1 +1,0 @@
-execute in minecraft:overworld run place template sandstone_summit_booth:generated/maps/frostbound_garden -60 63 23 none front_back 1 0

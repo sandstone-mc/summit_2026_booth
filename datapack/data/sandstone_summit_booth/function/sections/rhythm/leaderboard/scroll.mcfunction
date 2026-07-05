@@ -1,2 +1,0 @@
-execute if score $lb_song sandstone_summit_booth.rhythm.state matches 1 run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if
-execute if score $lb_song sandstone_summit_booth.rhythm.state matches 2 run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if2

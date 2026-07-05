@@ -1,7 +1,0 @@
-summon minecraft:block_display -69 66 23 {Tags:['ssb.rhythm.wall','ssb.rhythm.wall.new','ssb.rhythm.parkour'],block_state:{Name:'minecraft:red_stained_glass'},interpolation_duration:56i,transformation:{translation:[-0.5f,0f,-0.5f],left_rotation:[0f,0f,0f,1f],scale:[1f,1f,2f],right_rotation:[0f,0f,0f,1f]}}
-summon minecraft:happy_ghast -69 66 23 {Tags:['ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new','ssb.rhythm.wall.ghast','ssb.rhythm.parkour','ssb.rhythm.pk.fresh'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,attributes:[{id:'minecraft:scale',base:0.25d}]}
-scoreboard players set @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth -500
-tag @e[tag=ssb.rhythm.pk.fresh] remove ssb.rhythm.pk.fresh
-summon minecraft:happy_ghast -69 66 23 {Tags:['ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new','ssb.rhythm.wall.ghast','ssb.rhythm.parkour','ssb.rhythm.pk.fresh','ssb.rhythm.pk.trigger'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,attributes:[{id:'minecraft:scale',base:0.25d}]}
-scoreboard players set @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth 500
-tag @e[tag=ssb.rhythm.pk.fresh] remove ssb.rhythm.pk.fresh

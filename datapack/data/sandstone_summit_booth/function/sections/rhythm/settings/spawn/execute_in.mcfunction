@@ -1,6 +1,0 @@
-kill @e[tag=ssb.ui.set]
-summon minecraft:text_display -72 65 53 {Tags:['ssb.ui.set','ssb.ui.set.txt'],text:[{text:'SETTINGS  ',color:'white',bold:true},{text:'\n\n'},{text:'  ♪ Song: ',color:'gray'},{text:'     Tetoris        ',color:'aqua',font:'monocraft:default'},{text:'\n\n'},{text:'    Lives: ',color:'gray'},{text:'      ❤❤❤ 3         ',color:'red',font:'monocraft:default'},{text:'\n\n'},{text:'  🗺 Map: ',color:'gray'},{text:' Sandstone Garden   ',color:'green',font:'monocraft:default'},{text:'\n\n\n'},{text:'  ▶ START  ',color:'green',bold:true},{text:'\n                                   '}],billboard:'fixed',Rotation:[360f,0f],shadow:true,background:0i,line_width:400i,view_range:1f,text_opacity:-1b,see_through:false}
-summon minecraft:interaction -72 67 52.55 {Tags:['ssb.ui.set','ssb.ui.set.si'],width:3f,height:0.25f,response:true}
-summon minecraft:interaction -72 66.5 52.55 {Tags:['ssb.ui.set','ssb.ui.set.li'],width:3f,height:0.25f,response:true}
-summon minecraft:interaction -72 66 52.55 {Tags:['ssb.ui.set','ssb.ui.set.mi'],width:3f,height:0.25f,response:true}
-summon minecraft:interaction -72 65.25 52.55 {Tags:['ssb.ui.set','ssb.ui.set.gi'],width:3f,height:0.25f,response:true}

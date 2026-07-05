@@ -1,0 +1,1 @@
+kill @e[tag=sandstone_summit_booth.presentation]

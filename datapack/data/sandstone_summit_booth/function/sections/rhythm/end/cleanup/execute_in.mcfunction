@@ -1,2 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/obstacle/clear
-return run function sandstone_summit_booth:sections/rhythm/parkour/cleanup

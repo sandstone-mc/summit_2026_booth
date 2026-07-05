@@ -1,1 +1,0 @@
-execute if score @s sandstone_summit_booth.rlb.s2 > $lb_max sandstone_summit_booth.rhythm.state run scoreboard players operation $lb_max sandstone_summit_booth.rhythm.state = @s sandstone_summit_booth.rlb.s2

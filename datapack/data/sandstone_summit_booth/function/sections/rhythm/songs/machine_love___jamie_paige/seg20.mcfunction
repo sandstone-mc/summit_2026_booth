@@ -1,1 +1,0 @@
-execute in minecraft:overworld run playsound sandstone_summit_booth:music.song_machine_love___jamie_paige_s20 master @a[x=-94, y=51, z=11, dx=48, dy=24, dz=64] -70 63 43 10000

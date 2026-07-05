@@ -1,2 +1,0 @@
-execute in minecraft:overworld run function sandstone_summit_booth:sections/rhythm/arena/clear_map/execute_in
-function sandstone_summit_booth:sections/rhythm/arena/kill_skybox

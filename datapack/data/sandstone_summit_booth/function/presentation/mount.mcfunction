@@ -1,0 +1,2 @@
+summon text_display -74 88.25 42.015625 {Tags:['sandstone_summit_booth.presentation'],text:{text:'Sandstone',bold:true},transformation:{scale:[7f,7f,7f],translation:[0f,0f,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]}}
+summon text_display -74 87.75 42.015625 {Tags:['sandstone_summit_booth.presentation'],text:{text:'Welcome to my custom TSX framework!'},transformation:{scale:[2f,2f,2f],translation:[0f,0f,0f],left_rotation:[0f,0f,0f,1f],right_rotation:[0f,0f,0f,1f]}}

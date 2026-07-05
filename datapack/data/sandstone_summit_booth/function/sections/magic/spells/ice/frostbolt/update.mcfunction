@@ -1,1 +1,0 @@
-execute as @e[tag=sandstone_summit_booth.spell.ice.frostbolt.projectile, type=minecraft:marker] at @s run function sandstone_summit_booth:sections/magic/spells/ice/frostbolt/update/execute_as

@@ -1,3 +1,0 @@
-execute if score $map_select sandstone_summit_booth.rhythm.state matches 0 run function sandstone_summit_booth:sections/rhythm/settings/scroll/if2/if10/if/if/if
-execute if score $map_select sandstone_summit_booth.rhythm.state matches 1 run function sandstone_summit_booth:sections/rhythm/settings/scroll/if2/if10/if/if2/if
-execute if score $map_select sandstone_summit_booth.rhythm.state matches 2 run function sandstone_summit_booth:sections/rhythm/settings/scroll/if2/if10/if/if3/if

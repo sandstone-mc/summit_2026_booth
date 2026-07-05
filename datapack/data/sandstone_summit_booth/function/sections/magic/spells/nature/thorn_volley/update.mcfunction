@@ -1,1 +1,0 @@
-execute as @e[tag=sandstone_summit_booth.spell.nature.thorn_volley.projectile, type=minecraft:marker] at @s run function sandstone_summit_booth:sections/magic/spells/nature/thorn_volley/update/execute_as

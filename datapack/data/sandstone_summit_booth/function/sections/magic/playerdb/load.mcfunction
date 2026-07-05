@@ -1,1 +1,0 @@
-execute if score #next sandstone_summit_booth.pdb.uid matches 0 run scoreboard players set #next sandstone_summit_booth.pdb.uid 1

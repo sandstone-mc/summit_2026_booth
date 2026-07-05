@@ -1,1 +1,0 @@
-function sandstone_summit_booth:sections/magic/status/charged/arc/fire_raycast

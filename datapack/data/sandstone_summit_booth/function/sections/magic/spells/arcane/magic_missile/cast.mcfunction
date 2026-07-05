@@ -1,2 +1,0 @@
-execute if score @s sandstone_summit_booth.mana matches 15.. run return run function sandstone_summit_booth:sections/magic/spells/arcane/magic_missile/cast/0_if/return_run
-tellraw @s {"color":"red","text":"Insufficient Mana"}

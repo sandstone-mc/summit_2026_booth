@@ -1,1 +1,0 @@
-execute as @e[type=#sandstone_summit_booth:targetable, dx=3, dy=3, dz=3] if entity @s run function sandstone_summit_booth:sections/magic/spells/nature/vine_whip/raycast_step/execute_positioned/execute_as

@@ -1,2 +1,0 @@
-execute if score $pick sandstone_summit_booth.rhythm.wall_variable matches ..69 run return run function sandstone_summit_booth:sections/rhythm/obstacle/spawn_d3/if/if/0_if/return_run
-scoreboard players set $last sandstone_summit_booth.rhythm.wall_variable 0

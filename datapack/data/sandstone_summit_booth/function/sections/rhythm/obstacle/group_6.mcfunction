@@ -1,6 +1,0 @@
-execute store result score $pick sandstone_summit_booth.rhythm.wall_variable run random value 0..4 sandstone_summit_booth:wall_pick
-execute if score $pick sandstone_summit_booth.rhythm.wall_variable matches 0 run return run function sandstone_summit_booth:sections/rhythm/obstacle/g5_m0
-execute if score $pick sandstone_summit_booth.rhythm.wall_variable matches 1 run return run function sandstone_summit_booth:sections/rhythm/obstacle/g5_m1
-execute if score $pick sandstone_summit_booth.rhythm.wall_variable matches 2 run return run function sandstone_summit_booth:sections/rhythm/obstacle/g5_m2
-execute if score $pick sandstone_summit_booth.rhythm.wall_variable matches 3 run return run function sandstone_summit_booth:sections/rhythm/obstacle/g5_m3
-execute if score $pick sandstone_summit_booth.rhythm.wall_variable matches 4 run function sandstone_summit_booth:sections/rhythm/obstacle/g5_m4
