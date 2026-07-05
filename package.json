@@ -7,23 +7,27 @@
   "scripts": {
     "dev:watch": "sand watch",
     "dev:build": "sand build",
-    "dev:deploy": "bun run scripts/deploy.ts"
+    "dev:deploy": "bun run scripts/deploy.ts",
+    "typecheck": "tsc --noEmit 2>&1 | awk '/^src\\/sections\\/(magic|rhythm|elevator)/{s=1;next} s&&/^[[:space:]]/{next} /^[^[:space:]]/{s=0} {print}'"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "adm-zip": "^0.5.17",
     "@types/adm-zip": "^0.5.8",
     "@types/bun": "latest",
+    "@types/less": "^3.0.8",
+    "adm-zip": "^0.5.17",
     "sandstone-cli": "^2.4.3",
     "typescript": "^5.9.3"
   },
   "dependencies": {
     "@nbsjs/core": "^6.1.0",
     "@tonejs/midi": "^2.0.28",
+    "less": "^4.6.7",
     "sandstone": "^1.1.1",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.3",
+    "socket.io-client": "^4.8.3"
   },
   "trustedDependencies": [
     "@parcel/watcher"

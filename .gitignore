@@ -10,3 +10,4 @@ resources/resourcepack/assets/sandstone_summit_booth/sounds.json
 resources/datapack/data/sandstone_summit_booth/structure/generated
 .cache
 songs/private/*
+.temp

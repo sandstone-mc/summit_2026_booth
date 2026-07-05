@@ -1,6 +1,7 @@
 import AdmZip from 'adm-zip'
 import fs from 'fs'
 import path from 'path'
+import { io as io_client } from 'socket.io-client'
 
 import SandstoneConfig from '../sandstone.config'
 
@@ -39,6 +40,22 @@ type MCS_Routes = {
         },
         response: 'OK'
     },
+    'protected_instance/stream_channel': {
+        params: {
+            daemonId: string,
+            uuid: string,
+        },
+        response: {
+            status: number,
+            data: {
+                password: string,
+                addr: string,
+                prefix: string,
+                remoteMappings?: any[],
+            },
+            time: number,
+        },
+    },
 }
 
 async function MCS_API<Route extends keyof MCS_Routes>(
@@ -51,16 +68,16 @@ async function MCS_API<Route extends keyof MCS_Routes>(
         port_override: `${number}`
     },
 ) {
-    const endpoint = new URL(`${process.env.MCS_MANAGER_ENDPOINT}`)
+    const url = new URL(`${process.env.MCS_MANAGER_ENDPOINT}`)
 
     if (options?.port_override) {
-        endpoint.port = options.port_override
-        endpoint.pathname = '/'
+        url.port = options.port_override
+        url.pathname = '/'
     }
 
     const response = await fetch(
         `${
-            endpoint
+            url
         }${
             route
         }${
@@ -152,11 +169,17 @@ async function upload_zip(buffer: ArrayBuffer, filename: string) {
 
 // Main pack
 const main_pack_zip = new AdmZip()
+
+console.log('Deploy: reading and zipping main pack...')
+
 await main_pack_zip.addLocalFolderPromise('.sandstone/output/datapack', { zipPath: '/' })
 const main_pack = (await main_pack_zip.toBufferPromise()).buffer
 
+console.log('Deploy: zip ready, uploading to server...')
+
 await upload_zip(main_pack, `${SandstoneConfig.namespace}.zip`)
-console.log(`Deployed: ${SandstoneConfig.namespace}`)
+
+console.log(`Deploy: main pack uploaded, checking for dependencies...`)
 
 // Dependencies
 const SKIP_DEPS = ['summit-dp-core']
@@ -168,31 +191,109 @@ try {
     deployed = JSON.parse(await fs.promises.readFile(lockfile_path, 'utf8'))
 } catch {}
 
-for (const entry of await fs.promises.readdir(deps_dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.') || SKIP_DEPS.includes(entry.name)) continue
+if (await fs.promises.exists(deps_dir)) {
+    console.log('Deploy: dependencies found, zipping & uploading...')
 
-    const full_path = path.join(deps_dir, entry.name)
-    const dep_name = entry.isFile() ? entry.name : `${entry.name}.zip`
+    for (const entry of await fs.promises.readdir(deps_dir, { withFileTypes: true })) {
+        if (entry.name.startsWith('.') || SKIP_DEPS.includes(entry.name)) continue
 
-    if (deployed.includes(dep_name)) continue
+        const full_path = path.join(deps_dir, entry.name)
+        const dep_name = entry.isFile() ? entry.name : `${entry.name}.zip`
 
-    let buffer: ArrayBuffer
-    if (entry.isFile() && entry.name.endsWith('.zip')) {
-        buffer = (await fs.promises.readFile(full_path)).buffer
-    } else if (entry.isDirectory()) {
-        const dep_zip = new AdmZip()
-        await dep_zip.addLocalFolderPromise(path.relative(process.cwd(), full_path), { zipPath: '/' })
-        for (const zip_entry of dep_zip.getEntries()) {
-            console.log(`Zipped: ${zip_entry.entryName}`)
+        if (deployed.includes(dep_name)) continue
+
+        let buffer: ArrayBuffer
+        if (entry.isFile() && entry.name.endsWith('.zip')) {
+            buffer = (await fs.promises.readFile(full_path)).buffer
+        } else if (entry.isDirectory()) {
+            const dep_zip = new AdmZip()
+            await dep_zip.addLocalFolderPromise(path.relative(process.cwd(), full_path), { zipPath: '/' })
+            buffer = (await dep_zip.toBufferPromise()).buffer
+        } else {
+            continue
         }
-        buffer = (await dep_zip.toBufferPromise()).buffer
-    } else {
-        continue
-    }
 
-    await upload_zip(buffer, dep_name)
-    console.log(`Deployed: ${dep_name}`)
-    deployed.push(dep_name)
+        await upload_zip(buffer, dep_name)
+        deployed.push(dep_name)
+    }
+    await fs.promises.writeFile(lockfile_path, JSON.stringify(deployed))
+
+    console.log('Deploy: dependencies uploaded, success')
+} else {
+    console.log('Deploy: no dependencies found, success')
 }
 
-await fs.promises.writeFile(lockfile_path, JSON.stringify(deployed))
+const daemon_url = `ws://${new URL(process.env.MCS_MANAGER_ENDPOINT ?? '').hostname}:24444`
+
+console.log('Reload: Getting initial WS Auth...')
+
+// Request a one-time stream password from the panel.
+const channel_resp = await MCS_API('protected_instance/stream_channel', {
+    daemonId: `${process.env.MCS_MANAGER_DAEMON_ID}`,
+    uuid: `${process.env.MCS_MANAGER_UUID}`,
+})
+
+if (channel_resp.status !== 200 || !channel_resp.data) {
+    throw new Error(`Reload: stream_channel error, ${JSON.stringify(channel_resp)}`)
+}
+
+console.log('Reload: WS initial auth received, connecting...')
+
+const channel = channel_resp.data
+
+const sock = io_client(daemon_url, {
+    transports: ['websocket'],
+    path: (channel.prefix ? channel.prefix.replace(/\/$/, '') : '') + '/socket.io',
+})
+
+await new Promise<void>((resolve, reject) => {
+    sock.once('connect', () => resolve())
+    sock.once('connect_error', (err) => reject(err))
+})
+
+console.log('Reload: WS connected, getting WS session auth...')
+
+const auth_ok = await new Promise<boolean>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Reload: stream/auth timeout, failed')), 5_000)
+    sock.once('stream/auth', (packet: any) => {
+        clearTimeout(timer)
+        resolve(packet?.status === 200 && packet?.data === true)
+    })
+    sock.emit('stream/auth', { data: { password: channel.password } })
+})
+
+if (!auth_ok) throw new Error('Reload: stream/auth failed')
+
+console.log('Reload: WS session authenticated, sending /reload to server...')
+
+sock.emit('stream/input', { data: { command: 'reload' } })
+
+// Wait for `instance/stdout` to show the reload actually ran before disconnecting,
+// otherwise the close frame can race with the command packet.
+const reload_ran = await new Promise<boolean>((resolve, reject) => {
+    const timer = setTimeout(() => resolve(false), 10_000)
+    sock.on('instance/stdout', (packet: any) => {
+        const text = packet?.data?.text as string | undefined
+        if (text?.includes('Reloading!')) {
+            clearTimeout(timer)
+            resolve(true)
+        }
+    })
+})
+
+if (!reload_ran) throw new Error('Reload: did not see `Reloading!` on stdout, failed')
+
+console.log('Reload: successfully sent reload command, disconnecting WS...')
+
+// Graceful disconnect — wait for the disconnect event before exiting so the
+// engine.io close frame is actually flushed.
+await new Promise<void>((resolve) => {
+    const timer = setTimeout(resolve, 2_000)
+    sock.once('disconnect', () => {
+        clearTimeout(timer)
+        resolve()
+    })
+    sock.disconnect()
+})
+
+console.log('Reload: WS disconnected, success')

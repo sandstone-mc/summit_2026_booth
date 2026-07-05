@@ -5,6 +5,8 @@
     "moduleResolution": "bundler",
     "lib": ["ESNext"],
     "types": ["@types/bun"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "@summit/jsx",
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -17,8 +19,10 @@
       "*": ["./*"],
       "@/*": ["./*"],
       "@shared": ["./src/shared.ts"],
+      "@summit/jsx/jsx-runtime": ["./src/sections/presentation/jsx/jsx-runtime.ts"],
+      "@summit/jsx/jsx-dev-runtime": ["./src/sections/presentation/jsx/jsx-runtime.ts"],
       "@rhythm/*": ["./src/sections/rhythm/*"]
     }
   },
-  "include": ["sandstone.config.ts", "src"]
+  "include": ["sandstone.config.ts", "src", "scripts"]
 }
