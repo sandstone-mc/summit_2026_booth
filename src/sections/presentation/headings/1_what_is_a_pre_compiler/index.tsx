@@ -1,8 +1,25 @@
 /**
- * Title: What is a pre-compiler?
- * 
- * - Pre-compilers translate easy-to-write code, either in a custom language or an existing one, to raw mcfunction files while providing features you might expect from other languages
- * - They help to avoid the error prone and repetitive process of writing large mcfunction projects by hand
- * - They exist as a superset of vanilla mcfunctions, meaning features can be added on top while still staying compatible after being built (Variables, functions, OOP style)
- * - Simplify project management by allowing you to colocate relevant resources in the same file (advancements, functions, loot tables)
+ * Slide: What is a pre-compiler?
+ *
+ * Notes (kept for reference, not parsed as content):
+ * - Pre-compilers translate easy-to-write code to raw mcfunction files while
+ *   adding features (variables, abstractions, organization).
+ * - They help avoid the error-prone repetitive work of hand-writing a large
+ *   mcfunction project.
+ * - They layer features on top of vanilla so the compiled output stays
+ *   compatible.
+ * - They simplify project management by letting related resources live in
+ *   one file.
  */
+
+export const slides = [
+	(
+		<>
+			<h1>What is a pre-compiler?</h1>
+			<p>Translates easy-to-write code into raw mcfunction files</p>
+			<p>Lets you use variables, abstractions, and modern control flow</p>
+			<p>Output stays vanilla-compatible — runs in any datapack</p>
+			<p>Co-locates related resources (functions, advancements, loot tables) in one file</p>
+		</>
+	),
+]

@@ -1,5 +1,19 @@
 /**
- * Title: What can I do about my existing code? Would I have to rewrite it all?
- * 
- * Show a file/directory tree of a Sandstone project with existing code in the resources directory and the files ending up in the output, along with some files being generated from typescript code
+ * Slide: What about my existing code?
+ *
+ * Notes (kept for reference, not parsed as content):
+ * - Drop existing files in `resources/`; they ship untouched alongside
+ *   files generated from TypeScript.
  */
+
+export const slides = [
+	(
+		<>
+			<h1>What about my existing code?</h1>
+			<p>Drop existing files into resources/ — they ship untouched</p>
+			<p>New TypeScript files live alongside, generated into the same datapack</p>
+			<p>Mix and match: convert what helps, leave the rest as-is</p>
+			<p>No forced rewrite — adopt Sandstone at your own pace</p>
+		</>
+	),
+]

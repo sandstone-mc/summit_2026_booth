@@ -1,7 +1,19 @@
 /**
- * Title: Do I have to learn or use all of Sandstone’s features?
- * 
- * - raw
- * - You can write vanilla commands with sandstone pretty much verbatim, and you don’t have to use any special Variable’s or features, <showcase a scoreboard operation command and a title command>
- * - https://sandstone.dev/docs/features/resources/custom_resource RawResource, show code and also show output file/folder structure
+ * Slide: Do I have to use all of Sandstone's features?
+ *
+ * Notes (kept for reference, not parsed as content):
+ * - raw: write vanilla commands with sandstone pretty much verbatim
+ * - https://sandstone.dev/docs/features/resources/custom_resource RawResource
  */
+
+export const slides = [
+	(
+		<>
+			<h1>Do I have to use all of Sandstone's features?</h1>
+			<p>No — vanilla commands work inline, pretty much verbatim</p>
+			<p>Reach for variables, flow control, and macros only when they help</p>
+			<p>RawResource lets you ship arbitrary JSON untouched</p>
+			<p>Adopt features gradually, as your project needs them</p>
+		</>
+	),
+]

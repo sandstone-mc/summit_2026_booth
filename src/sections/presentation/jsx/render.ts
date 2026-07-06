@@ -1,21 +1,69 @@
-import { MCFunction, type MCFunctionClass, summon, kill, abs, Selector, NBT, Label } from 'sandstone'
+import {
+	MCFunction,
+	type MCFunctionClass,
+	summon,
+	kill,
+	abs,
+	Selector,
+	NBT,
+	Label,
+	LabelClass,
+	data,
+	execute,
+	sleep,
+	schedule,
+} from 'sandstone'
 import { parse as parseLess } from './less'
 import type { LessTreeNode, LessRulesetNode, LessSelectorNode, CssDeclarations } from './less'
 import { parseLength, pxToTextScale, pxToTextLineHeight } from './length'
+import { loadFontMetrics, wrapLines } from './text-metrics'
 import { ContentTag, JSONTextComponent, SymbolEntity } from 'sandstone/arguments';
+import { Fragment } from './jsx-runtime'
+import { computeDurationsSeconds, type SlidesTiming } from '../slides'
 
 export type VNode = { type: any; props: any; key: any }
+
 export type RenderOptions = {
 	origin: readonly [number, number, number]
 	bounds: readonly [number, number] // [width, height] in meters
 }
+
+/** Lifecycle MCFunctions. tick is always no-op in this framework. */
 export type Scene = {
 	mount: MCFunctionClass<undefined, undefined>
 	tick: MCFunctionClass<undefined, undefined>
 	unmount: MCFunctionClass<undefined, undefined>
 }
 
+/**
+ * Multi-slide scene. Carries per-slide primitives that index.tsx (or any
+ * downstream code) can call from its own MCFunctions to drive the show on
+ * the fly — show/hide individual slides, jump to a slide, or rerender a
+ * slide with a fresh JSX tree.
+ */
+export type SlideScene = Scene & {
+	/** Per-slide show primitives — call to make slide N visible. */
+	showSlide: MCFunctionClass<undefined, undefined>[]
+	/** Per-slide hide primitives. */
+	hideSlide: MCFunctionClass<undefined, undefined>[]
+	/** Combined: hide every other slide, show slide N. */
+	setSlide: (index: number) => MCFunctionClass<undefined, undefined>
+	/** Re-spawn slide N's entities from a new JSX tree (keeps the slide tag). */
+	rerenderSlide: (index: number, tree: VNode) => MCFunctionClass<undefined, undefined>
+	/** The auto-advance loop. Already kicked off by mount; reschedules itself. */
+	slideLoop: MCFunctionClass<undefined, undefined>
+	/** Display duration (in seconds) for each slide. */
+	durations: number[]
+	/** Total number of slides. */
+	totalSlides: number
+}
+
 const SCENE_TAG = Label('presentation')
+
+/** Tag attached to every entity in slide `index`. */
+function slideTag(index: number): LabelClass {
+	return Label(`slide_${index}`)
+}
 
 // ── JSX tree helpers ─────────────────────────────────────────────
 
@@ -97,14 +145,23 @@ function collectRules(node: LessTreeNode | null | undefined, into: Styles): void
 				if (rule.type === 'Declaration') {
 					// LESS AST: declaration.name is an array of keyword nodes for
 					// property declarations, or a bare `@name` string for variable
-					// declarations.
+					// declarations. declaration.value can be a primitive (e.g. a
+					// string for named keywords) or an Expression node — for hex
+					// colors `value` is an Expression array (truthy), so naive
+					// String() gives "[object Object]". Prefer toCSS({}) which
+					// always returns the canonical CSS form.
 					const name = Array.isArray(rule.name) ? rule.name[0]?.value : rule.name
 					if (typeof name === 'string') {
-						declarations[name] = String(
-							rule.value?.value ??
-								(typeof rule.value?.toCSS === 'function' ? rule.value.toCSS({}) : null) ??
-								rule.value,
-						)
+						const v = rule.value
+						let resolved: unknown
+						if (typeof v?.toCSS === 'function') {
+							resolved = v.toCSS({})
+						} else if (typeof v?.value === 'string' || typeof v?.value === 'number') {
+							resolved = v.value
+						} else {
+							resolved = v
+						}
+						declarations[name] = String(resolved)
 					}
 				}
 			}
@@ -193,13 +250,114 @@ function parseColorInt(hex: string): number | undefined {
 	return parseInt(m[1], 16)
 }
 
-// ── Main render ─────────────────────────────────────────────────
+// ── Entity summon (shared by mount + rerender) ──────────────────
 
-export async function render(tree: VNode, options: RenderOptions): Promise<Scene> {
-	const elements = flatWalk(tree)
+/**
+ * Emit `summon text_display ...` commands for every visible text element
+ * in `visible`. Must be called inside an MCFunction callback — the
+ * commands attach to whichever MCFunction is currently active.
+ *
+ * `extraTags` is added on top of `SCENE_TAG`.
+ * `initialOpacity` (if set) seeds `text_opacity` so the slide can start
+ * hidden without a follow-up hide pass (0 = invisible, -1 = fully opaque).
+ */
+function summonVisibleElements(
+	visible: NodeWithPath[],
+	styles: Styles,
+	sceneW: number,
+	sceneH: number,
+	origin: readonly [number, number, number],
+	extraTags: (`${any}${string}` | LabelClass)[],
+	initialOpacity?: number,
+): void {
+	let accY = sceneH
+	for (let i = 0; i < visible.length; i++) {
+		const { node, path } = visible[i]
+		const declarations = resolveStyles(styles, path)
+		const type = String(node.type)
+		const content = extractText(node.props?.children)
 
-	// Collect LESS source from <style> elements
-	const lessSource = elements
+		// font-size → text scale (blocks). width → line_width (text wrap in pixels).
+		const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
+		const width = parseLength(declarations.width ?? '', sceneW)
+
+		const scalePx = fontSize?.px ?? defaultFontPx(type)
+		const textScale = pxToTextScale(scalePx) // NBT `transformation.scale`
+
+		// MC interprets `line_width` in default-font pixels, but the visual
+		// width of a rendered line is multiplied by `transformation.scale`.
+		// Without compensation, an h1 (scale 6) renders ~2.4× wider per
+		// default-font pixel than a p (scale 2.5), so its lines overflow
+		// the cell before MC's wrap math triggers. Shrink the wrap budget
+		// (used both for pre-computing lines AND for the NBT line_width) by
+		// the ratio of this element's scale to the project's `<p>` baseline
+		// — so the baseline text wraps at the user-specified width, and any
+		// bigger font wraps proportionally sooner.
+		const BASELINE_TEXT_SCALE = pxToTextScale(10)
+		const widthCompensation = BASELINE_TEXT_SCALE / textScale
+
+		// Default cell height = single-line height for the rendered font
+		// size (16 actual px → 1 block, 32 → 2). When the text wraps, we
+		// measure the actual visual line count and multiply — otherwise
+		// overlapping paragraphs collide. Explicit `height` LESS
+		// declaration overrides this entirely.
+		const heightLen = parseLength(declarations.height ?? '', sceneH)
+		const isBold = type === 'h1' || type === 'h2' || declarations.bold === 'true'
+		const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
+		const lines = wrapLines(content, wrapWidthPx, isBold)
+		const cellH = heightLen?.meters ?? pxToTextLineHeight(scalePx) * lines
+		accY -= cellH
+		const cell: Cell = { x: 0, y: accY, width: sceneW, height: cellH }
+
+		// Entity anchored at cell bottom; text_display renders the glyphs extending
+		// upward from the entity position, so the text quad fills the cell exactly
+		// when the entity sits at the cell's bottom edge. x lands on a half-block
+		// center: with an even scene width the cell midpoint is an integer (block
+		// boundary), so we nudge by 0.5 to keep the billboard centered on a real
+		// block. Odd scene widths already land on a half-block and need no offset.
+		const z = origin[2] + Z_VISUAL_OFFSET
+		const x = origin[0] + cell.width / 2
+		const y = origin[1] + cell.y - cellH + (cellH - 1)
+
+		const scale = NBT.float(textScale)
+
+		const nbt: SymbolEntity['text_display'] = {
+			Tags: [SCENE_TAG, ...extraTags],
+			text: buildTextJson(content, declarations, type),
+			transformation: {
+				scale: [scale, scale, scale],
+				translation: NBT.float([0, 0, 0]),
+				left_rotation: NBT.float([0, 0, 0, 1]),
+				right_rotation: NBT.float([0, 0, 0, 1]),
+			},
+		}
+
+		const bg = declarations.background ? parseColorInt(declarations.background) : undefined
+		if (bg !== undefined) nbt.background = NBT.int(bg)
+		if (width !== undefined) nbt.line_width = NBT.int(Math.round(width.px * widthCompensation))
+		else if (declarations['line-width']) nbt.line_width = NBT.int(parseInt(declarations['line-width']))
+		if (declarations.shadow === 'true') nbt.shadow = true
+		if (declarations['see-through'] === 'true') nbt.see_through = true
+		if (initialOpacity !== undefined) {
+			nbt.text_opacity = NBT.int(initialOpacity)
+		} else if (declarations.opacity) {
+			nbt.text_opacity = NBT.int(Math.round((parseFloat(declarations.opacity) / 100) * 255) - 256)
+		}
+
+
+		summon(
+			'text_display',
+			// :mojank:
+			`${x}${Number.isInteger(x) ? '.0' : ''} ${y}${Number.isInteger(y) ? '.0' : ''} ${z}${Number.isInteger(z) ? '.0' : ''}`,
+			nbt,
+		)
+	}
+}
+
+/** Collect LESS source out of `<style>` elements across every tree. */
+function collectLess(trees: VNode[]): string {
+	return trees
+		.flatMap((t) => flatWalk(t))
 		.filter(({ node }) => node.type === 'style')
 		.map(({ node }) => {
 			if (typeof node.props?.source === 'string') return node.props.source
@@ -207,75 +365,24 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 		})
 		.filter(Boolean)
 		.join('\n')
+}
 
+// ── Single-tree render ──────────────────────────────────────────
+
+export async function render(tree: VNode, options: RenderOptions): Promise<Scene> {
+	await loadFontMetrics()
+	const elements = flatWalk(tree)
+
+	const lessSource = collectLess([tree])
 	const styles = await compileStyles(lessSource)
-
-	// Filter to visible (text) elements only. Containers + style are skipped.
 	const visible = elements.filter(({ node }) => isTextType(node.type))
 
 	const mount = MCFunction('presentation/mount', () => {
-		const sceneW = options.bounds[0]
-		const sceneH = options.bounds[1]
-
-		// Stack top-down: first element sits at top of scene, next below it.
-		let accY = sceneH
-		for (let i = 0; i < visible.length; i++) {
-			const { node, path } = visible[i]
-			const declarations = resolveStyles(styles, path)
-			const type = String(node.type)
-			const content = extractText(node.props?.children)
-
-			// font-size → text scale (blocks). width → line_width (text wrap in pixels).
-			const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
-			const width = parseLength(declarations.width ?? '', sceneW)
-
-			const scalePx = fontSize?.px ?? defaultFontPx(type)
-			const textScale = pxToTextScale(scalePx) // NBT `transformation.scale`
-
-			// Default cell height matches the rendered text quad: 16px → 1 block,
-			// 32px → 2 blocks. Explicit `height` LESS declaration overrides this.
-			const heightLen = parseLength(declarations.height ?? '', sceneH)
-			const cellH = heightLen?.meters ?? pxToTextLineHeight(scalePx)
-			accY -= cellH
-			const cell: Cell = { x: 0, y: accY, width: sceneW, height: cellH }
-
-			// Entity anchored at cell bottom; text_display renders the glyphs extending
-			// upward from the entity position, so the text quad fills the cell exactly
-			// when the entity sits at the cell's bottom edge.
-			const z = options.origin[2] + Z_VISUAL_OFFSET
-			const x = options.origin[0] + cell.width / 2
-			// Offset the entity by cellH blocks down from the cell top (cell.y - cellH is
-// the cell's bottom in scene coords, which maps to options.origin[1] + cellH
-// world units below the cell top). Text extends cellH blocks from entity.
-			const y = options.origin[1] + cell.y - cellH + (cellH - 1)
-
-			const scale = NBT.float(textScale)
-
-			const nbt: SymbolEntity['text_display'] = {
-				Tags: [SCENE_TAG],
-				text: buildTextJson(content, declarations, type),
-				transformation: {
-					scale: [scale, scale, scale],
-					translation: NBT.float([0, 0, 0]),
-					left_rotation: NBT.float([0, 0, 0, 1]),
-					right_rotation: NBT.float([0, 0, 0, 1]),
-				},
-			}
-
-			const bg = declarations.background ? parseColorInt(declarations.background) : undefined
-			if (bg !== undefined) nbt.background = NBT.int(bg)
-			if (width !== undefined) nbt.line_width = NBT.int(Math.round(width.px))
-			else if (declarations['line-width']) nbt.line_width = NBT.int(parseInt(declarations['line-width']))
-			if (declarations.shadow === 'true') nbt.shadow = true
-			if (declarations['see-through'] === 'true') nbt.see_through = true
-			if (declarations.opacity) nbt.text_opacity = NBT.int(Math.round((parseFloat(declarations.opacity) / 100) * 255) - 256)
-
-			summon('text_display', abs(x, y, z), nbt)
-		}
+		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [])
 	})
 
 	const tick = MCFunction('presentation/tick', () => {
-		// TODO: per-tick updates (animations, content refresh)
+		// no-op
 	}, { runOnTick: true })
 
 	const unmount = MCFunction('presentation/unmount', () => {
@@ -283,4 +390,165 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 	})
 
 	return { mount, tick, unmount }
+}
+
+// ── Multi-slide render ──────────────────────────────────────────
+
+/**
+ * Multi-slide mode. Each tree in `trees` becomes one slide: all of its
+ * text entities are summoned at mount (hidden) and tagged `slide_N`. The
+ * returned `SlideScene` exposes per-slide show/hide/setSlide MCFunctions
+ * and a `rerenderSlide` factory that re-summons a slide from a fresh
+ * JSX tree — so index.tsx (or any downstream caller) can drive the show
+ * however it wants. The auto-advance loop runs as a sync MCFunction that
+ * uses `sleep()` between transitions — Sandstone splits the function
+ * at each sleep into chained child MCFunctions during generation.
+ */
+export async function renderSlides(
+	trees: VNode[],
+	options: RenderOptions,
+	timing?: SlidesTiming,
+): Promise<SlideScene> {
+	if (trees.length === 0) throw new Error('renderSlides: at least one slide required')
+
+	await loadFontMetrics()
+
+	const totalSlides = trees.length
+	const sceneW = options.bounds[0]
+	const sceneH = options.bounds[1]
+
+	// Compute display duration per slide: words/wpm + buffer, clamped.
+	// Use a flatWalk + extractText to gather every text node's content
+	// into a single string per slide — word count drives the duration.
+	const slideTexts = trees.map((t) =>
+		flatWalk(t)
+			.map(({ node }) => extractText(node.props?.children))
+			.join(' '),
+	)
+	const durations = computeDurationsSeconds(slideTexts, timing)
+
+	const styles = await compileStyles(collectLess(trees))
+
+	// Precompute visible elements so mount + rerender don't pay the
+	// flatWalk cost again at the call site.
+	const slideVisibles: NodeWithPath[][] = trees.map((t) =>
+		flatWalk(t).filter(({ node }) => isTextType(node.type)),
+	)
+
+	// ── Per-slide show / hide ────────────────────────────────────
+	const showSlide: MCFunctionClass<undefined, undefined>[] = []
+	const hideSlide: MCFunctionClass<undefined, undefined>[] = []
+	for (let s = 0; s < totalSlides; s++) {
+		const tag = slideTag(s)
+		showSlide.push(
+			MCFunction(`presentation/slides/show/${s}`, () => {
+				execute.as(Selector('@e', { tag })).run(() => {
+					data.modify.entity('@s', 'text_opacity').set.value(-1)
+				})
+			}),
+		)
+		hideSlide.push(
+			MCFunction(`presentation/slides/hide/${s}`, () => {
+				execute.as(Selector('@e', { tag })).run(() => {
+					data.modify.entity('@s', 'text_opacity').set.value(0)
+				})
+			}),
+		)
+	}
+
+	// setSlide(i): hide every slide, then show i. Built per-index so
+	// callers can reference them as static MCFunction references.
+	const setSlideFns: MCFunctionClass<undefined, undefined>[] = []
+	for (let i = 0; i < totalSlides; i++) {
+		const index = i
+		setSlideFns.push(
+			MCFunction(`presentation/slides/set/${index}`, () => {
+				for (let s = 0; s < totalSlides; s++) {
+					if (s !== index) hideSlide[s]()
+				}
+				showSlide[index]()
+			}),
+		)
+	}
+	const setSlide = (index: number): MCFunctionClass<undefined, undefined> => {
+		if (index < 0 || index >= totalSlides) {
+			throw new Error(`setSlide: index ${index} out of range (0..${totalSlides - 1})`)
+		}
+		return setSlideFns[index]
+	}
+
+	// rerenderSlide(i, tree): kill the slide's existing entities, then
+	// re-summon from `tree`. The new slide starts hidden — caller is
+	// expected to call setSlide(i) (or showSlide(i)) to reveal it.
+	const rerenderSlide = (
+		index: number,
+		tree: VNode,
+	): MCFunctionClass<undefined, undefined> => {
+		if (index < 0 || index >= totalSlides) {
+			throw new Error(`rerenderSlide: index ${index} out of range (0..${totalSlides - 1})`)
+		}
+		const visible = flatWalk(tree).filter(({ node }) => isTextType(node.type))
+		return MCFunction(`presentation/slides/rerender/${index}`, () => {
+			kill(Selector('@e', { tag: slideTag(index) }))
+			summonVisibleElements(
+				visible,
+				styles,
+				sceneW,
+				sceneH,
+				options.origin,
+				[slideTag(index)],
+				0,
+			)
+		})
+	}
+
+	// ── Auto-advance loop ────────────────────────────────────────
+	// Sync MCFunction that walks the slides with sleep() between them.
+	// Sandstone splits the body at each sleep into chained __sleep child
+	// MCFunctions, then reschedules the whole loop from the last segment.
+	// No async/await needed — sleep() works in sync contexts too.
+	const slideLoop = MCFunction('presentation/slides/loop', () => {
+		for (let s = 0; s < totalSlides; s++) {
+			setSlideFns[s]()
+			sleep(`${durations[s]}s`)
+		}
+		// After the last slide's sleep, schedule a fresh loop run.
+		schedule.function(slideLoop, '1t', 'replace')
+	})
+
+	// ── Mount: spawn every slide hidden, then kick the loop ──────
+	const mount = MCFunction('presentation/mount', () => {
+		for (let s = 0; s < totalSlides; s++) {
+			summonVisibleElements(
+				slideVisibles[s],
+				styles,
+				sceneW,
+				sceneH,
+				options.origin,
+				[slideTag(s)],
+				0, // start hidden
+			)
+		}
+		// 1t delay so the spawn packets process before the first show.
+		schedule.function(slideLoop, '1t', 'replace')
+	})
+
+	// tick + unmount are simple + always present.
+	const tick = MCFunction('presentation/tick', () => {}, { runOnTick: true })
+	const unmount = MCFunction('presentation/unmount', () => {
+		kill(Selector('@e', { tag: SCENE_TAG }))
+	})
+
+	return {
+		mount,
+		tick,
+		unmount,
+		showSlide,
+		hideSlide,
+		setSlide,
+		rerenderSlide,
+		slideLoop,
+		durations,
+		totalSlides,
+	}
 }

@@ -1,39 +1,29 @@
-import { damage, execute, rel, Selector } from 'sandstone'
-
 /**
- * Title: How can Object Oriented Programming help with my project?
+ * Slides: How can Object Oriented Programming help with my project?
+ *
+ * Notes (kept for reference, not parsed as content):
+ * - Code example was illustrative pseudo-code: a HitboxOptions interface
+ *   plus a checkHit(opts) helper that executed an onHit callback against
+ *   any entity in the box.
+ *
+ * Two slides: one framing the benefit, one showing the pattern.
  */
 
-/** -- Example -- */
-import { TargetableTag } from '../../../magic/Spells/Common'
-
-interface HitboxOptions {
-    type?: string;  //default #sandstone_summit_booth:targetable
-    width?: number; // default 0.9
-    height?: number; // default 2.0
-    onHit: () => void
-}
-
-export const checkHit = (opts: HitboxOptions) => {
-    const w = opts.width || 0.9
-    const h = opts.height || 2.0
-    const type = opts.type || TargetableTag
-
-    execute.positioned(rel(-w, -h / 2, -w)).as(Selector('@e', {
-        type,
-        dx: w * 2,
-        dy: h,
-        dz: w * 2
-    })).if.entity('@s').run(() => opts.onHit())
-}
-
-// ...
-checkHit({
-    width: 6,
-    height: 6,
-    onHit: () => damage('@s', 6, 'lightning_bolt')
-})
-// ...
-
-// Output: execute positioned ~-6 ~-3 ~-6 as @e[type=#sandstone_summit_booth:targetable, dx=12, dy=6, dz=12] if entity @s run damage @s 6 lightning_bolt
-/** -- Example -- */
+export const slides = [
+	(
+		<>
+			<h1>How can OOP help with my project?</h1>
+			<p>Wrap repeated patterns behind a single call</p>
+			<p>Type-safe interfaces make shared code easy to read and review</p>
+			<p>Compose small pieces instead of copy-pasting huge execute chains</p>
+		</>
+	),
+	(
+		<>
+			<h1>Pattern: Hitbox + onHit</h1>
+			<p>Specify width, height, and a target type once</p>
+			<p>Pass an onHit callback for what should happen on contact</p>
+			<p>One helper call replaces a long execute...as...if.entity block</p>
+		</>
+	),
+]
