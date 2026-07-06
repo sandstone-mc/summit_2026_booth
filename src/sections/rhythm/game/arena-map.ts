@@ -1,7 +1,7 @@
 import { _, abs, execute, fill, kill, MCFunction, NBT, Selector, summon } from 'sandstone'
 import { arena } from '@rhythm/config/internal/arena'
 import { mapCount, mapSafeNames } from '@rhythm/config/internal/maps'
-import { mapSelect, Tags } from './state'
+import { mapSelect, Tags, boothTags } from './state'
 import { DIMENSION, NAMESPACE } from '@shared'
 import { SymbolEntity } from 'sandstone/arguments';
 
@@ -22,9 +22,6 @@ export const clearMap = MCFunction('sections/rhythm/arena/clear_map', () => {
 	const [ox, oy, oz] = arena.mapOrigin
 	const [ex, ey, ez] = arena.mapEnd
 	execute.in(DIMENSION).run(() => {
-		// Foliage (grass, flowers, ...) drops as an item when the block it stands on is
-		// cleared before the plant itself. Clear all replaceable blocks first so nothing is
-		// left to pop off, then clear the whole box.
 		fill(abs(ox, oy, oz), abs(ex, ey, ez), 'minecraft:air').replace('#minecraft:replaceable')
 		fill(abs(ox, oy, oz), abs(ex, ey, ez), 'minecraft:air')
 	})
@@ -37,11 +34,11 @@ const skyboxCenter: [number, number, number] = [
 	(arena.mapOrigin[2] + arena.mapEnd[2]) / 2,
 ]
 
-const skyboxModels = ['skybox_neon', 'skybox_cave', 'skybox_void']
+const skyboxModels = ['skybox_rainbows', 'skybox_neon', 'skybox_void']
 
 function skyboxNbt(model: string): SymbolEntity['item_display'] {
 	return {
-		Tags: [Tags.SKYBOX],
+		Tags: boothTags(Tags.SKYBOX),
 		brightness: { sky: NBT.int(15), block: NBT.int(15) },
 		transformation: {
 			left_rotation: NBT.float(arena.wallRotation),
@@ -65,7 +62,7 @@ export const spawnSkybox = MCFunction('sections/rhythm/arena/spawn_skybox', () =
 	const [cx, cy, cz] = skyboxCenter
 	execute.in(DIMENSION).run(() => {
 		if (mapCount <= 1) {
-			summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(skyboxModels[0] ?? 'skybox_neon'))
+			summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(skyboxModels[0] ?? 'skybox_rainbows'))
 		} else {
 			for (let i = 0; i < mapCount; i++) {
 				const model = skyboxModels[i % skyboxModels.length]
