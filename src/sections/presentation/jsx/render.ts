@@ -13,6 +13,7 @@ import {
 	sleep,
 	schedule,
 } from 'sandstone'
+import type { ExecuteCommand } from 'sandstone/commands'
 import { parse as parseLess } from './less'
 import type { LessTreeNode, LessRulesetNode, LessSelectorNode, CssDeclarations } from './less'
 import { parseLength, pxToTextScale, pxToTextLineHeight } from './length'
@@ -63,6 +64,33 @@ const SCENE_TAG = Label('presentation')
 /** Tag attached to every entity in slide `index`. */
 function slideTag(index: number): LabelClass {
 	return Label(`slide_${index}`)
+}
+
+/**
+ * Selector matching scene entities inside the rendered footprint. Pairs
+ * with `execute positioned <origin-(0,0,1)>` — MC's volume becomes
+ * `[origin-(0,0,1), origin+(bounds[0], bounds[1]-1, 1)]`, which is the
+ * exact box that contains every text_display we summon (text_display
+ * hitboxes are zeroed, so we need a 2-block z slab).
+ */
+function sceneEntitiesInBounds(
+	bounds: readonly [number, number],
+	tag: string | LabelClass = SCENE_TAG,
+) {
+	return Selector('@e', {
+		tag,
+		dx: bounds[0] - 1,
+		dy: bounds[1] - 2,
+		dz: 1,
+	})
+}
+
+/** Kill every entity tagged with SCENE_TAG inside the scene footprint. */
+function killSceneEntities(
+	bounds: readonly [number, number],
+	origin: readonly [number, number, number],
+): void {
+	execute.positioned([origin[0], origin[1], origin[2] - 1]).run.kill(sceneEntitiesInBounds(bounds))
 }
 
 // ── JSX tree helpers ─────────────────────────────────────────────
@@ -386,7 +414,7 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 	}, { runOnTick: true })
 
 	const unmount = MCFunction('presentation/unmount', () => {
-		kill(Selector('@e', { tag: SCENE_TAG }))
+		killSceneEntities(options.bounds, options.origin)
 	})
 
 	return { mount, tick, unmount }
@@ -435,24 +463,36 @@ export async function renderSlides(
 		flatWalk(t).filter(({ node }) => isTextType(node.type)),
 	)
 
+	/**
+	 * Return an `execute` command with `.positioned()` already applied, so
+	 * the caller can chain further subcommands (`.as(...)`, `.run...`) onto
+	 * the same node. Keeps `isSingleExecute = true`, so Sandstone emits a
+	 * single inline command rather than splitting into a child MCFunction.
+	 */
+	function withinSceneVolume(): ExecuteCommand<false> {
+		return execute.positioned([options.origin[0], options.origin[1], options.origin[2] - 1])
+	}
+
 	// ── Per-slide show / hide ────────────────────────────────────
 	const showSlide: MCFunctionClass<undefined, undefined>[] = []
 	const hideSlide: MCFunctionClass<undefined, undefined>[] = []
 	for (let s = 0; s < totalSlides; s++) {
 		const tag = slideTag(s)
 		showSlide.push(
-			MCFunction(`presentation/slides/show/${s}`, () => {
-				execute.as(Selector('@e', { tag })).run(() => {
-					data.modify.entity('@s', 'text_opacity').set.value(-1)
-				})
-			}),
+			MCFunction(`presentation/slides/show/${s}`, () =>
+				withinSceneVolume()
+					.as(sceneEntitiesInBounds(options.bounds, tag))
+					.run.data.modify.entity('@s', 'text_opacity')
+					.set.value(NBT.int(-1)),
+			),
 		)
 		hideSlide.push(
-			MCFunction(`presentation/slides/hide/${s}`, () => {
-				execute.as(Selector('@e', { tag })).run(() => {
-					data.modify.entity('@s', 'text_opacity').set.value(0)
-				})
-			}),
+			MCFunction(`presentation/slides/hide/${s}`, () =>
+				withinSceneVolume()
+					.as(sceneEntitiesInBounds(options.bounds, tag))
+					.run.data.modify.entity('@s', 'text_opacity')
+					.set.value(NBT.int(0)),
+			),
 		)
 	}
 
@@ -489,7 +529,7 @@ export async function renderSlides(
 		}
 		const visible = flatWalk(tree).filter(({ node }) => isTextType(node.type))
 		return MCFunction(`presentation/slides/rerender/${index}`, () => {
-			kill(Selector('@e', { tag: slideTag(index) }))
+			withinSceneVolume().run.kill(sceneEntitiesInBounds(options.bounds, slideTag(index)))
 			summonVisibleElements(
 				visible,
 				styles,
@@ -536,7 +576,17 @@ export async function renderSlides(
 	// tick + unmount are simple + always present.
 	const tick = MCFunction('presentation/tick', () => {}, { runOnTick: true })
 	const unmount = MCFunction('presentation/unmount', () => {
-		kill(Selector('@e', { tag: SCENE_TAG }))
+		// Cancel every pending run of the auto-advance loop — the main
+		// entry, its sleep-segment chain (`__sleep`, `__sleep2`, …), and
+		// the `loop/schedule` wrapper that restarts it — otherwise a
+		// pending segment will fire after teardown and re-summon entities.
+		const loopName = slideLoop.name
+		schedule.clear(loopName)
+		schedule.clear(`${loopName}/schedule`)
+		for (let i = 1; i <= totalSlides; i++) {
+			schedule.clear(`${loopName}/${i === 1 ? '__sleep' : `__sleep${i}`}`)
+		}
+		withinSceneVolume().run.kill(sceneEntitiesInBounds(options.bounds))
 	})
 
 	return {
