@@ -1,20 +1,39 @@
 import { Midi } from '@tonejs/midi'
 import { mkdirSync, unlinkSync } from 'fs'
 import { join } from 'path'
-import { NAMESPACE, PROJECT_ROOT, writeGenerated } from '@shared'
+import { RawResource, sandstonePack } from 'sandstone'
+import { NAMESPACE, PROJECT_ROOT } from '@shared'
 import { rendering } from '..'
 
-const SOUNDFONT = '/usr/share/soundfonts/FluidR3_GM.sf2'
+const SOUNDFONT = process.env.SOUNDFONT ?? '/usr/share/soundfonts/FluidR3_GM.sf2'
 const CACHE_DIR = join(PROJECT_ROOT, '.cache/sounds')
 
-export const DURATION_BUCKETS = [0.1, 0.25, 0.5, 1.0, 1.5]
+const soundEvents: Record<string, { sounds: { name: string; stream: boolean }[] }> = {}
+
+function rpFile(path: string, file: ReturnType<typeof Bun.file>) {
+	RawResource(
+		sandstonePack.resourcePack(),
+		path,
+		file.arrayBuffer().then((buf) => Buffer.from(buf)),
+	)
+}
+
+export function emitSoundsJson() {
+	if (Object.keys(soundEvents).length === 0) return
+	RawResource(sandstonePack.resourcePack(), `${NAMESPACE}/sounds.json`, JSON.stringify(soundEvents, null, 2))
+}
+
+const DURATION_BUCKETS = [0.1, 0.25, 0.5, 1.0, 1.5]
 
 export function nearestDurationBucket(duration: number): number {
 	let best = 0
 	let bestDiff = Math.abs(duration - DURATION_BUCKETS[0])
 	for (let i = 1; i < DURATION_BUCKETS.length; i++) {
 		const diff = Math.abs(duration - DURATION_BUCKETS[i])
-		if (diff < bestDiff) { best = i; bestDiff = diff }
+		if (diff < bestDiff) {
+			best = i
+			bestDiff = diff
+		}
 	}
 	return best
 }
@@ -66,19 +85,34 @@ async function renderSound(key: SoundKey): Promise<void> {
 
 	await createSingleNoteMidi(key, midPath)
 
-	const fluidResult = Bun.spawnSync(['fluidsynth',
-		'-ni', '-g', '0.8', '-r', '44100',
-		'-F', wavPath, SOUNDFONT, midPath,
+	const fluidResult = Bun.spawnSync([
+		'fluidsynth',
+		'-ni',
+		'-g',
+		'0.8',
+		'-r',
+		'44100',
+		'-F',
+		wavPath,
+		SOUNDFONT,
+		midPath,
 	])
 	if (!fluidResult.success) {
 		console.error(`[render-sounds] fluidsynth failed for ${name}:`, fluidResult.stderr.toString())
 		return
 	}
 
-	const ffmpegResult = Bun.spawnSync(['ffmpeg',
-		'-y', '-i', wavPath,
-		'-c:a', 'libvorbis', '-q:a', '6',
-		'-af', 'silenceremove=stop_periods=-1:stop_duration=0.02:stop_threshold=-55dB',
+	const ffmpegResult = Bun.spawnSync([
+		'ffmpeg',
+		'-y',
+		'-i',
+		wavPath,
+		'-c:a',
+		'libvorbis',
+		'-q:a',
+		'6',
+		'-af',
+		'silenceremove=stop_periods=-1:stop_duration=0.02:stop_threshold=-55dB',
 		oggPath,
 	])
 	if (!ffmpegResult.success) {
@@ -86,8 +120,12 @@ async function renderSound(key: SoundKey): Promise<void> {
 		return
 	}
 
-	try { unlinkSync(midPath) } catch {}
-	try { unlinkSync(wavPath) } catch {}
+	try {
+		unlinkSync(midPath)
+	} catch {}
+	try {
+		unlinkSync(wavPath)
+	} catch {}
 }
 
 export async function renderAllSounds(keys: SoundKey[]): Promise<void> {
@@ -109,25 +147,24 @@ export async function renderAllSounds(keys: SoundKey[]): Promise<void> {
 		const wasCached = await Bun.file(cachedOgg).exists()
 		await renderSound(key)
 		if (!wasCached) rendered++
-		if (await Bun.file(cachedOgg).exists()) await writeGenerated('resourcepack', `assets/${NAMESPACE}/sounds/generated/${name}.ogg`, Bun.file(cachedOgg))
+		if (await Bun.file(cachedOgg).exists()) rpFile(`${NAMESPACE}/sounds/generated/${name}.ogg`, Bun.file(cachedOgg))
 	}
 
-	if (rendered > 0) console.log(`[render-sounds] Rendered ${rendered} new sounds (${uniqueKeys.length - rendered} cached)`)
+	if (rendered > 0)
+		console.log(`[render-sounds] Rendered ${rendered} new sounds (${uniqueKeys.length - rendered} cached)`)
 	else console.log(`[render-sounds] All ${uniqueKeys.length} sounds from cache`)
 
-	const soundsJson: Record<string, { sounds: { name: string; stream: boolean }[] }> = {}
 	for (const key of uniqueKeys) {
 		const name = getSoundName(key)
 		const eventName = getSoundId(key).replace(`${NAMESPACE}:`, '')
-		soundsJson[eventName] = { sounds: [{ name: `${NAMESPACE}:generated/${name}`, stream: false }] }
+		soundEvents[eventName] = { sounds: [{ name: `${NAMESPACE}:generated/${name}`, stream: false }] }
 	}
-	await writeGenerated('resourcepack', `assets/${NAMESPACE}/sounds.json`, JSON.stringify(soundsJson, null, 2))
-	console.log(`[render-sounds] Written sounds.json with ${uniqueKeys.length} entries`)
+	console.log(`[render-sounds] Registered ${uniqueKeys.length} sound events`)
 }
 
 const SONGS_CACHE_DIR = join(CACHE_DIR, 'songs')
 
-export const SEGMENT_SECS = 10
+export const SEGMENT_SECS = 30
 export const SEGMENT_TICKS = SEGMENT_SECS * 20
 
 export interface FullSongInfo {
@@ -141,19 +178,21 @@ export function getSegmentSoundId(safeName: string, segmentIdx: number): `${stri
 }
 
 function getAudioDuration(filePath: string): number {
-	const result = Bun.spawnSync(['ffprobe',
-		'-v', 'error', '-show_entries', 'format=duration',
-		'-of', 'csv=p=0', filePath,
+	const result = Bun.spawnSync([
+		'ffprobe',
+		'-v',
+		'error',
+		'-show_entries',
+		'format=duration',
+		'-of',
+		'csv=p=0',
+		filePath,
 	])
 	return parseFloat(result.stdout.toString().trim() || '0')
 }
 
 function detectAudioStart(filePath: string): number {
-	const result = Bun.spawnSync(['ffmpeg',
-		'-i', filePath,
-		'-af', 'silencedetect=noise=-30dB:d=0.05',
-		'-f', 'null', '-',
-	])
+	const result = Bun.spawnSync(['ffmpeg', '-i', filePath, '-af', 'silencedetect=noise=-30dB:d=0.05', '-f', 'null', '-'])
 	const stderr = result.stderr.toString()
 	const match = stderr.match(/silence_end:\s*([\d.]+)/)
 	return match ? parseFloat(match[1]) : 0
@@ -161,13 +200,23 @@ function detectAudioStart(filePath: string): number {
 
 function detectMidiAudioStart(midiPath: string): number {
 	const tmpWav = join(SONGS_CACHE_DIR, '_onset_tmp.wav')
-	const fluidResult = Bun.spawnSync(['fluidsynth',
-		'-ni', '-g', '0.8', '-r', '44100',
-		'-F', tmpWav, SOUNDFONT, midiPath,
+	const fluidResult = Bun.spawnSync([
+		'fluidsynth',
+		'-ni',
+		'-g',
+		'0.8',
+		'-r',
+		'44100',
+		'-F',
+		tmpWav,
+		SOUNDFONT,
+		midiPath,
 	])
 	if (!fluidResult.success) return 0
 	const start = detectAudioStart(tmpWav)
-	try { unlinkSync(tmpWav) } catch {}
+	try {
+		unlinkSync(tmpWav)
+	} catch {}
 	return start
 }
 
@@ -194,7 +243,7 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 
 		let audioOffsetSec = song.audioOffset ?? 0
 
-		if (song.audioPath && await Bun.file(song.audioPath).exists() && song.audioOffset === undefined) {
+		if (song.audioPath && (await Bun.file(song.audioPath).exists()) && song.audioOffset === undefined) {
 			const midiStart = detectMidiAudioStart(song.midiPath)
 			const audioStartTrim = song.audioStart ?? 0
 			const rawAudioOnset = detectAudioStart(song.audioPath)
@@ -204,12 +253,20 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 		}
 		const audioOffsetTicks = Math.round(audioOffsetSec * 20)
 
-		if (!await Bun.file(wavPath).exists() && !await Bun.file(segMarker).exists()) {
-			if (song.audioPath && await Bun.file(song.audioPath).exists()) {
+		if (!(await Bun.file(wavPath).exists()) && !(await Bun.file(segMarker).exists())) {
+			if (song.audioPath && (await Bun.file(song.audioPath).exists())) {
 				const trimArgs = song.audioStart ? ['-ss', `${song.audioStart}`] : []
-				const ffmpegResult = Bun.spawnSync(['ffmpeg',
-					'-y', ...trimArgs, '-i', song.audioPath,
-					'-ar', '44100', '-ac', '2', wavPath,
+				const ffmpegResult = Bun.spawnSync([
+					'ffmpeg',
+					'-y',
+					...trimArgs,
+					'-i',
+					song.audioPath,
+					'-ar',
+					'44100',
+					'-ac',
+					'2',
+					wavPath,
 				])
 				if (!ffmpegResult.success) {
 					console.error(`[render-songs] ffmpeg convert failed for ${song.safeName}`)
@@ -217,9 +274,17 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 					continue
 				}
 			} else {
-				const fluidResult = Bun.spawnSync(['fluidsynth',
-					'-ni', '-g', '0.8', '-r', '44100',
-					'-F', wavPath, SOUNDFONT, song.midiPath,
+				const fluidResult = Bun.spawnSync([
+					'fluidsynth',
+					'-ni',
+					'-g',
+					'0.8',
+					'-r',
+					'44100',
+					'-F',
+					wavPath,
+					SOUNDFONT,
+					song.midiPath,
 				])
 				if (!fluidResult.success) {
 					console.error(`[render-songs] fluidsynth failed for ${song.safeName}`)
@@ -237,26 +302,51 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 			segmentCount = Math.ceil(duration / SEGMENT_SECS)
 			for (let i = 0; i < segmentCount; i++) {
 				const segOgg = join(SONGS_CACHE_DIR, `${song.safeName}_s${i}.ogg`)
-				if (!await Bun.file(segOgg).exists()) {
+				if (!(await Bun.file(segOgg).exists())) {
 					const startSec = i * SEGMENT_SECS
-					const ffmpegResult = Bun.spawnSync(['ffmpeg',
-						'-y', '-ss', `${startSec}`, '-t', `${SEGMENT_SECS}`,
-						'-i', wavPath,
+					const ffmpegResult = Bun.spawnSync([
+						'ffmpeg',
+						'-y',
+						'-ss',
+						`${startSec}`,
+						'-t',
+						`${SEGMENT_SECS}`,
+						'-i',
+						wavPath,
+						/*
+						 * dual-mono on purpose: 2 channels so the game plays it non-spatialized
+						 * (mono gets directional panning), downmixed identical so vorbis channel
+						 * coupling encodes it near mono size
+						 */
 						...(rendering === 'compressed'
-						? ['-c:a', 'libvorbis', '-q:a', '-1', '-ac', '1', '-ar', '7000']
-						: ['-c:a', 'libvorbis', '-q:a', '5', '-ac', '2']),
-					segOgg,
+							? [
+									'-af',
+									'pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0+0.5*c1',
+									'-c:a',
+									'libvorbis',
+									'-q:a',
+									'-1',
+									'-ac',
+									'2',
+									'-ar',
+									'7000',
+								]
+							: ['-c:a', 'libvorbis', '-q:a', '5', '-ac', '2']),
+						segOgg,
 					])
 					if (ffmpegResult.success) rendered++
 				}
 			}
 			await Bun.write(segMarker, `${segmentCount}`)
-			try { unlinkSync(wavPath) } catch {}
+			try {
+				unlinkSync(wavPath)
+			} catch {}
 		}
 
 		for (let i = 0; i < segmentCount; i++) {
 			const segOgg = join(SONGS_CACHE_DIR, `${song.safeName}_s${i}.ogg`)
-			if (await Bun.file(segOgg).exists()) await writeGenerated('resourcepack', `assets/${NAMESPACE}/sounds/generated/songs/${song.safeName}_s${i}.ogg`, Bun.file(segOgg))
+			if (await Bun.file(segOgg).exists())
+				rpFile(`${NAMESPACE}/sounds/generated/songs/${song.safeName}_s${i}.ogg`, Bun.file(segOgg))
 		}
 
 		results.push({ safeName: song.safeName, segmentCount, audioOffsetTicks })
@@ -266,17 +356,14 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 	if (rendered > 0) console.log(`[render-songs] Rendered ${rendered} new segments (${totalSegments} total)`)
 	else console.log(`[render-songs] All ${totalSegments} segments from cache`)
 
-	const soundsJsonPath = join(PROJECT_ROOT, `resources/resourcepack/assets/${NAMESPACE}/sounds.json`)
-	let soundsJson: Record<string, any> = {}
-	if (await Bun.file(soundsJsonPath).exists()) soundsJson = JSON.parse(await Bun.file(soundsJsonPath).text())
-
 	for (const info of results) {
 		for (let i = 0; i < info.segmentCount; i++) {
 			const eventName = `music.song_${info.safeName}_s${i}`
-			soundsJson[eventName] = { sounds: [{ name: `${NAMESPACE}:generated/songs/${info.safeName}_s${i}`, stream: true }] }
+			soundEvents[eventName] = {
+				sounds: [{ name: `${NAMESPACE}:generated/songs/${info.safeName}_s${i}`, stream: true }],
+			}
 		}
 	}
 
-	await writeGenerated('resourcepack', `assets/${NAMESPACE}/sounds.json`, JSON.stringify(soundsJson, null, 2))
 	return results
 }
