@@ -1,9 +1,9 @@
-#define STAR_ITERATIONS 17
+#define STAR_ITERATIONS 10
 #define STAR_FORMUPARAM 0.53
-#define STAR_VOLSTEPS 15
-#define STAR_STEPSIZE 0.13
+#define STAR_VOLSTEPS 7
+#define STAR_STEPSIZE 0.23
 #define STAR_TILE 0.850
-#define STAR_BRIGHTNESS 0.0015
+#define STAR_BRIGHTNESS 0.0031
 #define STAR_DARKMATTER 0.400
 #define STAR_DISTFADING 0.730
 #define STAR_SATURATION 0.750
@@ -52,7 +52,7 @@ const mat3 voidM3 = mat3(
 
 float voidTurbulence(vec3 p, float time) {
     float d = 0.0, z = 1.0, trk = 1.0;
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 4; i++) {
         p += sin(p.zxy * 0.75 * trk + time * 12.0 * trk) * 0.15;
         d -= abs(dot(cos(p), sin(p.yzx)) * z);
         z *= 0.57;
@@ -304,9 +304,10 @@ vec3 skyAlienPlanet(vec3 dir) {
 const vec3 RS_UP = vec3(0.0, 1.0, 0.0);
 const vec3 RS_WHITE = vec3(1.0, 1.0, 1.0);
 const float RS_CAMERA_UPWARD = 7.0;
-const float RS_MAX_DIST = 300.0;
+const float RS_MAX_DIST = 200.0;
 const float RS_SUN_THRESHOLD = 1.0 - (3.0 / 1800.0);
-const vec3 RS_SUN_DIRECTION = normalize(vec3(3.0, 0.05, 1.0));
+// -z = world north, where the walls spawn; slightly +x so the sun sits a bit to the players' right
+const vec3 RS_SUN_DIRECTION = normalize(vec3(1.2, 0.05, -3.0));
 const vec3 RS_RINGS_NORMAL = normalize(vec3(4.0, 1.0, 1.0));
 const vec3 RS_RINGS_POS = vec3(1000.0, 0.0, 0.0);
 
@@ -400,9 +401,13 @@ vec3 skyRainbowsSunshines(vec3 dir) {
 
     float totalDist = 0.0;
     vec3 currentPos = camPos;
-    for (int i = 0; i < 160 && totalDist < RS_MAX_DIST; i++) {
+    for (int i = 0; i < 96 && totalDist < RS_MAX_DIST; i++) {
+        if (currentPos.y > 64.0 && rayForward.y > 0.0) {
+            totalDist = RS_MAX_DIST;
+            break;
+        }
         float sdf = rs_map(currentPos);
-        if (sdf < 0.01) {
+        if (sdf < 0.04) {
             vec3 normal = rs_calcMapNormal(currentPos, sdf);
             float dotWithSun = dot(normal, RS_SUN_DIRECTION);
             float brightness = mix(0.3, 0.6, dotWithSun);
