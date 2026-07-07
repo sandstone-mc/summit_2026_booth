@@ -1,145 +1,251 @@
-import { _, advancement, Advancement, execute, MCFunction, Objective, scoreboard, Selector, kill, tag } from 'sandstone'
+import {
+	data,
+	Variable,
+	_,
+	advancement,
+	Advancement,
+	execute,
+	MCFunction,
+	type MCFunctionClass,
+	Objective,
+	type Score,
+	Selector,
+	kill,
+	tag,
+} from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { songCount, songNames } from '@rhythm/config/internal/songs'
-import { leaderboard as lbConfig } from '@rhythm/config'
+import { leaderboard as leaderboardConfig } from '@rhythm/config'
 import { panels } from '@rhythm/config/internal/derived'
-import { GameStatus, Tags, status, songSelect, lbSongView, lbCatView, allPlayers } from './state'
+import { GameStatus, Tags, status, songSelect, leaderboardSongView, leaderboardCategoryView, gamePlayer } from './state'
 import { finalScore } from './scoring'
-import { wallLives } from './walls/collision'
-import { livesSetting } from './settings'
-import { spawnPanel, spawnClick, lineY, clampName, needsScroll, scrollFrame, scrollFrameCount, mergeDisplayText } from '@rhythm/hologram'
-import { DIMENSION, NAMESPACE, state } from '@shared'
+import { hitsTaken } from './walls/collision'
+import {
+	spawnPanel,
+	spawnPanelLines,
+	spawnClick,
+	lineY,
+	clampName,
+	needsScroll,
+	scrollFrame,
+	scrollFrameCount,
+	mergeDisplayText,
+} from '@rhythm/hologram'
+import { NAMESPACE, ticking } from '@shared'
 
-const lbBest: ReturnType<typeof Objective.create>[] = []
-const lbNoDeath: ReturnType<typeof Objective.create>[] = []
+const bestScores: ReturnType<typeof Objective.create>[] = []
+const deathlessScores: ReturnType<typeof Objective.create>[] = []
 for (let i = 0; i < songCount; i++) {
-	lbBest.push(Objective.create(`rlb.s${i}`, 'dummy'))
-	lbNoDeath.push(Objective.create(`rlb.s${i}d`, 'dummy'))
+	bestScores.push(Objective.create(`rlb.s${i}`, 'dummy'))
+	deathlessScores.push(Objective.create(`rlb.s${i}d`, 'dummy'))
 }
+
+// the panel renders 16 lines; TOTAL_LINES=15 + CLICK_Y_OFFSET is the calibrated click grid
+const RENDER_LINES = 16
+const SONGCAT_LINE = 1
+const ROWS_LINE = 2
+const YOU_LINE = 12
 
 const TOTAL_LINES = 15
-
-// Same calibration as the settings panel: lineY is bottom-anchored and the panel renders an
-// extra (ruler) line, so raise the click boxes ~a line to sit on the text.
 const CLICK_Y_OFFSET = 0.25
 
-const panelSel = Selector('@e', { tag: Tags.UI_LB_TXT, limit: 1 })
+const songCatLineSel = Selector('@e', { tag: Tags.UI_LB_SONG_TXT, limit: 1 })
+const rowsSel = Selector('@e', { tag: Tags.UI_LB_ROWS_TXT, limit: 1 })
+const youLineSel = Selector('@e', { tag: Tags.UI_LB_YOU_TXT, limit: 1 })
 
-const lbSlots: ReturnType<typeof state>[] = []
-for (let i = 0; i < lbConfig.size; i++) {
-	lbSlots.push(state(`#lb${i + 1}`))
+const rankSlots: Score[] = []
+for (let i = 0; i < leaderboardConfig.size; i++) {
+	rankSlots.push(Variable(0))
 }
-const lbMax = state('$lb_max')
-const lbScore = state('$lb_score')
-const lbRank = state('$lb_rank')
+const highestScore = Variable(0)
+const myScore = Variable(0)
+const myRank = Variable(0)
 
-const scrollPos = state('$scroll_lb')
-const scrollTimer = state('$scroll_t_lb')
+const scrollPos = Variable(0)
 
 const LB_SEL = Tags.LB_SELECTION
-const RANK_TAGS = Array.from({ length: lbConfig.size }, (_, i) => `ssb.lb.r${i + 1}`)
+const RANK_TAGS = Array.from({ length: leaderboardConfig.size }, (_, i) => `ssb.lb.r${i + 1}`)
 
-function makeSortFn(si: number, ci: number) {
-	const obj = ci === 0 ? lbBest[si] : lbNoDeath[si]
-	const label = ci === 0 ? 'best' : 'death'
-	return MCFunction(`sections/rhythm/leaderboard/sort/${label}_${si}`, () => {
-		for (let rank = 0; rank < lbConfig.size; rank++) {
-			lbMax.set(0)
+// the viewed objective is copied here so one shared selection sort covers every song and category
+const sortScratch = Objective.create('rlb.sort', 'dummy')
+
+const runSort = MCFunction(
+	'sections/rhythm/leaderboard/sort/run',
+	() => {
+		for (let rank = 0; rank < leaderboardConfig.size; rank++) {
+			highestScore.set(0)
 			execute.as(Selector('@a', { tag: `!${LB_SEL}` })).run(() => {
-				_.if(obj('@s').greaterThan(lbMax), () => {
-					lbMax.set(obj('@s'))
+				_.if(sortScratch('@s').greaterThan(highestScore), () => {
+					highestScore.set(sortScratch('@s'))
 				})
 			})
-			_.if(lbMax.greaterThan(0), () => {
-				lbSlots[rank].set(lbMax)
+			_.if(highestScore.greaterThan(0), () => {
+				rankSlots[rank].set(highestScore)
 				execute.as(Selector('@a', { tag: `!${LB_SEL}` })).run(() => {
-					_.if(obj('@s').equalTo(lbSlots[rank]), () => {
+					_.if(sortScratch('@s').equalTo(rankSlots[rank]), () => {
 						tag('@s').add(LB_SEL)
 						tag('@s').add(RANK_TAGS[rank])
 					})
 				})
 			})
 		}
-		tag(Selector('@a')).remove(LB_SEL)
-	}, { lazy: true })
-}
+		tag(Selector('@a', { tag: LB_SEL })).remove(LB_SEL)
+	},
+	{ lazy: true },
+)
 
-const sortFns: ReturnType<typeof MCFunction>[] = []
-for (let si = 0; si < songCount; si++) {
-	sortFns.push(makeSortFn(si, 0))
-	sortFns.push(makeSortFn(si, 1))
-}
-
-const sortLeaderboard = MCFunction('sections/rhythm/leaderboard/sort', () => {
-	for (let i = 0; i < lbConfig.size; i++) {
-		lbSlots[i].set(0)
-		tag(Selector('@a')).remove(RANK_TAGS[i])
-	}
-	for (let si = 0; si < songCount; si++) {
-		_.if(lbSongView.equalTo(si), () => {
-			_.if(lbCatView.equalTo(0), () => {
-				sortFns[si * 2]()
+const sortLeaderboard = MCFunction(
+	'sections/rhythm/leaderboard/sort',
+	() => {
+		for (let i = 0; i < leaderboardConfig.size; i++) {
+			rankSlots[i].set(0)
+			tag(Selector('@a', { tag: RANK_TAGS[i] })).remove(RANK_TAGS[i])
+		}
+		const copyScores = (songI: number) => {
+			_.if(leaderboardCategoryView.equalTo(0), () => {
+				execute.as(Selector('@a')).run(() => {
+					sortScratch('@s').set(0)
+					sortScratch('@s').set(bestScores[songI]('@s'))
+				})
 			}).else(() => {
-				sortFns[si * 2 + 1]()
+				execute.as(Selector('@a')).run(() => {
+					sortScratch('@s').set(0)
+					sortScratch('@s').set(deathlessScores[songI]('@s'))
+				})
 			})
-		})
-	}
-}, { lazy: true })
+		}
+		_.switch(
+			leaderboardSongView,
+			Array.from({ length: songCount }, (_v, songI) => ['case', songI, () => copyScores(songI)] as const),
+		)
+		runSort()
+	},
+	{ lazy: true },
+)
 
-const STATE_OBJ = `${NAMESPACE}.rhythm.state`
+function scoreComponent(score: Score): JSONTextComponent {
+	return { score: { name: `${score.target}`, objective: score.objective.name } }
+}
 
-function buildLbText(songIdx: number, catIdx: number, scoreLine: JSONTextComponent[], nameOverride?: string): JSONTextComponent[] {
-	const songName = nameOverride ?? clampName(songNames[songIdx] ?? 'No songs')
-	const catName = catIdx === 0 ? 'Best Score' : 'Deathless'
-	const catColor = catIdx === 0 ? 'gold' : 'light_purple'
+const BLANK_LINE: JSONTextComponent = { text: ' ' }
 
-	const parts: JSONTextComponent[] = [
-		{ text: `${panels.padding}🏆 `, color: 'gold' }, { text: `LEADERBOARD${panels.padding}`, color: 'white', bold: true },
-		{ text: '\n' },
-		{ text: `${panels.padding}♪ `, color: 'gold' }, { text: songName, color: 'yellow', font: 'monocraft:default' },
-		{ text: ' - ', color: 'gray' }, { text: `${catName}${panels.padding}`, color: catColor },
+function songCatLineText(songI: number, catI: number, nameOverride?: string): JSONTextComponent {
+	const songName = nameOverride ?? clampName(songNames[songI] ?? 'No songs')
+	const catName = catI === 0 ? 'Best Score' : 'Deathless'
+	const catColor = catI === 0 ? 'gold' : 'light_purple'
+	return [
+		{ text: `${panels.padding}♪ `, color: 'gold' },
+		{ text: songName, color: 'yellow', font: 'monocraft:default' },
+		{ text: ' - ', color: 'gray' },
+		{ text: `${catName}${panels.padding}`, color: catColor },
 	]
-
-	for (let i = 0; i < lbConfig.size; i++) {
-		const color = lbConfig.rankColors[Math.min(i, 3)]
-		parts.push({ text: '\n' })
-		parts.push({ text: `${panels.padding}#${i + 1} `, color })
-		parts.push({ selector: `@a[tag=${RANK_TAGS[i]},limit=1]`, color: 'white' })
-		parts.push({ text: ' ' })
-		parts.push({ score: { name: `#lb${i + 1}`, objective: STATE_OBJ } })
-		parts.push({ text: panels.padding })
-	}
-
-	if (scoreLine.length > 0) {
-		parts.push({ text: '\n' }, ...scoreLine)
-	} else {
-		parts.push({ text: '\n' })
-	}
-
-	parts.push({ text: '\n' })
-	parts.push({ text: `${panels.padding}◀ Song ▶`, color: 'aqua' })
-	parts.push({ text: '  ' })
-	parts.push({ text: `◀ Cat ▶${panels.padding}`, color: 'light_purple' })
-	parts.push({ text: '\n' })
-	parts.push({ text: `${panels.padding}📊 My Score${panels.padding}`, color: 'green' })
-	parts.push({ text: `\n${panels.ruler}` })
-
-	return parts
 }
 
-function lbText(si: number, ci: number, nameOverride?: string) {
-	return buildLbText(si, ci, [], nameOverride)
-}
-
-function lbMyText(si: number, ci: number) {
-	return buildLbText(si, ci, [
-		{ text: `${panels.padding}You: `, color: 'green' },
-		{ score: { name: '$lb_score', objective: STATE_OBJ } },
-		{ text: ' | #', color: 'gray' },
-		{ score: { name: '$lb_rank', objective: STATE_OBJ } },
+const ROWS_TEXT: JSONTextComponent = rankSlots.flatMap((slot, i): JSONTextComponent[] => {
+	const color = leaderboardConfig.rankColors[Math.min(i, 3)]
+	return [
+		{ text: i === 0 ? '' : '\n' },
+		{ text: `${panels.padding}#${i + 1} `, color },
+		{ selector: `@a[tag=${RANK_TAGS[i]},limit=1]`, color: 'white' },
+		{ text: ' ' },
+		scoreComponent(slot),
 		{ text: panels.padding },
-	])
-}
+	]
+})
+
+const YOU_TEXT: JSONTextComponent = [
+	{ text: `${panels.padding}You: `, color: 'green' },
+	scoreComponent(myScore),
+	{ text: ' | #', color: 'gray' },
+	scoreComponent(myRank),
+	{ text: panels.padding },
+]
+
+// selector/score components resolve when the text is set, so re-merging refreshes the rows
+const refreshRows = MCFunction(
+	'sections/rhythm/leaderboard/rows',
+	() => {
+		mergeDisplayText(rowsSel, ROWS_TEXT)
+	},
+	{ lazy: true },
+)
+
+const scrollingSongs = Array.from({ length: songCount }, (_v, i) => i).filter((i) => needsScroll(songNames[i]))
+
+const updateSongCatLine = MCFunction(
+	'sections/rhythm/leaderboard/song_line',
+	() => {
+		if (songCount === 0) return
+		const renderCase = (songI: number) => {
+			_.if(leaderboardCategoryView.equalTo(0), () => {
+				mergeDisplayText(songCatLineSel, songCatLineText(songI, 0))
+			}).else(() => {
+				mergeDisplayText(songCatLineSel, songCatLineText(songI, 1))
+			})
+			if (scrollingSongs.includes(songI)) {
+				lbScrollLoop.schedule.function(`${panels.scrollSpeed}t`, 'replace')
+			}
+		}
+		_.switch(
+			leaderboardSongView,
+			Array.from({ length: songCount }, (_v, songI) => ['case', songI, () => renderCase(songI)] as const),
+		)
+	},
+	{ lazy: true },
+)
+
+const updateDisplay = MCFunction(
+	'sections/rhythm/leaderboard/update',
+	() => {
+		scrollPos.set(0)
+		sortLeaderboard()
+		updateSongCatLine()
+		refreshRows()
+		mergeDisplayText(youLineSel, BLANK_LINE)
+	},
+	{ lazy: true },
+)
+
+const scrollLbUpdate = MCFunction(
+	'sections/rhythm/leaderboard/scroll',
+	() => {
+		for (const songI of scrollingSongs) {
+			const name = songNames[songI]
+			_.if(leaderboardSongView.equalTo(songI), () => {
+				const frames = scrollFrameCount(name)
+				_.if(scrollPos.greaterThanOrEqualTo(frames), () => {
+					scrollPos.set(0)
+				})
+				for (let offset = 0; offset < frames; offset++) {
+					_.if(scrollPos.equalTo(offset), () => {
+						const visible = scrollFrame(name, offset)
+						_.if(leaderboardCategoryView.equalTo(0), () => {
+							mergeDisplayText(songCatLineSel, songCatLineText(songI, 0, visible))
+						}).else(() => {
+							mergeDisplayText(songCatLineSel, songCatLineText(songI, 1, visible))
+						})
+					})
+				}
+			})
+		}
+	},
+	{ lazy: true },
+)
+
+// runs only while a long song name is on the panel; dies on its own otherwise
+const lbScrollLoop = MCFunction(
+	'sections/rhythm/leaderboard/scroll_loop',
+	(self: MCFunctionClass) => {
+		scrollPos.add(1)
+		scrollLbUpdate()
+		for (const songI of scrollingSongs) {
+			_.if(leaderboardSongView.equalTo(songI), () => {
+				self.schedule.function(`${panels.scrollSpeed}t`, 'replace')
+			})
+		}
+	},
+	{ lazy: true },
+)
 
 Advancement('ui_lb_song', {
 	criteria: {
@@ -174,183 +280,185 @@ Advancement('ui_lb_my', {
 	},
 })
 
-const updateSidebar = MCFunction('sections/rhythm/leaderboard/sidebar', () => {
-	for (let i = 0; i < songCount; i++) {
-		const idx = i
-		_.if(lbSongView.equalTo(idx), () => {
-			_.if(lbCatView.equalTo(0), () => {
-				scoreboard.objectives.setdisplay('sidebar', `rlb.s${idx}`)
+const onSongCycle = MCFunction(
+	'sections/rhythm/leaderboard/on_song',
+	() => {
+		_.if(status.equalTo(GameStatus.WAITING), () => {
+			leaderboardSongView.add(1)
+			_.if(leaderboardSongView.greaterThanOrEqualTo(songCount), () => {
+				leaderboardSongView.set(0)
+			})
+			updateDisplay()
+			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
+		})
+	},
+	{ lazy: true },
+)
+
+const onSongCycleBack = MCFunction(
+	'sections/rhythm/leaderboard/on_song_back',
+	() => {
+		_.if(status.equalTo(GameStatus.WAITING), () => {
+			leaderboardSongView.remove(1)
+			_.if(leaderboardSongView.lessThan(0), () => {
+				leaderboardSongView.set(Math.max(songCount - 1, 0))
+			})
+			updateDisplay()
+			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
+		})
+	},
+	{ lazy: true },
+)
+
+const onCatToggle = MCFunction(
+	'sections/rhythm/leaderboard/on_cat',
+	() => {
+		_.if(status.equalTo(GameStatus.WAITING), () => {
+			_.if(leaderboardCategoryView.equalTo(0), () => {
+				leaderboardCategoryView.set(1)
 			}).else(() => {
-				scoreboard.objectives.setdisplay('sidebar', `rlb.s${idx}d`)
+				leaderboardCategoryView.set(0)
 			})
+			updateDisplay()
+			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
-	}
-}, { lazy: true })
+	},
+	{ lazy: true },
+)
 
-const updateDisplay = MCFunction('sections/rhythm/leaderboard/update', () => {
-	scrollPos.set(0)
-	scrollTimer.set(0)
-	sortLeaderboard()
-	for (let si = 0; si < songCount; si++) {
-		_.if(lbSongView.equalTo(si), () => {
-			_.if(lbCatView.equalTo(0), () => {
-				mergeDisplayText(panelSel, lbText(si, 0))
-			}).else(() => {
-				mergeDisplayText(panelSel, lbText(si, 1))
-			})
-		})
-	}
-	updateSidebar()
-}, { lazy: true })
-
-const scrollLbUpdate = MCFunction('sections/rhythm/leaderboard/scroll', () => {
-	for (let si = 0; si < songCount; si++) {
-		const name = songNames[si]
-		if (!needsScroll(name)) continue
-		_.if(lbSongView.equalTo(si), () => {
-			const frames = scrollFrameCount(name)
-			_.if(scrollPos.greaterThanOrEqualTo(frames), () => {
-				scrollPos.set(0)
-			})
-			for (let offset = 0; offset < frames; offset++) {
-				_.if(scrollPos.equalTo(offset), () => {
-					const visible = scrollFrame(name, offset)
-					_.if(lbCatView.equalTo(0), () => {
-						mergeDisplayText(panelSel, lbText(si, 0, visible))
-					}).else(() => {
-						mergeDisplayText(panelSel, lbText(si, 1, visible))
-					})
-				})
-			}
-		})
-	}
-}, { lazy: true })
-
-const onSongCycle = MCFunction('sections/rhythm/leaderboard/on_song', () => {
-	_.if(status.equalTo(GameStatus.WAITING), () => {
-		lbSongView.add(1)
-		_.if(lbSongView.greaterThanOrEqualTo(songCount), () => {
-			lbSongView.set(0)
-		})
-		updateDisplay()
-		execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
-	})
-}, { lazy: true })
-
-const onCatToggle = MCFunction('sections/rhythm/leaderboard/on_cat', () => {
-	_.if(status.equalTo(GameStatus.WAITING), () => {
-		_.if(lbCatView.equalTo(0), () => {
-			lbCatView.set(1)
-		}).else(() => {
-			lbCatView.set(0)
-		})
-		updateDisplay()
-		execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
-	})
-}, { lazy: true })
-
-const onMyScore = MCFunction('sections/rhythm/leaderboard/on_myscore', () => {
-	for (let si = 0; si < songCount; si++) {
-		_.if(lbSongView.equalTo(si), () => {
-			_.if(lbCatView.equalTo(0), () => {
-				lbScore.set(lbBest[si]('@s'))
-				lbRank.set(1)
-				// TODO: Optimize
+const onMyScore = MCFunction(
+	'sections/rhythm/leaderboard/on_myscore',
+	() => {
+		const computeMyRank = (songI: number) => {
+			_.if(leaderboardCategoryView.equalTo(0), () => {
+				myScore.set(bestScores[songI]('@s'))
+				myRank.set(1)
 				execute.as(Selector('@a')).run(() => {
-					_.if(lbBest[si]('@s').greaterThan(lbScore), () => {
-						lbRank.add(1)
+					_.if(bestScores[songI]('@s').greaterThan(myScore), () => {
+						myRank.add(1)
 					})
 				})
-				mergeDisplayText(panelSel, lbMyText(si, 0))
 			}).else(() => {
-				lbScore.set(lbNoDeath[si]('@s'))
-				lbRank.set(1)
-				// TODO: Optimize
+				myScore.set(deathlessScores[songI]('@s'))
+				myRank.set(1)
 				execute.as(Selector('@a')).run(() => {
-					_.if(lbNoDeath[si]('@s').greaterThan(lbScore), () => {
-						lbRank.add(1)
-					})
-				})
-				mergeDisplayText(panelSel, lbMyText(si, 1))
-			})
-		})
-	}
-	execute.at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
-}, { lazy: true })
-
-export const saveLeaderboard = MCFunction('sections/rhythm/leaderboard/save', () => {
-	execute.as(allPlayers).run(() => {
-		for (let i = 0; i < songCount; i++) {
-			const idx = i
-			_.if(songSelect.equalTo(idx), () => {
-				_.if(finalScore('@s').greaterThan(lbBest[idx]('@s')), () => {
-					lbBest[idx]('@s').set(finalScore('@s'))
-				})
-				_.if(wallLives('@s').greaterThanOrEqualTo(livesSetting), () => {
-					_.if(finalScore('@s').greaterThan(lbNoDeath[idx]('@s')), () => {
-						lbNoDeath[idx]('@s').set(finalScore('@s'))
+					_.if(deathlessScores[songI]('@s').greaterThan(myScore), () => {
+						myRank.add(1)
 					})
 				})
 			})
 		}
-	})
+		_.switch(
+			leaderboardSongView,
+			Array.from({ length: songCount }, (_v, songI) => ['case', songI, () => computeMyRank(songI)] as const),
+		)
+		mergeDisplayText(youLineSel, YOU_TEXT)
+		execute.at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
+	},
+	{ lazy: true },
+)
 
-	lbSongView.set(songSelect)
-	updateDisplay()
-}, { lazy: true })
+export const saveLeaderboard = MCFunction(
+	'sections/rhythm/leaderboard/save',
+	() => {
+		execute.as(gamePlayer).run(() => {
+			for (let i = 0; i < songCount; i++) {
+				const idx = i
+				_.if(songSelect.equalTo(idx), () => {
+					_.if(finalScore('@s').greaterThan(bestScores[idx]('@s')), () => {
+						bestScores[idx]('@s').set(finalScore('@s'))
+					})
+					_.if(hitsTaken('@s').equalTo(0), () => {
+						_.if(finalScore('@s').greaterThan(deathlessScores[idx]('@s')), () => {
+							deathlessScores[idx]('@s').set(finalScore('@s'))
+						})
+					})
+				})
+			}
+		})
 
-MCFunction('sections/rhythm/leaderboard/tick', () => {
-	execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_song`]: true } })).run(() => {
-		onSongCycle()
-		advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_song`)
-	})
-	execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_cat`]: true } })).run(() => {
-		onCatToggle()
-		advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_cat`)
-	})
-	execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_my`]: true } })).run(() => {
-		onMyScore()
-		advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_my`)
-	})
+		leaderboardSongView.set(songSelect)
+		updateDisplay()
+	},
+	{ lazy: true },
+)
 
-	scrollTimer.add(1)
-	_.if(scrollTimer.greaterThanOrEqualTo(panels.scrollSpeed), () => {
-		scrollTimer.set(0)
-		scrollPos.add(1)
-		scrollLbUpdate()
-	})
-}, { runEveryTick: true })
+// left click steps backwards / toggles: the interaction records the attack in nbt
+function onAttack(buttonTag: Tags, handler: () => void) {
+	execute
+		.as(Selector('@e', { type: 'minecraft:interaction', tag: buttonTag }))
+		.at('@s')
+		.if.data.entity('@s', 'attack')
+		.run(() => {
+			data.remove.entity('@s', 'attack')
+			execute.as('@p').run(() => {
+				handler()
+			})
+		})
+}
 
-MCFunction('sections/rhythm/leaderboard/init', () => {
-	lbSongView.set(0)
-	lbCatView.set(0)
-	scrollPos.set(0)
-	scrollTimer.set(0)
+export const leaderboardTick = MCFunction(
+	'sections/rhythm/leaderboard/tick',
+	() => {
+		onAttack(Tags.UI_LB_SONG_INT, () => onSongCycleBack())
+		onAttack(Tags.UI_LB_CAT_INT, () => onCatToggle())
 
-	for (let i = 0; i < songCount; i++) {
-		const name = songNames[i]
-		scoreboard.objectives.modify(`rlb.s${i}`).displayname([
-			{ text: '♪ ', color: 'gold' },
-			{ text: name, color: 'yellow' },
-			{ text: ' - Best', color: 'white' },
-		])
-		scoreboard.objectives.modify(`rlb.s${i}d`).displayname([
-			{ text: '♪ ', color: 'gold' },
-			{ text: name, color: 'yellow' },
-			{ text: ' - Deathless', color: 'light_purple' },
-		])
-	}
+		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_song`]: true } })).run(() => {
+			onSongCycle()
+			advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_song`)
+		})
+		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_cat`]: true } })).run(() => {
+			onCatToggle()
+			advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_cat`)
+		})
+		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_my`]: true } })).run(() => {
+			onMyScore()
+			advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_my`)
+		})
+	},
+	{ lazy: true },
+)
 
-	updateDisplay()
-}, { runOnLoad: true })
+MCFunction(
+	'sections/rhythm/leaderboard/init',
+	() => {
+		leaderboardSongView.set(0)
+		leaderboardCategoryView.set(0)
+		scrollPos.set(0)
 
-MCFunction('sections/rhythm/leaderboard/spawn', () => {
-	execute.in(DIMENSION).run(() => {
+		updateDisplay()
+	},
+	{ runOnLoad: true },
+)
+
+const BACKDROP_TEXT: JSONTextComponent = [
+	{ text: `${panels.padding}🏆 `, color: 'gold' },
+	{ text: `LEADERBOARD${panels.padding}`, color: 'white', bold: true },
+	{ text: '\n\n\n\n\n\n\n\n\n\n\n\n\n' },
+	{ text: `${panels.padding}◀ Song ▶`, color: 'aqua' },
+	{ text: '  ' },
+	{ text: `◀ Cat ▶${panels.padding}`, color: 'light_purple' },
+	{ text: '\n' },
+	{ text: `${panels.padding}📊 My Score${panels.padding}`, color: 'green' },
+	{ text: `\n${panels.ruler}` },
+]
+
+MCFunction(
+	'sections/rhythm/leaderboard/spawn',
+	() => {
 		kill(Selector('@e', { tag: Tags.UI_LEADERBOARD }))
 
-		spawnPanel(panels.leaderboard,
-			[Tags.UI_LEADERBOARD, Tags.UI_LB_TXT],
-			lbText(0, 0), 0)
+		spawnPanel(panels.leaderboard, [Tags.UI_LEADERBOARD, Tags.UI_LB_TXT], BACKDROP_TEXT, 0)
+		spawnPanelLines(panels.leaderboard, [Tags.UI_LEADERBOARD, Tags.UI_LB_SONG_TXT], RENDER_LINES, SONGCAT_LINE)
+		spawnPanelLines(
+			panels.leaderboard,
+			[Tags.UI_LEADERBOARD, Tags.UI_LB_ROWS_TXT],
+			RENDER_LINES,
+			ROWS_LINE,
+			leaderboardConfig.size,
+		)
+		spawnPanelLines(panels.leaderboard, [Tags.UI_LEADERBOARD, Tags.UI_LB_YOU_TXT], RENDER_LINES, YOU_LINE)
+		updateDisplay()
 
 		const btnY = lineY(panels.leaderboard, TOTAL_LINES, 13)
 		spawnClick(panels.leaderboard, -0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_SONG_INT], 1.5, CLICK_Y_OFFSET)
@@ -358,5 +466,6 @@ MCFunction('sections/rhythm/leaderboard/spawn', () => {
 
 		const myY = lineY(panels.leaderboard, TOTAL_LINES, 14)
 		spawnClick(panels.leaderboard, 0, myY, [Tags.UI_LEADERBOARD, Tags.UI_LB_MY_INT], 3, CLICK_Y_OFFSET)
-	})
-}, { runOnLoad: true })
+	},
+	{ runOnLoad: true },
+)

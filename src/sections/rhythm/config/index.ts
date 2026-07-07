@@ -1,12 +1,11 @@
 import type { RhythmConfig } from './internal/types'
 
 export { Difficulty, CellType } from './internal/types'
-export type { RenderingMode, GoldLineDirection, Cell, PanelConfig, RhythmConfig } from './internal/types'
+export type { RenderingMode, Cell, PanelConfig, RhythmConfig } from './internal/types'
 
 const config: RhythmConfig = {
 	rendering: 'compressed',
-	goldLine: [-72,63,43],
-	goldLineDirection: 'north',
+	goldLine: [-72, 63, 43],
 	pattern: {
 		width: 5,
 		height: 5,
@@ -21,16 +20,10 @@ const config: RhythmConfig = {
 		cooldownTicks: 30,
 		flashInterval: 3,
 		groupContinuePercent: 70,
-		colors: [
-			0xF0F0FF, // ice white
-			0x6699D8, // sky blue
-			0xB24CD8, // magenta
-			0x4CB2B2, // teal
-			0x7F3FB2, // deep purple
-			0xF27FA5, // pink
-		],
+		colors: [0xf0f0ff, 0x6699d8, 0xb24cd8, 0x4cb2b2, 0x7f3fb2, 0xf27fa5],
 	},
 	collisions: {
+		parkourLead: 1.5,
 		interact: [0, 0, 0],
 		ghast: [0, 0, 0],
 	},
@@ -39,14 +32,13 @@ const config: RhythmConfig = {
 		playerRoom: 8,
 		boothWall: 1,
 		laneWidth: 5,
-		size: [21, 9, 30],
-		mirrorX: true,
-		mirrorZ: true,
+		size: [21, 10, 30],
 		laneShift: [0, 0, 1],
 	},
 	gameplay: {
 		lives: {
-			options: [1, 3, 5],
+			min: 1,
+			max: 5,
 			default: 3,
 		},
 		countdown: 5,
@@ -71,10 +63,7 @@ const config: RhythmConfig = {
 				frontBack: 1.11,
 			},
 		},
-		glowColors: [
-			'aqua', 'blue', 'green', 'yellow',
-			'light_purple', 'red', 'gold', 'white',
-		],
+		glowColors: ['aqua', 'blue', 'green', 'yellow', 'light_purple', 'red', 'gold', 'white'],
 		pulse: {
 			activeScale: 0.55,
 			restScale: 0.2,
@@ -82,7 +71,7 @@ const config: RhythmConfig = {
 	},
 	music: {
 		offset: [0, 0, 0],
-		volume: 10000,
+		volume: 1,
 		hearable: { dx: 48, dy: 24, dz: 64 },
 	},
 	leaderboard: {
@@ -90,8 +79,10 @@ const config: RhythmConfig = {
 		rankColors: ['gold', 'gray', 'red', 'dark_gray'],
 	},
 	panels: {
-		settingsOffset: [0, 2, -10],
-		leaderboardOffset: [-4, 2, -10],
+		settingsOffset: [-22, 2, -10],
+		settingsFacing: 90,
+		leaderboardOffset: [-18, 2, -13],
+		leaderboardFacing: 180,
 		maxNameLength: 18,
 		scrollSpeed: 4,
 		padding: '  ',
@@ -104,7 +95,6 @@ export default config
 
 export const rendering = config.rendering
 export const goldLine = config.goldLine
-export const goldLineDirection = config.goldLineDirection
 export const pattern = config.pattern
 export const walls = config.walls
 export const collisions = config.collisions

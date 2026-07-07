@@ -1,6 +1,6 @@
 import { abs, data, NBT, summon } from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
-import { type Tags } from './game/state'
+import { type Tags, boothTags } from './game/state'
 import { type PanelConfig } from './config'
 import { panels } from './config/internal/derived'
 
@@ -30,7 +30,7 @@ export function clampName(name: string): string {
 	return name.substring(0, panels.maxNameLength - 1) + '…'
 }
 
-export function lineHeight(panel: PanelConfig) {
+function lineHeight(panel: PanelConfig) {
 	return BASE_LINE_HEIGHT * panel.scale
 }
 
@@ -42,9 +42,9 @@ export function mergeDisplayText(target: Parameters<typeof data.merge.entity>[0]
 	data.merge.entity(target, { text } as unknown as Parameters<typeof data.merge.entity>[1])
 }
 
-export function spawnPanel(panel: PanelConfig, tags: Tags[], text: JSONTextComponent, bg = panels.background) {
+function panelNbt(panel: PanelConfig, tags: Tags[], text: JSONTextComponent, bg: number): Record<string, any> {
 	const nbt: Record<string, any> = {
-		Tags: tags,
+		Tags: boothTags(...tags),
 		text,
 		billboard: 'fixed' as const,
 		Rotation: NBT.float([panel.facing, 0]),
@@ -65,20 +65,43 @@ export function spawnPanel(panel: PanelConfig, tags: Tags[], text: JSONTextCompo
 		}
 	}
 
-	summon('minecraft:text_display', abs(panel.x, panel.y, panel.z), nbt)
+	return nbt
 }
 
+export function spawnPanel(panel: PanelConfig, tags: Tags[], text: JSONTextComponent, bg = panels.background) {
+	summon('minecraft:text_display', abs(panel.x, panel.y, panel.z), panelNbt(panel, tags, text, bg))
+}
+
+// a block of `lines` panel lines starting at `lineIdx`; transparent background, so it shares the backdrop's plane
+export function spawnPanelLines(panel: PanelConfig, tags: Tags[], totalLines: number, lineIdx: number, lines = 1) {
+	const y = panel.y + (totalLines - lineIdx - lines) * lineHeight(panel)
+	summon('minecraft:text_display', abs(panel.x, y, panel.z), panelNbt(panel, tags, ' ', 0))
+}
+
+const CLICK_FRONT_MARGIN = 0.1
+
 export function spawnClick(
-	panel: PanelConfig, xOffset: number, y: number,
-	tags: Tags[], width: number, yOffset = 0, height?: number,
+	panel: PanelConfig,
+	xOffset: number,
+	y: number,
+	tags: Tags[],
+	width: number,
+	yOffset = 0,
+	height?: number,
 ) {
 	const clickHeight = height ?? lineHeight(panel)
-	const rad = panel.facing * Math.PI / 180
-	const interactionX = Math.round((panel.x + xOffset + Math.sin(rad) * 0.45) * 1000) / 1000
-	const interactionZ = Math.round((panel.z - Math.cos(rad) * 0.45) * 1000) / 1000
+	const rad = (panel.facing * Math.PI) / 180
+	/*
+	 * interaction hitboxes are square columns (width applies to depth too), so sink the box
+	 * behind the panel plane: only a thin front slice extends past the text, and angled
+	 * clicks can't land on a neighboring button's protruding box
+	 */
+	const forward = width / 2 - CLICK_FRONT_MARGIN
+	const interactionX = Math.round((panel.x + Math.cos(rad) * xOffset + Math.sin(rad) * forward) * 1000) / 1000
+	const interactionZ = Math.round((panel.z + Math.sin(rad) * xOffset - Math.cos(rad) * forward) * 1000) / 1000
 
 	summon('minecraft:interaction', abs(interactionX, y - clickHeight / 2 + yOffset, interactionZ), {
-		Tags: tags,
+		Tags: boothTags(...tags),
 		width: NBT.float(width),
 		height: NBT.float(clickHeight),
 		response: true,
