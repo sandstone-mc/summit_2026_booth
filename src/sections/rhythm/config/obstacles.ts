@@ -858,17 +858,6 @@ export const singles: Obstacle[] = [
 		],
 	},
 	{
-		name: '3_3',
-		difficulty: Difficulty.HARD,
-		grid: [
-			[E, E, E, E, E],
-			[E, E, E, E, E],
-			[E, E, E, E, E],
-			[E, E, E, E, E],
-			[E, E, E, E, E],
-		],
-	},
-	{
 		name: '3_4',
 		difficulty: Difficulty.HARD,
 		grid: [
@@ -976,17 +965,6 @@ export const singles: Obstacle[] = [
 			[F, F, F, F, F],
 			[F, E, E, E, F],
 			[F, F, F, F, F],
-		],
-	},
-	{
-		name: '5_4',
-		difficulty: Difficulty.MASTER,
-		grid: [
-			[E, E, E, E, E],
-			[E, E, E, E, E],
-			[E, E, E, E, E],
-			[E, E, E, E, E],
-			[E, E, E, E, E],
 		],
 	},
 	{

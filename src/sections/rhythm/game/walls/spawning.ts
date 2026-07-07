@@ -1,20 +1,19 @@
-import { _, abs, execute, MCFunction, NBT, Objective, schedule, Selector, summon } from 'sandstone'
+import { _, abs, execute, kill, MCFunction, NBT, Objective, Selector, summon, tp, Variable } from 'sandstone'
 import { pattern, walls, collisions, Difficulty } from '@rhythm/config'
 import { wallMovement, wallTintColor } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { singles, groups, type Cell, type Obstacle } from '@rhythm/config/obstacles'
-import { Tags } from '@rhythm/game/state'
-import { DIMENSION, NAMESPACE } from '@shared'
+import { Tags, boothTags, voidPark } from '@rhythm/game/state'
+import { scoreSwitch } from '@rhythm/flow'
+
 import { wallModelNames } from '@rhythm/config/internal/generate-wall-models'
 
 export const wallAge = Objective.create('rhythm.wall.age', 'dummy')
 export const wallDepth = Objective.create('rhythm.wall.depth', 'dummy')
 
-const wallPickState = Objective.create('rhythm.wall_variable')
-
-const randomPick = wallPickState('$pick')
-const lastGroupId = wallPickState('$last')
-const shouldContinueGroup = wallPickState('$continue')
+const randomPick = Variable(0)
+const lastGroupId = Variable(0)
+const shouldContinueGroup = Variable(0)
 
 function nameHash(name: string): number {
 	let h = 0
@@ -31,13 +30,13 @@ function cellInteractionYOffset(cell: NonNullable<Cell>): number {
 }
 
 function hasHeadroom(grid: Cell[][], x: number, y: number, cell: NonNullable<Cell>): boolean {
-	const cellTopY = (cell === 'slab_bottom') ? y + 0.5 : y + 1.0
+	const cellTopY = cell === 'slab_bottom' ? y + 0.5 : y + 1.0
 	const needClearTo = cellTopY + 1.5
 	for (let gy = y + 1; gy < pattern.height && gy < Math.ceil(needClearTo); gy++) {
 		const other = grid[gy]?.[x]
 		if (other == null) continue
-		const otherBottom = (other === 'slab_top') ? gy + 0.5 : gy
-		const otherTop = (other === 'full' || other === 'slab_top') ? gy + 1.0 : gy + 0.5
+		const otherBottom = other === 'slab_top' ? gy + 0.5 : gy
+		const otherTop = other === 'full' || other === 'slab_top' ? gy + 1.0 : gy + 0.5
 		if (otherBottom < needClearTo && otherTop > cellTopY) return false
 	}
 	return true
@@ -45,24 +44,24 @@ function hasHeadroom(grid: Cell[][], x: number, y: number, cell: NonNullable<Cel
 
 const [originX, originY, originZ] = arena.spawnOrigin
 function gridToWorld(x: number, y: number): [number, number, number] {
-	if (arena.wallsTravelAlongZ) return [originX + x, originY + y, originZ]
-	return [originX, originY + y, originZ + x]
+	return [originX + x, originY + y, originZ]
 }
 
-function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
+function buildObstacleSpawn(obstacle: Obstacle, fnName: string, groupIdx: number): () => void {
 	const seed = nameHash(obstacle.name)
 	const tint = wallTintColor(seed)
 	const modelName = wallModelNames.get(obstacle.name)!
 
-	return MCFunction(fnName, () => {
-		execute.in(DIMENSION).run(() => {
+	return MCFunction(
+		fnName,
+		() => {
 			const [ox, oy, oz] = gridToWorld(0, 0)
-			const ex = ox + (arena.wallsTravelAlongZ ? pattern.width / 2 : 0.5)
+			const ex = ox + pattern.width / 2
 			const ey = oy + pattern.height / 2
-			const ez = oz + (arena.wallsTravelAlongZ ? 0.5 : pattern.width / 2)
+			const ez = oz + 0.5
 
 			summon('minecraft:item_display', abs(ex, ey, ez), {
-				Tags: [Tags.WALL, Tags.WALL_NEW],
+				Tags: boothTags(Tags.WALL, Tags.WALL_NEW),
 				interpolation_duration: NBT.int(wallMovement.travelTicks),
 				item_display: 'none',
 				brightness: { sky: NBT.int(15), block: NBT.int(15) },
@@ -76,24 +75,27 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 					id: 'minecraft:leather_horse_armor',
 					count: NBT.int(1),
 					components: {
+						// @ts-ignore
+						// keys containing ':' must be pre-quoted for snbt
 						'"minecraft:item_model"': modelName,
 						'"minecraft:dyed_color"': NBT.int(tint),
 					},
 				},
-			} as Record<string, any>)
+			})
 
 			for (let y = 0; y < pattern.height; y++) {
 				for (let x = 0; x < pattern.width; x++) {
 					const cell = obstacle.grid[y]?.[x]
 					if (cell == null) continue
-					const cx = arena.reverseCollisionX ? (pattern.width - 1 - x) : x
+					// hitboxes mirror the model grid because the wall model faces the player
+					const cx = pattern.width - 1 - x
 					const [hx, hy, hz] = gridToWorld(cx, y)
 
 					const cellYOffset = hy + cellInteractionYOffset(cell)
 					if (hasHeadroom(obstacle.grid, x, y, cell)) {
 						const [gox, goy, goz] = collisions.ghast
 						summon('minecraft:happy_ghast', abs(hx + gox, cellYOffset + goy, hz + goz), {
-							Tags: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW, Tags.WALL_GHAST],
+							Tags: boothTags(Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW),
 							NoAI: true,
 							NoGravity: true,
 							Invulnerable: true,
@@ -104,15 +106,18 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string): () => void {
 					} else {
 						const [iox, ioy, ioz] = collisions.interact
 						summon('minecraft:interaction', abs(hx + iox, cellYOffset + ioy, hz + ioz), {
-							Tags: [Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW],
+							Tags: boothTags(Tags.WALL, Tags.WALL_HIT, Tags.WALL_NEW),
 							width: NBT.float(0.5),
 							height: NBT.float(cellInteractionHeight(cell)),
 						})
 					}
 				}
 			}
-		})
-	}, { lazy: true })
+
+			lastGroupId.set(groupIdx)
+		},
+		{ lazy: true },
+	)
 }
 
 interface PoolEntry {
@@ -129,7 +134,7 @@ for (let singleIdx = 0; singleIdx < singles.length; singleIdx++) {
 		difficulty: singles[singleIdx].difficulty,
 		groupIdx: 0,
 		weight: 1.0,
-		spawnFn: buildObstacleSpawn(singles[singleIdx], `sections/rhythm/obstacle/s${singleIdx}`),
+		spawnFn: buildObstacleSpawn(singles[singleIdx], `sections/rhythm/obstacle/s${singleIdx}`, 0),
 	})
 }
 
@@ -141,7 +146,11 @@ for (let groupIdx = 0; groupIdx < groups.length; groupIdx++) {
 			difficulty: group.obstacles[memberIdx].difficulty,
 			groupIdx: groupIdx1,
 			weight: 1.0,
-			spawnFn: buildObstacleSpawn(group.obstacles[memberIdx], `sections/rhythm/obstacle/g${groupIdx}_m${memberIdx}`),
+			spawnFn: buildObstacleSpawn(
+				group.obstacles[memberIdx],
+				`sections/rhythm/obstacle/g${groupIdx}_m${memberIdx}`,
+				groupIdx1,
+			),
 		})
 	}
 }
@@ -159,31 +168,67 @@ const groupIdxList = [...groupMembersByIdx.keys()].sort((a, b) => a - b)
 
 const groupDispatchFns: (() => void)[] = groupIdxList.map((gIdx, gi) => {
 	const members = groupMembersByIdx.get(gIdx)!
-	return MCFunction(`sections/rhythm/obstacle/group_${gIdx}`, () => {
-		if (members.length === 1) {
-			poolEntries[members[0]].spawnFn()
-		} else {
-			execute.store.result.score(randomPick.target, randomPick.objective)
-				.run.random.value([0, members.length - 1], 'wall_pick')
-			let chain = _.if(randomPick.equalTo(0), () => poolEntries[members[0]].spawnFn())
-			for (let memberIdx = 1; memberIdx < members.length; memberIdx++) {
-				const mi = memberIdx
-				chain = chain.elseIf(randomPick.equalTo(mi), () => poolEntries[members[mi]].spawnFn())
+	return MCFunction(
+		`sections/rhythm/obstacle/group_${gIdx}`,
+		() => {
+			if (members.length === 1) {
+				poolEntries[members[0]].spawnFn()
+			} else {
+				execute.store.result.score(randomPick).run.random.value([0, members.length - 1], 'wall_pick')
+				scoreSwitch(
+					randomPick,
+					members.map((member, i) => [i, () => poolEntries[member].spawnFn()]),
+				)
 			}
-		}
-	}, { lazy: true })
+		},
+		{ lazy: true },
+	)
 })
 
 const DIFFICULTY_WEIGHTS: Record<Difficulty, Record<Difficulty, number>> = {
-	[Difficulty.EASY]:   { [Difficulty.EASY]: 30, [Difficulty.NORMAL]: 40, [Difficulty.HARD]: 20, [Difficulty.EXPERT]: 10, [Difficulty.MASTER]: 0 },
-	[Difficulty.NORMAL]: { [Difficulty.EASY]: 10, [Difficulty.NORMAL]: 25, [Difficulty.HARD]: 40, [Difficulty.EXPERT]: 20, [Difficulty.MASTER]: 5 },
-	[Difficulty.HARD]:   { [Difficulty.EASY]: 5,  [Difficulty.NORMAL]: 10, [Difficulty.HARD]: 25, [Difficulty.EXPERT]: 40, [Difficulty.MASTER]: 20 },
-	[Difficulty.EXPERT]: { [Difficulty.EASY]: 0,  [Difficulty.NORMAL]: 5,  [Difficulty.HARD]: 15, [Difficulty.EXPERT]: 35, [Difficulty.MASTER]: 45 },
-	[Difficulty.MASTER]: { [Difficulty.EASY]: 0,  [Difficulty.NORMAL]: 0,  [Difficulty.HARD]: 10, [Difficulty.EXPERT]: 30, [Difficulty.MASTER]: 60 },
+	[Difficulty.EASY]: {
+		[Difficulty.EASY]: 30,
+		[Difficulty.NORMAL]: 40,
+		[Difficulty.HARD]: 20,
+		[Difficulty.EXPERT]: 10,
+		[Difficulty.MASTER]: 0,
+	},
+	[Difficulty.NORMAL]: {
+		[Difficulty.EASY]: 10,
+		[Difficulty.NORMAL]: 25,
+		[Difficulty.HARD]: 40,
+		[Difficulty.EXPERT]: 20,
+		[Difficulty.MASTER]: 5,
+	},
+	[Difficulty.HARD]: {
+		[Difficulty.EASY]: 5,
+		[Difficulty.NORMAL]: 10,
+		[Difficulty.HARD]: 25,
+		[Difficulty.EXPERT]: 40,
+		[Difficulty.MASTER]: 20,
+	},
+	[Difficulty.EXPERT]: {
+		[Difficulty.EASY]: 0,
+		[Difficulty.NORMAL]: 5,
+		[Difficulty.HARD]: 15,
+		[Difficulty.EXPERT]: 35,
+		[Difficulty.MASTER]: 45,
+	},
+	[Difficulty.MASTER]: {
+		[Difficulty.EASY]: 0,
+		[Difficulty.NORMAL]: 0,
+		[Difficulty.HARD]: 10,
+		[Difficulty.EXPERT]: 30,
+		[Difficulty.MASTER]: 60,
+	},
 }
 
 const entriesByDifficulty: Record<Difficulty, number[]> = {
-	[Difficulty.EASY]: [], [Difficulty.NORMAL]: [], [Difficulty.HARD]: [], [Difficulty.EXPERT]: [], [Difficulty.MASTER]: [],
+	[Difficulty.EASY]: [],
+	[Difficulty.NORMAL]: [],
+	[Difficulty.HARD]: [],
+	[Difficulty.EXPERT]: [],
+	[Difficulty.MASTER]: [],
 }
 for (let i = 0; i < poolEntries.length; i++) {
 	const difficultyLevel = poolEntries[i].difficulty as Difficulty
@@ -207,7 +252,8 @@ function buildWeightedPool(songDifficulty: Difficulty): number[] {
 }
 
 function buildDifficultySpawn(songDifficulty: Difficulty) {
-	if (poolEntries.length === 0) return MCFunction(`sections/rhythm/obstacle/spawn_d${songDifficulty}`, () => {}, { lazy: true })
+	if (poolEntries.length === 0)
+		return MCFunction(`sections/rhythm/obstacle/spawn_d${songDifficulty}`, () => {}, { lazy: true })
 
 	const pool = buildWeightedPool(songDifficulty)
 	const sorted = [...pool].sort((a, b) => a - b)
@@ -216,48 +262,43 @@ function buildDifficultySpawn(songDifficulty: Difficulty) {
 		if (i === 0 || sorted[i] !== sorted[i - 1]) ranges.push({ start: i, entryIdx: sorted[i] })
 	}
 
-	return MCFunction(`sections/rhythm/obstacle/spawn_d${songDifficulty}`, () => {
-		shouldContinueGroup.set(0)
+	return MCFunction(
+		`sections/rhythm/obstacle/spawn_d${songDifficulty}`,
+		() => {
+			shouldContinueGroup.set(0)
 
-		if (groupDispatchFns.length > 0) {
-			_.if(lastGroupId.greaterThan(0), () => {
-				execute.store.result.score(randomPick.target, randomPick.objective)
-					.run.random.value([0, 99], 'wall_pick')
-				_.if(randomPick.lessThan(walls.groupContinuePercent), () => {
-					if (groupIdxList.length === 1) {
-						groupDispatchFns[0]()
-					} else {
-						let chain = _.if(lastGroupId.equalTo(groupIdxList[0]), () => groupDispatchFns[0]())
-						for (let groupIdx = 1; groupIdx < groupIdxList.length; groupIdx++) {
-							const gi = groupIdx
-							chain = chain.elseIf(lastGroupId.equalTo(groupIdxList[gi]), () => groupDispatchFns[gi]())
+			if (groupDispatchFns.length > 0) {
+				_.if(lastGroupId.greaterThan(0), () => {
+					execute.store.result.score(randomPick).run.random.value([0, 99], 'wall_pick')
+					_.if(randomPick.lessThan(walls.groupContinuePercent), () => {
+						if (groupIdxList.length === 1) {
+							groupDispatchFns[0]()
+						} else {
+							scoreSwitch(
+								lastGroupId,
+								groupIdxList.map((groupId, i) => [groupId, () => groupDispatchFns[i]()]),
+							)
 						}
-					}
-					shouldContinueGroup.set(1)
-				}).else(() => {
-					lastGroupId.set(0)
+						shouldContinueGroup.set(1)
+					}).else(() => {
+						lastGroupId.set(0)
+					})
 				})
-			})
-		}
+			}
 
-		_.if(shouldContinueGroup.equalTo(0), () => {
-			execute.store.result.score(randomPick.target, randomPick.objective)
-				.run.random.value([0, sorted.length - 1], 'wall_pick')
-			if (ranges.length > 0) {
-				let chain = _.if(randomPick.greaterThanOrEqualTo(ranges[ranges.length - 1].start), () => {
-					poolEntries[ranges[ranges.length - 1].entryIdx].spawnFn()
-					lastGroupId.set(poolEntries[ranges[ranges.length - 1].entryIdx].groupIdx)
-				})
-				for (let i = ranges.length - 2; i >= 0; i--) {
-					const r = ranges[i]
-					chain = chain.elseIf(randomPick.greaterThanOrEqualTo(r.start), () => {
-						poolEntries[r.entryIdx].spawnFn()
-						lastGroupId.set(poolEntries[r.entryIdx].groupIdx)
+			_.if(shouldContinueGroup.equalTo(0), () => {
+				execute.store.result.score(randomPick).run.random.value([0, sorted.length - 1], 'wall_pick')
+				for (const [i, range] of ranges.entries()) {
+					const from = range.start
+					const to = (ranges[i + 1]?.start ?? sorted.length) - 1
+					_.if(randomPick.matches([from, to]), () => {
+						poolEntries[range.entryIdx].spawnFn()
 					})
 				}
-			}
-		})
-	}, { lazy: true })
+			})
+		},
+		{ lazy: true },
+	)
 }
 
 export const spawnForDifficulty = [
@@ -268,11 +309,20 @@ export const spawnForDifficulty = [
 	buildDifficultySpawn(Difficulty.MASTER),
 ]
 
-const doKillWalls = MCFunction('sections/rhythm/obstacle/do_kill', () => {
-	execute.in(DIMENSION).run.kill(Selector('@e', { tag: Tags.WALL }))
-}, { lazy: true })
+const doKillWalls = MCFunction(
+	'sections/rhythm/obstacle/do_kill',
+	() => {
+		kill(Selector('@e', { tag: Tags.WALL }))
+	},
+	{ lazy: true },
+)
 
-export const clearWalls = MCFunction('sections/rhythm/obstacle/clear', () => {
-	execute.in(DIMENSION).run.tp(Selector('@e', { tag: Tags.WALL }), abs(0, -64, 0))
-	schedule.function(`${NAMESPACE}:sections/rhythm/obstacle/do_kill`, '1t')
-}, { lazy: true })
+export const clearWalls = MCFunction(
+	'sections/rhythm/obstacle/clear',
+	() => {
+		tp(Selector('@e', { tag: Tags.WALL }), abs(...voidPark))
+		doKillWalls.schedule.function('1t', 'replace')
+		lastGroupId.set(0)
+	},
+	{ lazy: true },
+)
