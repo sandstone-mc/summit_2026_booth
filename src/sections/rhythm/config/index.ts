@@ -1,4 +1,5 @@
 import type { RhythmConfig } from './internal/types'
+import { rgb, rgba } from './internal/colors'
 
 export { Difficulty, CellType } from './internal/types'
 export type { RenderingMode, Cell, PanelConfig, RhythmConfig } from './internal/types'
@@ -20,7 +21,14 @@ const config: RhythmConfig = {
 		cooldownTicks: 30,
 		flashInterval: 3,
 		groupContinuePercent: 70,
-		colors: [0xf0f0ff, 0x6699d8, 0xb24cd8, 0x4cb2b2, 0x7f3fb2, 0xf27fa5],
+		colors: [
+			rgb(240, 240, 255),
+			rgb(102, 153, 216),
+			rgb(178, 76, 216),
+			rgb(76, 178, 178),
+			rgb(127, 63, 178),
+			rgb(242, 127, 165),
+		],
 	},
 	collisions: {
 		parkourLead: 1.5,
@@ -53,7 +61,7 @@ const config: RhythmConfig = {
 		border: {
 			stripCount: 10,
 			height: 1.0,
-			defaultColor: [255, 40, 40],
+			defaultColor: rgb(255, 40, 40),
 			offset: {
 				sides: { a: [0, 0, -0.35], b: [0, 0, 0.45] },
 				frontBack: { a: [-0.05, 0, 0], b: [0.05, 0, 0] },
@@ -87,7 +95,7 @@ const config: RhythmConfig = {
 		scrollSpeed: 4,
 		padding: '  ',
 		ruler: ' '.repeat(35),
-		background: 0x54000000,
+		background: rgba(0, 0, 0, 0.33),
 	},
 }
 

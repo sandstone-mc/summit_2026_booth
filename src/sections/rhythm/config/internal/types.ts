@@ -129,8 +129,8 @@ export interface RhythmConfig {
 			stripCount: number
 			/** Border height in blocks. */
 			height: number
-			/** Default RGB color. */
-			defaultColor: [number, number, number]
+			/** Default color (0xRRGGBB, build with rgb()). */
+			defaultColor: number
 			/**
 			 * World-space offsets for the border light strips. Each strip is two stacked,
 			 * opposite-facing displays (a/b) that must be positioned separately.

@@ -15,6 +15,7 @@ import {
 	tp,
 } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
+import { rgb } from '@rhythm/config/internal/colors'
 import { arena } from '@rhythm/config/internal/arena'
 import { pattern, visuals } from '@rhythm/config'
 import { Tags, boothTags, voidPark } from './state'
@@ -115,8 +116,8 @@ export const spawnLaneShulkers = MCFunction(
 	{ lazy: true },
 )
 
-function argb(a: number, r: number, g: number, b: number) {
-	return ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff) | 0
+function argb(alpha: number, color: number) {
+	return ((alpha & 0xff) << 24) | color | 0
 }
 
 const TD_PX_PER_BLOCK = 36
@@ -134,15 +135,15 @@ const BORDER_ALPHAS = Array.from({ length: visuals.border.stripCount }, (_, i) =
 	i === visuals.border.stripCount - 1 ? 5 : Math.round(180 * (1 - i / (visuals.border.stripCount - 1)) ** 2.5),
 )
 
-const BORDER_COLOR_MAP: Record<string, [number, number, number]> = {
-	aqua: [85, 255, 255],
-	blue: [85, 85, 255],
-	green: [85, 255, 85],
-	yellow: [255, 255, 85],
-	light_purple: [255, 85, 255],
-	red: [255, 85, 85],
-	gold: [255, 170, 0],
-	white: [255, 255, 255],
+const BORDER_COLOR_MAP: Record<string, number> = {
+	aqua: rgb(85, 255, 255),
+	blue: rgb(85, 85, 255),
+	green: rgb(85, 255, 85),
+	yellow: rgb(255, 255, 85),
+	light_purple: rgb(255, 85, 255),
+	red: rgb(255, 85, 85),
+	gold: rgb(255, 170, 0),
+	white: rgb(255, 255, 255),
 }
 
 function borderStripTag(i: number) {
@@ -210,7 +211,7 @@ export const spawnLaneBorder = MCFunction(
 		kill(borderSelector)
 
 		for (let i = 0; i < visuals.border.stripCount; i++) {
-			const bg = argb(BORDER_ALPHAS[i], ...visuals.border.defaultColor)
+			const bg = argb(BORDER_ALPHAS[i], visuals.border.defaultColor)
 			const yOff = i * BORDER_STEP - BORDER_STEP / 2
 
 			const sLeftBase = lane.pos(leftW, baseY + 1, sideMidD)
@@ -268,12 +269,12 @@ const borderRippleCounter = Objective.create('ssb.border_ripple', 'dummy')
 const borderColorIndex = borderRippleCounter('$color')
 
 const borderColorFns = visuals.glowColors.map((color, ci) => {
-	const [r, g, b] = BORDER_COLOR_MAP[color]
+	const stripColor = BORDER_COLOR_MAP[color]
 	return MCFunction(
 		`sections/rhythm/lane/border_c${ci}`,
 		() => {
 			for (let si = 0; si < visuals.border.stripCount; si++) {
-				const bg = argb(BORDER_ALPHAS[si], r, g, b)
+				const bg = argb(BORDER_ALPHAS[si], stripColor)
 				const sel = Selector('@e', { tag: [Tags.LANE_BORDER, borderStripTag(si)] })
 				execute.as(sel).run.data.merge.entity('@s', { background: NBT.int(bg) })
 			}
