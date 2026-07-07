@@ -215,8 +215,8 @@ function obstacleToModel(obstacle: Obstacle): ModelDef {
 
 	const ns = NAMESPACE
 	const textures: Record<string, string> = {
-		'0': `${ns}:item/generated/glass/white`,
-		particle: `${ns}:item/generated/glass/white`,
+		'0': `${ns}:item/generated/glass/fill`,
+		particle: `${ns}:item/generated/glass/fill`,
 	}
 	for (const [f, s] of flagToSlot) {
 		textures[s] = `${ns}:item/generated/glass/border_${f}`
@@ -258,12 +258,14 @@ for (const obstacle of obstacles) {
 	}
 }
 
-const whitePng = sharp(Buffer.from(new Uint8Array(16 * 16 * 4).fill(255)), {
+const fillPixels = Buffer.alloc(16 * 16 * 4)
+for (let i = 0; i < 16 * 16; i++) fillPixels.set(FILL_COLOR, i * 4)
+const fillPng = sharp(fillPixels, {
 	raw: { width: 16, height: 16, channels: 4 },
 })
 	.png()
 	.toBuffer()
-Texture('item', 'generated/glass/white', whitePng)
+Texture('item', 'generated/glass/fill', fillPng)
 
 for (const flags of allBorderFlags) {
 	Texture('item', `generated/glass/border_${flags}`, generateBorderTexture(flags))

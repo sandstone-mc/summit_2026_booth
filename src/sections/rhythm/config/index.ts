@@ -61,7 +61,7 @@ const config: RhythmConfig = {
 		border: {
 			stripCount: 10,
 			height: 1.0,
-			defaultColor: rgb(255, 40, 40),
+			defaultColor: rgb(234, 40, 255),
 			offset: {
 				sides: { a: [0, 0, -0.35], b: [0, 0, 0.45] },
 				frontBack: { a: [-0.05, 0, 0], b: [0.05, 0, 0] },
