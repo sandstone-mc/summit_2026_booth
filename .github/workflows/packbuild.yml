@@ -17,7 +17,7 @@ jobs:
       - name: Setup Fluidsynth
         run: |
           sudo apt update
-          sudo apt install fluidsynth fluid-soundfont-gm ffmpeg
+          sudo apt install fluidsynth fluid-soundfont-gm ffmpeg optipng
       
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
