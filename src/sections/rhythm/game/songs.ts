@@ -1,42 +1,63 @@
-import { _, abs, execute, MCFunction, playsound, schedule, Selector, stopsound } from 'sandstone'
-import { songCount, songData, songSafeNames, songSegmentCounts, songAudioOffsets, songUsesNoteBlocks, SEGMENT_TICKS, getSegmentSoundId } from '@rhythm/config/internal/songs'
+import { _, abs, execute, MCFunction, playsound, stopsound } from 'sandstone'
+import {
+	songCount,
+	songData,
+	songSafeNames,
+	songSegmentCounts,
+	songAudioOffsets,
+	songUsesNoteBlocks,
+	SEGMENT_TICKS,
+	getSegmentSoundId,
+} from '@rhythm/config/internal/songs'
 import { PARKOUR_GRACE_TICKS } from '@rhythm/config/parkour-paths'
 import { music } from '@rhythm/config'
 import { arena } from '@rhythm/config/internal/arena'
-import { songSelect } from './state'
+import { boothListeners, songSelect } from './state'
 import { spawnForDifficulty } from './walls/spawning'
 import { stepDispatchFns, parkourCleanup } from './parkour'
-import { DIMENSION, NAMESPACE } from '@shared'
 
 const NBS_BATCH_TICKS = 200
-
+const SEGMENT_VOLUME = 1000
 const [musicX, musicY, musicZ] = arena.musicPosition
 const musicPos = abs(musicX, musicY, musicZ)
-const listeners = Selector('@a', {
-	x: musicX - music.hearable.dx / 2,
-	y: musicY - music.hearable.dy / 2,
-	z: musicZ - music.hearable.dz / 2,
-	dx: music.hearable.dx,
-	dy: music.hearable.dy,
-	dz: music.hearable.dz,
-})
 
-const songPlayFns: (() => void)[] = []
-const songStopFns: (() => void)[] = []
-const songWallFns: (() => void)[] = []
-const songWallStopFns: (() => void)[] = []
+type SongFn = ReturnType<typeof MCFunction>
+type ScheduledEntry = { tick: number; fn: SongFn; mode: 'append' | 'replace' }
+
+function runOrSchedule({ tick, fn, mode }: ScheduledEntry) {
+	if (tick === 0) fn()
+	else fn.schedule.function(`${tick}t`, mode)
+}
+
+const sharedFns = new Map<string, SongFn>()
+const sharedCounters = new Map<string, number>()
+function sharedFn(kind: string, key: string, body: () => void): SongFn {
+	const mapKey = `${kind}|${key}`
+	const existing = sharedFns.get(mapKey)
+	if (existing) return existing
+	const index = sharedCounters.get(kind) ?? 0
+	sharedCounters.set(kind, index + 1)
+	const fn = MCFunction(`sections/rhythm/songs/shared/${kind}${index}`, body, { lazy: true })
+	sharedFns.set(mapKey, fn)
+	return fn
+}
+
+function clearAll(fns: Iterable<SongFn>) {
+	for (const fn of fns) fn.schedule.clear()
+}
+
+const songPlayFns: SongFn[] = []
+const songStopFns: SongFn[] = []
+const songWallFns: SongFn[] = []
+const songWallStopFns: SongFn[] = []
 
 for (let s = 0; s < songCount; s++) {
 	const song = songData[s]
 	const safeName = songSafeNames[s]
-	const nsPrefix = `${NAMESPACE}:sections/rhythm/songs/${safeName}`
 	const usesNoteBlocks = songUsesNoteBlocks[s]
 
-	type ScheduledEntry = { tick: number; fn: () => void; name: string }
-
-	let playFn: () => void
-	let stopFn: () => void
-	let audioEntries: ScheduledEntry[] = []
+	let playFn: SongFn
+	let stopFn: SongFn
 
 	if (usesNoteBlocks) {
 		const notesByTick = new Map<number, typeof song.notes>()
@@ -51,58 +72,55 @@ for (let s = 0; s < songCount; s++) {
 		const batchCount = Math.ceil((maxTick + 1) / NBS_BATCH_TICKS)
 
 		const batchFns: ScheduledEntry[] = []
+		const usedFns = new Set<SongFn>()
 		for (let batch = 0; batch < batchCount; batch++) {
 			const batchStart = batch * NBS_BATCH_TICKS
 			const batchEnd = batchStart + NBS_BATCH_TICKS
-			const ticksInBatch = sortedTicks.filter(t => t >= batchStart && t < batchEnd)
+			const ticksInBatch = sortedTicks.filter((t) => t >= batchStart && t < batchEnd)
 			if (ticksInBatch.length === 0) continue
 
 			const noteFns: ScheduledEntry[] = []
 			for (const tick of ticksInBatch) {
-				const notes = notesByTick.get(tick)!
-				const offsetInBatch = tick - batchStart
-				const fnName = `sections/rhythm/songs/${safeName}/nb_t${tick}`
-				const fn = MCFunction(fnName, () => {
-					execute.in(DIMENSION).run(() => {
-						for (const note of notes) {
-							playsound(note.sound as any, 'master', listeners, musicPos,
-								note.volume, note.pitch)
-						}
-					})
-				}, { lazy: true })
-				noteFns.push({ tick: offsetInBatch, fn, name: `${nsPrefix}/nb_t${tick}` })
+				const notes = [...notesByTick.get(tick)!].sort((a, b) =>
+					`${a.sound}|${a.pitch}|${a.volume}`.localeCompare(`${b.sound}|${b.pitch}|${b.volume}`),
+				)
+				const key = notes.map((n) => `${n.sound}|${n.pitch}|${n.volume}`).join(',')
+				const fn = sharedFn('n', key, () => {
+					for (const note of notes) {
+						execute
+							.as(boothListeners)
+							.at('@s')
+							.run.playsound(note.sound as any, 'master', '@s', '~ ~ ~', note.volume * music.volume, note.pitch)
+					}
+				})
+				noteFns.push({ tick: tick - batchStart, fn, mode: 'append' })
+				usedFns.add(fn)
 			}
 
-			const batchFnName = `sections/rhythm/songs/${safeName}/nb_b${batch}`
-			const batchFn = MCFunction(batchFnName, () => {
-				for (const { tick, fn, name } of noteFns) {
-					if (tick === 0) fn()
-					else schedule.function(name, `${tick}t`)
-				}
-			}, { lazy: true })
-			batchFns.push({ tick: batchStart, fn: batchFn, name: `${nsPrefix}/nb_b${batch}` })
+			const batchKey = noteFns.map(({ tick, fn }) => `${tick}:${fn.name}`).join(',')
+			const batchFn = sharedFn('b', batchKey, () => {
+				for (const entry of noteFns) runOrSchedule(entry)
+			})
+			batchFns.push({ tick: batchStart, fn: batchFn, mode: 'append' })
+			usedFns.add(batchFn)
 		}
 
-		audioEntries = batchFns
+		playFn = MCFunction(
+			`sections/rhythm/songs/${safeName}/play`,
+			() => {
+				for (const entry of batchFns) runOrSchedule(entry)
+			},
+			{ lazy: true },
+		)
 
-		playFn = MCFunction(`sections/rhythm/songs/${safeName}/play`, () => {
-			for (const { tick, fn, name } of batchFns) {
-				if (tick === 0) fn()
-				else schedule.function(name, `${tick}t`)
-			}
-		}, { lazy: true })
-
-		const allScheduledNames = batchFns.flatMap(b => {
-			const batchStart = parseInt(b.name.split('nb_b')[1]) * NBS_BATCH_TICKS
-			const ticksInBatch = sortedTicks.filter(t => t >= batchStart && t < batchStart + NBS_BATCH_TICKS)
-			return [b.name, ...ticksInBatch.map(t => `${nsPrefix}/nb_t${t}`)]
-		})
-
-		stopFn = MCFunction(`sections/rhythm/songs/${safeName}/stop`, () => {
-			for (const name of allScheduledNames) schedule.clear(name)
-			// TODO: scope this
-			stopsound('@a', 'master')
-		}, { lazy: true })
+		stopFn = MCFunction(
+			`sections/rhythm/songs/${safeName}/stop`,
+			() => {
+				clearAll(usedFns)
+				stopsound(boothListeners, 'master')
+			},
+			{ lazy: true },
+		)
 	} else {
 		const segmentCount = songSegmentCounts[s]
 		const audioOffset = songAudioOffsets[s]
@@ -110,26 +128,32 @@ for (let s = 0; s < songCount; s++) {
 		const segmentFns: ScheduledEntry[] = []
 		for (let seg = 0; seg < segmentCount; seg++) {
 			const soundId = getSegmentSoundId(safeName, seg)
-			const fnName = `sections/rhythm/songs/${safeName}/seg${seg}`
-			const fn = MCFunction(fnName, () => {
-				execute.in(DIMENSION).run.playsound(soundId, 'master', listeners, musicPos, music.volume)
-			}, { lazy: true })
-			segmentFns.push({ tick: Math.max(0, seg * SEGMENT_TICKS + audioOffset), fn, name: `${nsPrefix}/seg${seg}` })
+			const fn = MCFunction(
+				`sections/rhythm/songs/${safeName}/seg${seg}`,
+				() => {
+					playsound(soundId, 'master', boothListeners, musicPos, SEGMENT_VOLUME)
+				},
+				{ lazy: true },
+			)
+			segmentFns.push({ tick: Math.max(0, seg * SEGMENT_TICKS + audioOffset), fn, mode: 'replace' })
 		}
 
-		audioEntries = segmentFns
+		playFn = MCFunction(
+			`sections/rhythm/songs/${safeName}/play`,
+			() => {
+				for (const entry of segmentFns) runOrSchedule(entry)
+			},
+			{ lazy: true },
+		)
 
-		playFn = MCFunction(`sections/rhythm/songs/${safeName}/play`, () => {
-			for (const { tick, fn, name } of segmentFns) {
-				if (tick === 0) fn()
-				else schedule.function(name, `${tick}t`)
-			}
-		}, { lazy: true })
-
-		stopFn = MCFunction(`sections/rhythm/songs/${safeName}/stop`, () => {
-			for (const { name } of segmentFns) schedule.clear(name)
-			stopsound('@a', 'record')
-		}, { lazy: true })
+		stopFn = MCFunction(
+			`sections/rhythm/songs/${safeName}/stop`,
+			() => {
+				clearAll(segmentFns.map(({ fn }) => fn))
+				stopsound(boothListeners, 'master')
+			},
+			{ lazy: true },
+		)
 	}
 
 	const diffIdx = Math.max(0, Math.min(4, song.difficulty - 1))
@@ -137,45 +161,54 @@ for (let s = 0; s < songCount; s++) {
 
 	const chart = song.chart
 
-	type ScheduledFn = { fn: () => void; name: string }
-	const wallBeatFns: ScheduledFn[] = []
-	for (let bi = 0; bi < chart.beatTicks.length; bi++) {
-		const beatTick = chart.beatTicks[bi]
-		const fnName = `sections/rhythm/songs/${safeName}/w${beatTick}`
-		const beatFn = MCFunction(fnName, () => { spawnFn() }, { lazy: true })
-		wallBeatFns.push({ fn: beatFn, name: `${nsPrefix}/w${beatTick}` })
+	/*
+	 * wall spawns and parkour steps schedule existing functions directly (append mode); no wrappers.
+	 * the scheduler silently drops a second append of the same function at the same gametime,
+	 * so seenWallTicks guards against charts producing colliding entries
+	 */
+	const seenWallTicks = new Set<string>()
+	const wallEntries: ScheduledEntry[] = []
+	const usedWallFns = new Set<SongFn>()
+	for (const beatTick of chart.beatTicks) {
+		wallEntries.push({ tick: beatTick, fn: spawnFn, mode: 'append' })
+	}
+	usedWallFns.add(spawnFn)
+
+	for (const stepTicks of chart.parkourStepTicks) {
+		for (let stepIdx = 0; stepIdx < stepTicks.length; stepIdx++) {
+			wallEntries.push({ tick: stepTicks[stepIdx], fn: stepDispatchFns[stepIdx], mode: 'append' })
+			usedWallFns.add(stepDispatchFns[stepIdx])
+		}
+		wallEntries.push({
+			tick: stepTicks[stepTicks.length - 1] + PARKOUR_GRACE_TICKS,
+			fn: parkourCleanup,
+			mode: 'append',
+		})
+		usedWallFns.add(parkourCleanup)
 	}
 
-	const parkourScheduleFns: { tick: number; fn: () => void; name: string }[] = []
-	for (const [eventIdx, stepTicks] of chart.parkourStepTicks.entries()) {
-		for (let si = 0; si < stepTicks.length; si++) {
-			const step = si
-			const fnName = `sections/rhythm/songs/${safeName}/pk${eventIdx}_s${step}`
-			const fn = MCFunction(fnName, () => { stepDispatchFns[step]() }, { lazy: true })
-			parkourScheduleFns.push({ tick: stepTicks[si], fn, name: `${nsPrefix}/pk${eventIdx}_s${step}` })
-		}
-		const cleanupTick = stepTicks[stepTicks.length - 1] + PARKOUR_GRACE_TICKS
-		const cleanupFnName = `sections/rhythm/songs/${safeName}/pk${eventIdx}_end`
-		const cleanupFn = MCFunction(cleanupFnName, () => { parkourCleanup() }, { lazy: true })
-		parkourScheduleFns.push({ tick: cleanupTick, fn: cleanupFn, name: `${nsPrefix}/pk${eventIdx}_end` })
+	for (const entry of wallEntries) {
+		const key = `${entry.fn.name}@${entry.tick}`
+		if (seenWallTicks.has(key))
+			console.warn(`[songs] ${safeName}: duplicate schedule of ${key}, one instance will be dropped in-game`)
+		seenWallTicks.add(key)
 	}
 
-	const wallFn = MCFunction(`sections/rhythm/songs/${safeName}/walls`, () => {
-		for (let i = 0; i < chart.beatTicks.length; i++) {
-			const beatTick = chart.beatTicks[i]
-			if (beatTick === 0) wallBeatFns[i].fn()
-			else schedule.function(wallBeatFns[i].name, `${beatTick}t`)
-		}
-		for (const { tick, fn, name } of parkourScheduleFns) {
-			if (tick === 0) fn()
-			else schedule.function(name, `${tick}t`)
-		}
-	}, { lazy: true })
+	const wallFn = MCFunction(
+		`sections/rhythm/songs/${safeName}/walls`,
+		() => {
+			for (const entry of wallEntries) runOrSchedule(entry)
+		},
+		{ lazy: true },
+	)
 
-	const wallStopFn = MCFunction(`sections/rhythm/songs/${safeName}/walls_stop`, () => {
-		for (const { name } of wallBeatFns) schedule.clear(name)
-		for (const { name } of parkourScheduleFns) schedule.clear(name)
-	}, { lazy: true })
+	const wallStopFn = MCFunction(
+		`sections/rhythm/songs/${safeName}/walls_stop`,
+		() => {
+			clearAll(usedWallFns)
+		},
+		{ lazy: true },
+	)
 
 	songPlayFns.push(playFn)
 	songStopFns.push(stopFn)
@@ -183,28 +216,62 @@ for (let s = 0; s < songCount; s++) {
 	songWallStopFns.push(wallStopFn)
 }
 
-export const playSong = MCFunction('sections/rhythm/songs/play', () => {
-	if (songCount === 1) { songPlayFns[0](); return }
-	let chain = _.if(songSelect.equalTo(0), () => songPlayFns[0]())
-	for (let i = 1; i < songCount; i++) {
-		const idx = i
-		chain = chain.elseIf(songSelect.equalTo(idx), () => songPlayFns[idx]())
+function dispatchBySong(fns: SongFn[]) {
+	if (songCount === 0) return
+	if (songCount === 1) {
+		fns[0]()
+		return
 	}
-}, { lazy: true })
+	_.switch(
+		songSelect,
+		fns.map((fn, songI) => ['case', songI, () => fn()] as const),
+	)
+}
 
-export const stopSong = MCFunction('sections/rhythm/songs/stop', () => {
-	for (const fn of songStopFns) fn()
-}, { lazy: true })
+export const playSong = MCFunction(
+	'sections/rhythm/songs/play',
+	() => {
+		dispatchBySong(songPlayFns)
+	},
+	{ lazy: true },
+)
 
-export const scheduleWalls = MCFunction('sections/rhythm/songs/schedule_walls', () => {
-	if (songCount === 1) { songWallFns[0](); return }
-	let chain = _.if(songSelect.equalTo(0), () => songWallFns[0]())
-	for (let i = 1; i < songCount; i++) {
-		const idx = i
-		chain = chain.elseIf(songSelect.equalTo(idx), () => songWallFns[idx]())
-	}
-}, { lazy: true })
+export const stopSong = MCFunction(
+	'sections/rhythm/songs/stop',
+	() => {
+		dispatchBySong(songStopFns)
+	},
+	{ lazy: true },
+)
 
-export const stopWalls = MCFunction('sections/rhythm/songs/stop_walls', () => {
-	for (const fn of songWallStopFns) fn()
-}, { lazy: true })
+export const stopAllSongs = MCFunction(
+	'sections/rhythm/songs/stop_all',
+	() => {
+		for (const fn of songStopFns) fn()
+	},
+	{ lazy: true },
+)
+
+export const scheduleWalls = MCFunction(
+	'sections/rhythm/songs/schedule_walls',
+	() => {
+		dispatchBySong(songWallFns)
+	},
+	{ lazy: true },
+)
+
+export const stopWalls = MCFunction(
+	'sections/rhythm/songs/stop_walls',
+	() => {
+		dispatchBySong(songWallStopFns)
+	},
+	{ lazy: true },
+)
+
+export const stopAllWalls = MCFunction(
+	'sections/rhythm/songs/stop_all_walls',
+	() => {
+		for (const fn of songWallStopFns) fn()
+	},
+	{ lazy: true },
+)
