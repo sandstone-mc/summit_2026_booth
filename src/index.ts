@@ -1,3 +1,4 @@
+import './check-tools'
 import { MCFunction, Selector } from 'sandstone'
 import { SelectorProperties } from 'sandstone/variables'
 

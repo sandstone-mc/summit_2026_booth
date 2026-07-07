@@ -17,14 +17,19 @@ for await (const path of glob.scan(outputDir)) {
 
 if (minified > 0) console.log(`[minify] Compacted ${minified} JSON files in resourcepack`)
 
-// optional: recompress textures when optipng is available (biggest win for the zipped pack size)
 const pngGlob = new Bun.Glob('**/*.png')
 const pngs: string[] = []
 for await (const path of pngGlob.scan(outputDir)) pngs.push(join(outputDir, path))
 if (pngs.length > 0) {
-	const probe = Bun.spawnSync(['optipng', '--version'])
-	if (probe.success) {
-		Bun.spawnSync(['optipng', '-o5', '-quiet', ...pngs])
-		console.log(`[minify] Optimized ${pngs.length} PNGs`)
+	const optipng = process.env.OPTIPNG_PATH ?? 'optipng'
+	if (!Bun.which(optipng)) {
+		console.error('[minify] optipng not found (install it or set OPTIPNG_PATH)')
+		process.exit(1)
 	}
+	const result = Bun.spawnSync([optipng, '-o5', '-quiet', ...pngs])
+	if (!result.success) {
+		console.error('[minify] optipng failed:', result.stderr.toString())
+		process.exit(1)
+	}
+	console.log(`[minify] Optimized ${pngs.length} PNGs`)
 }

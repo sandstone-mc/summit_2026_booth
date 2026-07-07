@@ -5,6 +5,9 @@ import { RawResource, sandstonePack } from 'sandstone'
 import { NAMESPACE, PROJECT_ROOT } from '@shared'
 import { rendering } from '..'
 
+const FFMPEG = process.env.FFMPEG_PATH ?? 'ffmpeg'
+const FFPROBE = process.env.FFPROBE_PATH ?? 'ffprobe'
+
 const SOUNDFONT = process.env.SOUNDFONT ?? '/usr/share/soundfonts/FluidR3_GM.sf2'
 const CACHE_DIR = join(PROJECT_ROOT, '.cache/sounds')
 
@@ -103,7 +106,7 @@ async function renderSound(key: SoundKey): Promise<void> {
 	}
 
 	const ffmpegResult = Bun.spawnSync([
-		'ffmpeg',
+		FFMPEG,
 		'-y',
 		'-i',
 		wavPath,
@@ -178,21 +181,12 @@ export function getSegmentSoundId(safeName: string, segmentIdx: number): `${stri
 }
 
 function getAudioDuration(filePath: string): number {
-	const result = Bun.spawnSync([
-		'ffprobe',
-		'-v',
-		'error',
-		'-show_entries',
-		'format=duration',
-		'-of',
-		'csv=p=0',
-		filePath,
-	])
+	const result = Bun.spawnSync([FFPROBE, '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', filePath])
 	return parseFloat(result.stdout.toString().trim() || '0')
 }
 
 function detectAudioStart(filePath: string): number {
-	const result = Bun.spawnSync(['ffmpeg', '-i', filePath, '-af', 'silencedetect=noise=-30dB:d=0.05', '-f', 'null', '-'])
+	const result = Bun.spawnSync([FFMPEG, '-i', filePath, '-af', 'silencedetect=noise=-30dB:d=0.05', '-f', 'null', '-'])
 	const stderr = result.stderr.toString()
 	const match = stderr.match(/silence_end:\s*([\d.]+)/)
 	return match ? parseFloat(match[1]) : 0
@@ -257,7 +251,7 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 			if (song.audioPath && (await Bun.file(song.audioPath).exists())) {
 				const trimArgs = song.audioStart ? ['-ss', `${song.audioStart}`] : []
 				const ffmpegResult = Bun.spawnSync([
-					'ffmpeg',
+					FFMPEG,
 					'-y',
 					...trimArgs,
 					'-i',
@@ -305,7 +299,7 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 				if (!(await Bun.file(segOgg).exists())) {
 					const startSec = i * SEGMENT_SECS
 					const ffmpegResult = Bun.spawnSync([
-						'ffmpeg',
+						FFMPEG,
 						'-y',
 						'-ss',
 						`${startSec}`,
