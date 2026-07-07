@@ -5,7 +5,7 @@ import { ticking } from './shared'
 import './sections/main'
 import './version'
 // TODO: Disabled while developing presentation
-//import './sections/rhythm/index'
+import './sections/rhythm/index'
 //import './sections/magic/index'
 import './sections/presentation/index'
 
