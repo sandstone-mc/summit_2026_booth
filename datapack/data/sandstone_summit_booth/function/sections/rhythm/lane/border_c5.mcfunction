@@ -1,0 +1,10 @@
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.0] run data merge entity @s {background:-1258334891i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.1] run data merge entity @s {background:-2030086827i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.2] run data merge entity @s {background:1627346261i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.3] run data merge entity @s {background:1107252565i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.4] run data merge entity @s {background:704599381i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.5] run data merge entity @s {background:419386709i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.6] run data merge entity @s {background:218060117i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.7] run data merge entity @s {background:83842389i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.8] run data merge entity @s {background:33510741i}
+execute as @e[tag=ssb.rhythm.lane.border, tag=ssb.lane.border.9] run data merge entity @s {background:100619605i}

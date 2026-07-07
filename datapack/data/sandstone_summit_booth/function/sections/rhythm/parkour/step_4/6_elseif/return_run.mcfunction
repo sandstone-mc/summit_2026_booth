@@ -1,0 +1,7 @@
+summon minecraft:block_display -68 66 23 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.new','ssb.rhythm.parkour'],block_state:{Name:'minecraft:blue_stained_glass'},interpolation_duration:56i,transformation:{translation:[-0.5f,0f,-0.5f],left_rotation:[0f,0f,0f,1f],scale:[1f,1f,2f],right_rotation:[0f,0f,0f,1f]}}
+summon minecraft:happy_ghast -68 66 23 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new','ssb.rhythm.parkour','ssb.rhythm.pk.fresh'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,attributes:[{id:'minecraft:scale',base:0.25d}],active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}
+scoreboard players set @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth 1500
+tag @e[tag=ssb.rhythm.pk.fresh] remove ssb.rhythm.pk.fresh
+summon minecraft:happy_ghast -68 66 23 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new','ssb.rhythm.parkour','ssb.rhythm.pk.fresh','ssb.rhythm.pk.trigger'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,attributes:[{id:'minecraft:scale',base:0.25d}],active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}
+scoreboard players set @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth 2500
+tag @e[tag=ssb.rhythm.pk.fresh] remove ssb.rhythm.pk.fresh

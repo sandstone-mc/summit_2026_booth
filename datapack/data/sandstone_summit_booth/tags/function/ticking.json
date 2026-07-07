@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
+    "sandstone_summit_booth:sections/rhythm/tick",
     "sandstone_summit_booth:main"
   ]
 }

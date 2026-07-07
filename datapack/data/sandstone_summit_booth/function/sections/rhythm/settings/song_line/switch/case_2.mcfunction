@@ -1,0 +1,2 @@
+data merge entity @e[tag=ssb.ui.set.song, limit=1] {text:[{text:'  ♪ Song: ',color:'gray'},{text:"Il Vento D'oro - …  ",color:'aqua',font:'monocraft:default'}]}
+schedule function sandstone_summit_booth:sections/rhythm/settings/scroll_loop 4t replace

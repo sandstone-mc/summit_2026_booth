@@ -1,0 +1,1 @@
+data merge entity @e[tag=ssb.ui.set.lives, limit=1] {text:[{text:'    Lives: ',color:'gray'},{text:'       ❤❤ 2         ',color:'red',font:'monocraft:default'}]}

@@ -2,6 +2,15 @@
   "replace": false,
   "values": [
     "sandstone_summit_booth:__init__",
-    "sandstone_summit_booth:version_check"
+    "sandstone_summit_booth:version_check",
+    "sandstone_summit_booth:sections/rhythm/lane/teams_init",
+    "sandstone_summit_booth:sections/rhythm/lane/border_spawn",
+    "sandstone_summit_booth:sections/rhythm/scoring/init",
+    "sandstone_summit_booth:sections/rhythm/leaderboard/init",
+    "sandstone_summit_booth:sections/rhythm/leaderboard/spawn",
+    "sandstone_summit_booth:sections/rhythm/settings/load_map",
+    "sandstone_summit_booth:sections/rhythm/settings/spawn",
+    "sandstone_summit_booth:sections/rhythm/reset",
+    "sandstone_summit_booth:sections/rhythm/setup"
   ]
 }

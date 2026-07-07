@@ -1,0 +1,1 @@
+scoreboard players set anon_WnYlBycD_32 __sandstone 5700

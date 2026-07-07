@@ -1,0 +1,1 @@
+execute as @a[x=-94, y=51, z=11, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8826771653543306 1.5874010519681994
