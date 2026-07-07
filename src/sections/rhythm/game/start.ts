@@ -1,44 +1,55 @@
-import { _, execute, MCFunction, schedule, title } from 'sandstone'
-import { GameStatus, status, allPlayers } from './state'
+import { _, execute, MCFunction, playsound, Selector, tag, title, type MCFunctionClass, Variable } from 'sandstone'
+import { GameStatus, Tags, status, gamePlayer } from './state'
 import { setActive } from './active'
-import { NAMESPACE, state } from '@shared'
+
 import { gameplay } from '@rhythm/config'
 
-const countdown = state('$countdown')
+const countdown = Variable(0)
 
-const countdownTick = MCFunction('sections/rhythm/start/countdown_tick', () => {
+const countdownTick = MCFunction('sections/rhythm/start/countdown_tick', (self: MCFunctionClass) => {
 	_.if(status.equalTo(GameStatus.STARTING), () => {
 		_.if(countdown.greaterThan(0), () => {
-			execute.as(allPlayers).at('@s').run.playsound('minecraft:block.note_block.hat', 'master', '@s')
+			execute.as(gamePlayer).at('@s').run.playsound('minecraft:block.note_block.hat', 'master', '@s')
 
 			_.if(countdown.greaterThanOrEqualTo(4), () => {
-				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'green' }, countdown, ' seconds...'])
-			}).elseIf(countdown.greaterThanOrEqualTo(2), () => {
-				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'yellow' }, countdown, ' seconds...'])
-			}).else(() => {
-				title(allPlayers).actionbar([{ text: 'Starting in ', color: 'red' }, countdown, ' second...'])
+				title(gamePlayer).actionbar([{ text: 'Starting in ', color: 'green' }, countdown, ' seconds...'])
 			})
+				.elseIf(countdown.greaterThanOrEqualTo(2), () => {
+					title(gamePlayer).actionbar([{ text: 'Starting in ', color: 'yellow' }, countdown, ' seconds...'])
+				})
+				.else(() => {
+					title(gamePlayer).actionbar([{ text: 'Starting in ', color: 'red' }, countdown, ' second...'])
+				})
 
 			countdown.remove(1)
-			schedule.function(`${NAMESPACE}:sections/rhythm/start/countdown_tick`, '1s')
+			self.schedule.function('1s', 'replace')
 		}).else(() => {
 			setActive()
 		})
 	})
 })
 
-export const startGame = MCFunction('sections/rhythm/start/init', () => {
-	_.if(status.equalTo(GameStatus.WAITING), () => {
-		status.set(GameStatus.STARTING)
-		countdown.set(gameplay.countdown)
-		schedule.function(`${NAMESPACE}:sections/rhythm/start/countdown_tick`, '1s')
-	})
-}, { lazy: true })
+export const startGame = MCFunction(
+	'sections/rhythm/start/init',
+	() => {
+		_.if(status.equalTo(GameStatus.WAITING), () => {
+			status.set(GameStatus.STARTING)
+			countdown.set(gameplay.countdown)
+			countdownTick()
+		})
+	},
+	{ lazy: true },
+)
 
-export const cancelStart = MCFunction('sections/rhythm/start/cancel', () => {
-	_.if(status.equalTo(GameStatus.STARTING), () => {
-		schedule.clear(`${NAMESPACE}:sections/rhythm/start/countdown_tick`)
-		status.set(GameStatus.WAITING)
-		title(allPlayers).actionbar({ text: 'Cancelled.', color: 'red' })
-	})
-}, { lazy: true })
+export const cancelStart = MCFunction(
+	'sections/rhythm/start/cancel',
+	() => {
+		_.if(status.equalTo(GameStatus.STARTING), () => {
+			countdownTick.schedule.clear()
+			title(gamePlayer).actionbar({ text: 'Cancelled.', color: 'red' })
+			tag(gamePlayer).remove(Tags.PLAYER)
+			status.set(GameStatus.WAITING)
+		})
+	},
+	{ lazy: true },
+)
