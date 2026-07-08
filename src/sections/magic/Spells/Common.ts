@@ -1,4 +1,4 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, data, Data, execute, kill, rel, rotate, tellraw, tp, LabelClass } from 'sandstone'
+import { Label, MCFunction, Objective, Selector, Tag, _, abs, data, Data, execute, kill, rel, rotate, tellraw, tp, LabelClass, advancement } from 'sandstone'
 import { SpellLibrary, SchoolID } from '../spellbook/SpellLibrary'
 
 import * as player from '../player_handler'
@@ -196,7 +196,7 @@ export function castSpell(spellId: string, schoolId: SchoolID, fn: () => void) {
 
     // TODO: uncomment when stickers work
     // grant the sticker advancement
-    // advancement.grant('@s').only('summit.sticker_book:sandstone_summit_booth/arcane_arts')
+    advancement.grant('@s').only('summit.sticker_book:sandstone_summit_booth/arcane_arts') 
 
     fn()
   }).else(() => {

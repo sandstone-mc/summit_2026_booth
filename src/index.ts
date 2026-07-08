@@ -1,5 +1,5 @@
 import './check-tools'
-import { MCFunction, Selector } from 'sandstone'
+import { advancement, MCFunction, Selector } from 'sandstone'
 import { SelectorProperties } from 'sandstone/variables'
 
 import { ticking } from './shared'
@@ -7,7 +7,7 @@ import './sections/main'
 import './version'
 // TODO: Disabled while developing presentation
 import './sections/rhythm/index'
-//import './sections/magic/index'
+import './sections/magic/index'
 import './sections/presentation/index'
 
 MCFunction('main', () => {
@@ -21,6 +21,10 @@ MCFunction('main', () => {
 
 MCFunction('init_player', () => {
     const player = Selector('@s')
+
+     // TODO: uncomment when stickers work
+    // grant the visit sticker advancement
+    advancement.grant(player).only('summit.sticker_book:sandstone_summit_booth/enter_booth')
 })
 
 MCFunction('clean_player', () => {

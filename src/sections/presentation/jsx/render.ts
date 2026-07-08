@@ -12,10 +12,13 @@ import {
 	execute,
 	sleep,
 	schedule,
+	Objective,
+	_,
 } from 'sandstone'
 import type { ExecuteCommand } from 'sandstone/commands'
 import { parse as parseLess } from './less'
-import type { LessTreeNode, LessRulesetNode, LessSelectorNode, CssDeclarations } from './less'
+import type { LessTreeNode, LessRulesetNode, LessSelectorNode, LessElementNode, CssDeclarations } from './less'
+import selectorParser from 'postcss-selector-parser'
 import { parseLength, pxToTextScale, pxToTextLineHeight } from './length'
 import { loadFontMetrics, wrapLines } from './text-metrics'
 import { ContentTag, JSONTextComponent, SymbolEntity } from 'sandstone/arguments';
@@ -51,6 +54,13 @@ export type SlideScene = Scene & {
 	setSlide: (index: number) => MCFunctionClass<undefined, undefined>
 	/** Re-spawn slide N's entities from a new JSX tree (keeps the slide tag). */
 	rerenderSlide: (index: number, tree: VNode) => MCFunctionClass<undefined, undefined>
+	/**
+	 * Cancel the auto-advance loop and step forward one slide from the current.
+	 * Tracks the visible slide via the `presentation.slide_idx` objective; the
+	 * auto-advance loop sets it on each tick, nextSlide reads + increments + wraps.
+	 * Re-mount to restore the auto-advance animation from slide 0.
+	 */
+	nextSlide: MCFunctionClass<undefined, undefined>
 	/** The auto-advance loop. Already kicked off by mount; reschedules itself. */
 	slideLoop: MCFunctionClass<undefined, undefined>
 	/** Display duration (in seconds) for each slide. */
@@ -158,16 +168,27 @@ async function compileStyles(lessSource: string): Promise<Styles> {
 	const styles: Styles = new Map()
 	if (!lessSource.trim()) return styles
 	const ast = await parseLess(lessSource)
-	collectRules(ast, styles)
+	collectRules(ast, styles, [])
 	return styles
 }
 
-function collectRules(node: LessTreeNode | null | undefined, into: Styles): void {
+/**
+ * Walk a LESS AST and flatten rulesets into a selector → declarations map.
+ * `parentSelectors` is the chain of already-expanded selector strings of
+ * every ancestor ruleset (innermost last); it's used to expand `&` in any
+ * nested ruleset we descend into. At the root level this is `[]` and `&`
+ * has no special meaning.
+ */
+function collectRules(
+	node: LessTreeNode | null | undefined,
+	into: Styles,
+	parentSelectors: string[],
+): void {
 	if (!node) return
 	if (node.type === 'Ruleset') {
 		const ruleset: LessRulesetNode = node
-		if (Array.isArray(ruleset.selectors)) {
-			const selectors = ruleset.selectors.map(formatSelector)
+		const mySelectors = expandLessSelectors(ruleset.selectors ?? [], parentSelectors)
+		if (mySelectors.length > 0) {
 			const declarations: CssDeclarations = {}
 			for (const rule of ruleset.rules ?? []) {
 				if (rule.type === 'Declaration') {
@@ -193,29 +214,195 @@ function collectRules(node: LessTreeNode | null | undefined, into: Styles): void
 					}
 				}
 			}
-			for (const sel of selectors) {
+			for (const sel of mySelectors) {
 				into.set(sel, { ...(into.get(sel) ?? {}), ...declarations })
 			}
 		}
 		for (const child of ruleset.rules ?? []) {
-			collectRules(child, into)
+			collectRules(child, into, mySelectors)
 		}
 		return
 	}
 	// Other rule-bearing containers descend into their `.rules` body.
+	// Inherit the current parent chain — nested rulesets inside @media
+	// still need `&` expansion against the enclosing ruleset selector.
 	if (node.type === 'Media' || node.type === 'MixinDefinition' || node.type === 'AtRule') {
-		for (const child of node.rules ?? []) collectRules(child, into)
+		for (const child of node.rules ?? []) collectRules(child, into, parentSelectors)
 	}
 }
 
-function formatSelector(s: LessSelectorNode): string {
-	return (s.elements ?? []).map((e) => e.value ?? '&').join('')
+/**
+ * Expand every LESS child selector in `selectors` against the chain of
+ * already-formatted parent selectors. For each parent compound, a new
+ * selector is produced by substituting `&` with that parent. The first
+ * `&` element absorbs into the prefix; subsequent ones are appended with
+ * whatever combinator precedes them.
+ *
+ * `h1 { &#header { … } }` → parent `h1` × child `[&, #header]` → `h1#header`.
+ * `h1 { & p { … } }` → parent `h1` × child `[&, p]` (combinator ` `) → `h1 p`.
+ */
+function expandLessSelectors(
+	selectors: LessSelectorNode[],
+	parentSelectors: string[],
+): string[] {
+	if (selectors.length === 0) return []
+	if (parentSelectors.length === 0) {
+		// Top-level: no `&` expansion. `&` (if any) becomes itself; in
+		// practice the codebase's top-level rules never use it.
+		return selectors.map(formatTopLevelSelector)
+	}
+	return selectors.flatMap((child) => parentSelectors.map((p) => formatWithParent(child, p)))
+}
+
+function formatTopLevelSelector(s: LessSelectorNode): string {
+	// `+` binds tighter than `??`, so parenthesize to always combine the
+	// combinator (if any) with the element value. LESS's parser always
+	// populates `combinator.value` (often `''`); without parens the
+	// precedence drop would return the combinator string on its own
+	// and discard `el.value` entirely.
+	return (s.elements ?? []).map((e) => `${e.combinator?.value ?? ''}${e.value ?? ''}`).join('')
+}
+
+function formatWithParent(child: LessSelectorNode, parent: string): string {
+	const elements: LessElementNode[] = child.elements ?? []
+	let result = ''
+	let firstConsumed = false
+	for (const el of elements) {
+		const comb = el.combinator?.value ?? ''
+		const isAmp = el.value === '&' || el.value === null
+		if (isAmp && !firstConsumed) {
+			// Leading `&` (or null element) absorbs into the prefix as
+			// the parent compound — no leading combinator, otherwise
+			// `h1 { & p { … } }` would serialize as ` h1 p`.
+			result = parent
+			firstConsumed = true
+		} else {
+			result += comb + (isAmp ? parent : el.value ?? '')
+		}
+	}
+	return result
+}
+
+// ── Selector matching (postcss-selector-parser) ──────────────────
+
+type ParsedCompound = { tag: string | null; ids: string[]; classes: string[] }
+type ParsedSelector = {
+	/** Compounds in order; `combinatorBefore` is what separates this compound from the previous one (`' '`, `'>'`, `'+'`, `'~'`, or `''`). */
+	compounds: Array<{ compound: ParsedCompound; combinatorBefore: string }>
+}
+
+function parseCompound(seg: string): ParsedCompound {
+	const ast = selectorParser().astSync(seg)
+	const sel = ast.first
+	if (!sel) return { tag: null, ids: [], classes: [] }
+	let tag: string | null = null
+	const ids: string[] = []
+	const classes: string[] = []
+	for (const n of sel.nodes) {
+		if (n.type === 'tag') tag = n.value
+		else if (n.type === 'id') ids.push(n.value)
+		else if (n.type === 'class') classes.push(n.value)
+	}
+	return { tag, ids, classes }
+}
+
+function parseSelectorFull(sel: string): ParsedSelector {
+	const ast = selectorParser().astSync(sel)
+	const out: ParsedSelector = { compounds: [] }
+	if (!ast.first) return out
+	let current: ParsedCompound = { tag: null, ids: [], classes: [] }
+	let combinator = ''
+	for (const n of (ast.first as any).nodes) {
+		if (n.type === 'tag') {
+			flushCompound(out, current, combinator)
+			current = { tag: n.value, ids: [], classes: [] }
+			combinator = ' '
+		} else if (n.type === 'id') {
+			current.ids.push(n.value)
+		} else if (n.type === 'class') {
+			current.classes.push(n.value)
+		} else if (n.type === 'combinator') {
+			flushCompound(out, current, combinator)
+			current = { tag: null, ids: [], classes: [] }
+			combinator = n.value
+		}
+		// attribute / pseudo not consumed by the matcher yet.
+	}
+	flushCompound(out, current, combinator)
+	return out
+}
+
+function flushCompound(
+	out: ParsedSelector,
+	c: ParsedCompound,
+	combinator: string,
+): void {
+	if (c.tag === null && c.ids.length === 0 && c.classes.length === 0) return
+	out.compounds.push({ compound: c, combinatorBefore: combinator })
+}
+
+function compoundMatches(c: ParsedCompound, seg: ParsedCompound): boolean {
+	// Strict-equality match: compound tag/ids/classes must equal the
+	// segment's exactly. Without strictness, an element-only `h1 { … }`
+	// LESS rule would apply to `<h1 id="header">` because `h1` is a
+	// subset of `h1#header` (the segment has extra ids the compound
+	// doesn't constrain). The pre-existing layout baseline relied on
+	// that asymmetry: the nested `&#header` rule is what styles the
+	// header element, not the parent `h1` rule. Preserve the baseline
+	// for all other slides and let the nested rule supply margin only.
+	if (c.tag !== null && c.tag !== '*' && c.tag !== seg.tag) return false
+	if (c.ids.length !== seg.ids.length) return false
+	for (const id of c.ids) if (!seg.ids.includes(id)) return false
+	if (c.classes.length !== seg.classes.length) return false
+	for (const cls of c.classes) if (!seg.classes.includes(cls)) return false
+	return true
+}
+
+function selectorMatchesPath(sel: string, segments: ParsedCompound[]): boolean {
+	if (segments.length === 0) return false
+	const parsed = parseSelectorFull(sel)
+	if (parsed.compounds.length === 0) return false
+	// Try every starting position: a selector can match a subtree anchored
+	// at any path segment (descendant semantics for the leading compound).
+	for (let start = 0; start < segments.length; start++) {
+		if (
+			compoundMatches(parsed.compounds[0].compound, segments[start]) &&
+			matchRest(parsed.compounds, 1, segments, start + 1)
+		) {
+			return true
+		}
+	}
+	return false
+}
+
+function matchRest(
+	compounds: ParsedSelector['compounds'],
+	idx: number,
+	segments: ParsedCompound[],
+	segStart: number,
+): boolean {
+	if (idx >= compounds.length) return true
+	const comb = compounds[idx].combinatorBefore
+	const c = compounds[idx].compound
+	// `>` and `+` are immediate-next; descendant (` ` or ``) accepts any later.
+	if (comb === '>' || comb === '+') {
+		if (segStart >= segments.length) return false
+		if (!compoundMatches(c, segments[segStart])) return false
+		return matchRest(compounds, idx + 1, segments, segStart + 1)
+	}
+	for (let i = segStart; i < segments.length; i++) {
+		if (compoundMatches(c, segments[i]) && matchRest(compounds, idx + 1, segments, i + 1)) {
+			return true
+		}
+	}
+	return false
 }
 
 function resolveStyles(styles: Styles, path: string[]): CssDeclarations {
 	const out: CssDeclarations = {}
+	const segments = path.map(parseCompound)
 	for (const sel of styles.keys()) {
-		if (path.includes(sel)) Object.assign(out, styles.get(sel)!)
+		if (selectorMatchesPath(sel, segments)) Object.assign(out, styles.get(sel)!)
 	}
 	return out
 }
@@ -278,6 +465,47 @@ function parseColorInt(hex: string): number | undefined {
 	return parseInt(m[1], 16)
 }
 
+/**
+ * Resolve the `margin` shorthand into vertical-only meters. Supports 1–4
+ * value forms (e.g. `2vh`, `2vh 0`, `2vh 0 1vh`, `2vh 0 1vh 0`). Longhand
+ * `margin-top` / `margin-bottom` override the shorthand. Left/right are
+ * discarded — the scene center-anchors every cell on x.
+ */
+function parseMarginBox(
+	decs: CssDeclarations,
+	sceneH: number,
+): { top: number; bottom: number } {
+	let top = 0
+	let right = 0
+	let bottom = 0
+	let left = 0
+	const shorthand = decs.margin
+	if (typeof shorthand === 'string' && shorthand.trim()) {
+		const parts = shorthand.trim().split(/\s+/)
+		const vals = parts.map((p) => parseLength(p, sceneH)?.meters ?? 0)
+		if (vals.length === 1) {
+			top = right = bottom = left = vals[0]
+		} else if (vals.length === 2) {
+			top = bottom = vals[0]
+			right = left = vals[1]
+		} else if (vals.length === 3) {
+			top = vals[0]
+			right = left = vals[1]
+			bottom = vals[2]
+		} else if (vals.length >= 4) {
+			top = vals[0]
+			right = vals[1]
+			bottom = vals[2]
+			left = vals[3]
+		}
+	}
+	const tOverride = parseLength(decs['margin-top'] ?? '', sceneH)?.meters
+	const bOverride = parseLength(decs['margin-bottom'] ?? '', sceneH)?.meters
+	if (tOverride !== undefined) top = tOverride
+	if (bOverride !== undefined) bottom = bOverride
+	return { top, bottom }
+}
+
 // ── Entity summon (shared by mount + rerender) ──────────────────
 
 /**
@@ -298,9 +526,26 @@ function summonVisibleElements(
 	extraTags: (`${any}${string}` | LabelClass)[],
 	initialOpacity?: number,
 ): void {
-	let accY = sceneH
-	for (let i = 0; i < visible.length; i++) {
-		const { node, path } = visible[i]
+	// First pass: compute per-element layout (text properties, scale, wrap
+	// → lines, cell height). Doing this ahead of placement lets us read
+	// stack-level layout properties (`row-gap`, `align-items`) once the
+	// total height is known, then position each cell with the right gap
+	// and (optionally) center the whole stack in the scene.
+	type ElementLayout = {
+		node: VNode
+		path: string[]
+		declarations: CssDeclarations
+		type: string
+		content: string
+		width: ReturnType<typeof parseLength>
+		scalePx: number
+		textScale: number
+		widthCompensation: number
+		cellH: number
+		marginTop: number
+		marginBottom: number
+	}
+	const elements: ElementLayout[] = visible.map(({ node, path }) => {
 		const declarations = resolveStyles(styles, path)
 		const type = String(node.type)
 		const content = extractText(node.props?.children)
@@ -334,8 +579,52 @@ function summonVisibleElements(
 		const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 		const lines = wrapLines(content, wrapWidthPx, isBold)
 		const cellH = heightLen?.meters ?? pxToTextLineHeight(scalePx) * lines
-		accY -= cellH
-		const cell: Cell = { x: 0, y: accY, width: sceneW, height: cellH }
+		// Vertical margins only — text_display is center-anchored on x so
+		// left/right never affect the rendered scene.
+		const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
+		return {
+			node,
+			path,
+			declarations,
+			type,
+			content,
+			width,
+			scalePx,
+			textScale,
+			widthCompensation,
+			cellH,
+			marginTop,
+			marginBottom,
+		}
+	})
+
+	// Stack-level layout. Inherited by every element via resolveStyles
+	// (the parent selector `#grid` lands on each child's resolved
+	// declarations), so reading the first element is enough for the
+	// single-stack case this codebase uses. If a slide ever nests
+	// differently-stacked groups, this needs to split per parent.
+	const stackDecs = elements[0]?.declarations ?? {}
+	const rowGap = parseLength(stackDecs['row-gap'] ?? '', sceneH)?.meters ?? 0
+	const alignItems = stackDecs['align-items']
+	// Include per-element vertical margins in total height so
+	// `align-items: center` balances the visual stack correctly.
+	const totalH = elements.reduce(
+		(sum, el, i) =>
+			sum +
+			el.marginTop +
+			el.cellH +
+			(i < elements.length - 1 ? rowGap + el.marginBottom : 0),
+		0,
+	)
+	let accY =
+		alignItems === 'center' ? (sceneH + totalH + 1) / 2 : sceneH
+
+	for (let i = 0; i < elements.length; i++) {
+		const el = elements[i]
+		// Per-element top margin lands as extra space above the cell.
+		accY -= el.marginTop
+		accY -= el.cellH
+		const cell: Cell = { x: 0, y: accY, width: sceneW, height: el.cellH }
 
 		// Entity anchored at cell bottom; text_display renders the glyphs extending
 		// upward from the entity position, so the text quad fills the cell exactly
@@ -345,13 +634,13 @@ function summonVisibleElements(
 		// block. Odd scene widths already land on a half-block and need no offset.
 		const z = origin[2] + Z_VISUAL_OFFSET
 		const x = origin[0] + cell.width / 2
-		const y = origin[1] + cell.y - cellH + (cellH - 1)
+		const y = origin[1] + cell.y - el.cellH + (el.cellH - 1)
 
-		const scale = NBT.float(textScale)
+		const scale = NBT.float(el.textScale)
 
 		const nbt: SymbolEntity['text_display'] = {
 			Tags: [SCENE_TAG, ...extraTags],
-			text: buildTextJson(content, declarations, type),
+			text: buildTextJson(el.content, el.declarations, el.type),
 			transformation: {
 				scale: [scale, scale, scale],
 				translation: NBT.float([0, 0, 0]),
@@ -360,18 +649,17 @@ function summonVisibleElements(
 			},
 		}
 
-		const bg = declarations.background ? parseColorInt(declarations.background) : undefined
+		const bg = el.declarations.background ? parseColorInt(el.declarations.background) : undefined
 		if (bg !== undefined) nbt.background = NBT.int(bg)
-		if (width !== undefined) nbt.line_width = NBT.int(Math.round(width.px * widthCompensation))
-		else if (declarations['line-width']) nbt.line_width = NBT.int(parseInt(declarations['line-width']))
-		if (declarations.shadow === 'true') nbt.shadow = true
-		if (declarations['see-through'] === 'true') nbt.see_through = true
+		if (el.width !== undefined) nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
+		else if (el.declarations['line-width']) nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
+		if (el.declarations.shadow === 'true') nbt.shadow = true
+		if (el.declarations['see-through'] === 'true') nbt.see_through = true
 		if (initialOpacity !== undefined) {
 			nbt.text_opacity = NBT.int(initialOpacity)
-		} else if (declarations.opacity) {
-			nbt.text_opacity = NBT.int(Math.round((parseFloat(declarations.opacity) / 100) * 255) - 256)
+		} else if (el.declarations.opacity) {
+			nbt.text_opacity = NBT.int(Math.round((parseFloat(el.declarations.opacity) / 100) * 255) - 256)
 		}
-
 
 		summon(
 			'text_display',
@@ -379,6 +667,13 @@ function summonVisibleElements(
 			`${x}${Number.isInteger(x) ? '.0' : ''} ${y}${Number.isInteger(y) ? '.0' : ''} ${z}${Number.isInteger(z) ? '.0' : ''}`,
 			nbt,
 		)
+
+		// Subtract row-gap + this element's bottom margin before the next
+		// cell. The next iteration's `marginTop` lands on top of that, so
+		// the gap between cells becomes `rowGap + marginBottom[i] +
+		// marginTop[i+1]`. The last cell's bottom margin is intentionally
+		// dropped — no trailing space below the slide's last element.
+		if (i < elements.length - 1) accY -= rowGap + el.marginBottom
 	}
 }
 
@@ -547,8 +842,14 @@ export async function renderSlides(
 	// Sandstone splits the body at each sleep into chained __sleep child
 	// MCFunctions, then reschedules the whole loop from the last segment.
 	// No async/await needed — sleep() works in sync contexts too.
+	// Tracks the currently-visible slide in `presentation.slide_idx#current`
+	// so `nextSlide` knows where to advance from.
+	const slideIdx = Objective.create('presentation.slide_idx', 'dummy')
+	const currentSlide = slideIdx('#current')
+
 	const slideLoop = MCFunction('presentation/slides/loop', () => {
 		for (let s = 0; s < totalSlides; s++) {
+			currentSlide.set(s)
 			setSlideFns[s]()
 			sleep(`${durations[s]}s`)
 		}
@@ -556,8 +857,37 @@ export async function renderSlides(
 		schedule.function(slideLoop, '1t', 'replace')
 	})
 
+	// nextSlide: cancel the auto-advance loop and step forward one slide
+	// from the current index. The cancel block mirrors `unmount`'s schedule
+	// teardown so the loop + every pending __sleep segment gets cleared.
+	// After unmount+mount the auto-advance animation runs again from 0
+	// (mount resets currentSlide to -1, slideLoop then sets it to 0 first).
+	const nextSlide = MCFunction('presentation/slides/next', () => {
+		const loopName = slideLoop.name
+		schedule.clear(loopName)
+		schedule.clear(`${loopName}/schedule`)
+		for (let i = 1; i <= totalSlides; i++) {
+			schedule.clear(`${loopName}/${i === 1 ? '__sleep' : `__sleep${i}`}`)
+		}
+		currentSlide.add(1)
+		_.if(currentSlide.greaterThanOrEqualTo(totalSlides), () => {
+			currentSlide.set(0)
+		})
+		for (let s = 0; s < totalSlides; s++) {
+			hideSlide[s]()
+		}
+		for (let s = 0; s < totalSlides; s++) {
+			_.if(currentSlide.equalTo(s), () => {
+				showSlide[s]()
+			})
+		}
+	})
+
 	// ── Mount: spawn every slide hidden, then kick the loop ──────
 	const mount = MCFunction('presentation/mount', () => {
+		// Reset the visible-slide tracker so the first nextSlide call after
+		// mount advances from a clean state (-1 + 1 = slide 0).
+		currentSlide.set(-1)
 		for (let s = 0; s < totalSlides; s++) {
 			summonVisibleElements(
 				slideVisibles[s],
@@ -597,6 +927,7 @@ export async function renderSlides(
 		hideSlide,
 		setSlide,
 		rerenderSlide,
+		nextSlide,
 		slideLoop,
 		durations,
 		totalSlides,
