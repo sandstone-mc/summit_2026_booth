@@ -25,6 +25,7 @@
     "@nbsjs/core": "^6.1.0",
     "@tonejs/midi": "^2.0.28",
     "less": "^4.6.7",
+    "postcss-selector-parser": "^7.1.4",
     "sandstone": "^1.1.1",
     "sharp": "^0.35.3",
     "socket.io-client": "^4.8.3"
