@@ -1,24 +1,40 @@
 import sharp from 'sharp'
 import { ItemModelDefinition, Model, NBT, Texture } from 'sandstone'
 import { pattern, CellType, type Cell } from '..'
-import { project } from './derived'
+import { NAMESPACE } from '@shared'
 import { singles, groups, type Obstacle } from '../obstacles'
 
 type ModelDef = NonNullable<Parameters<typeof Model>[2]>
 type Vec3 = [number, number, number]
 type FaceName = 'north' | 'south' | 'east' | 'west' | 'up' | 'down'
-interface ModelFace { uv: [number, number, number, number]; texture: string; tintindex?: number }
-interface WallElement { from: Vec3; to: Vec3; faces: Partial<Record<FaceName, ModelFace>> }
+interface ModelFace {
+	uv: [number, number, number, number]
+	texture: string
+	tintindex?: number
+}
+interface WallElement {
+	from: Vec3
+	to: Vec3
+	faces: Partial<Record<FaceName, ModelFace>>
+}
 
 const CELL_SCALE = 16 / pattern.width
 const HALF_CELL = CELL_SCALE / 2
-const Z_OFFSET = 8 + CELL_SCALE - 0.3 * 16 / pattern.width
+const Z_OFFSET = 8 + CELL_SCALE - (0.3 * 16) / pattern.width
 const round = (v: number) => Math.round(v * 1000) / 1000
 
-// Bitfield of which edges and corners need a border line
-const BORDER_LEFT   = 1,    BORDER_RIGHT  = 2,    BORDER_TOP    = 4,    BORDER_BOTTOM = 8
-const CORNER_TL     = 16,   CORNER_TR     = 32,   CORNER_BL     = 64,  CORNER_BR     = 128
-const HALF_LEFT_TOP = 256,  HALF_LEFT_BOT = 512,  HALF_RIGHT_TOP = 1024, HALF_RIGHT_BOT = 2048
+const BORDER_LEFT = 1,
+	BORDER_RIGHT = 2,
+	BORDER_TOP = 4,
+	BORDER_BOTTOM = 8
+const CORNER_TL = 16,
+	CORNER_TR = 32,
+	CORNER_BL = 64,
+	CORNER_BR = 128
+const HALF_LEFT_TOP = 256,
+	HALF_LEFT_BOT = 512,
+	HALF_RIGHT_TOP = 1024,
+	HALF_RIGHT_BOT = 2048
 
 const BORDER_WIDTH = 2
 const FILL_COLOR: [number, number, number, number] = [240, 240, 255, 160]
@@ -93,18 +109,18 @@ function generateBorderTexture(flags: number): Promise<Buffer> {
 			const offset = (y * size + x) * 4
 			let color = FILL_COLOR
 
-			if ((flags & BORDER_LEFT)      && x < BORDER_WIDTH) color = EDGE_COLOR
-			if ((flags & BORDER_RIGHT)     && x >= size - BORDER_WIDTH) color = EDGE_COLOR
-			if ((flags & BORDER_TOP)       && y < BORDER_WIDTH) color = EDGE_COLOR
-			if ((flags & BORDER_BOTTOM)    && y >= size - BORDER_WIDTH) color = EDGE_COLOR
-			if ((flags & CORNER_TL)        && x < BORDER_WIDTH && y < BORDER_WIDTH) color = EDGE_COLOR
-			if ((flags & CORNER_TR)        && x >= size - BORDER_WIDTH && y < BORDER_WIDTH) color = EDGE_COLOR
-			if ((flags & CORNER_BL)        && x < BORDER_WIDTH && y >= size - BORDER_WIDTH) color = EDGE_COLOR
-			if ((flags & CORNER_BR)        && x >= size - BORDER_WIDTH && y >= size - BORDER_WIDTH) color = EDGE_COLOR
-			if ((flags & HALF_LEFT_TOP)    && x < BORDER_WIDTH && y < 8) color = EDGE_COLOR
-			if ((flags & HALF_LEFT_BOT)    && x < BORDER_WIDTH && y >= 8) color = EDGE_COLOR
-			if ((flags & HALF_RIGHT_TOP)   && x >= size - BORDER_WIDTH && y < 8) color = EDGE_COLOR
-			if ((flags & HALF_RIGHT_BOT)   && x >= size - BORDER_WIDTH && y >= 8) color = EDGE_COLOR
+			if (flags & BORDER_LEFT && x < BORDER_WIDTH) color = EDGE_COLOR
+			if (flags & BORDER_RIGHT && x >= size - BORDER_WIDTH) color = EDGE_COLOR
+			if (flags & BORDER_TOP && y < BORDER_WIDTH) color = EDGE_COLOR
+			if (flags & BORDER_BOTTOM && y >= size - BORDER_WIDTH) color = EDGE_COLOR
+			if (flags & CORNER_TL && x < BORDER_WIDTH && y < BORDER_WIDTH) color = EDGE_COLOR
+			if (flags & CORNER_TR && x >= size - BORDER_WIDTH && y < BORDER_WIDTH) color = EDGE_COLOR
+			if (flags & CORNER_BL && x < BORDER_WIDTH && y >= size - BORDER_WIDTH) color = EDGE_COLOR
+			if (flags & CORNER_BR && x >= size - BORDER_WIDTH && y >= size - BORDER_WIDTH) color = EDGE_COLOR
+			if (flags & HALF_LEFT_TOP && x < BORDER_WIDTH && y < 8) color = EDGE_COLOR
+			if (flags & HALF_LEFT_BOT && x < BORDER_WIDTH && y >= 8) color = EDGE_COLOR
+			if (flags & HALF_RIGHT_TOP && x >= size - BORDER_WIDTH && y < 8) color = EDGE_COLOR
+			if (flags & HALF_RIGHT_BOT && x >= size - BORDER_WIDTH && y >= 8) color = EDGE_COLOR
 
 			pixels[offset] = color[0]
 			pixels[offset + 1] = color[1]
@@ -118,7 +134,13 @@ function generateBorderTexture(flags: number): Promise<Buffer> {
 		.toBuffer()
 }
 
-function cellToElements(cell: NonNullable<Cell>, x: number, y: number, grid: Cell[][], borderSlot: string): WallElement {
+function cellToElements(
+	cell: NonNullable<Cell>,
+	x: number,
+	y: number,
+	grid: Cell[][],
+	borderSlot: string,
+): WallElement {
 	const x0 = round(x * CELL_SCALE)
 	const x1 = round(x0 + CELL_SCALE)
 	const z0 = round(Z_OFFSET)
@@ -183,7 +205,7 @@ function obstacleToModel(obstacle: Obstacle): ModelDef {
 		}
 	}
 
-	const uniqueFlags = [...new Set(borderFlagsPerCell.map(c => c.flags))]
+	const uniqueFlags = [...new Set(borderFlagsPerCell.map((c) => c.flags))]
 	const flagToSlot = new Map<number, string>()
 	let slot = 1
 	for (const f of uniqueFlags) {
@@ -191,8 +213,11 @@ function obstacleToModel(obstacle: Obstacle): ModelDef {
 		slot++
 	}
 
-	const ns = project.namespace
-	const textures: Record<string, string> = { '0': `${ns}:item/generated/glass/white`, particle: `${ns}:item/generated/glass/white` }
+	const ns = NAMESPACE
+	const textures: Record<string, string> = {
+		'0': `${ns}:item/generated/glass/fill`,
+		particle: `${ns}:item/generated/glass/fill`,
+	}
 	for (const [f, s] of flagToSlot) {
 		textures[s] = `${ns}:item/generated/glass/border_${f}`
 	}
@@ -203,7 +228,6 @@ function obstacleToModel(obstacle: Obstacle): ModelDef {
 		if (Object.keys(el.faces).length > 0) elements.push(el)
 	}
 
-	// Sandstone's Model type wraps coordinates in NBTList. This plain model JSON is valid at runtime.
 	return { textures, elements } as unknown as ModelDef
 }
 
@@ -234,14 +258,20 @@ for (const obstacle of obstacles) {
 	}
 }
 
-const whitePng = sharp(Buffer.from(new Uint8Array(16 * 16 * 4).fill(255)), { raw: { width: 16, height: 16, channels: 4 } }).png().toBuffer()
-Texture('item', 'generated/glass/white', whitePng)
+const fillPixels = Buffer.alloc(16 * 16 * 4)
+for (let i = 0; i < 16 * 16; i++) fillPixels.set(FILL_COLOR, i * 4)
+const fillPng = sharp(fillPixels, {
+	raw: { width: 16, height: 16, channels: 4 },
+})
+	.png()
+	.toBuffer()
+Texture('item', 'generated/glass/fill', fillPng)
 
 for (const flags of allBorderFlags) {
 	Texture('item', `generated/glass/border_${flags}`, generateBorderTexture(flags))
 }
 
-const ns = project.namespace
+const ns = NAMESPACE
 
 for (const obstacle of obstacles) {
 	const name = modelName(obstacle)
@@ -250,7 +280,11 @@ for (const obstacle of obstacles) {
 
 	Model('item', genName, obstacleToModel(obstacle))
 	ItemModelDefinition(genName, {
-		model: { type: 'minecraft:model', model: `${ns}:item/${genName}`, tints: [{ type: 'minecraft:dye', default: NBT.int(16777215) }] },
+		model: {
+			type: 'minecraft:model',
+			model: `${ns}:item/${genName}`,
+			tints: [{ type: 'minecraft:dye', default: NBT.int(16777215) }],
+		},
 	})
 }
 

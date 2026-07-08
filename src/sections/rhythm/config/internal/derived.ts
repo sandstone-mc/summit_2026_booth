@@ -1,12 +1,5 @@
-
 import config from '..'
-import sandstoneConfig from '@/sandstone.config'
 import type { PanelConfig } from './types'
-
-export const project = {
-	namespace: sandstoneConfig.namespace!,
-	dimension: 'minecraft:overworld' as const,
-}
 
 const totalDistance = config.walls.spawnDistance + config.walls.passDistance
 const travelTicks = Math.round(totalDistance / config.walls.speed)
@@ -17,19 +10,17 @@ export const wallMovement = {
 	totalDistance,
 	travelTicks,
 	reachTicks,
-	travelOffset: reachTicks + 4,
+	beatReachTicks: reachTicks + Math.round(1 / config.walls.speed),
+	travelOffset: reachTicks + 2,
 	lifetime: travelTicks + config.walls.despawnDelay,
 	moveScale,
 	moveNumerator: totalDistance * moveScale,
 }
 
-// The gold line sits centered on the width and (playerRoom + boothWall) blocks from the back.
 export const map = {
 	size: config.mapLayout.size,
 	laneWidth: config.mapLayout.laneWidth,
 	boothDepth: config.mapLayout.boothWall,
-	mirrorX: config.mapLayout.mirrorX,
-	mirrorZ: config.mapLayout.mirrorZ,
 	laneShift: config.mapLayout.laneShift,
 	laneOffset: {
 		x: Math.floor((config.mapLayout.size[0] - config.mapLayout.laneWidth) / 2),
@@ -37,44 +28,34 @@ export const map = {
 	},
 }
 
+if (config.pattern.width !== config.mapLayout.laneWidth) {
+	console.warn(
+		`[config] pattern.width ${config.pattern.width} != mapLayout.laneWidth ${config.mapLayout.laneWidth}. Walls will not line up with the lane.`,
+	)
+}
+
 const layoutDepth = config.mapLayout.playable + config.mapLayout.playerRoom + config.mapLayout.boothWall + 1
 if (layoutDepth !== config.mapLayout.size[2]) {
-	console.warn(`[config] mapLayout depth ${layoutDepth} (playable+playerRoom+boothWall+1) != structure depth ${config.mapLayout.size[2]}. The map will not line up with the gold line.`)
-}
-
-function rotateOffset(offset: [number, number, number]): [number, number, number] {
-	const [dx, dy, dz] = offset
-	switch (config.goldLineDirection) {
-		case 'south': return [dx, dy, dz]
-		case 'north': return [-dx, dy, -dz]
-		case 'east':  return [dz, dy, -dx]
-		case 'west':  return [-dz, dy, dx]
-	}
-}
-
-function rotateFacing(facing: number): number {
-	const yawOffset =
-		config.goldLineDirection === 'south' ? 0 :
-		config.goldLineDirection === 'north' ? 180 :
-		config.goldLineDirection === 'west' ? 90 :
-		-90
-	return facing + yawOffset
+	console.warn(
+		`[config] mapLayout depth ${layoutDepth} (playable+playerRoom+boothWall+1) != structure depth ${config.mapLayout.size[2]}. The map will not line up with the gold line.`,
+	)
 }
 
 function panelFrom(offset: [number, number, number], facing: number, scale = 1): PanelConfig {
-	const [rx, ry, rz] = rotateOffset(offset)
+	const [dx, dy, dz] = offset
+	const rad = (facing * Math.PI) / 180
 	return {
-		x: config.goldLine[0] + rx,
-		y: config.goldLine[1] + ry,
-		z: config.goldLine[2] + rz,
-		facing: rotateFacing(facing),
+		x: config.goldLine[0] - dx - Math.sin(rad) * 0.05,
+		y: config.goldLine[1] + dy,
+		z: config.goldLine[2] - dz + Math.cos(rad) * 0.05,
+		facing,
 		scale,
 	}
 }
 
 export const panels = {
-	settings: panelFrom(config.panels.settingsOffset, 180),
-	leaderboard: panelFrom(config.panels.leaderboardOffset, 180),
+	settings: panelFrom(config.panels.settingsOffset, config.panels.settingsFacing),
+	leaderboard: panelFrom(config.panels.leaderboardOffset, config.panels.leaderboardFacing),
 	maxNameLength: config.panels.maxNameLength,
 	scrollSpeed: config.panels.scrollSpeed,
 	padding: config.panels.padding,
@@ -84,13 +65,9 @@ export const panels = {
 
 const BOOTH_SPAWN_GAP = 3
 export const boothReturn: [number, number, number] = (() => {
-	const alongZ = config.goldLineDirection === 'south' || config.goldLineDirection === 'north'
-	const sign = (config.goldLineDirection === 'south' || config.goldLineDirection === 'east') ? 1 : -1
 	const widthCentre = (config.mapLayout.laneWidth - 1) / 2
 	const depthBehind = config.mapLayout.playerRoom + config.mapLayout.boothWall + BOOTH_SPAWN_GAP
-	const x = alongZ ? config.goldLine[0] + widthCentre : config.goldLine[0] - sign * depthBehind
-	const z = alongZ ? config.goldLine[2] - sign * depthBehind : config.goldLine[2] + widthCentre
-	return [x, config.goldLine[1] + 1, z]
+	return [config.goldLine[0] + widthCentre, config.goldLine[1] + 1, config.goldLine[2] + depthBehind]
 })()
 
 const COLOR_HASH_PRIME = 83492791

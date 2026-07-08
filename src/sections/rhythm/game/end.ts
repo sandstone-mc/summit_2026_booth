@@ -1,58 +1,103 @@
-import { _, abs, attribute, effect, execute, gamemode, gamerule, MCFunction, raw, schedule, Selector, tag, team, tp } from 'sandstone'
-import { GameStatus, Tags, allPlayers, status } from './state'
+import { _, abs, advancement, attribute, effect, execute, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
+import { GameStatus, Tags, gamePlayer, boothListeners, status, songSelect } from './state'
 import { clearWalls } from './walls/spawning'
-import { stopSong, stopWalls } from './songs'
+import { stopAllSongs, stopAllWalls, stopSong, stopWalls } from './songs'
 import { computeScores } from './scoring'
+import { wallLives } from './walls/collision'
 import { parkourCleanup } from './parkour'
 import { clearLaneShulkers } from './lane-effects'
 import { saveLeaderboard } from './leaderboard'
 import { updateSettingsPanel } from './settings'
-import { DIMENSION, NAMESPACE } from '@shared'
+import { ticking } from '@shared'
 import { boothReturn } from '@rhythm/config/internal/derived'
 import { timer } from './active'
 
-MCFunction('sections/rhythm/timer/tick', () => {
-	_.if(status.equalTo(GameStatus.ACTIVE), () => {
-		timer.remove(1)
-		_.if(timer.lessThanOrEqualTo(0), () => {
-			endGame()
-		})
-	})
-}, { runEveryTick: true })
+export const resetPlayer = MCFunction('sections/rhythm/reset_player', () => {
+	effect.clear('@s')
+	attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
+	attribute('@s', 'minecraft:fall_damage_multiplier').baseSet(1)
+	tag('@s').remove(Tags.PLAYER)
+	tag('@s').remove(Tags.WALL_HIT_COOLDOWN)
+})
 
-export const endGame = MCFunction('sections/rhythm/end/run', () => {
-	status.set(GameStatus.ENDING)
-
-	stopSong()
-	stopWalls()
-	computeScores()
-	saveLeaderboard()
-
-	schedule.function(`${NAMESPACE}:sections/rhythm/end/cleanup`, '3s')
-}, { lazy: true })
-
-const cleanup = MCFunction('sections/rhythm/end/cleanup', () => {
-	execute.in(DIMENSION).run(() => {
+const cleanup = MCFunction(
+	'sections/rhythm/end/cleanup',
+	() => {
 		clearWalls()
 		parkourCleanup()
-	})
-	clearLaneShulkers()
+		clearLaneShulkers()
 
-	execute.in(DIMENSION).run(() => {
 		const [x, y, z] = boothReturn
-		tp(allPlayers, abs(x, y, z))
-	})
+		tp(gamePlayer, abs(x, y, z))
 
-	execute.as(allPlayers).run(() => {
-		effect.clear('@s')
-		attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
-		raw('clear @s')
-		tag('@s').remove(Tags.ALIVE)
-		tag('@s').remove(Tags.PLAYER)
-		tag('@s').remove(Tags.WALL_HIT_COOLDOWN)
-		tag('@s').remove(Tags.HIT_TICK)
-	})
+		execute.as(gamePlayer).run(() => {
+			resetPlayer()
+		})
 
-	status.set(GameStatus.WAITING)
-	updateSettingsPanel()
-}, { lazy: true })
+		status.set(GameStatus.WAITING)
+		updateSettingsPanel()
+	},
+	{ lazy: true },
+)
+
+export const endGame = MCFunction(
+	'sections/rhythm/end/run',
+	() => {
+		status.set(GameStatus.ENDING)
+
+		_.if(timer.lessThanOrEqualTo(0), () => {
+			advancement
+				.grant(Selector('@a', { tag: Tags.PLAYER, scores: { [wallLives.name]: [1, Infinity] } }))
+				.only('summit.sticker_book:sandstone_summit_booth/rhythm')
+		})
+
+		stopSong()
+		stopWalls()
+		computeScores()
+		saveLeaderboard()
+
+		cleanup.schedule.function('3s', 'replace')
+	},
+	{ lazy: true },
+)
+
+const resetGame = MCFunction(
+	'sections/rhythm/reset',
+	() => {
+		stopAllSongs()
+		stopAllWalls()
+		clearWalls()
+		parkourCleanup()
+		clearLaneShulkers()
+		stopsound(boothListeners, 'master')
+
+		const [x, y, z] = boothReturn
+		tp(gamePlayer, abs(x, y, z))
+
+		execute.as(gamePlayer).run(() => {
+			resetPlayer()
+		})
+
+		status.set(GameStatus.WAITING)
+		songSelect.set(0)
+	},
+	{ runOnLoad: true },
+)
+
+export const timerTick = MCFunction(
+	'sections/rhythm/timer/tick',
+	() => {
+		_.if(status.equalTo(GameStatus.ACTIVE), () => {
+			// a vanished player (disconnect without the clean hook) must not strand the match
+			execute.unless.entity(gamePlayer).run(() => {
+				endGame()
+			})
+			timer.remove(1)
+			// once the song is over, wait for the last walls to leave the lane
+			_.if(_.and(timer.lessThanOrEqualTo(0), _.not(_.entity(Selector('@e', { tag: Tags.WALL })))), () => {
+				endGame()
+			})
+		})
+	},
+	{ lazy: true },
+)

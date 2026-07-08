@@ -1,32 +1,48 @@
 import { _, abs, execute, fill, kill, MCFunction, NBT, Selector, summon } from 'sandstone'
+import type { SymbolEntity } from 'sandstone/arguments'
 import { arena } from '@rhythm/config/internal/arena'
-import { mapCount, mapSafeNames } from '@rhythm/config/internal/maps'
+import { mapCount, mapList, mapSafeNames } from '@rhythm/config/internal/maps'
 import { mapSelect, Tags, boothTags } from './state'
-import { DIMENSION, NAMESPACE } from '@shared'
-import { SymbolEntity } from 'sandstone/arguments';
+import { NAMESPACE } from '@shared'
 
-export const placeMap = MCFunction('sections/rhythm/arena/place_map', () => {
-	if (mapCount === 0) return
-	const [px, py, pz] = arena.mapPlacement
-	const rotation = arena.structureRotation === 'none' ? undefined : arena.structureRotation
-	for (let i = 0; i < mapCount; i++) {
-		_.if(mapSelect.equalTo(i), () => {
-			execute.in(DIMENSION).run.place.template(`${NAMESPACE}:generated/maps/${mapSafeNames[i]}`, abs(px, py, pz), rotation, arena.structureMirror)
-		})
-	}
-	spawnSkybox()
-}, { lazy: true })
+/*
+ * strict fill + strict place skip block updates, and placing into air a tick later
+ * keeps support-needing blocks (flowers, buttons, signs) from popping off
+ */
+export const placeMap = MCFunction(
+	'sections/rhythm/arena/place_map',
+	() => {
+		if (mapCount === 0) return
+		const [ox, oy, oz] = arena.mapOrigin
+		const [ex, ey, ez] = arena.mapEnd
+		fill(abs(ox, oy, oz), abs(ex, ey, ez), 'minecraft:air').strict()
+		placeMapBlocks.schedule.function('1t', 'replace')
+	},
+	{ lazy: true },
+)
 
-export const clearMap = MCFunction('sections/rhythm/arena/clear_map', () => {
-	if (mapCount === 0) return
-	const [ox, oy, oz] = arena.mapOrigin
-	const [ex, ey, ez] = arena.mapEnd
-	execute.in(DIMENSION).run(() => {
-		fill(abs(ox, oy, oz), abs(ex, ey, ez), 'minecraft:air').replace('#minecraft:replaceable')
-		fill(abs(ox, oy, oz), abs(ex, ey, ez), 'minecraft:air')
-	})
-	killSkybox()
-}, { lazy: true })
+const placeMapBlocks = MCFunction(
+	'sections/rhythm/arena/place_map/blocks',
+	() => {
+		const [px, py, pz] = arena.mapPlacement
+		const rotation = arena.structureRotation === 'none' ? undefined : arena.structureRotation
+		for (let i = 0; i < mapCount; i++) {
+			_.if(mapSelect.equalTo(i), () => {
+				execute.run.place.template(
+					`${NAMESPACE}:generated/maps/${mapSafeNames[i]}`,
+					abs(px, py, pz),
+					rotation,
+					arena.structureMirror,
+					undefined,
+					undefined,
+					'strict',
+				)
+			})
+		}
+		spawnSkybox()
+	},
+	{ lazy: true },
+)
 
 const skyboxCenter: [number, number, number] = [
 	(arena.mapOrigin[0] + arena.mapEnd[0]) / 2,
@@ -34,7 +50,7 @@ const skyboxCenter: [number, number, number] = [
 	(arena.mapOrigin[2] + arena.mapEnd[2]) / 2,
 ]
 
-const skyboxModels = ['skybox_rainbows', 'skybox_neon', 'skybox_void']
+const mapSkyboxes = mapList.map((m) => `${NAMESPACE}:${m.skybox}`)
 
 function skyboxNbt(model: string): SymbolEntity['item_display'] {
 	return {
@@ -50,30 +66,37 @@ function skyboxNbt(model: string): SymbolEntity['item_display'] {
 			id: 'minecraft:leather_horse_armor',
 			count: NBT.int(1),
 			components: {
-				/* @ts-ignore */
+				// @ts-ignore
+				// keys containing ':' must be pre-quoted for snbt
 				'"minecraft:item_model"': model,
 			},
 		},
 	}
 }
 
-export const spawnSkybox = MCFunction('sections/rhythm/arena/spawn_skybox', () => {
-	killSkybox()
-	const [cx, cy, cz] = skyboxCenter
-	execute.in(DIMENSION).run(() => {
-		if (mapCount <= 1) {
-			summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(skyboxModels[0] ?? 'skybox_rainbows'))
+export const spawnSkybox = MCFunction(
+	'sections/rhythm/arena/spawn_skybox',
+	() => {
+		killSkybox()
+		if (mapCount === 0) return
+		const [cx, cy, cz] = skyboxCenter
+		if (mapCount === 1) {
+			summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(mapSkyboxes[0]))
 		} else {
 			for (let i = 0; i < mapCount; i++) {
-				const model = skyboxModels[i % skyboxModels.length]
 				_.if(mapSelect.equalTo(i), () => {
-					summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(model))
+					summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(mapSkyboxes[i]))
 				})
 			}
 		}
-	})
-}, { lazy: true })
+	},
+	{ lazy: true },
+)
 
-const killSkybox = MCFunction('sections/rhythm/arena/kill_skybox', () => {
-	kill(Selector('@e', { tag: Tags.SKYBOX }))
-}, { lazy: true })
+const killSkybox = MCFunction(
+	'sections/rhythm/arena/kill_skybox',
+	() => {
+		kill(Selector('@e', { tag: Tags.SKYBOX }))
+	},
+	{ lazy: true },
+)

@@ -1,5 +1,4 @@
 export type RenderingMode = 'extended' | 'compressed'
-export type GoldLineDirection = 'north' | 'south' | 'east' | 'west'
 
 export enum Difficulty {
 	EASY = 1,
@@ -29,11 +28,8 @@ export interface RhythmConfig {
 	/** Audio mode. "extended" ships full OGG audio (large pack). "compressed" uses noteblock sounds only (~1MB). */
 	rendering: RenderingMode
 
-	/** World position of the gold line. Walls land here on the beat. */
+	/** World position of the gold line. Walls land here on the beat. The arena faces north: walls travel toward +z. */
 	goldLine: [number, number, number]
-
-	/** Direction the player faces. Walls come from this direction. */
-	goldLineDirection: GoldLineDirection
 
 	/** Size of the wall pattern grid. */
 	pattern: {
@@ -69,6 +65,11 @@ export interface RhythmConfig {
 
 	/** Fine-tune where the wall collision hitboxes sit, relative to each wall cell (world-space blocks). */
 	collisions: {
+		/**
+		 * Blocks the parkour platform hitboxes run ahead of their visual. Standing is client-side and
+		 * the client lerps entity teleports ~3 ticks, so moving hitboxes trail the glass without this.
+		 */
+		parkourLead: number
 		/** Offset for interaction hitboxes (cells that have a wall directly above them). */
 		interact: [number, number, number]
 		/** Offset for happy_ghast hitboxes (cells with headroom above). */
@@ -90,10 +91,6 @@ export interface RhythmConfig {
 		laneWidth: number
 		/** Size of the map .nbt. Fixed by the structure file. */
 		size: [number, number, number]
-		/** Mirror the placed map along the X axis (flips it left/right). */
-		mirrorX: boolean
-		/** Mirror the placed map along the Z axis (flips it front/back). */
-		mirrorZ: boolean
 		/**
 		 * World-space shift of the whole lit lane zone (border, shulkers, fragments) relative to
 		 * the gold line. Moves the lights-delimited lane without touching the .nbt map or the walls.
@@ -104,19 +101,21 @@ export interface RhythmConfig {
 	/** Lives, countdown and scoring. */
 	gameplay: {
 		lives: {
-			/** Selectable life counts. */
-			options: readonly number[]
+			/** Lowest selectable life count. */
+			min: number
+			/** Highest selectable life count. */
+			max: number
 			/** Default life count. */
 			default: number
 		}
 		/** Countdown length in seconds before a song starts. */
 		countdown: number
 		scoring: {
-			/** Points added per combo step. */
+			/** Bonus points awarded each time the combo reaches a multiple of comboDivisor. */
 			comboBonus: number
 			/** Combo size that grants a bonus. */
 			comboDivisor: number
-			/** Combo cap. */
+			/** Combo value at which the end-of-game score multiplier caps (combo itself keeps counting). */
 			maxCombo: number
 			/** Combo milestones that trigger effects. */
 			milestones: readonly number[]
@@ -130,8 +129,8 @@ export interface RhythmConfig {
 			stripCount: number
 			/** Border height in blocks. */
 			height: number
-			/** Default RGB color. */
-			defaultColor: [number, number, number]
+			/** Default color (0xRRGGBB, build with rgb()). */
+			defaultColor: number
 			/**
 			 * World-space offsets for the border light strips. Each strip is two stacked,
 			 * opposite-facing displays (a/b) that must be positioned separately.
@@ -164,7 +163,7 @@ export interface RhythmConfig {
 	music: {
 		/** Offset in blocks from the gold lane middle block where the sound emits. */
 		offset: [number, number, number]
-		/** Playsound volume. Values above 1 grow the audible radius. 10000 reaches the whole booth. */
+		/** Per-listener loudness of noteblock notes (0..1); they play at each listener. Audio segments instead play positionally from the lane middle. */
 		volume: number
 		/** Box, centered on the music position, that a player must be inside to hear the music. */
 		hearable: {
@@ -186,9 +185,13 @@ export interface RhythmConfig {
 	panels: {
 		/** Settings panel offset from the gold line. */
 		settingsOffset: [number, number, number]
+		/** Yaw of the settings panel front: 0 = south, 90 = west, 180 = north, 270 = east. */
+		settingsFacing: number
 		/** Leaderboard panel offset from the gold line. */
 		leaderboardOffset: [number, number, number]
-		/** Max characters shown for a player name. */
+		/** Yaw of the leaderboard panel front. */
+		leaderboardFacing: number
+		/** Character width of the song/lives/map value lines on the panels; longer song names scroll. */
 		maxNameLength: number
 		/** Scroll speed for long text. */
 		scrollSpeed: number

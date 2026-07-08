@@ -1,3 +1,4 @@
+import './check-tools'
 import { advancement, MCFunction, Selector } from 'sandstone'
 import { SelectorProperties } from 'sandstone/variables'
 
@@ -5,9 +6,9 @@ import { ticking } from './shared'
 import './sections/main'
 import './version'
 // TODO: Disabled while developing presentation
-//import './sections/rhythm/index'
+import './sections/rhythm/index'
 import './sections/magic/index'
-// import './sections/presentation/index'
+import './sections/presentation/index'
 
 MCFunction('main', () => {
     const all_players = (args: SelectorProperties<false, false, 'minecraft:player'>) => Selector(
