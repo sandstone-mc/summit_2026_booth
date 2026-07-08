@@ -1,0 +1,13 @@
+{
+  "criteria": {
+    "click": {
+      "trigger": "minecraft:player_interacted_with_entity",
+      "conditions": {
+        "entity": {
+          "entity_type": "minecraft:interaction",
+          "nbt": "{Tags:[\"ssb.ui.set.li\"]}"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,2 @@
+execute as @e[tag=ssb.rhythm.wall, tag=ssb.rhythm.wall.init, tag=!ssb.rhythm.wall.hit, tag=!ssb.rhythm.parkour] run data merge entity @s {interpolation_duration:56i,transformation:{translation:[0f,0f,28f],left_rotation:[0f,0f,0f,1f],scale:[5f,5f,5f],right_rotation:[0f,0f,0f,1f]},start_interpolation:-2i}
+execute as @e[tag=ssb.rhythm.wall, tag=ssb.rhythm.wall.init, tag=ssb.rhythm.parkour] run data merge entity @s {interpolation_duration:56i,transformation:{translation:[-0.5f,0f,27.5f]},start_interpolation:-2i}

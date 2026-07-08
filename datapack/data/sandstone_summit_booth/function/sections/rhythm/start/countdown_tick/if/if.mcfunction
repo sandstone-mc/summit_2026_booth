@@ -1,0 +1,2 @@
+execute if score anon_WnYlBycD_33 __sandstone matches 1.. run return run function sandstone_summit_booth:sections/rhythm/start/countdown_tick/if/if/0_if/return_run
+return run function sandstone_summit_booth:sections/rhythm/active/init

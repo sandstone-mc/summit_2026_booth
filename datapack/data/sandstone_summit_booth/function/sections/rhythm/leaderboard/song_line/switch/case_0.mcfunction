@@ -1,0 +1,1 @@
+function sandstone_summit_booth:sections/rhythm/leaderboard/song_line/switch/case_0/if

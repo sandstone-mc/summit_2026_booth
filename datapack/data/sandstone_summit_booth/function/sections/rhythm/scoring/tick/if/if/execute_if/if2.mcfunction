@@ -1,0 +1,3 @@
+execute if score @s sandstone_summit_booth.rhythm.combo matches 50 run return run function sandstone_summit_booth:sections/rhythm/scoring/tick/if/if/execute_if/if2/0_if/return_run
+execute if score @s sandstone_summit_booth.rhythm.combo matches 25 run return run function sandstone_summit_booth:sections/rhythm/scoring/tick/if/if/execute_if/if2/1_elseif/return_run
+execute if score @s sandstone_summit_booth.rhythm.combo matches 10 run return run function sandstone_summit_booth:sections/rhythm/scoring/tick/if/if/execute_if/if2/2_elseif/return_run

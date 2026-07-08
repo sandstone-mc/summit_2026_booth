@@ -1,0 +1,2 @@
+execute if score anon_WnYlBycD_4 __sandstone matches 0 run return run data merge entity @e[tag=ssb.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:"nto D'oro - JoJo  ",color:'yellow',font:'monocraft:default'},{text:' - ',color:'gray'},{text:'Best Score  ',color:'gold'}]}
+data merge entity @e[tag=ssb.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:"nto D'oro - JoJo  ",color:'yellow',font:'monocraft:default'},{text:' - ',color:'gray'},{text:'Deathless  ',color:'light_purple'}]}

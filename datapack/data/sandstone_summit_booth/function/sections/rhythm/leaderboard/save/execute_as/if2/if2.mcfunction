@@ -1,0 +1,1 @@
+execute if score @s sandstone_summit_booth.rhythm.score > @s sandstone_summit_booth.rlb.s1d run scoreboard players operation @s sandstone_summit_booth.rlb.s1d = @s sandstone_summit_booth.rhythm.score

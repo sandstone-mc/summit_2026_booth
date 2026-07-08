@@ -1,0 +1,17 @@
+schedule clear sandstone_summit_booth:sections/rhythm/obstacle/spawn_d5
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_0
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_1
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_2
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_3
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_4
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_5
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_6
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_7
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_8
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_9
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_10
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_11
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_12
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_13
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/step_14
+schedule clear sandstone_summit_booth:sections/rhythm/parkour/cleanup

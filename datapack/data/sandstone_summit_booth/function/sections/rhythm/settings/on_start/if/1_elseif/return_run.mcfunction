@@ -1,0 +1,2 @@
+function sandstone_summit_booth:sections/rhythm/start/cancel
+return run function sandstone_summit_booth:sections/rhythm/settings/update

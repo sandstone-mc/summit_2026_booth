@@ -1,0 +1,2 @@
+function sandstone_summit_booth:sections/rhythm/settings/on_map
+advancement revoke @s only sandstone_summit_booth:ui_map_cycle

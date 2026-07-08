@@ -1,0 +1,2 @@
+execute as @e[tag=ssb.rhythm.lane.frag] run data merge entity @s {transformation:{scale:[0.55f,0.55f,0.55f],translation:[-0.275f,-0.275f,-0.275f]},start_interpolation:-1i,interpolation_duration:3i}
+schedule function sandstone_summit_booth:sections/rhythm/lane/pulse_down 4t replace
