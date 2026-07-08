@@ -1,2 +1,0 @@
-execute as @a[x=-94, y=51, z=11, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.5992125984251968 0.5297315471796477
-execute as @a[x=-94, y=51, z=11, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.5992125984251968 1

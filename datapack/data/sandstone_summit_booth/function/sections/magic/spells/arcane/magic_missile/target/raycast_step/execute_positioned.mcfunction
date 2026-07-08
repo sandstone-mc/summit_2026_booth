@@ -1,0 +1,1 @@
+execute as @e[type=#sandstone_summit_booth:targetable, dx=1.8, dy=2, dz=1.8] if entity @s run function sandstone_summit_booth:sections/magic/spells/arcane/magic_missile/target/raycast_step/execute_positioned/execute_as

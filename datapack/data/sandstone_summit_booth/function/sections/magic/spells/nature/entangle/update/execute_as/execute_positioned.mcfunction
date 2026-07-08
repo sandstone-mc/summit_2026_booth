@@ -1,0 +1,1 @@
+execute as @e[type=#sandstone_summit_booth:targetable, dx=3, dy=2, dz=3] if entity @s run function sandstone_summit_booth:sections/magic/spells/nature/entangle/update/execute_as/execute_positioned/execute_as

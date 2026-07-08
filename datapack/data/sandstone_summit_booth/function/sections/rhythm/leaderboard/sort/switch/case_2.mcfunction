@@ -1,1 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/leaderboard/sort/switch/case_2/if

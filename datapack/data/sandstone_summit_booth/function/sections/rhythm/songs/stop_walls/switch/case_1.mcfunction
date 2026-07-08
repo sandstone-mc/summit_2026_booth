@@ -1,1 +1,0 @@
-return run function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/walls_stop

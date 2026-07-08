@@ -1,1 +1,0 @@
-execute as @e[tag=ssb.rhythm.lane.frag] run data merge entity @s {transformation:{scale:[0.2f,0.2f,0.2f],translation:[-0.1f,-0.1f,-0.1f]},start_interpolation:-1i,interpolation_duration:6i}

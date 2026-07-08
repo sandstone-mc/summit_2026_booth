@@ -1,2 +1,0 @@
-function #sandstone_summit_booth:ticking
-schedule function sandstone_summit_booth:sections/rhythm/tick_loop 1t replace

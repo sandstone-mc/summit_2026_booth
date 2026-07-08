@@ -1,0 +1,1 @@
+execute positioned ~ ~-1 ~ run function sandstone_summit_booth:sections/magic/spells/ice/blizzard/spawn_bolt/execute_positioned

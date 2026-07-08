@@ -1,1 +1,0 @@
-execute if score @s sandstone_summit_booth.rlb.s2 > anon_WnYlBycD_29 __sandstone run scoreboard players add anon_WnYlBycD_30 __sandstone 1

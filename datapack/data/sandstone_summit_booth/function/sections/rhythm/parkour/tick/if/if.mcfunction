@@ -1,1 +1,0 @@
-execute as @a[tag=ssb.rhythm.player] at @s run playsound minecraft:block.note_block.hat master @s

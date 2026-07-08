@@ -1,1 +1,0 @@
-$return run function sandstone_summit_booth:sections/rhythm/songs/stop/switch/case_$(env_0)

@@ -1,0 +1,7 @@
+scoreboard players set @s sandstone_summit_booth.set_school_trigger 4
+title @a[tag=sandstone_summit_booth.showcase.player] title [{"text":"Nature","color":"green","bold":true}]
+title @a[tag=sandstone_summit_booth.showcase.player] subtitle [{"text":"School selected!","color":"gray","italic":true}]
+kill @e[tag=sandstone_summit_booth.showcase.pedestal]
+loot give @s loot sandstone_summit_booth:items/magic_wand
+scoreboard players set #global sandstone_summit_booth.showcase.state 3
+tellraw @a[tag=sandstone_summit_booth.showcase.player] [{"text":"\n"},{"text":"✦ Arcane Arts  ","color":"light_purple","bold":true},{"text":"Left-click","color":"yellow","bold":true},{"text":" to select spell  •  ","color":"gray"},{"text":"Right-click","color":"yellow","bold":true},{"text":" to cast\n\n","color":"gray"},{"text":"  Nature","color":"green","bold":true},{"text":"  Wild growth that ensnares, pulls, and pierces\n","color":"gray","italic":true},{"text":"  › ","color":"green"},{"text":"Thorn Volley","color":"white","bold":true},{"text":"  25✦  ","color":"aqua"},{"text":"Fires 5 thorns in a spread cone, each dealing 2 damage and entangling\n","color":"gray"},{"text":"  › ","color":"green"},{"text":"Vine Whip","color":"white","bold":true},{"text":"  10✦  ","color":"aqua"},{"text":"Launches a vine that pushes struck enemies away from you\n","color":"gray"},{"text":"  › ","color":"green"},{"text":"Entangle","color":"white","bold":true},{"text":"  60✦  ","color":"aqua"},{"text":"Roots enemies in an area, slowing movement and dealing damage over time\n","color":"gray"}]

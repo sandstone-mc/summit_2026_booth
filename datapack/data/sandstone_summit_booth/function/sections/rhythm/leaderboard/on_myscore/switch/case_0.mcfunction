@@ -1,1 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/leaderboard/on_myscore/switch/case_0/if

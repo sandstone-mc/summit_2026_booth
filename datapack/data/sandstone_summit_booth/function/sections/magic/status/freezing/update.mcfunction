@@ -1,0 +1,1 @@
+execute as @e[tag=sandstone_summit_booth.status.freezing] at @s run function sandstone_summit_booth:sections/magic/status/freezing/update/execute_as

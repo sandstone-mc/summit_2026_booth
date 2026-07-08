@@ -1,0 +1,1 @@
+execute as @s run function sandstone_summit_booth:sections/magic/playerdb/clear_self/execute_as

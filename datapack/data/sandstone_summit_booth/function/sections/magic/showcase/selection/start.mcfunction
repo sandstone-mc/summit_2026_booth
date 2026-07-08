@@ -1,0 +1,2 @@
+scoreboard players set #global sandstone_summit_booth.showcase.state 2
+function sandstone_summit_booth:sections/magic/showcase/selection/spawn_pedestals

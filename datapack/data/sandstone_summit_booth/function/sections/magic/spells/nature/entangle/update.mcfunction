@@ -1,0 +1,1 @@
+execute as @e[tag=sandstone_summit_booth.spell.nature.entangle.projectile, type=minecraft:marker] at @s run function sandstone_summit_booth:sections/magic/spells/nature/entangle/update/execute_as

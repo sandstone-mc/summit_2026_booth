@@ -1,2 +1,0 @@
-function sandstone_summit_booth:presentation/slides/set/9
-schedule function sandstone_summit_booth:presentation/slides/loop/__sleep10 14.700000000000001s append

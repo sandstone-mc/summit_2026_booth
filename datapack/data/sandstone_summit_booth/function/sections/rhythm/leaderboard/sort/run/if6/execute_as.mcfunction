@@ -1,1 +1,0 @@
-execute if score @s sandstone_summit_booth.rlb.sort = anon_WnYlBycD_23 __sandstone run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/run/if6/execute_as/if

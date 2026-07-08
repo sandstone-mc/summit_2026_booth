@@ -1,0 +1,2 @@
+tag @s remove __sandstone.asyncTimer.sandstone_summit_booth.sections.magic.spells.lightning.static_field.do_cast
+execute if entity @s[tag=sandstone_summit_booth.status.static_field] run function sandstone_summit_booth:sections/magic/spells/lightning/static_field/do_cast/if

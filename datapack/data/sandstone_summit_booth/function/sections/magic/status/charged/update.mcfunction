@@ -1,0 +1,1 @@
+execute as @e[tag=sandstone_summit_booth.status.charged] at @s run function sandstone_summit_booth:sections/magic/status/charged/update/execute_as

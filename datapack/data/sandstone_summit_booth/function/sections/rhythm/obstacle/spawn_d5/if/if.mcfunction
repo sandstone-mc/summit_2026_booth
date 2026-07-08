@@ -1,2 +1,0 @@
-execute if score anon_WnYlBycD_5 __sandstone matches ..69 run return run function sandstone_summit_booth:sections/rhythm/obstacle/spawn_d5/if/if/0_if/return_run
-scoreboard players set anon_WnYlBycD_6 __sandstone 0

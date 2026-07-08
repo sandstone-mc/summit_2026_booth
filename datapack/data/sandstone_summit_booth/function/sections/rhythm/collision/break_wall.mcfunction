@@ -1,1 +1,0 @@
-execute at @s run function sandstone_summit_booth:sections/rhythm/collision/break_wall/execute_at

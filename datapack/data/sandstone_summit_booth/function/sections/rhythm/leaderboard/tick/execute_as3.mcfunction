@@ -1,2 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/leaderboard/on_song
-advancement revoke @s only sandstone_summit_booth:ui_lb_song

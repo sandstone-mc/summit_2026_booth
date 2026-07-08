@@ -1,2 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/settings/on_lives
-advancement revoke @s only sandstone_summit_booth:ui_lives_cycle

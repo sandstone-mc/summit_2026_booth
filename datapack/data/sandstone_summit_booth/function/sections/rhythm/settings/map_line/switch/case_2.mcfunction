@@ -1,1 +1,0 @@
-data merge entity @e[tag=ssb.ui.set.map, limit=1] {text:[{text:'  🗺 Map: ',color:'gray'},{text:'  Crimson Ember     ',color:'green',font:'monocraft:default'}]}

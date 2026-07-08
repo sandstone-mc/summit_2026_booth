@@ -1,0 +1,1 @@
+advancement grant @s only summit.sticker_book:sandstone_summit_booth/enter_booth

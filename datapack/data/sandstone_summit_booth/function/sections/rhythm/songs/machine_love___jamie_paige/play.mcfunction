@@ -1,9 +1,0 @@
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg0 10t replace
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg1 610t replace
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg2 1210t replace
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg3 1810t replace
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg4 2410t replace
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg5 3010t replace
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg6 3610t replace
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg7 4210t replace
-schedule function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/seg8 4810t replace
