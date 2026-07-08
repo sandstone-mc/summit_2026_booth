@@ -224,7 +224,16 @@ function formatSelector(s: LessSelectorNode): string {
 function resolveStyles(styles: Styles, path: string[]): CssDeclarations {
 	const out: CssDeclarations = {}
 	for (const sel of styles.keys()) {
-		if (path.includes(sel)) Object.assign(out, styles.get(sel)!)
+		// `#grid` LESS rule should match a `div#grid` path segment, but
+		// `Array.includes` is element-wise (it compares whole strings),
+		// so `'div#grid' === '#grid'` is false. ID selectors are
+		// inherently partial — match them as substrings. Element-only
+		// selectors (h1, p, …) stay exact so they don't accidentally
+		// leak into other element types.
+		const matched = sel.startsWith('#')
+			? path.some((seg) => seg.includes(sel))
+			: path.includes(sel)
+		if (matched) Object.assign(out, styles.get(sel)!)
 	}
 	return out
 }
@@ -307,9 +316,24 @@ function summonVisibleElements(
 	extraTags: (`${any}${string}` | LabelClass)[],
 	initialOpacity?: number,
 ): void {
-	let accY = sceneH
-	for (let i = 0; i < visible.length; i++) {
-		const { node, path } = visible[i]
+	// First pass: compute per-element layout (text properties, scale, wrap
+	// → lines, cell height). Doing this ahead of placement lets us read
+	// stack-level layout properties (`row-gap`, `align-items`) once the
+	// total height is known, then position each cell with the right gap
+	// and (optionally) center the whole stack in the scene.
+	type ElementLayout = {
+		node: VNode
+		path: string[]
+		declarations: CssDeclarations
+		type: string
+		content: string
+		width: ReturnType<typeof parseLength>
+		scalePx: number
+		textScale: number
+		widthCompensation: number
+		cellH: number
+	}
+	const elements: ElementLayout[] = visible.map(({ node, path }) => {
 		const declarations = resolveStyles(styles, path)
 		const type = String(node.type)
 		const content = extractText(node.props?.children)
@@ -343,8 +367,25 @@ function summonVisibleElements(
 		const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 		const lines = wrapLines(content, wrapWidthPx, isBold)
 		const cellH = heightLen?.meters ?? pxToTextLineHeight(scalePx) * lines
-		accY -= cellH
-		const cell: Cell = { x: 0, y: accY, width: sceneW, height: cellH }
+		return { node, path, declarations, type, content, width, scalePx, textScale, widthCompensation, cellH }
+	})
+
+	// Stack-level layout. Inherited by every element via resolveStyles
+	// (the parent selector `#grid` lands on each child's resolved
+	// declarations), so reading the first element is enough for the
+	// single-stack case this codebase uses. If a slide ever nests
+	// differently-stacked groups, this needs to split per parent.
+	const stackDecs = elements[0]?.declarations ?? {}
+	const rowGap = parseLength(stackDecs['row-gap'] ?? '', sceneH)?.meters ?? 0
+	const alignItems = stackDecs['align-items']
+	const totalH = elements.reduce((sum, el, i) => sum + el.cellH + (i > 0 ? rowGap : 0), 0)
+	let accY =
+		alignItems === 'center' ? (sceneH + totalH + 1) / 2 : sceneH
+
+	for (let i = 0; i < elements.length; i++) {
+		const el = elements[i]
+		accY -= el.cellH
+		const cell: Cell = { x: 0, y: accY, width: sceneW, height: el.cellH }
 
 		// Entity anchored at cell bottom; text_display renders the glyphs extending
 		// upward from the entity position, so the text quad fills the cell exactly
@@ -354,13 +395,13 @@ function summonVisibleElements(
 		// block. Odd scene widths already land on a half-block and need no offset.
 		const z = origin[2] + Z_VISUAL_OFFSET
 		const x = origin[0] + cell.width / 2
-		const y = origin[1] + cell.y - cellH + (cellH - 1)
+		const y = origin[1] + cell.y - el.cellH + (el.cellH - 1)
 
-		const scale = NBT.float(textScale)
+		const scale = NBT.float(el.textScale)
 
 		const nbt: SymbolEntity['text_display'] = {
 			Tags: [SCENE_TAG, ...extraTags],
-			text: buildTextJson(content, declarations, type),
+			text: buildTextJson(el.content, el.declarations, el.type),
 			transformation: {
 				scale: [scale, scale, scale],
 				translation: NBT.float([0, 0, 0]),
@@ -369,18 +410,17 @@ function summonVisibleElements(
 			},
 		}
 
-		const bg = declarations.background ? parseColorInt(declarations.background) : undefined
+		const bg = el.declarations.background ? parseColorInt(el.declarations.background) : undefined
 		if (bg !== undefined) nbt.background = NBT.int(bg)
-		if (width !== undefined) nbt.line_width = NBT.int(Math.round(width.px * widthCompensation))
-		else if (declarations['line-width']) nbt.line_width = NBT.int(parseInt(declarations['line-width']))
-		if (declarations.shadow === 'true') nbt.shadow = true
-		if (declarations['see-through'] === 'true') nbt.see_through = true
+		if (el.width !== undefined) nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
+		else if (el.declarations['line-width']) nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
+		if (el.declarations.shadow === 'true') nbt.shadow = true
+		if (el.declarations['see-through'] === 'true') nbt.see_through = true
 		if (initialOpacity !== undefined) {
 			nbt.text_opacity = NBT.int(initialOpacity)
-		} else if (declarations.opacity) {
-			nbt.text_opacity = NBT.int(Math.round((parseFloat(declarations.opacity) / 100) * 255) - 256)
+		} else if (el.declarations.opacity) {
+			nbt.text_opacity = NBT.int(Math.round((parseFloat(el.declarations.opacity) / 100) * 255) - 256)
 		}
-
 
 		summon(
 			'text_display',
@@ -388,6 +428,10 @@ function summonVisibleElements(
 			`${x}${Number.isInteger(x) ? '.0' : ''} ${y}${Number.isInteger(y) ? '.0' : ''} ${z}${Number.isInteger(z) ? '.0' : ''}`,
 			nbt,
 		)
+
+		// Subtract row-gap before the next cell so the last cell has no
+		// trailing gap.
+		if (i < elements.length - 1) accY -= rowGap
 	}
 }
 
