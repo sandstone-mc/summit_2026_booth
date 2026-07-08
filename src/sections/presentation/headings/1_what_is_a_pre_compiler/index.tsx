@@ -13,13 +13,13 @@
  */
 
 export const slides = [
-	(
-		<>
-			<h1>What is a pre-compiler?</h1>
-			<p>Translates easy-to-write code into raw mcfunction files</p>
-			<p>Lets you use variables, abstractions, and modern control flow</p>
-			<p>Output stays vanilla-compatible — runs in any datapack</p>
-			<p>Co-locates related resources (functions, advancements, loot tables) in one file</p>
-		</>
-	),
+	(<><div id="grid">
+		<h1>What is a pre-compiler?</h1>
+	</div></>),
+	(<><div id="grid">
+		<p>A tool that translates non-vanilla code into raw mcfunction & JSON files.</p>
+		<p>They usually allow you to organize your code exactly how you want to, without having to manually juggle hundreds of files.</p>
+		<p>Also, often letting you use variables, abstractions, modern control flow, and more throughout your code without headaches.</p>
+		<p>And despite all the additional features, if a pre-compiler is well designed, you end up with an output with the same performance and compatiblity of a manually written pack.</p>
+	</div></>)
 ]

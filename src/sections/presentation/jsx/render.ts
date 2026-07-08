@@ -12,6 +12,8 @@ import {
 	execute,
 	sleep,
 	schedule,
+	Objective,
+	_,
 } from 'sandstone'
 import type { ExecuteCommand } from 'sandstone/commands'
 import { parse as parseLess } from './less'
@@ -51,6 +53,13 @@ export type SlideScene = Scene & {
 	setSlide: (index: number) => MCFunctionClass<undefined, undefined>
 	/** Re-spawn slide N's entities from a new JSX tree (keeps the slide tag). */
 	rerenderSlide: (index: number, tree: VNode) => MCFunctionClass<undefined, undefined>
+	/**
+	 * Cancel the auto-advance loop and step forward one slide from the current.
+	 * Tracks the visible slide via the `presentation.slide_idx` objective; the
+	 * auto-advance loop sets it on each tick, nextSlide reads + increments + wraps.
+	 * Re-mount to restore the auto-advance animation from slide 0.
+	 */
+	nextSlide: MCFunctionClass<undefined, undefined>
 	/** The auto-advance loop. Already kicked off by mount; reschedules itself. */
 	slideLoop: MCFunctionClass<undefined, undefined>
 	/** Display duration (in seconds) for each slide. */
@@ -547,8 +556,14 @@ export async function renderSlides(
 	// Sandstone splits the body at each sleep into chained __sleep child
 	// MCFunctions, then reschedules the whole loop from the last segment.
 	// No async/await needed — sleep() works in sync contexts too.
+	// Tracks the currently-visible slide in `presentation.slide_idx#current`
+	// so `nextSlide` knows where to advance from.
+	const slideIdx = Objective.create('presentation.slide_idx', 'dummy')
+	const currentSlide = slideIdx('#current')
+
 	const slideLoop = MCFunction('presentation/slides/loop', () => {
 		for (let s = 0; s < totalSlides; s++) {
+			currentSlide.set(s)
 			setSlideFns[s]()
 			sleep(`${durations[s]}s`)
 		}
@@ -556,8 +571,37 @@ export async function renderSlides(
 		schedule.function(slideLoop, '1t', 'replace')
 	})
 
+	// nextSlide: cancel the auto-advance loop and step forward one slide
+	// from the current index. The cancel block mirrors `unmount`'s schedule
+	// teardown so the loop + every pending __sleep segment gets cleared.
+	// After unmount+mount the auto-advance animation runs again from 0
+	// (mount resets currentSlide to -1, slideLoop then sets it to 0 first).
+	const nextSlide = MCFunction('presentation/slides/next', () => {
+		const loopName = slideLoop.name
+		schedule.clear(loopName)
+		schedule.clear(`${loopName}/schedule`)
+		for (let i = 1; i <= totalSlides; i++) {
+			schedule.clear(`${loopName}/${i === 1 ? '__sleep' : `__sleep${i}`}`)
+		}
+		currentSlide.add(1)
+		_.if(currentSlide.greaterThanOrEqualTo(totalSlides), () => {
+			currentSlide.set(0)
+		})
+		for (let s = 0; s < totalSlides; s++) {
+			hideSlide[s]()
+		}
+		for (let s = 0; s < totalSlides; s++) {
+			_.if(currentSlide.equalTo(s), () => {
+				showSlide[s]()
+			})
+		}
+	})
+
 	// ── Mount: spawn every slide hidden, then kick the loop ──────
 	const mount = MCFunction('presentation/mount', () => {
+		// Reset the visible-slide tracker so the first nextSlide call after
+		// mount advances from a clean state (-1 + 1 = slide 0).
+		currentSlide.set(-1)
 		for (let s = 0; s < totalSlides; s++) {
 			summonVisibleElements(
 				slideVisibles[s],
@@ -597,6 +641,7 @@ export async function renderSlides(
 		hideSlide,
 		setSlide,
 		rerenderSlide,
+		nextSlide,
 		slideLoop,
 		durations,
 		totalSlides,
