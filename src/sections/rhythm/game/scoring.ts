@@ -1,4 +1,4 @@
-import { _, execute, MCFunction, Objective, playsound, Selector, title } from 'sandstone'
+import { _, execute, MCFunction, Objective, playsound, Selector, tellraw, title } from 'sandstone'
 import { GameStatus, Tags, gamePlayer, status } from './state'
 import { beatFlag } from './walls/ticking'
 import { wallLives } from './walls/collision'
@@ -102,6 +102,7 @@ export const computeScores = MCFunction(
 		title(gamePlayer).title({ text: 'Game Over!', color: 'red', bold: true })
 		execute.as(gamePlayer).run(() => {
 			title('@s').subtitle([{ text: 'Score: ', color: 'gray' }, finalScore('@s')])
+			tellraw('@s', [{ text: '♪ ', color: 'gold' }, { text: 'Final score: ', color: 'gray' }, finalScore('@s')])
 		})
 	},
 	{ lazy: true },

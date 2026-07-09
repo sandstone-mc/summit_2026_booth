@@ -11,7 +11,10 @@ import {
 	type Score,
 	Selector,
 	kill,
+	playsound,
+	rel,
 	tag,
+	tellraw,
 } from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { songCount, songNames } from '@rhythm/config/internal/songs'
@@ -365,17 +368,39 @@ export const saveLeaderboard = MCFunction(
 			for (let i = 0; i < songCount; i++) {
 				const idx = i
 				_.if(songSelect.equalTo(idx), () => {
-					_.if(finalScore('@s').greaterThan(bestScores[idx]('@s')), () => {
+					_.if(bestScores[idx]('@s').matches('0..'), () => {
+						_.if(finalScore('@s').greaterThan(bestScores[idx]('@s')), () => {
+							bestScores[idx]('@s').set(finalScore('@s'))
+							tag('@s').add(Tags.NEW_PB)
+						})
+					}).else(() => {
 						bestScores[idx]('@s').set(finalScore('@s'))
+						tag('@s').add(Tags.NEW_PB)
 					})
 					_.if(hitsTaken('@s').equalTo(0), () => {
-						_.if(finalScore('@s').greaterThan(deathlessScores[idx]('@s')), () => {
+						_.if(deathlessScores[idx]('@s').matches('0..'), () => {
+							_.if(finalScore('@s').greaterThan(deathlessScores[idx]('@s')), () => {
+								deathlessScores[idx]('@s').set(finalScore('@s'))
+							})
+						}).else(() => {
 							deathlessScores[idx]('@s').set(finalScore('@s'))
 						})
 					})
 				})
 			}
 		})
+
+		execute
+			.as(Selector('@a', { tag: Tags.NEW_PB }))
+			.at('@s')
+			.run(() => {
+				tag('@s').remove(Tags.NEW_PB)
+				tellraw('@s', [
+					{ text: '★ ', color: 'gold' },
+					{ text: 'New personal best!', color: 'gold', bold: true },
+				])
+				playsound('minecraft:ui.toast.challenge_complete', 'master', '@s', rel(0, 0, 0), 1, 1)
+			})
 
 		leaderboardSongView.set(songSelect)
 		updateDisplay()
@@ -426,6 +451,14 @@ MCFunction(
 		leaderboardCategoryView.set(0)
 		scrollPos.set(0)
 
+		for (const adv of ['ui_lb_song', 'ui_lb_cat', 'ui_lb_my']) {
+			advancement.revoke('@a').only(`${NAMESPACE}:${adv}`)
+		}
+		execute.as(Selector('@e', { type: 'minecraft:interaction', tag: Tags.UI_LEADERBOARD })).run(() => {
+			data.remove.entity('@s', 'attack')
+			data.remove.entity('@s', 'interaction')
+		})
+
 		updateDisplay()
 	},
 	{ runOnLoad: true },
@@ -443,7 +476,7 @@ const BACKDROP_TEXT: JSONTextComponent = [
 	{ text: `\n${panels.ruler}` },
 ]
 
-MCFunction(
+export const spawnLeaderboardPanel = MCFunction(
 	'sections/rhythm/leaderboard/spawn',
 	() => {
 		kill(Selector('@e', { tag: Tags.UI_LEADERBOARD }))
@@ -467,5 +500,5 @@ MCFunction(
 		const myY = lineY(panels.leaderboard, TOTAL_LINES, 14)
 		spawnClick(panels.leaderboard, 0, myY, [Tags.UI_LEADERBOARD, Tags.UI_LB_MY_INT], 3, CLICK_Y_OFFSET)
 	},
-	{ runOnLoad: true },
+	{ lazy: true },
 )

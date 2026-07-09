@@ -50,6 +50,12 @@ const config: RhythmConfig = {
 			default: 3,
 		},
 		countdown: 5,
+		calibration: {
+			beats: 24,
+			countInBeats: 4,
+			intervalTicks: 16,
+			minSamples: 8,
+		},
 		scoring: {
 			comboBonus: 5,
 			comboDivisor: 10,

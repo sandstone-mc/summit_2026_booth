@@ -110,6 +110,17 @@ export interface RhythmConfig {
 		}
 		/** Countdown length in seconds before a song starts. */
 		countdown: number
+		/** Latency calibration minigame: tap a pad to a metronome, the mean offset is saved per player. */
+		calibration: {
+			/** Measured metronome beats (after the count-in). */
+			beats: number
+			/** Count-in beats before sampling starts. */
+			countInBeats: number
+			/** Ticks between metronome beats; taps beyond half this are folded onto the nearest beat. */
+			intervalTicks: number
+			/** Samples required for the result to be saved. */
+			minSamples: number
+		}
 		scoring: {
 			/** Bonus points awarded each time the combo reaches a multiple of comboDivisor. */
 			comboBonus: number

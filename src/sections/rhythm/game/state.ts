@@ -9,10 +9,14 @@ export enum GameStatus {
 	STARTING,
 	ACTIVE,
 	ENDING,
+	CALIBRATING,
 }
 
 export enum Tags {
 	PLAYER = 'ssb.rhythm.player',
+	CALIBRATOR = 'ssb.rhythm.cal.player',
+	CAL_PAD = 'ssb.rhythm.cal.pad',
+	NEW_PB = 'ssb.rhythm.pb',
 
 	WALL = 'ssb.rhythm.wall',
 	WALL_NEW = 'ssb.rhythm.wall.new',
@@ -27,6 +31,7 @@ export enum Tags {
 	PARKOUR_TRIGGER = 'ssb.rhythm.pk.trigger',
 
 	LANE = 'ssb.rhythm.lane',
+	LANE_MOUNT = 'ssb.rhythm.lane.mount',
 	LANE_FRAGMENT = 'ssb.rhythm.lane.frag',
 	LANE_BORDER = 'ssb.rhythm.lane.border',
 
@@ -35,6 +40,8 @@ export enum Tags {
 	UI_SET_SONG_TXT = 'ssb.ui.set.song',
 	UI_SET_LIVES_TXT = 'ssb.ui.set.lives',
 	UI_SET_MAP_TXT = 'ssb.ui.set.map',
+	UI_SET_INTERP_TXT = 'ssb.ui.set.interp',
+	UI_SET_CAL_TXT = 'ssb.ui.set.cal',
 	UI_SET_BTN_TXT = 'ssb.ui.set.btn',
 	UI_SONG_INT = 'ssb.ui.set.si',
 	UI_LIVES_INT = 'ssb.ui.set.li',
@@ -50,6 +57,8 @@ export enum Tags {
 	UI_LB_MY_INT = 'ssb.ui.lb.mi',
 
 	UI_MAP_INT = 'ssb.ui.set.mi',
+	UI_INTERP_INT = 'ssb.ui.set.ii',
+	UI_CAL_INT = 'ssb.ui.set.ci',
 
 	SKYBOX = 'ssb.rhythm.skybox',
 
@@ -64,6 +73,7 @@ export const status = Variable(GameStatus.WAITING)
 
 export const songSelect = Variable(0)
 export const mapSelect = Variable(0)
+export const interpSetting = Variable(0)
 
 export const leaderboardSongView = Variable(0)
 export const leaderboardCategoryView = Variable(0)

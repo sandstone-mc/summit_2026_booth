@@ -1,4 +1,16 @@
-import { _, execute, MCFunction, playsound, Selector, tag, title, type MCFunctionClass, Variable } from 'sandstone'
+import {
+	_,
+	execute,
+	MCFunction,
+	playsound,
+	Selector,
+	tag,
+	tellraw,
+	title,
+	type MCFunctionClass,
+	Variable,
+} from 'sandstone'
+import { calOffsetMs, calibrationDepth } from './calibration'
 import { GameStatus, Tags, status, gamePlayer } from './state'
 import { setActive } from './active'
 
@@ -6,6 +18,8 @@ import { gameplay } from '@rhythm/config'
 import { startShowcaseSession } from 'src/sections/main/showcase'
 
 const countdown = Variable(0)
+const startedGametime = Variable(0)
+const cancelDelta = Variable(0)
 
 const countdownTick = MCFunction('sections/rhythm/start/countdown_tick', (self: MCFunctionClass) => {
 	_.if(status.equalTo(GameStatus.STARTING), () => {
@@ -35,8 +49,13 @@ export const startGame = MCFunction(
 	() => {
 		_.if(status.equalTo(GameStatus.WAITING), () => {
 			startShowcaseSession()
-			
 			status.set(GameStatus.STARTING)
+			execute.store.result.score(startedGametime).run.time.query('gametime')
+			calibrationDepth.set(0)
+			execute.store.result
+				.score(calibrationDepth)
+				.run.scoreboard.players.get(Selector('@a', { tag: Tags.PLAYER, limit: 1 }), calOffsetMs.name)
+			calibrationDepth.multiply(10)
 			countdown.set(gameplay.countdown)
 			countdownTick()
 		})
@@ -48,10 +67,14 @@ export const cancelStart = MCFunction(
 	'sections/rhythm/start/cancel',
 	() => {
 		_.if(status.equalTo(GameStatus.STARTING), () => {
-			countdownTick.schedule.clear()
-			title(gamePlayer).actionbar({ text: 'Cancelled.', color: 'red' })
-			tag(gamePlayer).remove(Tags.PLAYER)
-			status.set(GameStatus.WAITING)
+			execute.store.result.score(cancelDelta).run.time.query('gametime')
+			cancelDelta.remove(startedGametime)
+			_.if(cancelDelta.greaterThanOrEqualTo(10), () => {
+				countdownTick.schedule.clear()
+				title(gamePlayer).actionbar({ text: 'Cancelled.', color: 'red' })
+				tag(gamePlayer).remove(Tags.PLAYER)
+				status.set(GameStatus.WAITING)
+			})
 		})
 	},
 	{ lazy: true },

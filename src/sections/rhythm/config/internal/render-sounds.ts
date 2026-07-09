@@ -1,6 +1,6 @@
 import { Midi } from '@tonejs/midi'
-import { mkdirSync, unlinkSync } from 'fs'
-import { join } from 'path'
+import { mkdirSync, readdirSync, statSync, unlinkSync } from 'fs'
+import { dirname, join } from 'path'
 import { RawResource, sandstonePack } from 'sandstone'
 import { NAMESPACE, PROJECT_ROOT } from '@shared'
 import { rendering } from '..'
@@ -222,6 +222,51 @@ export interface SongRenderInput {
 	audioOffset?: number
 }
 
+const FORCE_RENDER = process.env.FORCE_RENDER === '1' || process.env.FORCE_RENDER === 'true'
+const CONFIG_INDEX = join(PROJECT_ROOT, 'src/sections/rhythm/config/index.ts')
+
+function fileSig(path: string): string {
+	try {
+		const stat = statSync(path)
+		return `${path}:${stat.size}:${Math.floor(stat.mtimeMs)}`
+	} catch {
+		return `${path}:missing`
+	}
+}
+
+function songCacheHash(song: SongRenderInput): string {
+	const sources = [song.audioPath, song.midiPath, CONFIG_INDEX, join(dirname(song.midiPath), 'songs.json')]
+	return Bun.hash(
+		JSON.stringify([
+			rendering,
+			SEGMENT_SECS,
+			song.audioStart ?? 0,
+			sources.filter((source): source is string => !!source).map(fileSig),
+		]),
+	).toString(16)
+}
+
+const CACHE_FILE_PATTERN = /(_s\d+\.ogg|\.segments|\.wav)$/
+
+function purgeSongCache(safeName: string) {
+	for (const file of readdirSync(SONGS_CACHE_DIR)) {
+		if (file === `${safeName}.segments` || file === `${safeName}.wav` || file.startsWith(`${safeName}_s`))
+			unlinkSync(join(SONGS_CACHE_DIR, file))
+	}
+}
+
+function pruneOrphanedSongCache(knownSafeNames: Set<string>) {
+	let pruned = 0
+	for (const file of readdirSync(SONGS_CACHE_DIR)) {
+		if (!CACHE_FILE_PATTERN.test(file)) continue
+		if (!knownSafeNames.has(file.replace(CACHE_FILE_PATTERN, ''))) {
+			unlinkSync(join(SONGS_CACHE_DIR, file))
+			pruned++
+		}
+	}
+	if (pruned > 0) console.log(`[render-songs] Pruned ${pruned} stale cache files`)
+}
+
 export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSongInfo[]> {
 	if (songs.length === 0) return []
 	mkdirSync(SONGS_CACHE_DIR, { recursive: true })
@@ -235,6 +280,15 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 		const wavPath = join(SONGS_CACHE_DIR, `${song.safeName}.wav`)
 		const segMarker = join(SONGS_CACHE_DIR, `${song.safeName}.segments`)
 
+		const cacheHash = songCacheHash(song)
+		let cachedCount: number | null = null
+		try {
+			const marker = JSON.parse(await Bun.file(segMarker).text())
+			if (typeof marker.count === 'number' && marker.hash === cacheHash) cachedCount = marker.count
+		} catch {}
+		if (FORCE_RENDER) cachedCount = null
+		if (cachedCount === null && (await Bun.file(segMarker).exists())) purgeSongCache(song.safeName)
+
 		let audioOffsetSec = song.audioOffset ?? 0
 
 		if (song.audioPath && (await Bun.file(song.audioPath).exists()) && song.audioOffset === undefined) {
@@ -247,7 +301,7 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 		}
 		const audioOffsetTicks = Math.round(audioOffsetSec * 20)
 
-		if (!(await Bun.file(wavPath).exists()) && !(await Bun.file(segMarker).exists())) {
+		if (!(await Bun.file(wavPath).exists()) && cachedCount === null) {
 			if (song.audioPath && (await Bun.file(song.audioPath).exists())) {
 				const trimArgs = song.audioStart ? ['-ss', `${song.audioStart}`] : []
 				const ffmpegResult = Bun.spawnSync([
@@ -289,8 +343,8 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 		}
 
 		let segmentCount: number
-		if (await Bun.file(segMarker).exists()) {
-			segmentCount = parseInt(await Bun.file(segMarker).text())
+		if (cachedCount !== null) {
+			segmentCount = cachedCount
 		} else {
 			const duration = getAudioDuration(wavPath)
 			segmentCount = Math.ceil(duration / SEGMENT_SECS)
@@ -331,7 +385,7 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 					if (ffmpegResult.success) rendered++
 				}
 			}
-			await Bun.write(segMarker, `${segmentCount}`)
+			await Bun.write(segMarker, JSON.stringify({ count: segmentCount, hash: cacheHash }))
 			try {
 				unlinkSync(wavPath)
 			} catch {}
@@ -349,6 +403,8 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 
 	if (rendered > 0) console.log(`[render-songs] Rendered ${rendered} new segments (${totalSegments} total)`)
 	else console.log(`[render-songs] All ${totalSegments} segments from cache`)
+
+	pruneOrphanedSongCache(new Set(songs.map((song) => song.safeName)))
 
 	for (const info of results) {
 		for (let i = 0; i < info.segmentCount; i++) {

@@ -14,6 +14,7 @@ import {
 	Variable,
 } from 'sandstone'
 import { collisions, walls } from '@rhythm/config'
+import { calibrationDepth } from './calibration'
 import { wallMovement } from '@rhythm/config/internal/derived'
 import {
 	PARKOUR_BONUS,
@@ -100,6 +101,7 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 					const spacingAge = i * 2 - platLen + 2 + collisions.parkourLead * 2
 					const depthOffset = Math.round((spacingAge * wallMovement.moveNumerator) / wallMovement.travelTicks)
 					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).set(depthOffset)
+					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).add(calibrationDepth)
 					tag(Selector('@e', { tag: Tags.PARKOUR_FRESH })).remove(Tags.PARKOUR_FRESH)
 				}
 			}
