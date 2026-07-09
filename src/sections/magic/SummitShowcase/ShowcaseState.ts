@@ -5,7 +5,7 @@ import { clearSelf, getSelf, saveSelf, io } from '../PlayerDB'
 import { mana, maxMana, manaRegen } from '../player_handler'
 import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
 import { SymbolEntity } from 'sandstone/arguments';
-import { endShowcaseSession, startShowcaseSession } from 'src/sections/main/showcase'
+import { endShowcaseSession, PlayersInShowcase, startShowcaseSession } from 'src/sections/main/showcase'
 
 export const State = Objective.create('showcase.state', 'dummy')
 export const GlobalState = State('#global')
@@ -44,10 +44,19 @@ const InBoothLabel = Label('showcase.in_magic_showcase')
 const InBoothPlayer = Selector('@a', { tag: InBoothLabel })
 const InBoothCount = State('#in_booth_count')
 
-// safeguard: a session player who somehow isn't tagged as inside the showcase volume (e.g. teleported/logged out mid-session)
-const SessionPlayerOutsideBooth = Selector('@a', {
-    tag: [SessionPlayerLabel, `!sandstone_summit_booth.${InBoothLabel.name}` as `${any}${string}`]
-})
+// session time limit - counts down in ticks, reset() is forced once it runs out
+const SESSION_DURATION_TICKS = 3 * 60 * 20
+export const SessionTimer = State('#session_timer')
+
+// safeguard: the session player, if they're currently within the shared showcase area
+// (built lazily at the call site, not up here, since `PlayersInShowcase.arguments` isn't
+// initialized yet this early in the circular import chain with main/showcase.ts)
+function sessionPlayerInShowcase() {
+    return Selector('@a', {
+        tag: SessionPlayerLabel,
+        ...PlayersInShowcase.arguments,
+    })
+}
 
 // booth interior volume relative to ShowcaseMarker (x 0-19, y 0-5, z 0-26)
 const BOOTH_DX = 19
@@ -273,6 +282,8 @@ export const startSession = MCFunction('sections/magic/showcase/session/start', 
     _.if(GlobalState.equalTo(STATES.IDLE), () => {
         startShowcaseSession()
 
+        SessionTimer.set(SESSION_DURATION_TICKS)
+
         SessionPlayerLabel('@s').add()
 
         // Init player state fresh for each showcase run
@@ -349,8 +360,14 @@ MCFunction('sections/magic/showcase/tick', () => {
         _.if(InBoothCount.greaterThan(1), () => {
             reset()
         })
-        // Safeguard: reset if the session player exists but isn't tagged as inside the booth
-        execute.if.entity(SessionPlayerOutsideBooth).run(() => {
+        // Safeguard: reset if the session player exists but isn't within the shared showcase area
+        execute.unless.entity(sessionPlayerInShowcase()).run(() => {
+            reset()
+        })
+
+        // Enforce the session time limit
+        SessionTimer.remove(1)
+        _.if(SessionTimer.lessThanOrEqualTo(0), () => {
             reset()
         })
     })

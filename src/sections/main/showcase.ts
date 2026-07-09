@@ -28,7 +28,7 @@ const SHOWCASE_MIN = { x: -80, y: 63, z: 21 }
 const SHOWCASE_MAX = { x: -60, y: 72, z: 51 }
 const SHOWCASE_BOUNDS = [abs(SHOWCASE_MIN.x, SHOWCASE_MIN.y, SHOWCASE_MIN.z), abs(SHOWCASE_MAX.x, SHOWCASE_MAX.y, SHOWCASE_MAX.z)] as const
 
-const PlayersInShowcase = Selector('@a', {
+export const PlayersInShowcase = Selector('@a', {
     x: SHOWCASE_MIN.x,
     y: SHOWCASE_MIN.y,
     z: SHOWCASE_MIN.z,

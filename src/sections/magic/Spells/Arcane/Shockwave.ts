@@ -26,6 +26,7 @@ createProjectileSpell({
             })
             damage('@s', 1, 'magic')
         },
-        destroyOnHit: true
+        destroyOnHit: true,
+        blockCollision: true
     }
 })
