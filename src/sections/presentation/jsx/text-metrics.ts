@@ -1,31 +1,33 @@
-// Text metrics for Minecraft's default font. Used at build time to figure
-// out how tall a text_display will be after it wraps, so the layout
-// pre-allocates enough vertical space for every paragraph.
+// Per-glyph advance widths for any font available to the JSX renderer.
 //
-// Why dynamic: MC's default font is a bitmap font. Each glyph lives in an
-// 8×8 cell on a 128×128 PNG; the rightmost filled column in that cell is
-// the glyph's advance (plus 1px of inter-character spacing). Hardcoding
-// the advances loses characters whose widths differ from MC's reference
-// table (italic, custom fonts, future MC updates) and silently disagrees
-// with what `text_display` actually renders.
+// Each font renders its own char widths — using default-font widths to
+// pre-compute wrap for a `<code>` block that actually renders in
+// monocraft would silently disagree with what `text_display` draws. So
+// the metrics table is keyed by font ID (`<namespace>:<name>`) and the
+// renderer asks for the font it intends to render in.
 //
-// We pull the font JSON + ASCII PNG from the misode/mcmeta `assets` branch
-// (a frequently-updated mirror of MC's bundled resources) and measure
-// each glyph ourselves. Files are cached at `.sandstone/cache/font/` so
-// the network only happens on the first build (or after a cache wipe).
+// Default Minecraft font: fetched from misode/mcmeta's `assets` branch
+// (a frequently-updated mirror of MC's bundled resources). Cached at
+// `.sandstone/cache/font/` so the network only happens on first build.
 //
-// Widths are in default-font pixels (scale 1) — `line_width` is also in
-// default-font pixels, so the comparison is apples-to-apples.
+// Custom fonts (anything under `resources/resourcepack/assets/<ns>/font/`):
+// read from the local resourcepack folder so the user can drop in any
+// font they ship and have it Just Work for `<code>` and any other
+// element. Their bitmap PNGs are loaded from
+// `resources/resourcepack/assets/<ns>/textures/...` the same way MC
+// resolves them at runtime.
+//
+// Widths are in the font's bitmap pixels. `text_display.line_width` is
+// also in those pixels, so wrap math and NBT stay in the same unit.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import sharp from 'sharp'
 
 const CACHE_DIR = join(process.cwd(), '.sandstone', 'cache', 'font')
+const RESOURCES_DIR = join(process.cwd(), 'resources', 'resourcepack', 'assets')
 
 // misode/mcmeta's `assets` branch tracks MC's latest bundled resources.
-// We pin to the `assets` branch tip — the user explicitly accepted "use
-// the latest files" rather than matching a specific MC version commit.
 const MCMETA_BASE = 'https://raw.githubusercontent.com/misode/mcmeta/assets/assets'
 
 // MC's advance for characters not present in any bitmap provider. Matches
@@ -33,13 +35,13 @@ const MCMETA_BASE = 'https://raw.githubusercontent.com/misode/mcmeta/assets/asse
 // `BitmapProvider.GlyphInfo` for the default font.
 const MISSING_CHAR_WIDTH = 7
 
-// Module-level cache. Populated by `loadFontMetrics`; consumed by
-// `charWidth` / `wrapLines`. Module state is intentional — text-metrics
-// is a build-time singleton.
-const widths = new Map<string, number>()
-let loaded = false
+export const DEFAULT_FONT_ID = 'minecraft:default'
 
-// ── Asset fetching ──────────────────────────────────────────────
+// fontId → char → width in that font's bitmap pixels
+const fontWidths = new Map<string, Map<string, number>>()
+const loadedFonts = new Set<string>()
+
+// ── Asset fetching / loading ─────────────────────────────────────
 
 async function fetchToCache(relPath: string): Promise<Buffer> {
 	const cached = join(CACHE_DIR, relPath)
@@ -53,7 +55,28 @@ async function fetchToCache(relPath: string): Promise<Buffer> {
 	return buf
 }
 
-// ── Font JSON model + reference resolution ──────────────────────
+/**
+ * Resolve an MC resource location (`minecraft:include/default`) to the
+ * local font JSON path inside the user's resourcepack directory
+ * (`<cwd>/resources/resourcepack/assets/minecraft/font/include/default.json`).
+ */
+function localFontJsonPath(fontId: string): string {
+	const [ns, ...rest] = fontId.split(':')
+	if (!ns) throw new Error(`text-metrics: invalid font ID ${fontId}`)
+	return join(RESOURCES_DIR, ns, 'font', `${rest.join(':')}.json`)
+}
+
+/**
+ * Resolve a bitmap provider's `file` field (`minecraft:font/ascii.png`)
+ * to the matching PNG inside `resources/resourcepack/assets/.../textures/...`.
+ */
+function localBitmapPngPath(file: string): string {
+	const [ns, ...rest] = file.split(':')
+	if (!ns) throw new Error(`text-metrics: invalid bitmap file ref ${file}`)
+	return join(RESOURCES_DIR, ns, 'textures', ...rest)
+}
+
+// ── Font JSON model ──────────────────────────────────────────────
 
 interface BitmapProvider {
 	type: 'bitmap'
@@ -61,9 +84,6 @@ interface BitmapProvider {
 	chars: string[]
 	height?: number
 	ascent: number
-	// Width in pixels of each cell. Per-row entries (one per chars row)
-	// because different bitmap providers (nonlatin_european, ascii, etc.)
-	// use different cell sizes.
 	rowWidths?: number[]
 }
 
@@ -84,72 +104,23 @@ interface FontJson {
 	providers: FontProvider[]
 }
 
-// Map an MC font JSON resource location (`minecraft:include/default`) to
-// its misode cache path (`include/default.json`).
-function fontJsonRelPath(id: string): string {
-	const [ns, ...rest] = id.split(':')
-	if (ns !== 'minecraft') {
-		throw new Error(`text-metrics: only minecraft font providers supported, got ${id}`)
-	}
-	return `${rest.join(':')}.json`
-}
-
-// Map a bitmap provider's `file` field (`minecraft:font/ascii.png`) to
-// the texture path it lives at in MC's `textures/` tree.
-function bitmapPngRelPath(file: string): string {
-	const [ns, ...rest] = file.split(':')
-	if (ns !== 'minecraft') {
-		throw new Error(`text-metrics: only minecraft bitmap providers supported, got ${file}`)
-	}
-	return `textures/${rest.join(':')}`
-}
+// ── PNG measurement ──────────────────────────────────────────────
 
 /**
- * Walk a font's provider chain, returning every bitmap provider reachable
- * through `reference` links. PNG files are downloaded as needed. The
- * result is the *providers*, not pixel data — callers iterate to find
- * the one whose PNG they want, then decode it.
- */
-async function loadProviders(jsonAssetPath: string, visited = new Set<string>()): Promise<BitmapProvider[]> {
-	if (visited.has(jsonAssetPath)) return []
-	visited.add(jsonAssetPath)
-	const fontJSON: FontJson = JSON.parse((await fetchToCache(jsonAssetPath)).toString('utf8'))
-	const bitmaps: BitmapProvider[] = []
-	for (const p of fontJSON.providers) {
-		if (p.type === 'bitmap') {
-			bitmaps.push(p)
-		} else if (p.type === 'reference') {
-			// Cross-reference IDs are font-tree-relative; prepend `font/`
-			// to get the asset path fetchToCache expects.
-			const assetRel = `font/${fontJsonRelPath(p.id)}`
-			bitmaps.push(...(await loadProviders(assetRel, visited)))
-		}
-		// space providers contribute explicit advance widths for chars
-		// not covered by any bitmap — we ignore them and let the
-		// fallback kick in (it matches MC's behavior closely enough).
-	}
-	return bitmaps
-}
-
-// ── PNG decoding → per-glyph advance table ──────────────────────
-
-/**
- * Measure every glyph in a single bitmap: walk the `chars` rows, for each
- * char find the rightmost non-transparent column in its 8×8 cell, then
- * add +1 for inter-character spacing (matches animated-java's
- * BitmapFontProvider, which mirrors MC's advance behavior).
+ * Measure every glyph in a single bitmap PNG. Walks the `chars` rows;
+ * for each char finds the rightmost non-transparent column in its cell,
+ * then adds +1 for inter-character spacing (matches MC's advance).
  *
- * PNG is decoded via `sharp` (already a project dep) into raw RGBA so we
- * can scan alpha cheaply without a Canvas.
+ * Different rows can use different cell widths (nonlatin_european and
+ * ascii providers use different layouts), so the cell size is computed
+ * per row from the row's `chars.length`.
  */
 async function measureBitmap(
 	bitmap: BitmapProvider,
-	pngFile: string,
+	pngBytes: Buffer,
 	out: Map<string, number>,
 ): Promise<void> {
-	const relPath = bitmapPngRelPath(pngFile)
-	const png = await fetchToCache(relPath)
-	const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+	const { data, info } = await sharp(pngBytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
 
 	const rowCount = bitmap.chars.length
 	const cellH = info.height / rowCount
@@ -173,57 +144,265 @@ async function measureBitmap(
 	}
 }
 
-// ── Public API ──────────────────────────────────────────────────
-
 /**
- * One-time init: download the MC default font (default.json + its
- * referenced includes + the ascii.png bitmap), measure every glyph, and
- * populate the module-level widths table. Subsequent calls return
- * instantly. Safe to call from multiple entry points — module state is
- * shared across all importers in the build.
- *
- * Must be awaited before `wrapLines` / `charWidth` are called — those
- * throw if metrics aren't loaded yet. Render entry points (`render`,
- * `renderSlides`) await this before emitting any MCFunction.
+ * Apply a bitmap provider's glyphs into `out`. For default font the PNG
+ * comes from the misode cache; for custom fonts it's a local read.
  */
-export async function loadFontMetrics(): Promise<void> {
-	if (loaded) return
-
-	// Resolve every bitmap provider reachable from `default.json`. Then
-	// pick the one whose file is ascii.png — that's the standard ASCII
-	// glyph table.
-	const providers = await loadProviders('font/default.json')
-	const asciiProvider = providers.find((p) => p.file.endsWith('ascii.png'))
-	if (!asciiProvider) {
-		throw new Error('text-metrics: could not find an ascii.png bitmap provider in default.json')
-	}
-
-	widths.clear()
-	await measureBitmap(asciiProvider, asciiProvider.file, widths)
-	loaded = true
+async function applyBitmap(
+	bitmap: BitmapProvider,
+	out: Map<string, number>,
+	loader: () => Promise<Buffer>,
+): Promise<void> {
+	const png = await loader()
+	await measureBitmap(bitmap, png, out)
 }
 
-/** Width of one char in default-font pixels. Bold adds 1px (matches MC). */
-export function charWidth(ch: string, bold: boolean): number {
-	if (!loaded) {
+/**
+ * Walk a font's provider chain (loaded from `jsonBytes`) and merge every
+ * reachable bitmap / space provider into `out`. `bitmapLoader` resolves
+ * a bitmap `file` ref to PNG bytes — pass a default-font loader or a
+ * local-resource loader depending on the source.
+ */
+async function applyProviders(
+	jsonBytes: Buffer,
+	out: Map<string, number>,
+	bitmapLoader: (file: string) => Promise<Buffer>,
+	referenceLoader: (id: string) => Promise<Buffer | null>,
+): Promise<void> {
+	const fontJSON: FontJson = JSON.parse(jsonBytes.toString('utf8'))
+	for (const p of fontJSON.providers) {
+		if (p.type === 'bitmap') {
+			await applyBitmap(p, out, () => bitmapLoader(p.file))
+		} else if (p.type === 'reference') {
+			const refBytes = await referenceLoader(p.id)
+			if (refBytes) await applyProviders(refBytes, out, bitmapLoader, referenceLoader)
+		} else if (p.type === 'space') {
+			// Space providers supply explicit advances (mostly for chars
+			// not in any bitmap). +1 inter-char spacing to match MC.
+			for (const [ch, advance] of Object.entries(p.advances)) {
+				out.set(ch, advance + 1)
+			}
+		}
+	}
+}
+
+// ── Default font load (misode/mcmeta) ────────────────────────────
+
+async function loadDefaultFont(): Promise<void> {
+	const widths = new Map<string, number>()
+
+	const referenceLoader = async (id: string): Promise<Buffer | null> => {
+		// Default-font references resolve under minecraft/.
+		const [ns, ...rest] = id.split(':')
+		if (ns !== 'minecraft') return null
+		return await fetchToCache(`font/${rest.join(':')}.json`)
+	}
+
+	const bitmapLoader = async (file: string): Promise<Buffer> => {
+		const [ns, ...rest] = file.split(':')
+		if (ns !== 'minecraft') throw new Error(`text-metrics: non-minecraft bitmap ref ${file} in default font`)
+		return await fetchToCache(`textures/${rest.join(':')}`)
+	}
+
+	await applyProviders(await fetchToCache('font/default.json'), widths, bitmapLoader, referenceLoader)
+	fontWidths.set(DEFAULT_FONT_ID, widths)
+}
+
+// ── Custom font load (local resources/resourcepack) ──────────────
+
+async function loadCustomFont(fontId: string): Promise<void> {
+	const jsonPath = localFontJsonPath(fontId)
+	if (!existsSync(jsonPath)) {
 		throw new Error(
-			'text-metrics: charWidth() called before loadFontMetrics() — await loadFontMetrics() in your render entry point',
+			`text-metrics: custom font ${fontId} not found at ${jsonPath} — ` +
+				`add it under resources/resourcepack/assets/<namespace>/font/`,
+		)
+	}
+	const jsonBytes = readFileSync(jsonPath)
+
+	const widths = new Map<string, number>()
+
+	const referenceLoader = async (id: string): Promise<Buffer | null> => {
+		const path = localFontJsonPath(id)
+		return existsSync(path) ? readFileSync(path) : null
+	}
+
+	const bitmapLoader = async (file: string): Promise<Buffer> => {
+		const path = localBitmapPngPath(file)
+		if (!existsSync(path)) {
+			throw new Error(`text-metrics: font bitmap ${file} not found at ${path}`)
+		}
+		return readFileSync(path)
+	}
+
+	await applyProviders(jsonBytes, widths, bitmapLoader, referenceLoader)
+	fontWidths.set(fontId, widths)
+}
+
+// ── Public API ───────────────────────────────────────────────────
+
+/**
+ * One-time init: load the named font and populate its widths table.
+ * Defaults to Minecraft's built-in font. Subsequent calls with the same
+ * `fontId` are no-ops. Safe to call from many entry points — module
+ * state is shared.
+ *
+ * Must be awaited before `wrapLines` / `charWidth` for that font. The
+ * render entry points (`render`, `renderSlides`) preload every font
+ * they reference before emitting MCFunctions.
+ */
+export async function loadFontMetrics(fontId: string = DEFAULT_FONT_ID): Promise<void> {
+	if (loadedFonts.has(fontId)) return
+	if (fontId === DEFAULT_FONT_ID) {
+		await loadDefaultFont()
+	} else {
+		await loadCustomFont(fontId)
+	}
+	loadedFonts.add(fontId)
+}
+
+/** Width of one char in the named font's bitmap pixels. Bold adds 1px (matches MC). */
+export function charWidth(ch: string, bold: boolean, fontId: string = DEFAULT_FONT_ID): number {
+	const widths = fontWidths.get(fontId)
+	if (!widths) {
+		throw new Error(
+			`text-metrics: charWidth(${JSON.stringify(ch)}, ${bold}, ${fontId}) called before loadFontMetrics(${fontId})`,
 		)
 	}
 	const w = widths.get(ch) ?? MISSING_CHAR_WIDTH
 	return bold ? w + 1 : w
 }
 
-/** Total width of `text` in default-font pixels. */
-export function textWidth(text: string, bold: boolean): number {
+/** Total width of `text` in the named font's bitmap pixels. */
+export function textWidth(text: string, bold: boolean, fontId: string = DEFAULT_FONT_ID): number {
 	let w = 0
-	for (const ch of text) w += charWidth(ch, bold)
+	for (const ch of text) w += charWidth(ch, bold, fontId)
 	return w
 }
 
 /**
+ * Wrap `text` to the named font's pixel limits and return the actual
+ * lines (not just a count) so callers can post-process them — e.g.
+ * `<code>` borders prefix every line with `│ ` after wrapping at a
+ * width that already accounts for the prefix. Behavior matches
+ * `wrapLines` exactly; this is just an array-returning twin.
+ *
+ * Leading whitespace on each source line is captured before the
+ * whitespace-split tokenization (which would otherwise eat it) and
+ * re-prepended to the first wrapped line of that group. Continuation
+ * lines from a single over-long source line are NOT indented — they
+ * come from char-wrap inside one word.
+ */
+export function wrapToLines(
+	text: string,
+	lineWidth: number,
+	bold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): string[] {
+	if (lineWidth <= 0) return text ? [text] : ['']
+
+	const out: string[] = []
+	for (const sourceLine of text.split('\n')) {
+		const m = sourceLine.match(/^([ \t]*)([\s\S]*)$/)
+		const leading = m ? m[1] : ''
+		const body = m ? m[2] : sourceLine
+
+		const words = body.split(/\s+/).filter(Boolean)
+		if (words.length === 0) {
+			out.push('')
+			continue
+		}
+
+		const spaceW = charWidth(' ', bold, fontId)
+		const lines: string[] = []
+		let currentWidth = 0
+		let currentLine: string[] = []
+
+		const flush = () => {
+			if (currentLine.length) {
+				lines.push(currentLine.join(' '))
+				currentLine = []
+				currentWidth = 0
+			}
+		}
+
+		for (const word of words) {
+			const wordWidth = textWidth(word, bold, fontId)
+
+			// Word wider than the line — char-wrap across multiple lines.
+			if (wordWidth > lineWidth) {
+				flush()
+				let chunk = ''
+				let chunkWidth = 0
+				for (const ch of word) {
+					const cw = charWidth(ch, bold, fontId)
+					if (chunkWidth + cw > lineWidth && chunk) {
+						lines.push(chunk)
+						chunk = ch
+						chunkWidth = cw
+					} else {
+						chunk += ch
+						chunkWidth += cw
+					}
+				}
+				if (chunk) {
+					currentLine = [chunk]
+					currentWidth = chunkWidth
+				}
+				continue
+			}
+
+			// Normal word: try to fit on current line, otherwise wrap.
+			if (currentLine.length === 0) {
+				currentLine = [word]
+				currentWidth = wordWidth
+			} else if (currentWidth + spaceW + wordWidth <= lineWidth) {
+				currentLine.push(word)
+				currentWidth += spaceW + wordWidth
+			} else {
+				flush()
+				currentLine = [word]
+				currentWidth = wordWidth
+			}
+		}
+		flush()
+		if (lines.length === 0) lines.push('')
+
+		// Restore this source line's leading whitespace on its first
+		// continuation line (this is where indent should appear).
+		if (lines[0] !== undefined) lines[0] = leading + lines[0]
+		out.push(...lines)
+	}
+
+	return out.length > 0 ? out : ['']
+}
+
+/**
+ * Array-returning variant of `wrapCodeLines`: preserves `\n` breaks,
+ * wraps each source line independently, and returns the resulting
+ * strings. Empty source lines yield one empty string each.
+ */
+export function wrapCodeLinesAsArray(
+	text: string,
+	lineWidth: number,
+	bold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): string[] {
+	const sources = text.split('\n')
+	const out: string[] = []
+	for (const line of sources) {
+		if (line.length === 0) {
+			out.push('')
+		} else {
+			out.push(...wrapToLines(line, lineWidth, bold, fontId))
+		}
+	}
+	return out
+}
+
+/**
  * Number of visual lines `text` occupies when word-wrapped to `lineWidth`
- * default-font pixels. Matches MC's text_display behavior closely:
+ * pixels of the named font. Matches MC's text_display behavior closely:
  *
  * - Words split on whitespace, accumulated left-to-right per line.
  * - A word that won't fit on the current line starts a new line.
@@ -231,47 +410,31 @@ export function textWidth(text: string, bold: boolean): number {
  *   multiple lines (long URLs, code snippets, etc.).
  * - `bold=true` adds 1px per char (MC's actual bold behavior).
  */
-export function wrapLines(text: string, lineWidth: number, bold: boolean): number {
-	if (lineWidth <= 0) return 1
-	const words = text.split(/\s+/).filter(Boolean)
-	if (words.length === 0) return 1
-
-	const spaceW = charWidth(' ', bold)
-	let lines = 1
-	let currentWidth = 0
-
-	for (const word of words) {
-		const wordWidth = textWidth(word, bold)
-
-		// Word wider than the line — char-wrap across multiple lines.
-		if (wordWidth > lineWidth) {
-			if (currentWidth > 0) {
-				lines++
-				currentWidth = 0
-			}
-			let chunkWidth = 0
-			for (const ch of word) {
-				const cw = charWidth(ch, bold)
-				if (chunkWidth + cw > lineWidth) {
-					lines++
-					chunkWidth = 0
-				}
-				chunkWidth += cw
-			}
-			currentWidth = chunkWidth
-			continue
-		}
-
-		// Normal word: try to fit on current line, otherwise wrap.
-		const fits =
-			currentWidth === 0 ? wordWidth <= lineWidth : currentWidth + spaceW + wordWidth <= lineWidth
-		if (fits) {
-			currentWidth = currentWidth === 0 ? wordWidth : currentWidth + spaceW + wordWidth
-		} else {
-			lines++
-			currentWidth = wordWidth
-		}
+/**
+ * Wrap-aware line count for multi-line code: preserves the source's
+ * `\n` breaks, char-wraps any line wider than `lineWidth` itself, and
+ * counts one visual line per blank source line.
+ */
+export function wrapCodeLines(
+	text: string,
+	lineWidth: number,
+	bold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): number {
+	const sources = text.split('\n')
+	let total = 0
+	for (const line of sources) {
+		total += line.length === 0 ? 1 : wrapLines(line, lineWidth, bold, fontId)
 	}
+	return Math.max(1, total)
+}
 
-	return lines
+export function wrapLines(
+	text: string,
+	lineWidth: number,
+	bold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): number {
+	if (lineWidth <= 0) return 1
+	return Math.max(1, wrapToLines(text, lineWidth, bold, fontId).length)
 }

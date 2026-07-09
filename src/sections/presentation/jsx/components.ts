@@ -14,6 +14,18 @@ export type H2Props = CommonProps
 export type CenterProps = CommonProps
 export type StyleProps = { children?: string; source?: string }
 
+/**
+ * Source of the code block's text. `src` is preferred — pair it with
+ * Bun's `import x from './file' with { type: 'text' }` to inline the
+ * file at build time. Otherwise `children` is accepted as either a
+ * string (raw source) or a function (rendered via `Function.toString()`,
+ * so you can keep the snippet type-checked inside the slide file).
+ */
+export type CodeProps = CommonProps & {
+	lang?: string
+	src?: string
+}
+
 // Component functions. Identity wrappers around jsx() — exist for explicit
 // import + type inference. JSX form <div> compiles to the same jsx('div', ...).
 export const div = (props: DivProps): VNode => jsx('div', props, null)
@@ -25,6 +37,7 @@ export const style = (props: StyleProps): VNode => {
 	const source = props.source ?? (typeof props.children === 'string' ? props.children : '')
 	return jsx('style', { source }, null)
 }
+export const code = (props: CodeProps): VNode => jsx('code', props, null)
 
 // Augment JSX intrinsics so <div>, <h1> etc. are type-checked in TSX files
 // that import this module (or anything that transitively imports it).
@@ -37,6 +50,7 @@ declare global {
 			h2: H2Props
 			center: CenterProps
 			style: StyleProps
+			code: CodeProps
 		}
 	}
 }

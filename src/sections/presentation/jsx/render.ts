@@ -20,7 +20,7 @@ import { parse as parseLess } from './less'
 import type { LessTreeNode, LessRulesetNode, LessSelectorNode, LessElementNode, CssDeclarations } from './less'
 import selectorParser from 'postcss-selector-parser'
 import { parseLength, pxToTextScale, pxToTextLineHeight } from './length'
-import { loadFontMetrics, wrapLines } from './text-metrics'
+import { DEFAULT_FONT_ID, charWidth, loadFontMetrics, wrapCodeLinesAsArray, wrapLines } from './text-metrics'
 import { ContentTag, JSONTextComponent, SymbolEntity } from 'sandstone/arguments';
 import { Fragment } from './jsx-runtime'
 import { computeDurationsSeconds, type SlidesTiming } from '../slides'
@@ -76,31 +76,12 @@ function slideTag(index: number): LabelClass {
 	return Label(`slide_${index}`)
 }
 
-/**
- * Selector matching scene entities inside the rendered footprint. Pairs
- * with `execute positioned <origin-(0,0,1)>` — MC's volume becomes
- * `[origin-(0,0,1), origin+(bounds[0], bounds[1]-1, 1)]`, which is the
- * exact box that contains every text_display we summon (text_display
- * hitboxes are zeroed, so we need a 2-block z slab).
- */
-function sceneEntitiesInBounds(
-	bounds: readonly [number, number],
-	tag: string | LabelClass = SCENE_TAG,
-) {
-	return Selector('@e', {
-		tag,
-		dx: bounds[0] - 1,
-		dy: bounds[1] - 2,
-		dz: 1,
-	})
-}
-
-/** Kill every entity tagged with SCENE_TAG inside the scene footprint. */
-function killSceneEntities(
-	bounds: readonly [number, number],
-	origin: readonly [number, number, number],
-): void {
-	execute.positioned([origin[0], origin[1], origin[2] - 1]).run.kill(sceneEntitiesInBounds(bounds))
+/** Kill every entity tagged with SCENE_TAG. The Summit server's Label-tag
+ * optimization makes the selector effectively constant-time, so we don't
+ * bother with volume selectors here (and content that overflows below the
+ * configured scene bounds is still cleaned up). */
+function killSceneEntities(): void {
+	execute.run.kill(Selector('@e', { tag: SCENE_TAG }))
 }
 
 // ── JSX tree helpers ─────────────────────────────────────────────
@@ -118,9 +99,84 @@ function flattenChildren(children: any): any[] {
 function extractText(children: any): string {
 	if (children == null || children === false) return ''
 	if (typeof children === 'string' || typeof children === 'number') return String(children)
+	if (typeof children === 'function') return codeSourceFromFunction(children)
 	if (isVNode(children)) return extractText(children.props?.children)
 	if (Array.isArray(children)) return children.map(extractText).join('')
 	return ''
+}
+
+/**
+ * Pull the body of an arrow / regular function back out as a string. Used
+ * for `<code>{() => { ... }}</code>` — the user pastes the code as a
+ * real function so it stays type-checked, and we toString() it at build
+ * time to render. Strips the `() => { … }` wrapper, dedents the body,
+ * and trims leading/trailing blank lines so the rendered block starts on
+ * the first non-blank character.
+ */
+function codeSourceFromFunction(fn: Function): string {
+	const src = fn.toString()
+	const open = src.indexOf('{')
+	const close = src.lastIndexOf('}')
+	if (open === -1 || close === -1 || close <= open) return src
+	let body = src.slice(open + 1, close)
+	body = dedentBlock(body)
+	body = body.replace(/^\n+/, '').replace(/\n[ \t]*$/, '')
+	return body
+}
+
+/** Remove the longest common leading whitespace from every non-blank line. */
+function dedentBlock(s: string): string {
+	const lines = s.split('\n')
+	let common: number | null = null
+	for (const line of lines) {
+		if (!line.trim()) continue
+		const m = line.match(/^[ \t]*/)
+		const lead = m ? m[0].length : 0
+		if (common === null) common = lead
+		else common = Math.min(common, lead)
+		if (common === 0) break
+	}
+	if (!common) return s
+	return lines.map((l) => l.slice(common!)).join('\n')
+}
+
+const SNIPPET_START = '// == snippet start =='
+const SNIPPET_END = '// == snippet end =='
+
+/**
+ * Resolve a `<code>` element's source text. `src` wins (it points at a
+ * file imported with `with { type: 'text' }`, so it's already a string
+ * at build time). Otherwise the children can be a string, a function
+ * (toString'd + dedented), or already-extracted text.
+ *
+ * If the resolved source contains `// == snippet start ==` and
+ * `// == snippet end ==` markers, only the lines between them (exclusive
+ * of the markers) are returned — useful when the imported file has
+ * imports / placeholder exports / boilerplate around the actual snippet.
+ * The extracted block is dedented against its own leading whitespace.
+ */
+function extractCodeSource(props: any): string {
+	let src: string
+	if (typeof props?.src === 'string') {
+		src = props.src
+	} else {
+		const child = props?.children
+		if (typeof child === 'string') src = child
+		else if (typeof child === 'function') src = codeSourceFromFunction(child)
+		else if (Array.isArray(child)) src = child.map(extractCodeSource).join('')
+		else return ''
+	}
+
+	const startIdx = src.indexOf(SNIPPET_START)
+	const endIdx = src.indexOf(SNIPPET_END)
+	if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+		const afterStart = src.indexOf('\n', startIdx)
+		if (afterStart !== -1) {
+			const inner = src.slice(afterStart + 1, endIdx)
+			return dedentBlock(inner).replace(/\n+$/, '')
+		}
+	}
+	return src
 }
 
 function nodeSelector(node: VNode): string {
@@ -433,7 +489,7 @@ const Z_VISUAL_OFFSET = 0.015625
 
 // ── Text element styling ────────────────────────────────────────
 
-const TEXT_TYPES = new Set(['h1', 'h2', 'p'])
+const TEXT_TYPES = new Set(['h1', 'h2', 'p', 'code'])
 
 function isTextType(t: any): boolean {
 	return TEXT_TYPES.has(String(t))
@@ -443,11 +499,137 @@ function defaultFontPx(type: string): number {
 	switch (type) {
 		case 'h1': return 32
 		case 'h2': return 24
+		case 'code': return 8
 		default: return 16 // p and unknown
 	}
 }
 
-function buildTextJson(content: string, declarations: Record<string, string>, type: string): SymbolEntity['text_display']['text'] {
+/**
+ * Wrap-aware line count for multi-line code blocks. Each source line is
+ * independently word/char-wrapped (long URLs / unbreakable tokens still
+ * span multiple visual lines), and blank source lines still count as one
+ * visual line each so the rendered height matches what MC's text_display
+ * will actually draw.
+ */
+function wrapCodeLines(text: string, lineWidth: number, bold: boolean, fontId: string): number {
+	const lines = text.split('\n')
+	let total = 0
+	for (const line of lines) {
+		total += line.length === 0 ? 1 : wrapLines(line, lineWidth, bold, fontId)
+	}
+	return Math.max(1, total)
+}
+
+/**
+ * Decorate a code block's source text with a full thin-text border box:
+ * `┌─…─┐` top (with language name embedded before the right corner),
+ * `└─…─┘` bottom, `│ … │` on the left/right of every source line. The
+ * code is re-wrapped at `lineWidthPx - │ left - │ right` so each
+ * bordered line (corners + dashes/bars + content) still fits in MC's
+ * wrap width. Border width hugs the longest wrapped code line. Line
+ * count goes up by exactly 2 (top + bottom border rows).
+ */
+/**
+ * Decorate a code block's source text with a full thin-text border
+ * box (`┌─…─┐` top with language name embedded before the right
+ * corner, `└─…─┘` bottom, `│ … │` on the left/right of every source
+ * line). Returns an array of styled segments so each piece — corner
+ * glyphs, dashes, bars, language tag, and the code itself — can carry
+ * its own color in the final text_display NBT. This is the same
+ * representation the renderer uses for syntax-highlighted code (one
+ * segment per styled run), so adding a highlighter later is a matter
+ * of producing more segments for the code portion.
+ */
+
+// Default colors for `<code>` borders + language tag. Pick up when the
+// caller (i.e. the JSX) didn't pass an explicit color, so an unset
+// `<code>` still gets visible border/lang styling instead of collapsing
+// into the code color.
+const DEFAULT_CODE_BORDER_COLOR = '#6a6a6a' as const
+const DEFAULT_CODE_LANG_COLOR = '#4ec9b0' as const
+
+function wrapCodeWithBorders(
+	content: string,
+	language: string,
+	fontId: string,
+	lineWidthPx: number,
+	bold: boolean,
+	borderColor: `#${string}` | undefined,
+	langColor: `#${string}` | undefined,
+	codeColor: `#${string}` | undefined,
+): StyledSegment[] {
+	const barW = charWidth('│', false, fontId)
+	// Reserve `│` on the left + `│` on the right so every bordered row
+	// fits inside `lineWidthPx`. Top/bottom rows also include two corner
+	// chars, but `┌┐└┘` are similar in width to `│` in monocraft.
+	const innerWidth = Math.max(50, lineWidthPx - 2 * barW)
+	const codeLines = wrapCodeLinesAsArray(content, innerWidth, bold, fontId)
+	const longestInnerChars = codeLines.reduce((m, l) => Math.max(m, l.length), 0)
+
+	const langPart = language ? `${language}─` : ''
+	// Side rows carry one leading + one trailing space of breathing
+	// room around the code. Bump the tracked outer width by 2 so the
+	// top/bottom dashes + lang tag still align with the wider rows.
+	const outerWidth = longestInnerChars + 2
+	const dashCount = Math.max(0, outerWidth - langPart.length)
+
+	const out: StyledSegment[] = []
+
+	// Top row: ┌ + dashes + lang tag + ┐
+	// Top row: ┌ + dashes + lang tag + ┐. The trailing dash is part of
+	// the border (it visually closes the dashed line back to the right
+	// corner), not the language tag, so it picks up the border color.
+	out.push({ text: `┌${'─'.repeat(dashCount)}`, color: borderColor })
+	if (language) {
+		out.push({ text: language, color: langColor })
+		out.push({ text: '─', color: borderColor })
+	}
+	out.push({ text: '┐', color: borderColor })
+
+	// Middle rows: │ + code + │  (one segment per side, one for code).
+	// Each row leads with a `\n` — the first one separates the top
+	// border from the first middle row, subsequent ones break between
+	// middle rows.
+	for (let i = 0; i < codeLines.length; i++) {
+		out.push({ text: '\n', color: borderColor })
+		out.push({ text: '│ ', color: borderColor })
+		out.push({ text: codeLines[i].padEnd(longestInnerChars, ' '), color: codeColor })
+		out.push({ text: ' │', color: borderColor })
+	}
+
+	// Bottom row: └ + dashes + ┘
+	out.push({ text: '\n', color: borderColor })
+	out.push({ text: `└${'─'.repeat(outerWidth)}┘`, color: borderColor })
+
+	return out
+}
+
+/**
+ * One styled chunk of text inside a text_display. Multiple segments can
+ * be combined to render multi-color content (e.g. syntax-highlighted
+ * code) or to give different parts of a bordered block their own color.
+ */
+export type StyledSegment = {
+	text: string
+	color?: `#${string}`
+	/** When set, overrides the parent declaration's font for this segment only. */
+	font?: `${string}:${string}`
+}
+
+/**
+ * Build the `text` field for a text_display. Accepts either a single
+ * string (one color from `declarations.color`) or an array of styled
+ * segments (each can carry its own color/font). Segment-level fields
+ * fall back to the declaration when absent.
+ */
+function buildTextJson(
+	content: string | StyledSegment[],
+	declarations: Record<string, string>,
+	type: string,
+): SymbolEntity['text_display']['text'] {
+	if (Array.isArray(content)) {
+		return content.map((seg) => buildSegment(seg, declarations, type)) as SymbolEntity['text_display']['text']
+	}
 	const out: SymbolEntity['text_display']['text'] = { text: content }
 	if (declarations.color) out.color = declarations.color as `#${string}`
 	if (declarations.bold === 'true') out.bold = true
@@ -456,6 +638,24 @@ function buildTextJson(content: string, declarations: Record<string, string>, ty
 	if (declarations.strikethrough === 'true') out.strikethrough = true
 	if (declarations.obfuscated === 'true') out.obfuscated = true
 	if (type === 'h1' || type === 'h2') out.bold = true
+	if (type === 'code') out.font = 'monocraft:default'
+	if (declarations.font) out.font = declarations.font as `${string}:${string}`
+	return out
+}
+
+function buildSegment(
+	seg: StyledSegment,
+	declarations: Record<string, string>,
+	type: string,
+): NonNullable<SymbolEntity['text_display']['text']> {
+	const out: NonNullable<SymbolEntity['text_display']['text']> = { text: seg.text }
+	const color = seg.color ?? (declarations.color as `#${string}` | undefined)
+	if (color) out.color = color
+	if (declarations.bold === 'true') out.bold = true
+	if (type === 'h1' || type === 'h2') out.bold = true
+	const font = seg.font ?? declarations.font
+	if (font) out.font = font as `${string}:${string}`
+	else if (type === 'code') out.font = 'monocraft:default'
 	return out
 }
 
@@ -464,6 +664,8 @@ function parseColorInt(hex: string): number | undefined {
 	if (!m) return undefined
 	return parseInt(m[1], 16)
 }
+
+// TODO: Something is deeply flawed with either how vh is calculated and applied or how its used for margin, eg. set the top margin to 50vh and watch it be half a block off, and try to fix it without breaking 25vh further
 
 /**
  * Resolve the `margin` shorthand into vertical-only meters. Supports 1–4
@@ -508,6 +710,23 @@ function parseMarginBox(
 
 // ── Entity summon (shared by mount + rerender) ──────────────────
 
+type ElementLayout = {
+	node: VNode
+	path: string[]
+	declarations: CssDeclarations
+	type: string
+	content: string
+	/** `<code>` only: the bordered render content as styled segments (each part — corner glyphs, dashes, lang tag, code — carries its own color). Falls back to `content` for summon. */
+	borderedContent?: StyledSegment[]
+	width: ReturnType<typeof parseLength>
+	scalePx: number
+	textScale: number
+	widthCompensation: number
+	cellH: number
+	marginTop: number
+	marginBottom: number
+}
+
 /**
  * Emit `summon text_display ...` commands for every visible text element
  * in `visible`. Must be called inside an MCFunction callback — the
@@ -531,24 +750,16 @@ function summonVisibleElements(
 	// stack-level layout properties (`row-gap`, `align-items`) once the
 	// total height is known, then position each cell with the right gap
 	// and (optionally) center the whole stack in the scene.
-	type ElementLayout = {
-		node: VNode
-		path: string[]
-		declarations: CssDeclarations
-		type: string
-		content: string
-		width: ReturnType<typeof parseLength>
-		scalePx: number
-		textScale: number
-		widthCompensation: number
-		cellH: number
-		marginTop: number
-		marginBottom: number
-	}
 	const elements: ElementLayout[] = visible.map(({ node, path }) => {
 		const declarations = resolveStyles(styles, path)
 		const type = String(node.type)
-		const content = extractText(node.props?.children)
+		// `<code>` resolves its source separately: `src` prop, function
+		// child (toString'd), or a plain string. Other element types just
+		// walk their child tree.
+		const content =
+			type === 'code'
+				? extractCodeSource(node.props)
+				: extractText(node.props?.children)
 
 		// font-size → text scale (blocks). width → line_width (text wrap in pixels).
 		const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
@@ -556,6 +767,12 @@ function summonVisibleElements(
 
 		const scalePx = fontSize?.px ?? defaultFontPx(type)
 		const textScale = pxToTextScale(scalePx) // NBT `transformation.scale`
+
+		// Resolve the rendering font. Default font unless LESS `font` (or
+		// the `<code>` default) names one — anything under
+		// `resources/resourcepack/assets/<ns>/font/` works because the
+		// pre-scan loaded its widths into text-metrics above.
+		const fontId = declarations.font ?? (type === 'code' ? 'monocraft:default' : DEFAULT_FONT_ID)
 
 		// MC interprets `line_width` in default-font pixels, but the visual
 		// width of a rendered line is multiplied by `transformation.scale`.
@@ -577,7 +794,58 @@ function summonVisibleElements(
 		const heightLen = parseLength(declarations.height ?? '', sceneH)
 		const isBold = type === 'h1' || type === 'h2' || declarations.bold === 'true'
 		const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
-		const lines = wrapLines(content, wrapWidthPx, isBold)
+
+		// For `<code>`, decorate the source with thin text-based borders
+		// (a `─` row above and below, `│ ` on the left of every source
+		// line). The language name (from `<code lang="…">`) replaces part
+		// of the top border on the right. The wrapped line count grows by
+		// exactly 2 (top + bottom border rows), so the cell-height math
+		// below automatically picks up the extra rows. The result is an
+		// array of styled segments so each piece (corner glyphs, dashes,
+		// language tag, code) can carry its own color.
+		const codeColor = declarations.color as `#${string}` | undefined
+		// Border + language tag default to the code's color when the JSX
+		// doesn't pick its own, but for `<code>` blocks specifically we
+		// drop in a dim gray border and a saturated tag color so the box
+		// reads as code at a glance — the user can still override either
+		// via `border-color` / `lang-color` LESS properties.
+		const borderColor =
+			(declarations['border-color'] as `#${string}` | undefined) ??
+			(type === 'code' ? DEFAULT_CODE_BORDER_COLOR : codeColor)
+		const langColor =
+			(declarations['lang-color'] as `#${string}` | undefined) ??
+			(type === 'code' ? DEFAULT_CODE_LANG_COLOR : codeColor)
+		// Typed explicitly as `StyledSegment[] | undefined` so the
+		// `borderedContent` field on ElementLayout stays narrow. A bare
+		// `type === 'code' ? wrapCodeWithBorders(...) : content`
+		// conditional would leak `string` into the union (the false
+		// branch's `content` is a string) and force a widening cast on
+		// the assignment.
+		const codeBordered: StyledSegment[] | undefined =
+			type === 'code'
+				? wrapCodeWithBorders(
+						content,
+						String(node.props?.lang ?? ''),
+						fontId,
+						wrapWidthPx,
+						isBold,
+						borderColor,
+						langColor,
+						codeColor,
+					)
+				: undefined
+
+		// `<code>` preserves the source's `\n` breaks; other elements treat
+		// newlines as whitespace via the standard wrap. Both branches use
+		// the element's font for char widths so the layout matches what
+		// text_display actually draws. Note we measure against the
+		// bordered content for `<code>` so the +2 border rows are included
+		// in the cell height.
+		const renderText = codeBordered ? codeBordered.map((s) => s.text).join('') : content
+		const lines =
+			type === 'code'
+				? wrapCodeLines(renderText, wrapWidthPx, isBold, fontId)
+				: wrapLines(content, wrapWidthPx, isBold, fontId)
 		const cellH = heightLen?.meters ?? pxToTextLineHeight(scalePx) * lines
 		// Vertical margins only — text_display is center-anchored on x so
 		// left/right never affect the rendered scene.
@@ -588,6 +856,7 @@ function summonVisibleElements(
 			declarations,
 			type,
 			content,
+			borderedContent: codeBordered,
 			width,
 			scalePx,
 			textScale,
@@ -640,7 +909,7 @@ function summonVisibleElements(
 
 		const nbt: SymbolEntity['text_display'] = {
 			Tags: [SCENE_TAG, ...extraTags],
-			text: buildTextJson(el.content, el.declarations, el.type),
+			text: buildTextJson(el.borderedContent ?? el.content, el.declarations, el.type),
 			transformation: {
 				scale: [scale, scale, scale],
 				translation: NBT.float([0, 0, 0]),
@@ -655,6 +924,13 @@ function summonVisibleElements(
 		else if (el.declarations['line-width']) nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
 		if (el.declarations.shadow === 'true') nbt.shadow = true
 		if (el.declarations['see-through'] === 'true') nbt.see_through = true
+		// `<code>` reads naturally with left-aligned text (like a code
+		// editor). LESS `text-align` overrides for any element type.
+		let align: 'center' | 'left' | 'right' | undefined
+		if (el.type === 'code') align = 'left'
+		const ta = el.declarations['text-align']?.toLowerCase().trim()
+		if (ta === 'left' || ta === 'right' || ta === 'center') align = ta
+		if (align) nbt.alignment = align
 		if (initialOpacity !== undefined) {
 			nbt.text_opacity = NBT.int(initialOpacity)
 		} else if (el.declarations.opacity) {
@@ -690,6 +966,25 @@ function collectLess(trees: VNode[]): string {
 		.join('\n')
 }
 
+/**
+ * Collect every distinct font ID any element could resolve to. We pull
+ * the LESS `font` declaration AND the `<code>` default — anything we
+ * might render must be loaded into text-metrics before layout starts,
+ * since `wrapLines` throws if asked about an unloaded font.
+ */
+function collectFonts(trees: VNode[], styles: Styles): Set<string> {
+	const out = new Set<string>([DEFAULT_FONT_ID])
+	for (const tree of trees) {
+		for (const { node, path } of flatWalk(tree)) {
+			if (!isTextType(node.type)) continue
+			const decs = resolveStyles(styles, path)
+			if (decs.font) out.add(decs.font)
+			else if (node.type === 'code') out.add('monocraft:default')
+		}
+	}
+	return out
+}
+
 // ── Single-tree render ──────────────────────────────────────────
 
 export async function render(tree: VNode, options: RenderOptions): Promise<Scene> {
@@ -698,6 +993,7 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 
 	const lessSource = collectLess([tree])
 	const styles = await compileStyles(lessSource)
+	await Promise.all([...collectFonts([tree], styles)].map(loadFontMetrics))
 	const visible = elements.filter(({ node }) => isTextType(node.type))
 
 	const mount = MCFunction('presentation/mount', () => {
@@ -709,7 +1005,7 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 	}, { runOnTick: true })
 
 	const unmount = MCFunction('presentation/unmount', () => {
-		killSceneEntities(options.bounds, options.origin)
+		killSceneEntities()
 	})
 
 	return { mount, tick, unmount }
@@ -751,6 +1047,9 @@ export async function renderSlides(
 	const durations = computeDurationsSeconds(slideTexts, timing)
 
 	const styles = await compileStyles(collectLess(trees))
+	// Pre-load every font any element could resolve to — wrapLines throws
+	// for fonts not loaded yet, and the layout pass runs synchronously.
+	await Promise.all([...collectFonts(trees, styles)].map(loadFontMetrics))
 
 	// Precompute visible elements so mount + rerender don't pay the
 	// flatWalk cost again at the call site.
@@ -758,34 +1057,26 @@ export async function renderSlides(
 		flatWalk(t).filter(({ node }) => isTextType(node.type)),
 	)
 
-	/**
-	 * Return an `execute` command with `.positioned()` already applied, so
-	 * the caller can chain further subcommands (`.as(...)`, `.run...`) onto
-	 * the same node. Keeps `isSingleExecute = true`, so Sandstone emits a
-	 * single inline command rather than splitting into a child MCFunction.
-	 */
-	function withinSceneVolume(): ExecuteCommand<false> {
-		return execute.positioned([options.origin[0], options.origin[1], options.origin[2] - 1])
-	}
-
 	// ── Per-slide show / hide ────────────────────────────────────
+	// Pure tag selectors — the Summit server's Label-tag optimization makes
+	// these effectively constant-time, and tag-only matching picks up any
+	// entity that overflows below the configured scene bounds (where a
+	// volume selector would have missed it).
 	const showSlide: MCFunctionClass<undefined, undefined>[] = []
 	const hideSlide: MCFunctionClass<undefined, undefined>[] = []
 	for (let s = 0; s < totalSlides; s++) {
 		const tag = slideTag(s)
 		showSlide.push(
 			MCFunction(`presentation/slides/show/${s}`, () =>
-				withinSceneVolume()
-					.as(sceneEntitiesInBounds(options.bounds, tag))
-					.run.data.modify.entity('@s', 'text_opacity')
+				execute.as(Selector('@e', { tag })).run.data.modify
+					.entity('@s', 'text_opacity')
 					.set.value(NBT.int(-1)),
 			),
 		)
 		hideSlide.push(
 			MCFunction(`presentation/slides/hide/${s}`, () =>
-				withinSceneVolume()
-					.as(sceneEntitiesInBounds(options.bounds, tag))
-					.run.data.modify.entity('@s', 'text_opacity')
+				execute.as(Selector('@e', { tag })).run.data.modify
+					.entity('@s', 'text_opacity')
 					.set.value(NBT.int(0)),
 			),
 		)
@@ -824,7 +1115,7 @@ export async function renderSlides(
 		}
 		const visible = flatWalk(tree).filter(({ node }) => isTextType(node.type))
 		return MCFunction(`presentation/slides/rerender/${index}`, () => {
-			withinSceneVolume().run.kill(sceneEntitiesInBounds(options.bounds, slideTag(index)))
+			execute.run.kill(Selector('@e', { tag: slideTag(index) }))
 			summonVisibleElements(
 				visible,
 				styles,
@@ -916,7 +1207,7 @@ export async function renderSlides(
 		for (let i = 1; i <= totalSlides; i++) {
 			schedule.clear(`${loopName}/${i === 1 ? '__sleep' : `__sleep${i}`}`)
 		}
-		withinSceneVolume().run.kill(sceneEntitiesInBounds(options.bounds))
+		killSceneEntities()
 	})
 
 	return {
