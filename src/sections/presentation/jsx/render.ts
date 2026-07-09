@@ -635,7 +635,6 @@ function wrapCodeWithBorders(
 
 	const out: StyledSegment[] = []
 
-	// Top row: ┌ + dashes + lang tag + ┐
 	// Top row: ┌ + dashes + lang tag + ┐. The trailing dash is part of
 	// the border (it visually closes the dashed line back to the right
 	// corner), not the language tag, so it picks up the border color.
@@ -646,56 +645,76 @@ function wrapCodeWithBorders(
 	}
 	out.push({ text: '┐', color: borderColor })
 
+	// Precompute each segment's start position in `codeLines.join('\n')`.
+	// Both `codeLines[i]` ranges AND the segment lists live in that joined
+	// coordinate space, so each row's content slice lines up with the
+	// segments by position. The earlier cursor-walking slice had two bugs:
+	// (a) it couldn't handle a segment that straddled a `\n` separator —
+	// the joined source has `\n` chars at every codeLines boundary (and at
+	// every wrap-continuation), so a token that crossed a separator
+	// dumped both halves into one row, breaking the layout; and (b)
+	// even with `\n` chars stripped from the slice, the cursor advanced
+	// by `take` (which included the separator) so subsequent rows drifted
+	// off by one position. Position-based slicing sidesteps both by
+	// iterating segments aligned to `[lineStart, lineEnd)`.
+	const segs = highlighted && highlighted.length > 0 ? highlighted : null
+	const segStarts: number[] | null = segs
+		? (() => {
+				const starts = new Array<number>(segs.length)
+				let acc = 0
+				for (let s = 0; s < segs.length; s++) {
+					starts[s] = acc
+					acc += segs[s].text.length
+				}
+				return starts
+			})()
+		: null
+
 	// Middle rows: │ + code + │  (one segment per side, one for code).
 	// Each row leads with a `\n` — the first one separates the top
 	// border from the first middle row, subsequent ones break between
 	// middle rows.
-	if (highlighted && highlighted.length > 0) {
-		// Slice the highlighted segment list against each wrapped line.
-		// `highlighted` corresponds to `codeLines.join('\n')`, so line `i`
-		// covers [lineStart..lineEnd) where `lineStart` accounts for the
-		// `\n` separators between adjacent wrapped lines:
-		//   lineStart_i = Σ(codeLines[0..i-1].length) + i   (+1 per \n)
-		// A single token may span two wrapped lines (long identifiers,
-		// long URLs, unbreakable runs) — the slice produces two same-color
-		// segments, one per line, so color survives the wrap boundary.
-		let cursor = 0
-		let segIdx = 0
-		let segPos = 0
+	if (segs && segStarts) {
+		let lineStart = 0
 		for (let i = 0; i < codeLines.length; i++) {
-			const lineStart = cursor
-			const lineEnd = cursor + codeLines[i].length
+			const lineLen = codeLines[i].length
+			const lineEnd = lineStart + lineLen
 			out.push({ text: '\n', color: borderColor })
 			out.push({ text: '│ ', color: borderColor })
+			// Find first segment whose range overlaps [lineStart, lineEnd).
+			let s = 0
+			while (s < segs.length && segStarts[s] + segs[s].text.length <= lineStart) s++
+
 			let written = 0
-			while (cursor < lineEnd && segIdx < highlighted.length) {
-				const seg = highlighted[segIdx]
-				const remaining = seg.text.length - segPos
-				const need = lineEnd - cursor
-				const take = Math.min(remaining, need)
-				pushSlice(out, seg.text.slice(segPos, segPos + take), seg.color)
-				written += take
-				cursor += take
-				segPos += take
-				if (segPos >= seg.text.length) {
-					segIdx++
-					segPos = 0
+			while (s < segs.length && segStarts[s] < lineEnd) {
+				const seg = segs[s]
+				const segStart = segStarts[s]
+				const segEnd = segStart + seg.text.length
+				const fromIdx = Math.max(0, lineStart - segStart)
+				const toIdx = Math.min(seg.text.length, lineEnd - segStart)
+				if (fromIdx < toIdx) {
+					const slice = seg.text.slice(fromIdx, toIdx)
+					pushSlice(out, slice, seg.color)
+					written += slice.length
 				}
+				if (segEnd >= lineEnd) break
+				s++
 			}
 			// Highlight segments can end mid-line when the source has trailing
 			// whitespace or anything the .scm didn't capture — fall through to
-			// `codeColor` for the remainder so the line stays contiguous.
-			if (cursor < lineEnd) {
-				const leftover = codeLines[i].slice(cursor - lineStart)
-				pushSlice(out, leftover, codeColor)
-				written += leftover.length
-				cursor = lineEnd
+			// `codeColor` for the remainder so the line stays contiguous. The
+			// unwalked chars are exactly the tail of `codeLines[i]` from index
+			// `written` onward (the leading `written` chars were already pushed
+			// from the highlight segments, character-for-character).
+			if (written < lineLen) {
+				pushSlice(out, codeLines[i].slice(written), codeColor)
+				written = lineLen
 			}
 			if (written < longestInnerChars) {
 				pushSlice(out, ' '.repeat(longestInnerChars - written), codeColor)
 			}
 			out.push({ text: ' │', color: borderColor })
-			cursor = lineEnd + 1 // +1 for the \n separator between wrapped lines
+			lineStart = lineEnd + 1 // +1 for the \n separator between wrapped lines
 		}
 	} else {
 		for (let i = 0; i < codeLines.length; i++) {
