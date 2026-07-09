@@ -21,6 +21,7 @@ import type { LessTreeNode, LessRulesetNode, LessSelectorNode, LessElementNode, 
 import selectorParser from 'postcss-selector-parser'
 import { parseLength, pxToTextScale, pxToTextLineHeight } from './length'
 import { DEFAULT_FONT_ID, charWidth, loadFontMetrics, wrapCodeLinesAsArray, wrapLines } from './text-metrics'
+import { precomputeHighlights, type Grammar } from './highlight'
 import { ContentTag, JSONTextComponent, SymbolEntity } from 'sandstone/arguments';
 import { Fragment } from './jsx-runtime'
 import { computeDurationsSeconds, type SlidesTiming } from '../slides'
@@ -548,6 +549,62 @@ function wrapCodeLines(text: string, lineWidth: number, bold: boolean, fontId: s
 const DEFAULT_CODE_BORDER_COLOR = '#6a6a6a' as const
 const DEFAULT_CODE_LANG_COLOR = '#4ec9b0' as const
 
+/**
+ * Registry of grammars available to `<code>` blocks. Each entry points at
+ * the wasm + .scm populated by `scripts/fetch-syntax-parsers.ts`. Add a
+ * language by adding a row here AND adding the corresponding fetch entry
+ * in that script — both are needed.
+ */
+const GRAMMARS: Record<string, Grammar> = {
+	mcfunction: {
+		wasmPath: 'resources/jsx/parser/tree-sitter-mcfunction.wasm',
+		queryPath: 'resources/jsx/parser/mcfunction.highlights.scm',
+	},
+	typescript: {
+		wasmPath: 'resources/jsx/parser/tree-sitter-typescript.wasm',
+		queryPath: 'resources/jsx/parser/typescript.highlights.scm',
+	},
+}
+
+/**
+ * Pre-computed data the synchronous layout pass consumes per `<code>`
+ * element. `codeLines` is the wrapped-out line list (the same array the
+ * layout pass would otherwise produce internally); `highlighted` is the
+ * tree-sitter tokenization of `codeLines.join('\n')`, so segment slicing
+ * against `codeLines[i]` aligns with character offsets in the joined
+ * version. `highlighted` is `null` when no grammar is registered for the
+ * element's `lang` (or `bun run fetch:parsers` hasn't run yet) — caller
+ * keeps the single-color code segment.
+ */
+export type CodePrecomputed = {
+	codeLines: string[]
+	highlighted: StyledSegment[] | null
+}
+
+type CodePrecomputedMap = WeakMap<VNode, CodePrecomputed>
+
+/**
+ * Push `slice` onto `out`, merging with the previous segment when colors
+ * match. Keeps the segment list short — adjacent same-color runs (a typical
+ * token sequence like `keyword keyword` collapsed into one segment) inflate
+ * NBT size for nothing.
+ */
+function pushSlice(
+	out: StyledSegment[],
+	slice: string,
+	color: `#${string}` | undefined,
+): void {
+	if (!slice) return
+	const last = out[out.length - 1]
+	if (last && last.color === color) {
+		last.text += slice
+		return
+	}
+	const seg: StyledSegment = { text: slice }
+	if (color !== undefined) seg.color = color
+	out.push(seg)
+}
+
 function wrapCodeWithBorders(
 	content: string,
 	language: string,
@@ -557,13 +614,16 @@ function wrapCodeWithBorders(
 	borderColor: `#${string}` | undefined,
 	langColor: `#${string}` | undefined,
 	codeColor: `#${string}` | undefined,
+	precomputed: CodePrecomputed | undefined,
 ): StyledSegment[] {
-	const barW = charWidth('│', false, fontId)
-	// Reserve `│` on the left + `│` on the right so every bordered row
-	// fits inside `lineWidthPx`. Top/bottom rows also include two corner
-	// chars, but `┌┐└┘` are similar in width to `│` in monocraft.
-	const innerWidth = Math.max(50, lineWidthPx - 2 * barW)
-	const codeLines = wrapCodeLinesAsArray(content, innerWidth, bold, fontId)
+	// Use the pre-computed wrap output when available — the wrap depends on
+	// `fontId` / `bold` / `innerWidth` derived from the element's LESS
+	// declarations, so running it twice (here + in the async pre-compute)
+	// would risk drift. When no entry exists (e.g. `lang` missing or grammar
+	// not registered), we recompute on the fly for the single-color fallback.
+	const codeLines =
+		precomputed?.codeLines ?? wrapCodeLinesAsArray(content, Math.max(50, lineWidthPx - 2 * charWidth('│', false, fontId)), bold, fontId)
+	const highlighted = precomputed?.highlighted ?? null
 	const longestInnerChars = codeLines.reduce((m, l) => Math.max(m, l.length), 0)
 
 	const langPart = language ? `${language}─` : ''
@@ -590,11 +650,60 @@ function wrapCodeWithBorders(
 	// Each row leads with a `\n` — the first one separates the top
 	// border from the first middle row, subsequent ones break between
 	// middle rows.
-	for (let i = 0; i < codeLines.length; i++) {
-		out.push({ text: '\n', color: borderColor })
-		out.push({ text: '│ ', color: borderColor })
-		out.push({ text: codeLines[i].padEnd(longestInnerChars, ' '), color: codeColor })
-		out.push({ text: ' │', color: borderColor })
+	if (highlighted && highlighted.length > 0) {
+		// Slice the highlighted segment list against each wrapped line.
+		// `highlighted` corresponds to `codeLines.join('\n')`, so line `i`
+		// covers [lineStart..lineEnd) where `lineStart` accounts for the
+		// `\n` separators between adjacent wrapped lines:
+		//   lineStart_i = Σ(codeLines[0..i-1].length) + i   (+1 per \n)
+		// A single token may span two wrapped lines (long identifiers,
+		// long URLs, unbreakable runs) — the slice produces two same-color
+		// segments, one per line, so color survives the wrap boundary.
+		let cursor = 0
+		let segIdx = 0
+		let segPos = 0
+		for (let i = 0; i < codeLines.length; i++) {
+			const lineStart = cursor
+			const lineEnd = cursor + codeLines[i].length
+			out.push({ text: '\n', color: borderColor })
+			out.push({ text: '│ ', color: borderColor })
+			let written = 0
+			while (cursor < lineEnd && segIdx < highlighted.length) {
+				const seg = highlighted[segIdx]
+				const remaining = seg.text.length - segPos
+				const need = lineEnd - cursor
+				const take = Math.min(remaining, need)
+				pushSlice(out, seg.text.slice(segPos, segPos + take), seg.color)
+				written += take
+				cursor += take
+				segPos += take
+				if (segPos >= seg.text.length) {
+					segIdx++
+					segPos = 0
+				}
+			}
+			// Highlight segments can end mid-line when the source has trailing
+			// whitespace or anything the .scm didn't capture — fall through to
+			// `codeColor` for the remainder so the line stays contiguous.
+			if (cursor < lineEnd) {
+				const leftover = codeLines[i].slice(cursor - lineStart)
+				pushSlice(out, leftover, codeColor)
+				written += leftover.length
+				cursor = lineEnd
+			}
+			if (written < longestInnerChars) {
+				pushSlice(out, ' '.repeat(longestInnerChars - written), codeColor)
+			}
+			out.push({ text: ' │', color: borderColor })
+			cursor = lineEnd + 1 // +1 for the \n separator between wrapped lines
+		}
+	} else {
+		for (let i = 0; i < codeLines.length; i++) {
+			out.push({ text: '\n', color: borderColor })
+			out.push({ text: '│ ', color: borderColor })
+			out.push({ text: codeLines[i].padEnd(longestInnerChars, ' '), color: codeColor })
+			out.push({ text: ' │', color: borderColor })
+		}
 	}
 
 	// Bottom row: └ + dashes + ┘
@@ -743,7 +852,8 @@ function summonVisibleElements(
 	sceneH: number,
 	origin: readonly [number, number, number],
 	extraTags: (`${any}${string}` | LabelClass)[],
-	initialOpacity?: number,
+	initialOpacity: number | undefined,
+	codePrecomputed: CodePrecomputedMap,
 ): void {
 	// First pass: compute per-element layout (text properties, scale, wrap
 	// → lines, cell height). Doing this ahead of placement lets us read
@@ -832,6 +942,7 @@ function summonVisibleElements(
 						borderColor,
 						langColor,
 						codeColor,
+						codePrecomputed.get(node),
 					)
 				: undefined
 
@@ -985,6 +1096,67 @@ function collectFonts(trees: VNode[], styles: Styles): Set<string> {
 	return out
 }
 
+/**
+ * Walk every visible `<code>` element across `trees`, compute the wrap
+ * (matching what `wrapCodeWithBorders` does internally), and pre-tokenize
+ * the joined wrapped content via tree-sitter. Returns a `WeakMap` keyed
+ * by the code element's VNode so the synchronous layout pass can look up
+ * the pre-computed `codeLines` + `highlighted` segments without re-running
+ * the wrap or re-parsing.
+ *
+ * Why pre-tokenize the *joined wrapped content* (not the raw source):
+ *   `wrapCodeLinesAsArray` strips `\n` separators between wrapped lines,
+ *   so character offsets in the wrapped output don't line up with offsets
+ *   in the original source. Re-tokenizing the wrapped version means each
+ *   segment's `[start..end)` falls cleanly inside a single wrapped line —
+ *   the slice in `wrapCodeWithBorders` walks the wrap output linearly and
+ *   pulls each segment into the right visual row.
+ */
+async function prepareCodeHighlights(
+	visiblePerSlide: NodeWithPath[][],
+	styles: Styles,
+	sceneW: number,
+	sceneH: number,
+): Promise<CodePrecomputedMap> {
+	const map: CodePrecomputedMap = new WeakMap()
+
+	// Collect every (node, source) we need to tokenize. Skip elements
+	// without a `lang` (no grammar → falls through to single-color anyway).
+	type Entry = { node: VNode; source: string; lang: string; codeLines: string[] }
+	const entries: Entry[] = []
+	for (const visible of visiblePerSlide) {
+		for (const { node, path } of visible) {
+			if (node.type !== 'code') continue
+			const lang = String(node.props?.lang ?? '')
+			if (!lang) continue
+			const source = extractCodeSource(node.props)
+			if (!source) continue
+			const declarations = resolveStyles(styles, path)
+			const fontId = declarations.font ?? 'monocraft:default'
+			const bold = declarations.bold === 'true'
+			const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
+			const width = parseLength(declarations.width ?? '', sceneW)
+			const scalePx = fontSize?.px ?? defaultFontPx('code')
+			const textScale = pxToTextScale(scalePx)
+			const BASELINE_TEXT_SCALE = pxToTextScale(10)
+			const widthCompensation = BASELINE_TEXT_SCALE / textScale
+			const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
+			const barW = charWidth('│', false, fontId)
+			const innerWidth = Math.max(50, wrapWidthPx - 2 * barW)
+			const codeLines = wrapCodeLinesAsArray(source, innerWidth, bold, fontId)
+			entries.push({ node, source: codeLines.join('\n'), lang, codeLines })
+		}
+	}
+
+	const lookup = await precomputeHighlights(GRAMMARS, entries.map((e) => ({ source: e.source, lang: e.lang })))
+
+	for (const entry of entries) {
+		const highlighted = lookup(entry.source, entry.lang)
+		map.set(entry.node, { codeLines: entry.codeLines, highlighted })
+	}
+	return map
+}
+
 // ── Single-tree render ──────────────────────────────────────────
 
 export async function render(tree: VNode, options: RenderOptions): Promise<Scene> {
@@ -996,8 +1168,13 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 	await Promise.all([...collectFonts([tree], styles)].map(loadFontMetrics))
 	const visible = elements.filter(({ node }) => isTextType(node.type))
 
+	// Pre-compute tree-sitter highlights for every `<code>` block. The
+	// returned `WeakMap` is captured in `mount`'s closure so the synchronous
+	// `summonVisibleElements` call never has to await a parse.
+	const codePrecomputed = await prepareCodeHighlights([visible], styles, options.bounds[0], options.bounds[1])
+
 	const mount = MCFunction('presentation/mount', () => {
-		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [])
+		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [], undefined, codePrecomputed)
 	})
 
 	const tick = MCFunction('presentation/tick', () => {
@@ -1056,6 +1233,11 @@ export async function renderSlides(
 	const slideVisibles: NodeWithPath[][] = trees.map((t) =>
 		flatWalk(t).filter(({ node }) => isTextType(node.type)),
 	)
+
+	// Pre-compute tree-sitter highlights for every `<code>` block. The
+	// returned `WeakMap` is captured in mount/rerender closures so the
+	// synchronous `summonVisibleElements` calls never await a parse.
+	const codePrecomputed = await prepareCodeHighlights(slideVisibles, styles, sceneW, sceneH)
 
 	// ── Per-slide show / hide ────────────────────────────────────
 	// Pure tag selectors — the Summit server's Label-tag optimization makes
@@ -1124,6 +1306,7 @@ export async function renderSlides(
 				options.origin,
 				[slideTag(index)],
 				0,
+				codePrecomputed,
 			)
 		})
 	}
@@ -1188,6 +1371,7 @@ export async function renderSlides(
 				options.origin,
 				[slideTag(s)],
 				0, // start hidden
+				codePrecomputed,
 			)
 		}
 		// 1t delay so the spawn packets process before the first show.

@@ -384,3 +384,71 @@ Edit `sandstone.config.ts` to change:
 - `packs.datapack.packFormat`: Data pack format version
 - `packs.resourcepack.packFormat`: Resource pack format version
 - `mcmeta`: Minecraft version for type generation (`'latest'` or specific version)
+
+## Syntax highlighting for `<code>` blocks
+
+`<code lang="…">` elements inside the in-game presentation
+(`src/sections/presentation/`) get per-token colors via
+[Tree-sitter](https://tree-sitter.github.io/), running **at build time** in
+Bun. Colors come from the [VS Code Dark Modern](https://github.com/kevcamel/vscode_dark_modern.zed/blob/main/themes/vscode-dark-modern.json)
+theme; no runtime cost in Minecraft.
+
+### Layout
+
+```
+resources/jsx/parser/                    # gitignored, populated by fetch
+  tree-sitter-typescript.wasm
+  typescript.highlights.scm
+  tree-sitter-mcfunction.wasm           # built from .temp/tree-sitter-mcfunction
+  mcfunction.highlights.scm
+
+scripts/fetch-syntax-parsers.ts          # populates the above
+src/sections/presentation/jsx/highlight.ts  # tokenizer + theme + precompute
+src/sections/presentation/jsx/render.ts     # wires it into wrapCodeWithBorders
+```
+
+### First-time setup
+
+Run once after cloning (and again after adding a grammar):
+
+```bash
+bun run fetch:parsers
+```
+
+That builds the local mcfunction grammar from `.temp/tree-sitter-mcfunction/`,
+downloads the upstream TypeScript wasm + query into `resources/jsx/parser/`,
+and prints a size summary. The output dir is in `.gitignore`, so a fresh
+clone won't have these files until you run this. Builds that find a missing
+grammar gracefully degrade to the legacy single-color `<code>` rendering.
+
+### Adding a language
+
+1. Add an entry to `GRAMMARS` in `src/sections/presentation/jsx/render.ts`:
+   ```ts
+   const GRAMMARS = {
+     …
+     python: {
+       wasmPath: 'resources/jsx/parser/tree-sitter-python.wasm',
+       queryPath: 'resources/jsx/parser/python.highlights.scm',
+     },
+   }
+   ```
+2. Add the matching fetch entry to `ARTIFACTS` in
+   `scripts/fetch-syntax-parsers.ts` (and the `OUTPUTS` map for output paths).
+3. `bun run fetch:parsers`
+
+### Color theme
+
+The scope → hex map (`SCOPE_COLOR` in `highlight.ts`) is verbatim from VS
+Code Dark Modern's `tokenColors`. The priority order (`SCOPE_PRIORITY`) is
+an explicit ranking of capture names so an overlapping `@string.escape`
+beats `@string`, `@keyword.control` beats `@keyword`, etc. Same priority
+ties break to the more-nested range — the sweep algorithm picks the
+smallest-enclosing capture.
+
+### Falling back to single-color
+
+`<code>` with no `lang` prop (or an unknown `lang`) renders as one colored
+segment per line, exactly as before. Useful when the snippet doesn't need
+syntax colors (just a code-style bordered block).
+
