@@ -10,3 +10,8 @@ declare module '*.less' {
 	const content: string
 	export default content
 }
+
+declare module '*.mcfunction' {
+	const content: string
+	export default content
+}

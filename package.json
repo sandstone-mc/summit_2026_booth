@@ -8,6 +8,7 @@
     "dev:watch": "sand watch",
     "dev:build": "sand build && bun run scripts/minify-resourcepack.ts",
     "dev:deploy": "bun run scripts/deploy.ts",
+    "fetch:parsers": "bun run scripts/fetch-syntax-parsers.ts",
     "typecheck": "tsc --noEmit 2>&1 | awk '/^src\\/sections\\/(magic|rhythm|elevator)/{s=1;next} s&&/^[[:space:]]/{next} /^[^[:space:]]/{s=0} {print}'"
   },
   "keywords": [],
@@ -28,7 +29,8 @@
     "postcss-selector-parser": "^7.1.4",
     "sandstone": "^1.1.1",
     "sharp": "^0.35.3",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "web-tree-sitter": "^0.26.7"
   },
   "trustedDependencies": [
     "@parcel/watcher"
