@@ -17,7 +17,8 @@ import {
 import { wallMovement } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { wallAge, wallDepth } from './spawning'
-import { GameStatus, Tags, gamePlayer, status, voidPark } from '@rhythm/game/state'
+import { calibrationDepth } from '@rhythm/game/calibration'
+import { GameStatus, Tags, gamePlayer, interpSetting, status, voidPark } from '@rhythm/game/state'
 import { NAMESPACE, ticking } from '@shared'
 
 const wallPos = Objective.create('rhythm.wall.pos', 'dummy')
@@ -31,26 +32,28 @@ export const beatFlag = Variable(0)
 const initWalls = MCFunction(
 	'sections/rhythm/wall/init',
 	() => {
-		execute
-			.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.WALL_HIT}`, `!${Tags.PARKOUR}`] }))
-			.run(() => {
+		_.if(interpSetting.equalTo(0), () => {
+			execute
+				.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.WALL_HIT}`, `!${Tags.PARKOUR}`] }))
+				.run(() => {
+					data.merge.entity('@s', {
+						interpolation_duration: NBT.int(wallMovement.travelTicks),
+						transformation: {
+							translation: NBT.float(arena.interpolationTranslation),
+							left_rotation: NBT.float(arena.wallRotation),
+							scale: NBT.float(arena.wallScale),
+							right_rotation: NBT.float([0, 0, 0, 1]),
+						},
+						start_interpolation: NBT.int(-2),
+					})
+				})
+			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, Tags.PARKOUR] })).run(() => {
+				const pkTrans: [number, number, number] = [-0.5, 0, -0.5 + wallMovement.totalDistance]
 				data.merge.entity('@s', {
 					interpolation_duration: NBT.int(wallMovement.travelTicks),
-					transformation: {
-						translation: NBT.float(arena.interpolationTranslation),
-						left_rotation: NBT.float(arena.wallRotation),
-						scale: NBT.float(arena.wallScale),
-						right_rotation: NBT.float([0, 0, 0, 1]),
-					},
+					transformation: { translation: NBT.float(pkTrans) },
 					start_interpolation: NBT.int(-2),
 				})
-			})
-		execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, Tags.PARKOUR] })).run(() => {
-			const pkTrans: [number, number, number] = [-0.5, 0, -0.5 + wallMovement.totalDistance]
-			data.merge.entity('@s', {
-				interpolation_duration: NBT.int(wallMovement.travelTicks),
-				transformation: { translation: NBT.float(pkTrans) },
-				start_interpolation: NBT.int(-2),
 			})
 		})
 	},
@@ -70,24 +73,30 @@ const tpWall = MCFunction(
 const moveWalls = MCFunction(
 	'sections/rhythm/wall/move',
 	() => {
+		const moveBody = () => {
+			wallPositionTemp('@s').set(wallAge('@s'))
+			_.if(wallPositionTemp('@s').greaterThan(travelTicksScore), () => {
+				wallPositionTemp('@s').set(travelTicksScore)
+			})
+			wallPositionTemp('@s').multiply(numeratorScore)
+			wallPositionTemp('@s').divide(travelTicksScore)
+			wallPos('@s').set(arena.spawnScaled)
+			wallPos('@s').add(wallPositionTemp('@s'))
+			wallPos('@s').add(wallDepth('@s'))
+			execute.store.result.storage(TEMP_STORAGE, 'pos', 'double', 0.001).run.scoreboard.players.get('@s', wallPos.name)
+			raw(`function ${tpWall.name} with storage ${TEMP_STORAGE}`)
+		}
 		execute
 			.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_HIT, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] }))
 			.at('@s')
-			.run(() => {
-				wallPositionTemp('@s').set(wallAge('@s'))
-				_.if(wallPositionTemp('@s').greaterThan(travelTicksScore), () => {
-					wallPositionTemp('@s').set(travelTicksScore)
-				})
-				wallPositionTemp('@s').multiply(numeratorScore)
-				wallPositionTemp('@s').divide(travelTicksScore)
-				wallPos('@s').set(arena.spawnScaled)
-				wallPos('@s').add(wallPositionTemp('@s'))
-				wallPos('@s').add(wallDepth('@s'))
-				execute.store.result
-					.storage(TEMP_STORAGE, 'pos', 'double', 0.001)
-					.run.scoreboard.players.get('@s', wallPos.name)
-				raw(`function ${tpWall.name} with storage ${TEMP_STORAGE}`)
-			})
+			.run(moveBody)
+		_.if(interpSetting.equalTo(1), () => {
+			execute
+				.as(Selector('@e', { tag: [Tags.WALL, `!${Tags.WALL_HIT}`, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] }))
+				.at('@s')
+				.run(moveBody)
+		})
+		execute.as(Selector('@e', { type: 'minecraft:happy_ghast', tag: Tags.WALL })).run.rotate('@s', ['0', '0'])
 	},
 	{ lazy: true },
 )
@@ -99,7 +108,7 @@ export const wallTick = MCFunction(
 			initWalls()
 
 			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.PARKOUR}`] })).run(() => {
-				wallDepth('@s').set(0)
+				wallDepth('@s').set(calibrationDepth)
 			})
 			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT] })).run(() => {
 				wallAge('@s').set(2)
