@@ -26,7 +26,7 @@ const GLOW_DURATION = 1
 const glowPick = Objective.create('ssb.glow_pick', 'dummy')
 const glowColorScore = glowPick('$glow')
 
-MCFunction(
+export const laneTeamsInit = MCFunction(
 	'sections/rhythm/lane/teams_init',
 	() => {
 		for (const color of visuals.glowColors) {
@@ -35,12 +35,13 @@ MCFunction(
 			team.modify(`ssb_glow_${color}`, 'seeFriendlyInvisibles', false)
 		}
 	},
-	{ runOnLoad: true },
+	{ lazy: true },
 )
 
 const laneSelector = Selector('@e', { tag: Tags.LANE })
 const fragmentSelector = Selector('@e', { tag: Tags.LANE_FRAGMENT })
 const borderSelector = Selector('@e', { tag: Tags.LANE_BORDER })
+const mountSelector = Selector('@e', { tag: Tags.LANE_MOUNT })
 
 const baseY = arena.laneFloorY
 const lane = arena.lane
@@ -80,18 +81,24 @@ export const spawnLaneShulkers = MCFunction(
 	'sections/rhythm/lane/spawn',
 	() => {
 		kill(laneSelector)
+		kill(mountSelector)
 		kill(fragmentSelector)
 		for (let i = 0; i < pattern.width; i++) {
 			const pos = lane.pos(i, 0, 0)
-			summon('minecraft:happy_ghast', abs(pos[0], baseY - 1 / 160, pos[2]), {
-				Tags: boothTags(Tags.LANE),
-				NoAI: true,
-				NoGravity: true,
-				Invulnerable: true,
-				Silent: true,
-				attributes: [{ id: 'minecraft:scale', base: 0.25 }],
-				active_effects: [{ id: 'minecraft:invisibility', duration: NBT.int(-1), show_particles: false }],
-			})
+			summon('minecraft:item_display', abs(pos[0], baseY - 1 / 120, pos[2]), {
+				Tags: boothTags(Tags.LANE_MOUNT),
+				Passengers: [
+					{
+						id: 'minecraft:shulker',
+						Tags: boothTags(Tags.LANE),
+						NoAI: true,
+						NoGravity: true,
+						Invulnerable: true,
+						Silent: true,
+						active_effects: [{ id: 'minecraft:invisibility', duration: NBT.int(-1), show_particles: false }],
+					},
+				],
+			} as Parameters<typeof summon>[2])
 		}
 
 		for (let i = 0; i < FRAGMENTS.length; i++) {
@@ -261,7 +268,8 @@ export const spawnLaneBorder = MCFunction(
 				wallBorderNbt(i, bg, yOff, lane.frontFacing + 180, frontScale),
 			)
 		}
-	}
+	},
+	{ lazy: true },
 )
 
 const borderRippleCounter = Objective.create('ssb.border_ripple', 'dummy')
@@ -302,6 +310,7 @@ const doKillLane = MCFunction(
 	'sections/rhythm/lane/do_kill',
 	() => {
 		kill(laneSelector)
+		kill(mountSelector)
 		kill(fragmentSelector)
 	},
 	{ lazy: true },
@@ -311,7 +320,7 @@ export const clearLaneShulkers = MCFunction(
 	'sections/rhythm/lane/clear',
 	() => {
 		// park out of sight for a tick so the kill isn't visible
-		tp(laneSelector, abs(...voidPark))
+		tp(mountSelector, abs(...voidPark))
 		tp(fragmentSelector, abs(...voidPark))
 
 		doKillLane.schedule.function('1t', 'replace')
