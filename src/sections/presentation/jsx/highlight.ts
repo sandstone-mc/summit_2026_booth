@@ -1,164 +1,96 @@
-/**
- * Tree-sitter based syntax highlighting for `<code>` blocks in the in-game
- * presentation. Runs at build time (in Bun, via Sandstone) — produces extra
- * `StyledSegment`s with per-token colors that flow straight into the
- * `text_display` NBT. See CLAUDE.md "Syntax highlighting" for the end-to-end
- * setup (fetch + parse + render).
- */
-
 import { Parser, Language, Query } from 'web-tree-sitter'
 import type { StyledSegment } from './render'
 
-/**
- * Where each registered language's binary assets live. The fetch script
- * (`scripts/fetch-syntax-parsers.ts`) populates these paths — see that file
- * to add a new language.
- */
 export type Grammar = { wasmPath: string; queryPath: string }
 
 export type Highlighter = {
-	/**
-	 * Tokenize `source` for `lang`. Returns an empty array when the
-	 * language isn't registered (the renderer's fallback path keeps the
-	 * single-color code segment when this happens, so omitting `lang`
-	 * doesn't crash — it just degrades).
-	 */
 	highlight(source: string, lang: string): Promise<StyledSegment[]>
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Scope → color (VS Code Dark Modern, from kevcamel/vscode_dark_modern.zed)
-// ─────────────────────────────────────────────────────────────────────────
-// Capture names in tree-sitter `.scm` files (`@keyword.control`, `@string`,
-// `@function`, …) map 1:1 onto these hex strings. The fallback walk lets a
-// `@string.escape` capture inherit from `@string` when the more specific
-// scope has no entry — so adding a new variant (e.g. `@string.regex`) is
-// just a one-liner if VS Code already covers it, and a sane default if not.
+const THEME_PATH = 'resources/jsx/parser/vscode-dark-modern.json'
 
-const SCOPE_COLOR = {
-	comment: '#6A9955',
-	'comment.doc': '#6A9955',
-	'string.escape': '#D7BA7D',
-	'string.regex': '#D16969',
-	'string.special': '#D16969',
-	'string.special.symbol': '#D16969',
-	string: '#CE9178',
-	'text.literal': '#CE9178',
-	'tag.component.jsx': '#4EC9B0',
-	'function.method': '#DCDCAA',
-	'function.call': '#DCDCAA',
-	'function.builtin': '#DCDCAA',
-	function: '#DCDCAA',
-	'preproc.builtin': '#569CD6',
-	preproc: '#569CD6',
-	'type.builtin': '#569CD6',
-	type: '#4EC9B0',
-	'constant.builtin': '#569CD6',
-	'constant.character.escape': '#569CD6',
-	boolean: '#569CD6',
-	constant: '#4FC1FF',
-	number: '#B5CEA8',
-	'variable.special': '#569CD6',
-	'variable.parameter': '#9CDCFE',
-	variable: '#9CDCFE',
-	attribute: '#9CDCFE',
-	property: '#9CDCFE',
-	constructor: '#569CD6',
-	'keyword.control.import': '#C586C0',
-	'keyword.control': '#C586C0',
-	'keyword.declaration': '#569CD6',
-	keyword: '#569CD6',
-	tag: '#569CD6',
-	embedded: '#D4D4D4',
-	'punctuation.special': '#CCCCCC',
-	'punctuation.bracket': '#CCCCCC',
-	'punctuation.delimiter': '#CCCCCC',
-	'punctuation.list_marker': '#CCCCCC',
-	punctuation: '#CCCCCC',
-	'emphasis.strong': '#569CD6',
-	operator: '#D4D4D4',
-} as const satisfies Record<string, `#${string}`>
+type ThemeSyntax = Record<string, { color?: string | null } | undefined>
+type ThemeJson = { themes?: Array<{ style?: { syntax?: ThemeSyntax } }> }
 
-function colorFor(name: string): `#${string}` | undefined {
-	const exact = SCOPE_COLOR[name as keyof typeof SCOPE_COLOR]
-	if (exact) return exact as `#${string}`
+let cachedThemeColors: Record<string, `#${string}`> | null = null
+
+async function loadThemeColors(): Promise<Record<string, `#${string}`>> {
+	if (cachedThemeColors) return cachedThemeColors
+	try {
+		const text = await Bun.file(THEME_PATH).text()
+		const json = JSON.parse(text) as ThemeJson
+		const syntax = json.themes?.[0]?.style?.syntax ?? {}
+		const out: Record<string, `#${string}`> = {}
+		for (const [scope, entry] of Object.entries(syntax)) {
+			const color = entry?.color
+			if (typeof color === 'string' && /^#[0-9a-fA-F]{6}$/.test(color)) {
+				out[scope] = color as `#${string}`
+			}
+		}
+		cachedThemeColors = out
+		return out
+	} catch (err) {
+		console.warn(`[highlight] theme unavailable at ${THEME_PATH}: ${err}`)
+		cachedThemeColors = {}
+		return cachedThemeColors
+	}
+}
+
+function colorFor(name: string, colors: Record<string, `#${string}`>): `#${string}` | undefined {
+	const exact = colors[name]
+	if (exact) return exact
 	// Strip the last `.suffix` at a time. Lets a missing `@string.escape`
 	// entry fall back to `@string`, or a missing `@keyword.control.import`
 	// fall back to `@keyword.control`, etc.
 	const parts = name.split('.')
 	for (let i = parts.length - 1; i > 0; i--) {
 		const prefix = parts.slice(0, i).join('.')
-		const fallback = SCOPE_COLOR[prefix as keyof typeof SCOPE_COLOR]
-		if (fallback) return fallback as `#${string}`
+		const fallback = colors[prefix]
+		if (fallback) return fallback
 	}
 	return undefined
 }
 
-// Specificity ranking for overlap resolution. Lower number wins — same-pri
-// ties break on smaller range (more nested). Captures not in this table are
-// discarded by `priorityOf` (returning null), so an unknown `@foo` capture
-// won't poison the output by claiming generic text.
-const SCOPE_PRIORITY: Record<string, number> = {
-	comment: 1,
-	'string.escape': 2,
-	'punctuation.special': 3,
-	'string.regex': 4,
-	'string.special': 5,
-	'tag.component.jsx': 6,
-	'constant.character.escape': 7,
-	string: 8,
-	'function.call': 9,
-	'function.method': 10,
-	'function.builtin': 11,
-	function: 12,
-	'preproc.builtin': 13,
-	preproc: 14,
-	'type.builtin': 15,
-	type: 16,
-	'constant.builtin': 17,
-	boolean: 18,
-	constant: 19,
-	number: 20,
-	'variable.special': 21,
-	'variable.parameter': 22,
-	variable: 23,
-	attribute: 24,
-	property: 25,
-	constructor: 26,
-	'keyword.control.import': 27,
-	'keyword.control': 28,
-	'keyword.declaration': 29,
-	keyword: 30,
-	tag: 31,
-	embedded: 32,
-	'emphasis.strong': 33,
-	'punctuation.bracket': 34,
-	'punctuation.delimiter': 35,
-	'punctuation.list_marker': 36,
-	punctuation: 37,
-	operator: 38,
-}
+const CATEGORY_ORDER = [
+	'comment',
+	'string',
+	'function',
+	'type',
+	'preproc',
+	'constant',
+	'boolean',
+	'number',
+	'keyword',
+	'tag',
+	'embedded',
+	'variable',
+	'attribute',
+	'property',
+	'constructor',
+	'punctuation',
+	'operator',
+	'emphasis',
+] as const
 
-function priorityOf(name: string): number | null {
-	if (name in SCOPE_PRIORITY) return SCOPE_PRIORITY[name]
+const PROMOTED: ReadonlySet<string> = new Set([
+	'string.escape',
+	'string.regex',
+	'string.special',
+	'punctuation.special',
+	'constant.character.escape',
+	'tag.component.jsx',
+])
+const PROMOTED_PRIORITY = 50
+
+function priorityOf(name: string): number {
+	if (PROMOTED.has(name)) return PROMOTED_PRIORITY
 	const parts = name.split('.')
-	for (let i = parts.length - 1; i > 0; i--) {
-		const prefix = parts.slice(0, i).join('.')
-		if (prefix in SCOPE_PRIORITY) return SCOPE_PRIORITY[prefix]
-	}
-	return null
+	const catIdx = CATEGORY_ORDER.indexOf(parts[0] as (typeof CATEGORY_ORDER)[number])
+	const cat = catIdx === -1 ? CATEGORY_ORDER.length : catIdx
+	return cat * 100 - parts.length
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// Overlap sweep → non-overlapping styled segments
-// ─────────────────────────────────────────────────────────────────────────
-
 type Tag = { start: number; end: number; priority: number; name: string; color: `#${string}` }
 
-/**
- * Pick the active tag with the lowest priority number. On a tie, longer
- * ranges (less specific) win — same rule the legacy stack sweep used.
- */
 function pickWinner(active: Tag[]): Tag | undefined {
 	if (active.length === 0) return undefined
 	let winner = active[0]
@@ -173,11 +105,6 @@ function pickWinner(active: Tag[]): Tag | undefined {
 	return winner
 }
 
-/**
- * Merge a styled segment into `out`, combining with the previous segment
- * when colors match. Keeps the segment list short — adjacent same-color
- * runs would otherwise inflate NBT size for nothing.
- */
 function pushSegment(
 	out: StyledSegment[],
 	text: string,
@@ -194,25 +121,6 @@ function pushSegment(
 	out.push(seg)
 }
 
-/**
- * Collapse overlapping tags on a single source string into a non-overlapping
- * list of segments whose concatenation equals `source`. Tags are pre-resolved
- * to a priority (lower wins) + color so the sweep doesn't re-walk the scope
- * tables per character.
- *
- * Algorithm: keep an `active` set of tags whose range covers the current
- * cursor, advance to the next boundary (a tag starting, or the soonest
- * active tag ending), emit a segment for [cursor, boundary) colored by the
- * highest-priority active tag, then drop ended tags and pull in new starts
- * at the boundary. Repeat until the cursor walks past `source.length`.
- *
- * Replaces an earlier stack-based sweep that had two bugs: (a) when no tag
- * was active at the cursor, `nextEnd` defaulted to `source.length` — so the
- * whitespace between two captures was emitted as one giant segment instead
- * of being split at every later tag's start; (b) the inner push loop only
- * fired when a tag started *exactly* at the cursor, so any tag whose start
- * landed inside an already-emitted outer tag's range was silently dropped.
- */
 function collapseToSegments(source: string, tags: Tag[]): StyledSegment[] {
 	if (source.length === 0) return []
 	tags.sort((a, b) => a.start - b.start || b.end - a.end)
@@ -222,7 +130,7 @@ function collapseToSegments(source: string, tags: Tag[]): StyledSegment[] {
 	let tagIdx = 0
 	let active: Tag[] = []
 
-	// Pull in every tag whose range starts at or before cursor — also covers
+	// Pull in every tag whose range starts at or before cursor - also covers
 	// nested tags whose start is inside an outer tag that the sweep will
 	// process first.
 	while (tagIdx < tags.length && tags[tagIdx].start <= cursor) {
@@ -231,7 +139,7 @@ function collapseToSegments(source: string, tags: Tag[]): StyledSegment[] {
 	}
 
 	while (cursor < source.length) {
-		// Next boundary: the next tag's start, or the soonest active end —
+		// Next boundary: the next tag's start, or the soonest active end -
 		// whichever comes first. Whichever's closer determines where this
 		// segment stops.
 		let nextEnd = tagIdx < tags.length ? tags[tagIdx].start : source.length
@@ -258,20 +166,12 @@ function collapseToSegments(source: string, tags: Tag[]): StyledSegment[] {
 	return segments
 }
 
-// ─────────────────────────────────────────────────────────────────────────
-// Async loader + highlighter
-// ─────────────────────────────────────────────────────────────────────────
-
 type LoadedGrammar = { language: Language; query: Query }
 
 let initPromise: Promise<void> | null = null
 
 async function ensureInit(): Promise<void> {
 	if (initPromise) return initPromise
-	// `web-tree-sitter` ships its own `tree-sitter.wasm` runtime and locates
-	// it automatically — no `locateFile` arg needed. (See
-	// `.temp/tree-sitter-mcfunction/scripts/compare-grammars.js`: same call
-	// with no args.)
 	initPromise = Parser.init()
 	return initPromise
 }
@@ -287,17 +187,8 @@ async function loadGrammar(grammar: Grammar): Promise<LoadedGrammar> {
 	return { language, query }
 }
 
-/**
- * Build a highlighter for the given language registry. Initializes
- * `web-tree-sitter` once and loads every registered grammar's wasm + query
- * in parallel.
- *
- * If a grammar's wasm or query is missing, that language silently returns
- * `[]` from `highlight()` — no crash, no log noise. This keeps the renderer
- * working when the dev hasn't run `bun run fetch:parsers` yet (single-color
- * fallback in `wrapCodeWithBorders`).
- */
 export async function loadHighlighter(registry: Record<string, Grammar>): Promise<Highlighter> {
+	const colors = await loadThemeColors()
 	const loaded: Record<string, LoadedGrammar | null> = {}
 	await Promise.all(
 		Object.entries(registry).map(async ([lang, def]) => {
@@ -326,8 +217,7 @@ export async function loadHighlighter(registry: Record<string, Grammar>): Promis
 				const tags: Tag[] = []
 				for (const cap of captures) {
 					const priority = priorityOf(cap.name)
-					if (priority === null) continue
-					const color = colorFor(cap.name)
+					const color = colorFor(cap.name, colors)
 					if (!color) continue
 					const start = cap.node.startIndex
 					const end = cap.node.endIndex
@@ -343,17 +233,6 @@ export async function loadHighlighter(registry: Record<string, Grammar>): Promis
 	}
 }
 
-/**
- * Pre-compute the highlighted segments for every `(source, lang)` pair the
- * renderer needs. Returns a sync `lookup(source, lang) → StyledSegment[]`
- * the synchronous layout pass uses. Same-source + same-lang pairs are
- * deduped so a long block of identical code only parses once.
- *
- * The async work is bounded by the count of distinct `(source, lang)`
- * tuples across the whole scene, not the number of `<code>` elements.
- * Matches the pattern `collectFonts` already uses for font metric
- * pre-loading in `renderSlides`.
- */
 export async function precomputeHighlights(
 	registry: Record<string, Grammar>,
 	requests: Array<{ source: string; lang: string }>,
