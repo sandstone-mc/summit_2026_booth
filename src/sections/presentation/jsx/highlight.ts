@@ -27,69 +27,65 @@ export type Highlighter = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Scope → color (VS Code Dark Modern, from kevcamel/vscode_dark_modern.zed)
+// Scope → color (loaded from VS Code Dark Modern theme)
 // ─────────────────────────────────────────────────────────────────────────
-// Capture names in tree-sitter `.scm` files (`@keyword.control`, `@string`,
-// `@function`, …) map 1:1 onto these hex strings. The fallback walk lets a
-// `@string.escape` capture inherit from `@string` when the more specific
-// scope has no entry — so adding a new variant (e.g. `@string.regex`) is
-// just a one-liner if VS Code already covers it, and a sane default if not.
+// The scope → hex map comes from
+// `resources/jsx/parser/vscode-dark-modern.json` (fetched by
+// `scripts/fetch-syntax-parsers.ts`). Capture names in tree-sitter `.scm`
+// files (`@keyword.control`, `@string`, `@function`, …) map onto the
+// theme's `style.syntax` keys. When a more specific scope is missing (e.g.
+// `@string.escape` vs `@string`), `colorFor` walks up the dot hierarchy to
+// find a fallback — so adding a new variant is automatic as long as VS Code
+// already covers it.
 
-const SCOPE_COLOR = {
-	comment: '#6A9955',
-	'comment.doc': '#6A9955',
-	'string.escape': '#D7BA7D',
-	'string.regex': '#D16969',
-	'string.special': '#D16969',
-	'string.special.symbol': '#D16969',
-	string: '#CE9178',
-	'text.literal': '#CE9178',
-	'tag.component.jsx': '#4EC9B0',
-	'function.method': '#DCDCAA',
-	'function.call': '#DCDCAA',
-	'function.builtin': '#DCDCAA',
-	function: '#DCDCAA',
-	'preproc.builtin': '#569CD6',
-	preproc: '#569CD6',
-	'type.builtin': '#569CD6',
-	type: '#4EC9B0',
-	'constant.builtin': '#569CD6',
-	'constant.character.escape': '#569CD6',
-	boolean: '#569CD6',
-	constant: '#4FC1FF',
-	number: '#B5CEA8',
-	'variable.special': '#569CD6',
-	'variable.parameter': '#9CDCFE',
-	variable: '#9CDCFE',
-	attribute: '#9CDCFE',
-	property: '#9CDCFE',
-	constructor: '#569CD6',
-	'keyword.control.import': '#C586C0',
-	'keyword.control': '#C586C0',
-	'keyword.declaration': '#569CD6',
-	keyword: '#569CD6',
-	tag: '#569CD6',
-	embedded: '#D4D4D4',
-	'punctuation.special': '#CCCCCC',
-	'punctuation.bracket': '#CCCCCC',
-	'punctuation.delimiter': '#CCCCCC',
-	'punctuation.list_marker': '#CCCCCC',
-	punctuation: '#CCCCCC',
-	'emphasis.strong': '#569CD6',
-	operator: '#D4D4D4',
-} as const satisfies Record<string, `#${string}`>
+const THEME_PATH = 'resources/jsx/parser/vscode-dark-modern.json'
 
-function colorFor(name: string): `#${string}` | undefined {
-	const exact = SCOPE_COLOR[name as keyof typeof SCOPE_COLOR]
-	if (exact) return exact as `#${string}`
+type ThemeSyntax = Record<string, { color?: string | null } | undefined>
+type ThemeJson = { themes?: Array<{ style?: { syntax?: ThemeSyntax } }> }
+
+let cachedThemeColors: Record<string, `#${string}`> | null = null
+
+/**
+ * Load the VS Code Dark Modern theme's `style.syntax` map into a scope →
+ * hex table. Drops scopes whose `color` is null/absent (or not a 6-digit
+ * hex). Returns an empty map on any error (missing file, bad JSON) so the
+ * renderer still produces segments — they just land uncolored, same as a
+ * missing grammar's fallback. Run `bun run fetch:parsers` to populate
+ * the theme file.
+ */
+async function loadThemeColors(): Promise<Record<string, `#${string}`>> {
+	if (cachedThemeColors) return cachedThemeColors
+	try {
+		const text = await Bun.file(THEME_PATH).text()
+		const json = JSON.parse(text) as ThemeJson
+		const syntax = json.themes?.[0]?.style?.syntax ?? {}
+		const out: Record<string, `#${string}`> = {}
+		for (const [scope, entry] of Object.entries(syntax)) {
+			const color = entry?.color
+			if (typeof color === 'string' && /^#[0-9a-fA-F]{6}$/.test(color)) {
+				out[scope] = color as `#${string}`
+			}
+		}
+		cachedThemeColors = out
+		return out
+	} catch (err) {
+		console.warn(`[highlight] theme unavailable at ${THEME_PATH}: ${err}`)
+		cachedThemeColors = {}
+		return cachedThemeColors
+	}
+}
+
+function colorFor(name: string, colors: Record<string, `#${string}`>): `#${string}` | undefined {
+	const exact = colors[name]
+	if (exact) return exact
 	// Strip the last `.suffix` at a time. Lets a missing `@string.escape`
 	// entry fall back to `@string`, or a missing `@keyword.control.import`
 	// fall back to `@keyword.control`, etc.
 	const parts = name.split('.')
 	for (let i = parts.length - 1; i > 0; i--) {
 		const prefix = parts.slice(0, i).join('.')
-		const fallback = SCOPE_COLOR[prefix as keyof typeof SCOPE_COLOR]
-		if (fallback) return fallback as `#${string}`
+		const fallback = colors[prefix]
+		if (fallback) return fallback
 	}
 	return undefined
 }
@@ -298,6 +294,7 @@ async function loadGrammar(grammar: Grammar): Promise<LoadedGrammar> {
  * fallback in `wrapCodeWithBorders`).
  */
 export async function loadHighlighter(registry: Record<string, Grammar>): Promise<Highlighter> {
+	const colors = await loadThemeColors()
 	const loaded: Record<string, LoadedGrammar | null> = {}
 	await Promise.all(
 		Object.entries(registry).map(async ([lang, def]) => {
@@ -327,7 +324,7 @@ export async function loadHighlighter(registry: Record<string, Grammar>): Promis
 				for (const cap of captures) {
 					const priority = priorityOf(cap.name)
 					if (priority === null) continue
-					const color = colorFor(cap.name)
+					const color = colorFor(cap.name, colors)
 					if (!color) continue
 					const start = cap.node.startIndex
 					const end = cap.node.endIndex
