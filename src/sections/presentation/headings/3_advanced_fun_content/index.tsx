@@ -10,10 +10,14 @@
 export const slides = [
 	(
 		<>
-			<h1>Can people make advanced, fun content with Sandstone?</h1>
-			<p>Yes — Sandstone powers ambitious community mini games</p>
-			<p>Ori's and Spartan's projects use it for complex, well-commented codebases</p>
-			<p>Compiles to clean vanilla mcfunction that's easy to inspect and share</p>
+			<h2 id="header">Can people make advanced, fun content with Sandstone?</h2>
+
+			<p>Yes!</p>
+
+			<div id="img-grid">
+				<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/rhythm.png" height="30vh" />
+				<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/arcane.png" height="30vh" />
+			</div>
 		</>
 	),
 ]

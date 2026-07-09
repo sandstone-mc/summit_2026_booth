@@ -18,5 +18,9 @@ export default {
     namespace: 'sandstone_summit_booth',
     packUid: 'WnYlBycD',
     mcmeta: '26.2',
-    saveOptions: (Bun.env.CLIENT_PATH && Bun.env.WORLD) ? { clientPath: Bun.env.CLIENT_PATH, world: Bun.env.WORLD } : {}
+    saveOptions: (Bun.env.CLIENT_PATH && Bun.env.WORLD) 
+        ? { clientPath: Bun.env.CLIENT_PATH, world: Bun.env.WORLD } 
+        : Bun.env.CLIENT_PATH
+            ? { clientPath: Bun.env.CLIENT_PATH, root: true }
+            : {}
 } as SandstoneConfig

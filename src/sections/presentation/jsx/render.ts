@@ -25,6 +25,9 @@ import { precomputeHighlights, type Grammar } from './highlight'
 import { ContentTag, JSONTextComponent, SymbolEntity } from 'sandstone/arguments';
 import { Fragment } from './jsx-runtime'
 import { computeDurationsSeconds, type SlidesTiming } from '../slides'
+import path from 'node:path'
+import sharp from 'sharp'
+import { Model, ItemModelDefinition } from 'sandstone'
 
 export type VNode = { type: any; props: any; key: any }
 
@@ -496,6 +499,39 @@ function isTextType(t: any): boolean {
 	return TEXT_TYPES.has(String(t))
 }
 
+const IMG_TYPES = new Set(['img'])
+
+function isImgType(t: any): boolean {
+	return IMG_TYPES.has(String(t))
+}
+
+/** Anything that takes a cell in the slide layout and summons a display entity. */
+function isVisibleType(t: any): boolean {
+	return isTextType(t) || isImgType(t)
+}
+
+// Fallback for <img> with no height / width prop and no LESS height/width:
+// 30vh on the scene height. Matches the typical "screenshot" use case.
+const DEFAULT_IMG_HEIGHT = '30vh'
+
+/**
+ * Resource registration entry for one unique `<img src="…">`. Created at
+ * build time by `prepareImgResources` — the renderer references this
+ * entry (not the original src) at summon time so the model id and the
+ * `minecraft:item_model` component value stay in sync with whatever
+ * `Model` / `ItemModelDefinition` ended up generating.
+ */
+type ImgResource = {
+	/** The Minecraft resource location passed in via `src` (with the `.png` suffix). */
+	src: string
+	/** Width ÷ height of the source texture, read via sharp at build time. */
+	aspect: number
+	/** Value placed in the `minecraft:item_model` data component on the displayed item. */
+	itemModel: string
+}
+
+type ImgResourceMap = Map<string, ImgResource>
+
 function defaultFontPx(type: string): number {
 	switch (type) {
 		case 'h1': return 32
@@ -839,8 +875,18 @@ function parseMarginBox(
 // ── Entity summon (shared by mount + rerender) ──────────────────
 
 type ElementLayout = {
+	/** `'text'` renders a `text_display`; `'image'` renders an `item_display`. */
+	kind: 'text' | 'image'
 	node: VNode
 	path: string[]
+	/**
+	 * Resolved LESS declarations of the immediate parent container. Two
+	 * siblings of the same parent share this reference — the layout pass
+	 * uses reference equality to detect "adjacent siblings" and apply
+	 * the parent's `row-gap` between them. Empty object `{}` for root
+	 * children (no styled parent).
+	 */
+	parentStack: CssDeclarations
 	declarations: CssDeclarations
 	type: string
 	content: string
@@ -851,18 +897,26 @@ type ElementLayout = {
 	textScale: number
 	widthCompensation: number
 	cellH: number
+	cellW: number
 	marginTop: number
 	marginBottom: number
+	// Image-only fields. Undefined for text elements.
+	imgSrc?: string
+	imgItemModel?: string
+	imgAspect?: number
 }
 
 /**
- * Emit `summon text_display ...` commands for every visible text element
- * in `visible`. Must be called inside an MCFunction callback — the
- * commands attach to whichever MCFunction is currently active.
+ * Emit `summon text_display / item_display ...` commands for every
+ * visible element in `visible`. Both text and image elements are
+ * supported; their layouts intermix in the same source order so a slide
+ * like `<p>...</p><img/><p>...</p>` stacks naturally. Must be called
+ * inside an MCFunction callback — the commands attach to whichever
+ * MCFunction is currently active.
  *
  * `extraTags` is added on top of `SCENE_TAG`.
- * `initialOpacity` (if set) seeds `text_opacity` so the slide can start
- * hidden without a follow-up hide pass (0 = invisible, -1 = fully opaque).
+ * `initialOpacity` (if set) seeds `text_opacity` (text) or `view_range=0`
+ * (image) so the slide can start hidden without a follow-up hide pass.
  */
 function summonVisibleElements(
 	visible: NodeWithPath[],
@@ -873,22 +927,84 @@ function summonVisibleElements(
 	extraTags: (`${any}${string}` | LabelClass)[],
 	initialOpacity: number | undefined,
 	codePrecomputed: CodePrecomputedMap,
+	imgResources: ImgResourceMap,
 ): void {
-	// First pass: compute per-element layout (text properties, scale, wrap
-	// → lines, cell height). Doing this ahead of placement lets us read
-	// stack-level layout properties (`row-gap`, `align-items`) once the
-	// total height is known, then position each cell with the right gap
-	// and (optionally) center the whole stack in the scene.
+	// Memoize the parent's resolved declarations by parent path so
+	// siblings share a reference — the layout pass uses reference
+	// equality on `parentStack` to detect adjacent siblings and apply
+	// the parent's `row-gap` between them.
+	const EMPTY_DEC: CssDeclarations = {}
+	const parentStackCache = new Map<string, CssDeclarations>()
+	const getParentStack = (path: string[]): CssDeclarations => {
+		if (path.length === 0) return EMPTY_DEC
+		const key = path.slice(0, -1).join(' ')
+		let dec = parentStackCache.get(key)
+		if (!dec) {
+			dec = resolveStyles(styles, path.slice(0, -1))
+			parentStackCache.set(key, dec)
+		}
+		return dec
+	}
+
+	// First pass: compute per-element layout. Doing this ahead of
+	// placement lets us read stack-level layout properties (`row-gap`,
+	// `align-items`) once the total height is known, then position each
+	// cell with the right gap and (optionally) center the whole stack in
+	// the scene.
 	const elements: ElementLayout[] = visible.map(({ node, path }) => {
+		const parentStack = getParentStack(path)
 		const declarations = resolveStyles(styles, path)
 		const type = String(node.type)
-		// `<code>` resolves its source separately: `src` prop, function
-		// child (toString'd), or a plain string. Other element types just
-		// walk their child tree.
-		const content =
-			type === 'code'
-				? extractCodeSource(node.props)
-				: extractText(node.props?.children)
+
+		if (isImgType(type)) {
+			const src = String(node.props?.src ?? '')
+			const resource = imgResources.get(src)
+			if (!resource) {
+				throw new Error(
+					`<img src="${src}"> is missing a registered resource — every src must be prepared via prepareImgResources before render.`,
+				)
+			}
+			// Dimension resolution: explicit `height` prop → LESS `height:`
+			// declaration → `DEFAULT_IMG_HEIGHT` fallback. Width defaults
+			// to the height × aspect so the image doesn't distort when the
+			// user only sets one axis (the most common case for screenshots).
+			const heightRaw =
+				(typeof node.props?.height === 'string' && node.props.height) ||
+				declarations.height ||
+				DEFAULT_IMG_HEIGHT
+			const widthRaw =
+				(typeof node.props?.width === 'string' && node.props.width) || declarations.width || ''
+			const heightLen = parseLength(heightRaw, sceneH)
+			const explicitWidth = widthRaw ? parseLength(widthRaw, sceneW) : undefined
+			const cellH = heightLen?.meters ?? parseLength(DEFAULT_IMG_HEIGHT, sceneH)!.meters
+			const cellW = explicitWidth?.meters ?? cellH * resource.aspect
+			const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
+			return {
+				kind: 'image',
+				node,
+				path,
+				parentStack,
+				declarations,
+				type,
+				content: '',
+				width: undefined,
+				scalePx: 0,
+				textScale: 0,
+				widthCompensation: 1,
+				cellH,
+				cellW,
+				marginTop,
+				marginBottom,
+				imgSrc: src,
+				imgItemModel: resource.itemModel,
+				imgAspect: resource.aspect,
+			}
+		}
+
+		// Text element path (unchanged). `<code>` resolves its source
+		// separately: `src` prop, function child (toString'd), or a plain
+		// string. Other element types just walk their child tree.
+		const content = type === 'code' ? extractCodeSource(node.props) : extractText(node.props?.children)
 
 		// font-size → text scale (blocks). width → line_width (text wrap in pixels).
 		const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
@@ -977,12 +1093,12 @@ function summonVisibleElements(
 				? wrapCodeLines(renderText, wrapWidthPx, isBold, fontId)
 				: wrapLines(content, wrapWidthPx, isBold, fontId)
 		const cellH = heightLen?.meters ?? pxToTextLineHeight(scalePx) * lines
-		// Vertical margins only — text_display is center-anchored on x so
-		// left/right never affect the rendered scene.
 		const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
 		return {
+			kind: 'text',
 			node,
 			path,
+			parentStack,
 			declarations,
 			type,
 			content,
@@ -992,94 +1108,290 @@ function summonVisibleElements(
 			textScale,
 			widthCompensation,
 			cellH,
+			cellW: sceneW,
 			marginTop,
 			marginBottom,
 		}
 	})
 
-	// Stack-level layout. Inherited by every element via resolveStyles
-	// (the parent selector `#grid` lands on each child's resolved
-	// declarations), so reading the first element is enough for the
-	// single-stack case this codebase uses. If a slide ever nests
-	// differently-stacked groups, this needs to split per parent.
-	const stackDecs = elements[0]?.declarations ?? {}
-	const rowGap = parseLength(stackDecs['row-gap'] ?? '', sceneH)?.meters ?? 0
+	// Per-pair gap between adjacent elements. Composed of:
+	//   1. CSS `row-gap` from the parent — only when the two elements are
+	//      siblings of the same container (reference equality on
+	//      `parentStack` — siblings share a memoized reference). This is
+	//      what makes `<div id="grid">` with `row-gap: 2vh` space its
+	//      child imgs while leaving unrelated siblings in the root
+	//      fragment untouched.
+	//   2. Text descender — applies unconditionally when the previous
+	//      element is text and the next is non-text. text_display renders
+	//      its glyphs extending upward from an entity placed at
+	//      `cell.y - 1` (one block BELOW the cell's bottom edge, for
+	//      visual breathing room above the next element). That "tail"
+	//      sits outside the cell, so the next cell — if it's a non-text
+	//      element like an `item_display` whose top anchors at the cell's
+	//      top edge — would otherwise overlap the text's tail. Add 1
+	//      block of vertical gap to clear it. Text→text pairs are fine
+	//      because the next text's own descender is the same shape, so
+	//      the cells stack flush.
+	const TEXT_DESCENDER = 1
+	const gapBetween = (i: number): number => {
+		if (i <= 0) return 0
+		const prev = elements[i - 1]
+		const next = elements[i]
+		const textDescender = prev.kind === 'text' && next.kind !== 'text' ? TEXT_DESCENDER : 0
+		if (prev.parentStack !== next.parentStack) return textDescender
+		const raw = next.parentStack['row-gap']
+		const rowGap = raw ? parseLength(raw, sceneH)?.meters ?? 0 : 0
+		return rowGap + textDescender
+	}
+
+	// `align-items: center` (read from the first element's parent) still
+	// centers the whole stack vertically. Most slides don't use it; for
+	// the cases that do, it balances the visual stack as before.
+	const stackDecs = elements[0]?.parentStack ?? {}
 	const alignItems = stackDecs['align-items']
-	// Include per-element vertical margins in total height so
-	// `align-items: center` balances the visual stack correctly.
-	const totalH = elements.reduce(
-		(sum, el, i) =>
+
+	// Group consecutive elements that share a `grid-auto-flow: row` parent
+	// into a single row-flow block. Everything else stays a single-element
+	// block (which is the original column-stack layout, our default).
+	type Block =
+		| { kind: 'element'; el: ElementLayout }
+		| { kind: 'row'; parentStack: CssDeclarations; children: ElementLayout[] }
+	const blocks: Block[] = []
+	for (let i = 0; i < elements.length; ) {
+		const el = elements[i]
+		if (el.parentStack?.['grid-auto-flow'] === 'row') {
+			const children: ElementLayout[] = []
+			while (i < elements.length && elements[i].parentStack === el.parentStack) {
+				children.push(elements[i])
+				i++
+			}
+			blocks.push({ kind: 'row', parentStack: el.parentStack, children })
+		} else {
+			blocks.push({ kind: 'element', el })
+			i++
+		}
+	}
+
+	const blockCellH = (b: Block): number =>
+		b.kind === 'element' ? b.el.cellH : Math.max(...b.children.map((c) => c.cellH))
+
+	// Gap between two adjacent blocks. Combines the parent's row-gap (only
+	// when the two blocks live in the same parent — row-flow blocks expose
+	// their container's stack as their parentStack) with the unconditional
+	// text-descender buffer that keeps a text tail from overlapping the
+	// next block's top.
+	const blockGap = (prev: Block, next: Block): number => {
+		const prevEl = prev.kind === 'element' ? prev.el : prev.children[prev.children.length - 1]
+		const nextEl = next.kind === 'element' ? next.el : next.children[0]
+		const textDescender = prevEl.kind === 'text' && nextEl.kind !== 'text' ? TEXT_DESCENDER : 0
+		const prevStack = prev.kind === 'element' ? prev.el.parentStack : prev.parentStack
+		const nextStack = next.kind === 'element' ? next.el.parentStack : next.parentStack
+		const rowGap =
+			prevStack === nextStack
+				? parseLength(nextStack['row-gap'] ?? '', sceneH)?.meters ?? 0
+				: 0
+		return rowGap + textDescender
+	}
+
+	const totalH = blocks.reduce(
+		(sum, b, i) =>
 			sum +
-			el.marginTop +
-			el.cellH +
-			(i < elements.length - 1 ? rowGap + el.marginBottom : 0),
+			blockCellH(b) +
+			(i < blocks.length - 1 ? blockGap(b, blocks[i + 1]) : 0),
 		0,
 	)
-	let accY =
-		alignItems === 'center' ? (sceneH + totalH + 1) / 2 : sceneH
+	let accY = alignItems === 'center' ? (sceneH + totalH + 1) / 2 : sceneH
 
-	for (let i = 0; i < elements.length; i++) {
-		const el = elements[i]
-		// Per-element top margin lands as extra space above the cell.
-		accY -= el.marginTop
-		accY -= el.cellH
-		const cell: Cell = { x: 0, y: accY, width: sceneW, height: el.cellH }
-
-		// Entity anchored at cell bottom; text_display renders the glyphs extending
-		// upward from the entity position, so the text quad fills the cell exactly
-		// when the entity sits at the cell's bottom edge. x lands on a half-block
-		// center: with an even scene width the cell midpoint is an integer (block
-		// boundary), so we nudge by 0.5 to keep the billboard centered on a real
-		// block. Odd scene widths already land on a half-block and need no offset.
+	// Per-element summon helper. `cellY` is the local bottom edge of the
+	// element's cell; text uses `cellY - 1` (its "descender" anchor) and
+	// images use `cellY + cellH/2` (centered quad).
+	const summonElement = (
+		el: ElementLayout,
+		entityX: number,
+		cellY: number,
+	): void => {
 		const z = origin[2] + Z_VISUAL_OFFSET
-		const x = origin[0] + cell.width / 2
-		const y = origin[1] + cell.y - el.cellH + (el.cellH - 1)
+		// :mojank: — format floats with `.0` so the NBT parser doesn't choke
+		// on integers that need to be parsed as floats by the trailing components.
+		const fmt = (v: number) => `${v}${Number.isInteger(v) ? '.0' : ''}`
 
-		const scale = NBT.float(el.textScale)
+		if (el.kind === 'text') {
+			// Entity anchored at cell bottom; text_display renders the glyphs
+			// extending upward from the entity position, so the text quad
+			// fills the cell exactly when the entity sits at the cell's bottom
+			// edge. y lands half a block above the geometric center of the
+			// image-style math above.
+			const textY = origin[1] + cellY - 1
 
-		const nbt: SymbolEntity['text_display'] = {
-			Tags: [SCENE_TAG, ...extraTags],
-			text: buildTextJson(el.borderedContent ?? el.content, el.declarations, el.type),
-			transformation: {
-				scale: [scale, scale, scale],
-				translation: NBT.float([0, 0, 0]),
-				left_rotation: NBT.float([0, 0, 0, 1]),
-				right_rotation: NBT.float([0, 0, 0, 1]),
-			},
+			const scale = NBT.float(el.textScale)
+			const nbt: SymbolEntity['text_display'] = {
+				Tags: [SCENE_TAG, ...extraTags],
+				text: buildTextJson(el.borderedContent ?? el.content, el.declarations, el.type),
+				transformation: {
+					scale: [scale, scale, scale],
+					translation: NBT.float([0, 0, 0]),
+					left_rotation: NBT.float([0, 0, 0, 1]),
+					right_rotation: NBT.float([0, 0, 0, 1]),
+				},
+			}
+
+			const bg = el.declarations.background ? parseColorInt(el.declarations.background) : undefined
+			if (bg !== undefined) nbt.background = NBT.int(bg)
+			if (el.width !== undefined) nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
+			else if (el.declarations['line-width']) nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
+			if (el.declarations.shadow === 'true') nbt.shadow = true
+			if (el.declarations['see-through'] === 'true') nbt.see_through = true
+			// `<code>` reads naturally with left-aligned text (like a code
+			// editor). LESS `text-align` overrides for any element type.
+			let align: 'center' | 'left' | 'right' | undefined
+			if (el.type === 'code') align = 'left'
+			const ta = el.declarations['text-align']?.toLowerCase().trim()
+			if (ta === 'left' || ta === 'right' || ta === 'center') align = ta
+			if (align) nbt.alignment = align
+			if (initialOpacity !== undefined) {
+				nbt.text_opacity = NBT.int(initialOpacity)
+			} else if (el.declarations.opacity) {
+				nbt.text_opacity = NBT.int(Math.round((parseFloat(el.declarations.opacity) / 100) * 255) - 256)
+			}
+
+			summon('text_display', `${fmt(entityX)} ${fmt(textY)} ${fmt(z)}`, nbt)
+		} else {
+			// Image: `minecraft:paper` as a base item because it's a no-op
+			// shape that the `minecraft:item_model` component fully
+			// overrides. `item_display: 'fixed'` makes the model render as
+			// a 2D billboard regardless of viewer angle. Scale.y =
+			// cellH (height in blocks); scale.x = cellW so non-square
+			// images keep their aspect when only one dimension is given.
+			// `view_range: 0` seeds a hidden state when `initialOpacity`
+			// asks for one — text uses `text_opacity`, images use
+			// `view_range` because item_display has no opacity field.
+			const imgCenterY = origin[1] + cellY + el.cellH / 2
+			const imgNbt: SymbolEntity['item_display'] = {
+				Tags: [SCENE_TAG, ...extraTags],
+				item: {
+					id: 'minecraft:paper',
+					count: NBT.int(1),
+					components: {
+						// SNBT keys with `:` must be pre-quoted to dodge the
+						// parser treating the colon as a type-tag.
+						/* @ts-ignore */
+						// TODO: Sandstone bug — unquoted `minecraft:item_model` should work after the fix
+						'"minecraft:item_model"': el.imgItemModel!,
+					},
+				},
+				item_display: 'fixed',
+				transformation: {
+					scale: NBT.float([el.cellW, el.cellH, 1]),
+					translation: NBT.float([0, 0, 0]),
+					left_rotation: NBT.float([0, 0, 0, 1]),
+					right_rotation: NBT.float([0, 0, 0, 1]),
+				},
+				brightness: { sky: NBT.int(15), block: NBT.int(15) },
+			}
+			if (initialOpacity === 0) {
+				imgNbt.view_range = NBT.float(0.0)
+			}
+			summon('minecraft:item_display', `${fmt(entityX)} ${fmt(imgCenterY)} ${fmt(z)}`, imgNbt)
 		}
+	}
 
-		const bg = el.declarations.background ? parseColorInt(el.declarations.background) : undefined
-		if (bg !== undefined) nbt.background = NBT.int(bg)
-		if (el.width !== undefined) nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
-		else if (el.declarations['line-width']) nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
-		if (el.declarations.shadow === 'true') nbt.shadow = true
-		if (el.declarations['see-through'] === 'true') nbt.see_through = true
-		// `<code>` reads naturally with left-aligned text (like a code
-		// editor). LESS `text-align` overrides for any element type.
-		let align: 'center' | 'left' | 'right' | undefined
-		if (el.type === 'code') align = 'left'
-		const ta = el.declarations['text-align']?.toLowerCase().trim()
-		if (ta === 'left' || ta === 'right' || ta === 'center') align = ta
-		if (align) nbt.alignment = align
-		if (initialOpacity !== undefined) {
-			nbt.text_opacity = NBT.int(initialOpacity)
-		} else if (el.declarations.opacity) {
-			nbt.text_opacity = NBT.int(Math.round((parseFloat(el.declarations.opacity) / 100) * 255) - 256)
+	// Layout + summon loop. Two block kinds:
+	//   - `element`: a single element placed at `accY` (vertical stacking).
+	//   - `row`: a `grid-auto-flow: row` container — placed as a single
+	//     cell at `accY`, then its children are laid out horizontally
+	//     inside the container using `column-gap` from the parent's
+	//     declarations. Each child is vertically centered in the container
+	//     (matches `align-items: center` semantics on a row-flow grid).
+	for (let bi = 0; bi < blocks.length; bi++) {
+		const block = blocks[bi]
+		if (block.kind === 'element') {
+			const el = block.el
+			accY -= el.marginTop
+			accY -= el.cellH
+			const entityX = origin[0] + sceneW / 2
+			summonElement(el, entityX, accY)
+			if (bi < blocks.length - 1) {
+				accY -= blockGap(block, blocks[bi + 1]) + el.marginBottom
+			}
+		} else {
+			// Row-flow container. The container's outer cell uses
+			// `max(child cellH)` for height (the tallest child wins) and
+			// `sum(child cellW) + (n-1)*columnGap` for width.
+			const columnGap = parseLength(block.parentStack['column-gap'] ?? '', sceneW)?.meters ?? 0
+
+			// `height` on the parent: the container reserves the specified
+			// portion of the remaining vertical space (the leftover `accY`
+			// at this point in the layout) and anchors to the bottom of it,
+			// so e.g. `height: 100%` fills the area below the previous
+			// siblings and `height: 50%` takes the bottom 50% of that area.
+			// The percent sign is a fraction of remaining; `vh`/`vw`/`px`
+			// are absolute (resolved against the scene size). Children are
+			// vertically centered within the resulting block via
+			// `align-items: center`, which is implicit in our row-flow
+			// layout (each child already sits at the container's center y).
+			const heightProp = block.parentStack.height
+			let containerCellH: number
+			let bottomAnchored = false
+			if (heightProp) {
+				const trimmed = heightProp.trim()
+				const pctMatch = trimmed.match(/^(-?\d*\.?\d+)\s*%$/i)
+				const heightMeters = pctMatch
+					? (parseFloat(pctMatch[1]) / 100) * accY
+					: (parseLength(heightProp, sceneH)?.meters ?? 0)
+				containerCellH = Math.max(blockCellH(block), heightMeters)
+				bottomAnchored = true
+			} else {
+				containerCellH = blockCellH(block)
+			}
+			const containerCellW =
+				block.children.reduce((sum, c) => sum + c.cellW, 0) +
+				Math.max(0, block.children.length - 1) * columnGap
+
+			const firstChild = block.children[0]
+			const lastChild = block.children[block.children.length - 1]
+			accY -= firstChild.marginTop
+			if (bottomAnchored) {
+				// The container occupies `[0, containerCellH]` in scene-local
+				// coordinates — anchored to the bottom of the remaining space.
+				// accY is reset to 0 so any sibling placed after this block
+				// starts flush against the container's top edge.
+				accY = 0
+			} else {
+				accY -= containerCellH
+			}
+			const containerCenterY = accY + containerCellH / 2
+			const containerCenterX = origin[0] + sceneW / 2
+
+			// When the row fits in the scene, center the whole group so
+			// every child lands symmetrically around the scene's x-axis
+			// center (natural for, e.g., two side-by-side screenshots).
+			// When it overflows — typically because some sibling carries a
+			// hardcoded `width: 95vw` — the group center is meaningless
+			// and individual entities drift off-screen. Anchor the middle
+			// child to the scene center instead, so the geometric focus
+			// of the row stays put and the rest overflow symmetrically.
+			let accX: number
+			if (containerCellW <= sceneW) {
+				accX = containerCenterX - containerCellW / 2
+			} else {
+				const middleIndex = Math.floor(block.children.length / 2)
+				accX = containerCenterX - block.children[middleIndex].cellW / 2
+				for (let i = middleIndex - 1; i >= 0; i--) {
+					accX -= block.children[i].cellW + columnGap
+				}
+			}
+
+			for (const child of block.children) {
+				const subCellY = containerCenterY - child.cellH / 2
+				const childCenterX = accX + child.cellW / 2
+				summonElement(child, childCenterX, subCellY)
+				accX += child.cellW + columnGap
+			}
+
+			if (bi < blocks.length - 1) {
+				accY -= blockGap(block, blocks[bi + 1]) + lastChild.marginBottom
+			}
 		}
-
-		summon(
-			'text_display',
-			// :mojank:
-			`${x}${Number.isInteger(x) ? '.0' : ''} ${y}${Number.isInteger(y) ? '.0' : ''} ${z}${Number.isInteger(z) ? '.0' : ''}`,
-			nbt,
-		)
-
-		// Subtract row-gap + this element's bottom margin before the next
-		// cell. The next iteration's `marginTop` lands on top of that, so
-		// the gap between cells becomes `rowGap + marginBottom[i] +
-		// marginTop[i+1]`. The last cell's bottom margin is intentionally
-		// dropped — no trailing space below the slide's last element.
-		if (i < elements.length - 1) accY -= rowGap + el.marginBottom
 	}
 }
 
@@ -1176,6 +1488,82 @@ async function prepareCodeHighlights(
 	return map
 }
 
+/**
+ * Walk every tree, find every `<img src="…">`, and:
+ *
+ *   1. Derive a stable resource name from the src (everything after the
+ *      namespace, with the `.png` stripped). Two imgs with identical
+ *      src collapse to one registration.
+ *   2. Generate an item model at `assets/<ns>/models/item/<name>.json`
+ *      that uses `minecraft:item/generated` and points `layer0` at the
+ *      user's texture.
+ *   3. Generate an item_model_definition at
+ *      `assets/<ns>/items/<name>.json` that selects the model above —
+ *      this is what `minecraft:item_model` data components reference.
+ *   4. Read the texture's pixel aspect ratio via sharp so the summon
+ *      pass can size the billboard without distorting the image when
+ *      only one dimension is given.
+ *
+ * Returns a map from the original src → the metadata the renderer needs
+ * to summon a correctly-sized `item_display`. Files missing on disk
+ * fall back to a 1:1 aspect with a build-time warning rather than
+ * failing the whole render.
+ */
+async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMap> {
+	const seen = new Set<string>()
+	const out: ImgResourceMap = new Map()
+
+	const projectRoot = process.cwd()
+
+	for (const tree of trees) {
+		for (const { node } of flatWalk(tree)) {
+			if (!isImgType(node.type)) continue
+			const src = String(node.props?.src ?? '')
+			if (!src || seen.has(src)) continue
+			seen.add(src)
+
+			const colonIdx = src.indexOf(':')
+			if (colonIdx <= 0) {
+				console.warn(`[img] src "${src}" is not a resource location (expected "<ns>:<path>"); skipping`)
+				continue
+			}
+			const ns = src.slice(0, colonIdx)
+			const texturePath = src.slice(colonIdx + 1)
+			const textureNoExt = texturePath.replace(/\.png$/i, '')
+			// Slug = texture path sans extension. Slashes are kept; Sandstone's
+			// resourceToPath turns them into nested asset directories.
+			const slug = textureNoExt
+
+			const filePath = path.join(projectRoot, 'resources', 'resourcepack', 'assets', ns, 'textures', texturePath)
+			let aspect = 1
+			try {
+				const meta = await sharp(filePath).metadata()
+				if (meta.width && meta.height) aspect = meta.width / meta.height
+			} catch (e: any) {
+				console.warn(`[img] failed to read texture ${filePath}: ${e?.message ?? e}; defaulting to 1:1 aspect`)
+			}
+
+			Model('item', slug, {
+				parent: 'minecraft:item/generated',
+				textures: { layer0: `${ns}:${textureNoExt}` },
+			})
+			ItemModelDefinition(slug, {
+				model: {
+					type: 'minecraft:model',
+					model: `${ns}:item/${slug}`,
+				},
+			})
+
+			out.set(src, {
+				src,
+				aspect,
+				itemModel: `${ns}:${slug}`,
+			})
+		}
+	}
+	return out
+}
+
 // ── Single-tree render ──────────────────────────────────────────
 
 export async function render(tree: VNode, options: RenderOptions): Promise<Scene> {
@@ -1185,15 +1573,19 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 	const lessSource = collectLess([tree])
 	const styles = await compileStyles(lessSource)
 	await Promise.all([...collectFonts([tree], styles)].map(loadFontMetrics))
-	const visible = elements.filter(({ node }) => isTextType(node.type))
+	const visible = elements.filter(({ node }) => isVisibleType(node.type))
 
 	// Pre-compute tree-sitter highlights for every `<code>` block. The
 	// returned `WeakMap` is captured in `mount`'s closure so the synchronous
 	// `summonVisibleElements` call never has to await a parse.
 	const codePrecomputed = await prepareCodeHighlights([visible], styles, options.bounds[0], options.bounds[1])
 
+	// Register a `Model` + `ItemModelDefinition` for every distinct `<img>`
+	// src so the summon pass can reference them via `minecraft:item_model`.
+	const imgResources = await prepareImgResources([tree])
+
 	const mount = MCFunction('presentation/mount', () => {
-		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [], undefined, codePrecomputed)
+		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [], undefined, codePrecomputed, imgResources)
 	})
 
 	const tick = MCFunction('presentation/tick', () => {
@@ -1250,7 +1642,7 @@ export async function renderSlides(
 	// Precompute visible elements so mount + rerender don't pay the
 	// flatWalk cost again at the call site.
 	const slideVisibles: NodeWithPath[][] = trees.map((t) =>
-		flatWalk(t).filter(({ node }) => isTextType(node.type)),
+		flatWalk(t).filter(({ node }) => isVisibleType(node.type)),
 	)
 
 	// Pre-compute tree-sitter highlights for every `<code>` block. The
@@ -1258,28 +1650,43 @@ export async function renderSlides(
 	// synchronous `summonVisibleElements` calls never await a parse.
 	const codePrecomputed = await prepareCodeHighlights(slideVisibles, styles, sceneW, sceneH)
 
+	// Register a `Model` + `ItemModelDefinition` for every distinct `<img>`
+	// src across all slides so every summon can reference them via
+	// `minecraft:item_model`. Deduped by src, so identical images across
+	// slides share one registration.
+	const imgResources = await prepareImgResources(trees)
+
 	// ── Per-slide show / hide ────────────────────────────────────
 	// Pure tag selectors — the Summit server's Label-tag optimization makes
 	// these effectively constant-time, and tag-only matching picks up any
 	// entity that overflows below the configured scene bounds (where a
-	// volume selector would have missed it).
+	// volume selector would have missed it). Each slide can carry text and
+	// image entities; text hides via `text_opacity`, images via
+	// `view_range` (item_display has no `text_opacity`, and toggling
+	// view_range to 0 makes the entity cull itself out of the render).
 	const showSlide: MCFunctionClass<undefined, undefined>[] = []
 	const hideSlide: MCFunctionClass<undefined, undefined>[] = []
 	for (let s = 0; s < totalSlides; s++) {
 		const tag = slideTag(s)
 		showSlide.push(
-			MCFunction(`presentation/slides/show/${s}`, () =>
+			MCFunction(`presentation/slides/show/${s}`, () => {
 				execute.as(Selector('@e', { tag })).run.data.modify
 					.entity('@s', 'text_opacity')
-					.set.value(NBT.int(-1)),
-			),
+					.set.value(NBT.int(-1))
+				execute.as(Selector('@e', { tag })).run.data.modify
+					.entity('@s', 'view_range')
+					.set.value(NBT.float(1.0))
+			}),
 		)
 		hideSlide.push(
-			MCFunction(`presentation/slides/hide/${s}`, () =>
+			MCFunction(`presentation/slides/hide/${s}`, () => {
 				execute.as(Selector('@e', { tag })).run.data.modify
 					.entity('@s', 'text_opacity')
-					.set.value(NBT.int(0)),
-			),
+					.set.value(NBT.int(0))
+				execute.as(Selector('@e', { tag })).run.data.modify
+					.entity('@s', 'view_range')
+					.set.value(NBT.float(0.0))
+			}),
 		)
 	}
 
@@ -1314,7 +1721,7 @@ export async function renderSlides(
 		if (index < 0 || index >= totalSlides) {
 			throw new Error(`rerenderSlide: index ${index} out of range (0..${totalSlides - 1})`)
 		}
-		const visible = flatWalk(tree).filter(({ node }) => isTextType(node.type))
+		const visible = flatWalk(tree).filter(({ node }) => isVisibleType(node.type))
 		return MCFunction(`presentation/slides/rerender/${index}`, () => {
 			execute.run.kill(Selector('@e', { tag: slideTag(index) }))
 			summonVisibleElements(
@@ -1326,6 +1733,7 @@ export async function renderSlides(
 				[slideTag(index)],
 				0,
 				codePrecomputed,
+				imgResources,
 			)
 		})
 	}
@@ -1391,6 +1799,7 @@ export async function renderSlides(
 				[slideTag(s)],
 				0, // start hidden
 				codePrecomputed,
+				imgResources,
 			)
 		}
 		// 1t delay so the spawn packets process before the first show.

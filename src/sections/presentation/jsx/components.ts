@@ -26,6 +26,21 @@ export type CodeProps = CommonProps & {
 	src?: string
 }
 
+/**
+ * Image element. `src` is a Minecraft resource location pointing at a PNG
+ * (e.g. `"sandstone_summit_booth:ui/presentation/foo.png"`); the
+ * renderer auto-creates a flat item model + item_model_definition that
+ * references that texture, then displays it on screen via an
+ * `item_display` entity. CSS-style `height` / `width` props (e.g.
+ * `"30vh"`, `"2vw"`) take precedence over LESS `height` / `width`
+ * declarations when set.
+ */
+export type ImgProps = CommonProps & {
+	src: string
+	height?: string
+	width?: string
+}
+
 // Component functions. Identity wrappers around jsx() — exist for explicit
 // import + type inference. JSX form <div> compiles to the same jsx('div', ...).
 export const div = (props: DivProps): VNode => jsx('div', props, null)
@@ -38,6 +53,7 @@ export const style = (props: StyleProps): VNode => {
 	return jsx('style', { source }, null)
 }
 export const code = (props: CodeProps): VNode => jsx('code', props, null)
+export const img = (props: ImgProps): VNode => jsx('img', props, null)
 
 // Augment JSX intrinsics so <div>, <h1> etc. are type-checked in TSX files
 // that import this module (or anything that transitively imports it).
@@ -51,6 +67,7 @@ declare global {
 			center: CenterProps
 			style: StyleProps
 			code: CodeProps
+			img: ImgProps
 		}
 	}
 }

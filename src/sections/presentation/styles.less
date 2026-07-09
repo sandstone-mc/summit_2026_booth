@@ -6,6 +6,14 @@ h1 {
     }
 }
 
+h2 {
+    font-size: 18px;
+    width: 95vw;
+    &#header {
+        margin: 8vh 0 1vh 0;
+    }
+}
+
 p {
     font-size: 10px;
     width: 95vw;
@@ -22,7 +30,14 @@ code {
     background: #1e1e1e;
 }
 
-#grid {
+#text-grid {
     align-items: center;
-    row-gap: 2vh
+    row-gap: 2vh;
+}
+
+#img-grid {
+    height: 100%;
+    align-items: center;
+    column-gap: 2vh;
+    grid-auto-flow: row;
 }
