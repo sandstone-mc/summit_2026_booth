@@ -1,4 +1,5 @@
 function sandstone_summit_booth:sections/main/showcase/session/start
+scoreboard players set #session_timer sandstone_summit_booth.showcase.state 3600
 tag @s add sandstone_summit_booth.showcase.player
 function sandstone_summit_booth:sections/magic/playerdb/clear_self
 function sandstone_summit_booth:sections/magic/playerdb/get_self

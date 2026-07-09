@@ -84,6 +84,7 @@ scoreboard players set main.showcase.active_0_WnYlBycD __sandstone 0
 scoreboard players set 50 __sandstone 50
 scoreboard players set 6 __sandstone 6
 scoreboard players set 20 __sandstone 20
+scoreboard players set 60 __sandstone 60
 scoreboard players set 1000 __sandstone 1000
 scoreboard players set 30 __sandstone 30
 scoreboard players set 15 __sandstone 15
