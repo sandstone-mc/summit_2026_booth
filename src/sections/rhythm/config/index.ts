@@ -6,7 +6,7 @@ export type { RenderingMode, Cell, PanelConfig, RhythmConfig } from './internal/
 
 const config: RhythmConfig = {
 	rendering: 'compressed',
-	goldLine: [-72, 63, 43],
+	goldLine: [-72, 63, 42],
 	pattern: {
 		width: 5,
 		height: 5,
@@ -87,9 +87,9 @@ const config: RhythmConfig = {
 		rankColors: ['gold', 'gray', 'red', 'dark_gray'],
 	},
 	panels: {
-		settingsOffset: [-22, 2, -10],
+		settingsOffset: [-22, 2.5, -11],
 		settingsFacing: 90,
-		leaderboardOffset: [-18, 2, -14],
+		leaderboardOffset: [-18, 2, -15],
 		leaderboardFacing: 180,
 		maxNameLength: 18,
 		scrollSpeed: 4,

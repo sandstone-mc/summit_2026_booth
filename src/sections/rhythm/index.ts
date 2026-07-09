@@ -1,6 +1,7 @@
-import { _, execute, MCFunction, Selector } from 'sandstone'
-import { spawnSkybox } from './game/arena-map'
+import { _, execute, MCFunction, Selector, kill } from 'sandstone'
+import { killSkybox, placeMap, spawnSkybox } from './game/arena-map'
 import { endGame, resetPlayer } from './game/end'
+import { spawnSettingsPanel } from './game/settings'
 import { cancelStart } from './game/start'
 import { GameStatus, Tags, status } from './game/state'
 
@@ -21,13 +22,26 @@ import './game/lane-effects'
 import './game/arena-map'
 import './game/debug'
 import './dev'
+import { spawnLaneBorder } from './game/lane-effects'
 
-MCFunction(
+export const setup = MCFunction(
 	'sections/rhythm/setup',
 	() => {
 		spawnSkybox()
+		placeMap()
+		spawnLaneBorder()
+		spawnSettingsPanel()
 	},
-	{ runOnLoad: true },
+)
+
+// Clean up when swapping out rhythm game
+export const cleanup = MCFunction(
+	'sections/rhythm/cleanup',
+	() => {
+		killSkybox()
+		kill(Selector('@e', { tag: Tags.LANE_BORDER }))
+		kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
+	}
 )
 
 MCFunction('sections/rhythm/init_player', () => {

@@ -11,6 +11,7 @@ import { updateSettingsPanel } from './settings'
 import { ticking } from '@shared'
 import { boothReturn } from '@rhythm/config/internal/derived'
 import { timer } from './active'
+import { endShowcaseSession } from 'src/sections/main/showcase'
 
 export const resetPlayer = MCFunction('sections/rhythm/reset_player', () => {
 	effect.clear('@s')
@@ -36,6 +37,8 @@ const cleanup = MCFunction(
 
 		status.set(GameStatus.WAITING)
 		updateSettingsPanel()
+
+		endShowcaseSession()
 	},
 	{ lazy: true },
 )

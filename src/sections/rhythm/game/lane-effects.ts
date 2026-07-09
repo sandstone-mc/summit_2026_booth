@@ -261,8 +261,7 @@ export const spawnLaneBorder = MCFunction(
 				wallBorderNbt(i, bg, yOff, lane.frontFacing + 180, frontScale),
 			)
 		}
-	},
-	{ runOnLoad: true },
+	}
 )
 
 const borderRippleCounter = Objective.create('ssb.border_ripple', 'dummy')

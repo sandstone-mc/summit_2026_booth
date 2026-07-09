@@ -3,6 +3,7 @@ import { GameStatus, Tags, status, gamePlayer } from './state'
 import { setActive } from './active'
 
 import { gameplay } from '@rhythm/config'
+import { startShowcaseSession } from 'src/sections/main/showcase'
 
 const countdown = Variable(0)
 
@@ -33,6 +34,8 @@ export const startGame = MCFunction(
 	'sections/rhythm/start/init',
 	() => {
 		_.if(status.equalTo(GameStatus.WAITING), () => {
+			startShowcaseSession()
+			
 			status.set(GameStatus.STARTING)
 			countdown.set(gameplay.countdown)
 			countdownTick()

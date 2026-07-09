@@ -93,7 +93,7 @@ export const spawnSkybox = MCFunction(
 	{ lazy: true },
 )
 
-const killSkybox = MCFunction(
+export const killSkybox = MCFunction(
 	'sections/rhythm/arena/kill_skybox',
 	() => {
 		kill(Selector('@e', { tag: Tags.SKYBOX }))

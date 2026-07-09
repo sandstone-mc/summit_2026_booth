@@ -400,20 +400,21 @@ export const settingsTick = MCFunction(
 	{ lazy: true },
 )
 
-MCFunction(
-	'sections/rhythm/settings/load_map',
-	() => {
-		placeMap()
-	},
-	{ runOnLoad: true },
-)
+// no longer load map on reload
+// MCFunction(
+// 	'sections/rhythm/settings/load_map',
+// 	() => {
+// 		placeMap()
+// 	},
+// 	{ runOnLoad: true },
+// )
 
 const BACKDROP_TEXT: JSONTextComponent = [
 	{ text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
 	{ text: `\n\n\n\n\n\n\n\n\n\n${panels.ruler}` },
 ]
 
-MCFunction(
+export const spawnSettingsPanel = MCFunction(
 	'sections/rhythm/settings/spawn',
 	() => {
 		kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
@@ -437,5 +438,5 @@ MCFunction(
 		const startY = lineY(panels.settings, TOTAL_LINES, 9)
 		spawnClick(panels.settings, 0, startY, [Tags.UI_SETTINGS, Tags.UI_START_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
 	},
-	{ runOnLoad: true },
+	{ lazy: true },
 )

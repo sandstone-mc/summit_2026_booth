@@ -7,7 +7,7 @@
         "casino_lower_floor_and_showcase":{"position":{"x":{"min":-93,"max":-53},"y":{"min":54,"max":82},"z":{"min":41,"max":60}}},
         "back_hall":{"position":{"x":{"min":-93,"max":-79},"y":{"min":58,"max":79},"z":{"min":36,"max":41}}},
         "side_stairs":{"position":{"x":{"min":-97,"max":-87},"y":{"min":85,"max":98},"z":{"min":50,"max":64}}},
-        "showcase":{"position":{"x":{"min":-80,"max":-60},"y":{"min":63,"max":72},"z":{"min":21,"max":52}}},
+        "showcase":{"position":{"x":{"min":-80,"max":-60},"y":{"min":63,"max":72},"z":{"min":21,"max":51}}},
         "back_stairs":{"position":{"x":{"min":-84,"max":-68},"y":{"min":95,"max":102},"z":{"min":38,"max":44}}}
     },
     "on_player_enter": "sandstone_summit_booth:init_player",

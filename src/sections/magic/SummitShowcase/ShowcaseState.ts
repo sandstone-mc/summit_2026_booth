@@ -5,6 +5,7 @@ import { clearSelf, getSelf, saveSelf, io } from '../PlayerDB'
 import { mana, maxMana, manaRegen } from '../player_handler'
 import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
 import { SymbolEntity } from 'sandstone/arguments';
+import { endShowcaseSession, startShowcaseSession } from 'src/sections/main/showcase'
 
 export const State = Objective.create('showcase.state', 'dummy')
 export const GlobalState = State('#global')
@@ -163,6 +164,8 @@ export const reset = MCFunction('sections/magic/showcase/reset', () => {
 
         GlobalState.set(STATES.IDLE)
     })
+
+    endShowcaseSession()
 })
 
 
@@ -268,6 +271,8 @@ export const startSelection = MCFunction('sections/magic/showcase/selection/star
 
 export const startSession = MCFunction('sections/magic/showcase/session/start', () => {
     _.if(GlobalState.equalTo(STATES.IDLE), () => {
+        startShowcaseSession()
+
         SessionPlayerLabel('@s').add()
 
         // Init player state fresh for each showcase run
