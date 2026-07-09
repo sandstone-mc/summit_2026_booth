@@ -12,7 +12,8 @@ export const slides = [
 		<>
 			<h2 id="header">Can people make advanced, fun content with Sandstone?</h2>
 
-			<p>Yes!</p>
+			<p>Short answer: Yes!</p>
+			<p>Longer answer: After the presentation go down to our bottom floor and check out their games!</p>
 
 			<div id="img-grid">
 				<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/rhythm.png" height="30vh" />

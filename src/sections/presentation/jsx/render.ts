@@ -402,18 +402,17 @@ function flushCompound(
 }
 
 function compoundMatches(c: ParsedCompound, seg: ParsedCompound): boolean {
-	// Strict-equality match: compound tag/ids/classes must equal the
-	// segment's exactly. Without strictness, an element-only `h1 { … }`
-	// LESS rule would apply to `<h1 id="header">` because `h1` is a
-	// subset of `h1#header` (the segment has extra ids the compound
-	// doesn't constrain). The pre-existing layout baseline relied on
-	// that asymmetry: the nested `&#header` rule is what styles the
-	// header element, not the parent `h1` rule. Preserve the baseline
-	// for all other slides and let the nested rule supply margin only.
+	// CSS-cascade subset match: every id/class the selector constrains
+	// must be present on the segment, but the segment can carry additional
+	// ids/classes. Lets `h1 { … }` apply to `<h1 id="header">` AND the
+	// nested `&#header { margin: … }` block add on top (standard LESS
+	// `&` semantics — extend, not replace). Insertion order in the
+	// styles map puts parent rules before nested ones, so `Object.assign`
+	// during resolution lets the nested rule's properties overlay.
 	if (c.tag !== null && c.tag !== '*' && c.tag !== seg.tag) return false
-	if (c.ids.length !== seg.ids.length) return false
+	if (c.ids.length > seg.ids.length) return false
 	for (const id of c.ids) if (!seg.ids.includes(id)) return false
-	if (c.classes.length !== seg.classes.length) return false
+	if (c.classes.length > seg.classes.length) return false
 	for (const cls of c.classes) if (!seg.classes.includes(cls)) return false
 	return true
 }
