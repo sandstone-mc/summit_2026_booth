@@ -14,4 +14,4 @@ schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep11
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep12
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep13
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep14
-execute positioned -83 79 41 run kill @e[tag=sandstone_summit_booth.presentation, dx=17, dy=10, dz=1]
+kill @e[tag=sandstone_summit_booth.presentation]

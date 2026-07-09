@@ -1,1 +1,1 @@
-execute positioned -83 79 41 as @e[tag=sandstone_summit_booth.slide_2, dx=17, dy=10, dz=1] run data modify entity @s text_opacity set value -1i
+execute as @e[tag=sandstone_summit_booth.slide_2] run data modify entity @s text_opacity set value -1i
