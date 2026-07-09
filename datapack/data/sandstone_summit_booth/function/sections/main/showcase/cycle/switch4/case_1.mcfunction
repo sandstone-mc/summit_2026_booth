@@ -1,1 +1,1 @@
-return run function sandstone_summit_booth:sections/rhythm/cleanup
+return run function sandstone_summit_booth:sections/rhythm/clear

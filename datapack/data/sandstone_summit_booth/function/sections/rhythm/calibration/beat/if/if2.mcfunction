@@ -1,0 +1,2 @@
+execute if score anon_WnYlBycD_45 __sandstone matches 1.. run return run schedule function sandstone_summit_booth:sections/rhythm/calibration/beat 16t replace
+schedule function sandstone_summit_booth:sections/rhythm/calibration/finish 16t replace

@@ -1,0 +1,2 @@
+execute as @e[tag=ssb.rhythm.cal.pad, type=minecraft:interaction] if data entity @s attack run function sandstone_summit_booth:sections/rhythm/calibration/tick/if/execute_as
+execute as @e[tag=ssb.rhythm.cal.pad, type=minecraft:interaction] if data entity @s interaction run function sandstone_summit_booth:sections/rhythm/calibration/tick/if/execute_as2

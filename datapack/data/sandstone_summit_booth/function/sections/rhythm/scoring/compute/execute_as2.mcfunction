@@ -1,0 +1,2 @@
+title @s subtitle [{"text":"Score: ","color":"gray"},{"score":{"name":"@s","objective":"sandstone_summit_booth.rhythm.score"}}]
+tellraw @s [{"text":"♪ ","color":"gold"},{"text":"Final score: ","color":"gray"},{"score":{"name":"@s","objective":"sandstone_summit_booth.rhythm.score"}}]

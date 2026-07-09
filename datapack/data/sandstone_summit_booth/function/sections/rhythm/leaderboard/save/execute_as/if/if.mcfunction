@@ -1,0 +1,3 @@
+execute if score @s sandstone_summit_booth.rlb.s0 matches 0.. run return run execute if score @s sandstone_summit_booth.rhythm.score > @s sandstone_summit_booth.rlb.s0 run function sandstone_summit_booth:sections/rhythm/leaderboard/save/execute_as/if/if/if/return_run/if
+scoreboard players operation @s sandstone_summit_booth.rlb.s0 = @s sandstone_summit_booth.rhythm.score
+tag @s add ssb.rhythm.pb

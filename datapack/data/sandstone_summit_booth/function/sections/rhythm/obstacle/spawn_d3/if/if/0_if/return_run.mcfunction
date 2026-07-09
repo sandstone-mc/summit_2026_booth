@@ -1,2 +1,2 @@
 function sandstone_summit_booth:sections/rhythm/obstacle/spawn_d3/if/if/0_if/return_run/if
-scoreboard players set anon_WnYlBycD_7 __sandstone 1
+scoreboard players set anon_WnYlBycD_8 __sandstone 1

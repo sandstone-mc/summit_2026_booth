@@ -10,10 +10,6 @@ scoreboard objectives add sandstone_summit_booth.rhythm.points dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.combo dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.score dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.combo_temp dummy
-scoreboard objectives add sandstone_summit_booth.rhythm.wall.lives dummy
-scoreboard objectives add sandstone_summit_booth.rhythm.hits dummy
-scoreboard objectives add sandstone_summit_booth.rhythm.wall.hit_cooldown dummy
-scoreboard objectives add sandstone_summit_booth.ssb.flash_phase dummy
 scoreboard objectives add sandstone_summit_booth.pdb.uid dummy
 scoreboard objectives add sandstone_summit_booth.set_school_trigger trigger
 scoreboard objectives add sandstone_summit_booth.set_spell_trigger trigger
@@ -40,6 +36,11 @@ scoreboard objectives add sandstone_summit_booth.rlb.s1d dummy
 scoreboard objectives add sandstone_summit_booth.rlb.s2 dummy
 scoreboard objectives add sandstone_summit_booth.rlb.s2d dummy
 scoreboard objectives add sandstone_summit_booth.rlb.sort dummy
+scoreboard objectives add sandstone_summit_booth.rhythm.wall.lives dummy
+scoreboard objectives add sandstone_summit_booth.rhythm.hits dummy
+scoreboard objectives add sandstone_summit_booth.rhythm.wall.hit_cooldown dummy
+scoreboard objectives add sandstone_summit_booth.ssb.flash_phase dummy
+scoreboard objectives add sandstone_summit_booth.rhythm.cal dummy
 scoreboard objectives add sandstone_summit_booth.presentation.slide_idx dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.magic.spells.lightning.static_field.do_cast dummy
 scoreboard players set sandstone_summit_booth load.status 1
@@ -51,9 +52,9 @@ scoreboard players set anon_WnYlBycD_4 __sandstone 0
 scoreboard players set anon_WnYlBycD_5 __sandstone 0
 scoreboard players set anon_WnYlBycD_6 __sandstone 0
 scoreboard players set anon_WnYlBycD_7 __sandstone 0
-scoreboard players set anon_WnYlBycD_8 __sandstone 28000
-scoreboard players set anon_WnYlBycD_9 __sandstone 56
-scoreboard players set anon_WnYlBycD_10 __sandstone 0
+scoreboard players set anon_WnYlBycD_8 __sandstone 0
+scoreboard players set anon_WnYlBycD_9 __sandstone 28000
+scoreboard players set anon_WnYlBycD_10 __sandstone 56
 scoreboard players set anon_WnYlBycD_11 __sandstone 0
 scoreboard players set anon_WnYlBycD_12 __sandstone 0
 scoreboard players set anon_WnYlBycD_13 __sandstone 0
@@ -77,15 +78,26 @@ scoreboard players set anon_WnYlBycD_30 __sandstone 0
 scoreboard players set anon_WnYlBycD_31 __sandstone 0
 scoreboard players set anon_WnYlBycD_32 __sandstone 0
 scoreboard players set anon_WnYlBycD_33 __sandstone 0
-scoreboard players set anon_WnYlBycD_34 __sandstone 3
+scoreboard players set anon_WnYlBycD_34 __sandstone 0
 scoreboard players set anon_WnYlBycD_35 __sandstone 0
+scoreboard players set anon_WnYlBycD_36 __sandstone 0
+scoreboard players set anon_WnYlBycD_37 __sandstone 3
+scoreboard players set anon_WnYlBycD_38 __sandstone 0
+scoreboard players set anon_WnYlBycD_39 __sandstone 0
+scoreboard players set anon_WnYlBycD_40 __sandstone 0
+scoreboard players set anon_WnYlBycD_41 __sandstone 0
+scoreboard players set anon_WnYlBycD_42 __sandstone 0
+scoreboard players set anon_WnYlBycD_43 __sandstone 0
+scoreboard players set anon_WnYlBycD_44 __sandstone 0
+scoreboard players set anon_WnYlBycD_45 __sandstone 0
+scoreboard players set anon_WnYlBycD_46 __sandstone 0
 scoreboard players set main.showcase.current_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.active_0_WnYlBycD __sandstone 0
 scoreboard players set 50 __sandstone 50
-scoreboard players set 6 __sandstone 6
 scoreboard players set 20 __sandstone 20
 scoreboard players set 60 __sandstone 60
 scoreboard players set 1000 __sandstone 1000
 scoreboard players set 30 __sandstone 30
 scoreboard players set 15 __sandstone 15
 scoreboard players set 10 __sandstone 10
+scoreboard players set 6 __sandstone 6

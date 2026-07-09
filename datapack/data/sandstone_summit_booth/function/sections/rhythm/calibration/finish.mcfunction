@@ -1,0 +1,1 @@
+execute if score anon_WnYlBycD_0 __sandstone matches 4 run function sandstone_summit_booth:sections/rhythm/calibration/finish/if

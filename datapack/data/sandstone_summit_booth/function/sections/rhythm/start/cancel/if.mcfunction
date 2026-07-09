@@ -1,4 +1,3 @@
-schedule clear sandstone_summit_booth:sections/rhythm/start/countdown_tick
-title @a[tag=ssb.rhythm.player] actionbar {"text":"Cancelled.","color":"red"}
-tag @a[tag=ssb.rhythm.player] remove ssb.rhythm.player
-scoreboard players set anon_WnYlBycD_0 __sandstone 0
+execute store result score anon_WnYlBycD_36 __sandstone run time query gametime
+scoreboard players operation anon_WnYlBycD_36 __sandstone -= anon_WnYlBycD_35 __sandstone
+execute if score anon_WnYlBycD_36 __sandstone matches 10.. run function sandstone_summit_booth:sections/rhythm/start/cancel/if/if

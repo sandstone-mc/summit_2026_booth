@@ -1,2 +1,2 @@
-function sandstone_summit_booth:sections/rhythm/settings/on_start
-advancement revoke @s only sandstone_summit_booth:ui_start_game
+function sandstone_summit_booth:sections/rhythm/settings/on_song
+advancement revoke @s only sandstone_summit_booth:ui_song_cycle
