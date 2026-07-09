@@ -279,7 +279,7 @@ export const singles: Obstacle[] = [
 		difficulty: Difficulty.EASY,
 		grid: [
 			[E, E, E, E, E],
-			[ST, ST, ST, ST, ST],
+			[E, E, E, E, E],
 			[F, F, F, F, F],
 			[SB, SB, SB, SB, SB],
 			[E, E, E, E, E],
@@ -842,7 +842,7 @@ export const singles: Obstacle[] = [
 			[F, F, F, F, F],
 			[E, E, E, E, E],
 			[F, E, F, E, F],
-			[F, F, F, F, F],
+			[F, E, F, E, F],
 			[F, F, F, F, F],
 		],
 	},
@@ -895,7 +895,7 @@ export const singles: Obstacle[] = [
 		difficulty: Difficulty.HARD,
 		grid: [
 			[E, E, E, E, E],
-			[ST, ST, ST, ST, ST],
+			[E, E, E, E, E],
 			[F, F, F, F, F],
 			[F, ST, F, ST, F],
 			[F, F, F, F, F],
@@ -917,7 +917,7 @@ export const singles: Obstacle[] = [
 		difficulty: Difficulty.EXPERT,
 		grid: [
 			[E, F, E, F, E],
-			[ST, F, ST, F, ST],
+			[ST, F, E, F, ST],
 			[F, E, F, E, F],
 			[E, F, F, F, E],
 			[E, E, E, E, E],
@@ -928,7 +928,7 @@ export const singles: Obstacle[] = [
 		difficulty: Difficulty.EXPERT,
 		grid: [
 			[F, E, F, E, F],
-			[F, ST, F, ST, F],
+			[F, E, F, E, F],
 			[F, F, F, F, F],
 			[E, F, F, F, E],
 			[E, E, E, E, E],
@@ -949,10 +949,10 @@ export const singles: Obstacle[] = [
 		name: '5_2',
 		difficulty: Difficulty.MASTER,
 		grid: [
-			[F, F, F, F, F],
-			[F, F, F, F, F],
+			[F, SB, SB, SB, F],
 			[F, E, E, E, F],
 			[F, E, E, E, F],
+			[F, F, F, F, F],
 			[F, F, F, F, F],
 		],
 	},
@@ -962,7 +962,7 @@ export const singles: Obstacle[] = [
 		grid: [
 			[F, SB, F, SB, F],
 			[F, E, F, E, F],
-			[F, F, F, F, F],
+			[F, E, F, E, F],
 			[F, E, E, E, F],
 			[F, F, F, F, F],
 		],
