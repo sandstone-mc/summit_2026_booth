@@ -1,0 +1,3 @@
+execute positioned -80 63 22 run place template sandstone_summit_booth:showcase_magic ~ ~ ~ none none 1 0
+execute positioned -79 64 23 run function sandstone_summit_booth:sections/magic/showcase/summon_marker
+summon minecraft:text_display -50.05 66.5 53 {Tags:['sandstone_summit_booth.magic.info_panel','summit.booth_entity.sandstone_summit_booth'],text:[{text:"LilSpartan's Magic Pack\n\n",color:'light_purple',bold:true},{text:'Left-Click: ',color:'gray'},{text:'Select Spell\n',color:'white'},{text:'Right-Click: ',color:'gray'},{text:'Cast Spell\n\n',color:'white'},{text:'Step inside to begin!',color:'yellow'}],alignment:'center',billboard:'fixed',Rotation:[90f,0f],shadow:true,line_width:400i,background:0i,brightness:{sky:15i,block:15i}}

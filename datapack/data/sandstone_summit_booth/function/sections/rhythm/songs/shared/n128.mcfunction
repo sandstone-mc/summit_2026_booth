@@ -1,4 +1,4 @@
-execute as @a[x=-94, y=51, z=11, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8905511811023621 0.9438743126816935
-execute as @a[x=-94, y=51, z=11, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8905511811023621 0.9438743126816935
-execute as @a[x=-94, y=51, z=11, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8905511811023621 1.122462048309373
-execute as @a[x=-94, y=51, z=11, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8905511811023621 1.4142135623730951
+execute as @a[x=-94, y=51, z=10, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8905511811023621 0.9438743126816935
+execute as @a[x=-94, y=51, z=10, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8905511811023621 0.9438743126816935
+execute as @a[x=-94, y=51, z=10, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8905511811023621 1.122462048309373
+execute as @a[x=-94, y=51, z=10, dx=48, dy=24, dz=64] at @s run playsound block.note_block.harp master @s ~ ~ ~ 0.8905511811023621 1.4142135623730951

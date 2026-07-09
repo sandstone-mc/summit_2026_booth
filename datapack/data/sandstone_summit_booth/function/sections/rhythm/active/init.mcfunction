@@ -1,5 +1,5 @@
 scoreboard players set anon_WnYlBycD_0 __sandstone 2
-tp @a[tag=ssb.rhythm.player] -70 64 43 180 0
+tp @a[tag=ssb.rhythm.player] -70 64 42 180 0
 execute as @a[tag=ssb.rhythm.player] run function sandstone_summit_booth:sections/rhythm/active/init/execute_as
 function sandstone_summit_booth:sections/rhythm/active/init/switch
 function sandstone_summit_booth:sections/rhythm/lane/spawn

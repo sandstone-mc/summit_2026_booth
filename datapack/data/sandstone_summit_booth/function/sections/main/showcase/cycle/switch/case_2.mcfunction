@@ -1,0 +1,1 @@
+execute if score main.showcase.active_0_WnYlBycD __sandstone matches 0 run function sandstone_summit_booth:sections/main/showcase/cycle/switch/case_2/if

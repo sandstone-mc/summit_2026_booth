@@ -1,0 +1,1 @@
+scoreboard players set main.showcase.active_0_WnYlBycD __sandstone 1

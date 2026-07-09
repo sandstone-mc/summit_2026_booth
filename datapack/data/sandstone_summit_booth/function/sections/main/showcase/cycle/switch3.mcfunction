@@ -1,0 +1,2 @@
+execute store result storage __sandstone:variable anon_WnYlBycD_22.env_0 int 1 run scoreboard players get main.showcase.current_0_WnYlBycD __sandstone
+return run function sandstone_summit_booth:sections/main/showcase/cycle/switch3/dispatch with storage __sandstone:variable anon_WnYlBycD_22
