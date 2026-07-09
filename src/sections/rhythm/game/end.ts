@@ -1,4 +1,5 @@
 import { _, abs, advancement, attribute, effect, execute, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
+import { cancelCalibration } from './calibration'
 import { GameStatus, Tags, gamePlayer, boothListeners, status, songSelect } from './state'
 import { clearWalls } from './walls/spawning'
 import { stopAllSongs, stopAllWalls, stopSong, stopWalls } from './songs'
@@ -10,8 +11,8 @@ import { saveLeaderboard } from './leaderboard'
 import { updateSettingsPanel } from './settings'
 import { ticking } from '@shared'
 import { boothReturn } from '@rhythm/config/internal/derived'
-import { timer } from './active'
 import { endShowcaseSession } from 'src/sections/main/showcase'
+import { timer } from './active'
 
 export const resetPlayer = MCFunction('sections/rhythm/reset_player', () => {
 	effect.clear('@s')
@@ -64,7 +65,7 @@ export const endGame = MCFunction(
 	{ lazy: true },
 )
 
-const resetGame = MCFunction(
+export const resetGame = MCFunction(
 	'sections/rhythm/reset',
 	() => {
 		stopAllSongs()
@@ -72,6 +73,7 @@ const resetGame = MCFunction(
 		clearWalls()
 		parkourCleanup()
 		clearLaneShulkers()
+		cancelCalibration()
 		stopsound(boothListeners, 'master')
 
 		const [x, y, z] = boothReturn

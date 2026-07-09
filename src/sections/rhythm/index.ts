@@ -1,6 +1,10 @@
-import { _, execute, MCFunction, Selector, kill } from 'sandstone'
-import { killSkybox, placeMap, spawnSkybox } from './game/arena-map'
-import { endGame, resetPlayer } from './game/end'
+import { _, abs, execute, fill, kill, MCFunction, Selector } from 'sandstone'
+import { arena } from './config/internal/arena'
+import { killSkybox, placeMap } from './game/arena-map'
+import { cancelCalibration } from './game/calibration'
+import { endGame, resetGame, resetPlayer } from './game/end'
+import { laneTeamsInit, spawnLaneBorder } from './game/lane-effects'
+import { spawnLeaderboardPanel } from './game/leaderboard'
 import { spawnSettingsPanel } from './game/settings'
 import { cancelStart } from './game/start'
 import { GameStatus, Tags, status } from './game/state'
@@ -22,26 +26,30 @@ import './game/lane-effects'
 import './game/arena-map'
 import './game/debug'
 import './dev'
-import { spawnLaneBorder } from './game/lane-effects'
 
 export const setup = MCFunction(
 	'sections/rhythm/setup',
 	() => {
-		spawnSkybox()
+		laneTeamsInit()
 		placeMap()
 		spawnLaneBorder()
 		spawnSettingsPanel()
+		spawnLeaderboardPanel()
+		resetGame()
 	},
+	{ lazy: true },
 )
 
-// Clean up when swapping out rhythm game
 export const cleanup = MCFunction(
-	'sections/rhythm/cleanup',
+	'sections/rhythm/clear',
 	() => {
-		killSkybox()
+		resetGame()
 		kill(Selector('@e', { tag: Tags.LANE_BORDER }))
 		kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
-	}
+		killSkybox()
+		fill(abs(...arena.mapOrigin), abs(...arena.mapEnd), 'minecraft:air').strict()
+	},
+	{ lazy: true },
 )
 
 MCFunction('sections/rhythm/init_player', () => {
@@ -57,6 +65,9 @@ MCFunction('sections/rhythm/clean_player', () => {
 		}).elseIf(status.equalTo(GameStatus.STARTING), () => {
 			cancelStart()
 		})
+	})
+	execute.if.entity(Selector('@s', { tag: Tags.CALIBRATOR })).run(() => {
+		cancelCalibration()
 	})
 	resetPlayer()
 })
