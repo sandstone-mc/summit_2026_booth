@@ -1,0 +1,1 @@
+function sandstone_summit_booth:sections/magic/spells/ice/blizzard/update_storms
