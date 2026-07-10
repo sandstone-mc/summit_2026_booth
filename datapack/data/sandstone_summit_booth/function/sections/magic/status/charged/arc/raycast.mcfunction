@@ -1,21 +1,3 @@
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if2
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if3
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if4
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if5
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if6
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if7
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if8
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if9
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if10
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if11
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if12
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if13
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if14
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if15
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if16
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if17
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if18
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if19
-execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/if20
+scoreboard players set loop_iterator_0_WnYlBycD __sandstone 0
+execute if score loop_iterator_0_WnYlBycD __sandstone matches ..20 run function sandstone_summit_booth:sections/magic/status/charged/arc/raycast/loop
 execute if entity @s[tag=sandstone_summit_booth.status.charged.arc.ray_active] run tag @s remove sandstone_summit_booth.status.charged.arc.ray_active

@@ -1,0 +1,3 @@
+execute if entity @s[tag=sandstone_summit_booth.spells.lightning.thunderbolt.ray_active] run function sandstone_summit_booth:sections/magic/spells/lightning/thunderbolt/raycast/loop/if
+scoreboard players add loop_iterator_2_WnYlBycD __sandstone 1
+execute if score loop_iterator_2_WnYlBycD __sandstone matches ..60 run function sandstone_summit_booth:sections/magic/spells/lightning/thunderbolt/raycast/loop

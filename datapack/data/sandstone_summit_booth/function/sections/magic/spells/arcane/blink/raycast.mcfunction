@@ -1,16 +1,3 @@
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if2
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if3
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if4
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if5
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if6
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if7
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if8
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if9
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if10
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if11
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if12
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if13
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if14
-execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/if15
+scoreboard players set loop_iterator_1_WnYlBycD __sandstone 0
+execute if score loop_iterator_1_WnYlBycD __sandstone matches ..15 run function sandstone_summit_booth:sections/magic/spells/arcane/blink/raycast/loop
 execute if entity @s[tag=sandstone_summit_booth.spells.arcane.blink.ray_active] run tag @s remove sandstone_summit_booth.spells.arcane.blink.ray_active
