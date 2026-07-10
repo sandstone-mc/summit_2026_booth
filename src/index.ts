@@ -10,6 +10,8 @@ import './sections/rhythm/index'
 import './sections/magic/index'
 import './sections/presentation/index'
 
+import './ticked_functions'
+
 MCFunction('main', () => {
     const all_players = (args: SelectorProperties<false, false, 'minecraft:player'>) => Selector(
         '@a',

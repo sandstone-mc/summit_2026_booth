@@ -13,9 +13,9 @@
     "on_player_enter": "sandstone_summit_booth:init_player",
     "on_player_exit": "sandstone_summit_booth:clean_player",
     "ticking_functions": {
-        "#__sandstone:ticked/1t": "1t",
-        "#__sandstone:ticked/5t": "5t",
-        "#__sandstone:ticked/10t": "10t"
+        "sandstone_summit_booth:ticked/1t": "1t",
+        "sandstone_summit_booth:ticked/5t": "5t",
+        "sandstone_summit_booth:ticked/10t": "10t"
     },
     "sticker_book": {
         "background_color": "#b4ae94",
@@ -50,5 +50,12 @@
                 "obtained_text": "You found the hidden secret!"
             }
         ]
-    }
+    },
+    "balloons": [
+        {
+            "balloon_id": "sand_castle",
+            "balloon_name": "Sand Castle",
+            "balloon_model": "sandstone_summit_booth:balloons/sand_castle"
+        }
+    ]
 }

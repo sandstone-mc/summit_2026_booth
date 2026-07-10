@@ -47,7 +47,7 @@ export const cleanup = MCFunction(
 		kill(Selector('@e', { tag: Tags.LANE_BORDER }))
 		kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
 		killSkybox()
-		fill(abs(...arena.mapOrigin), abs(...arena.mapEnd), 'minecraft:air').strict()
+		// fill(abs(...arena.mapOrigin), abs(...arena.mapEnd), 'minecraft:air').strict()
 	},
 	{ lazy: true },
 )

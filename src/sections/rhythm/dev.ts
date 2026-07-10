@@ -8,9 +8,9 @@ const tickLoop = MCFunction(
 	'sections/rhythm/tick_loop',
 	(self: MCFunctionClass) => {
 		functionCmd(ticking)
-		self.schedule.function('1t', 'replace')
+		// self.schedule.function('1t', 'replace')
 	},
-	{ lazy: true },
+	{ runEveryTick: true },
 )
 
 MCFunction('sections/rhythm/toggle_tick', () => {
