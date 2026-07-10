@@ -1,0 +1,33 @@
+{
+  "condition": "minecraft:any_of",
+  "terms": [
+    {
+      "condition": "minecraft:reference",
+      "name": "summit.booth:sandstone_summit_booth/in_bounding_box/castle"
+    },
+    {
+      "condition": "minecraft:reference",
+      "name": "summit.booth:sandstone_summit_booth/in_bounding_box/casino_upper_floor"
+    },
+    {
+      "condition": "minecraft:reference",
+      "name": "summit.booth:sandstone_summit_booth/in_bounding_box/casino_lower_floor_and_showcase"
+    },
+    {
+      "condition": "minecraft:reference",
+      "name": "summit.booth:sandstone_summit_booth/in_bounding_box/back_hall"
+    },
+    {
+      "condition": "minecraft:reference",
+      "name": "summit.booth:sandstone_summit_booth/in_bounding_box/side_stairs"
+    },
+    {
+      "condition": "minecraft:reference",
+      "name": "summit.booth:sandstone_summit_booth/in_bounding_box/showcase"
+    },
+    {
+      "condition": "minecraft:reference",
+      "name": "summit.booth:sandstone_summit_booth/in_bounding_box/back_stairs"
+    }
+  ]
+}

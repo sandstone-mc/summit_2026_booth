@@ -1,0 +1,46 @@
+{
+  "parent": "summit:booth_enter_root",
+  "criteria": {
+    "in_booth": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:location_check",
+            "predicate": {
+              "dimension": "minecraft:overworld",
+              "position": {
+                "x": {
+                  "min": -84.0,
+                  "max": -68.0
+                },
+                "y": {
+                  "min": 95.0,
+                  "max": 102.0
+                },
+                "z": {
+                  "min": 38.0,
+                  "max": 44.0
+                }
+              }
+            }
+          },
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "minecraft:entity_tags": {
+                "none_of": [
+                  "summit.battlegrounds.player"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "function": "summit.booth:sandstone_summit_booth/bounding_box/back_stairs/enter"
+  }
+}

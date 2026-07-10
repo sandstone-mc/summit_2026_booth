@@ -1,0 +1,49 @@
+{
+  "parent": "summit:booth_exit_root",
+  "criteria": {
+    "not_in_booth": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:inverted",
+            "term": {
+              "condition": "minecraft:location_check",
+              "predicate": {
+                "dimension": "minecraft:overworld",
+                "position": {
+                  "x": {
+                    "min": -93.0,
+                    "max": -53.0
+                  },
+                  "y": {
+                    "min": 54.0,
+                    "max": 82.0
+                  },
+                  "z": {
+                    "min": 41.0,
+                    "max": 60.0
+                  }
+                }
+              }
+            }
+          },
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "minecraft:entity_tags": {
+                "none_of": [
+                  "summit.battlegrounds.player"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "function": "summit.booth:sandstone_summit_booth/bounding_box/casino_lower_floor_and_showcase/exit"
+  }
+}
