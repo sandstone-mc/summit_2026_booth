@@ -223,3 +223,7 @@ export const startCalibration = MCFunction(
 	},
 	{ lazy: true },
 )
+
+const placeholder = 'placeholder'
+
+export default placeholder

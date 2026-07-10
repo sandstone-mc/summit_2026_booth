@@ -29,13 +29,13 @@ export const createRaycast = (path: string, opts: RaycastOptions) => {
 
     // return a function to start the raycast
     return MCFunction(`sections/magic/${path}/raycast`, () => {
-        for (let i = 0; i < opts.maxSteps; i++) {
+        _.for([0, opts.maxSteps], 'iterate', () => {
             _.if(RayActive('@s'), () => {
                 execute.at('@s').run(() => {
                     step()
                 })
             })
-        }
+        })
 
         _.if(RayActive('@s'), () => {
             opts.onComplete?.()

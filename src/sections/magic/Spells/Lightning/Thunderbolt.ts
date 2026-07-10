@@ -10,7 +10,7 @@ const rollScore = Objective.create(`spell.lightning.thunderbolt_roll`, 'dummy')
 const chainStrike = MCFunction(`sections/magic/${meta.spellPath}/chain_strike`, () => {
     particle('end_rod', rel(0, 0, 0), abs(0.1, 1, 0.1), 0, 5, 'force')
     particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.2, 20, 'force')
-    
+
     damage('@s', 4, 'lightning_bolt')
     Stunned.apply(Variable(2))
     Charged.apply(Variable(2))
@@ -45,3 +45,7 @@ MCFunction(`sections/magic/${meta.spellPath}/cast`, () => {
         boltRaycast()
     })
 });
+
+const placeholder = 'placeholder'
+
+export default placeholder
