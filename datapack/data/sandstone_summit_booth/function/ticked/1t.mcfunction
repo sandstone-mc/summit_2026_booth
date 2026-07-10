@@ -2,7 +2,7 @@ function sandstone_summit_booth:sections/rhythm/tick_loop
 function sandstone_summit_booth:sections/magic/playerdb/tick
 function sandstone_summit_booth:sections/magic/showcase/selection/tick
 function sandstone_summit_booth:sections/magic/showcase/tick
-function sandstone_summit_booth:mana_manager
+function sandstone_summit_booth:sections/magic/mana_manager
 function sandstone_summit_booth:sections/magic/spellbook/triggers
 function sandstone_summit_booth:sections/magic/status/burning/update
 function sandstone_summit_booth:sections/magic/status/freezing/update

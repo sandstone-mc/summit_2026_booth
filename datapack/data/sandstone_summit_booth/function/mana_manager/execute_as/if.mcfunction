@@ -1,2 +1,0 @@
-execute if score @s sandstone_summit_booth.mana_regen_timer matches ..0 run function sandstone_summit_booth:mana_manager/execute_as/if/if
-scoreboard players remove @s sandstone_summit_booth.mana_regen_timer 1

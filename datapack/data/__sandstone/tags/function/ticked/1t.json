@@ -5,7 +5,7 @@
     "sandstone_summit_booth:sections/magic/playerdb/tick",
     "sandstone_summit_booth:sections/magic/showcase/selection/tick",
     "sandstone_summit_booth:sections/magic/showcase/tick",
-    "sandstone_summit_booth:mana_manager",
+    "sandstone_summit_booth:sections/magic/mana_manager",
     "sandstone_summit_booth:sections/magic/spellbook/triggers",
     "sandstone_summit_booth:sections/magic/status/burning/update",
     "sandstone_summit_booth:sections/magic/status/freezing/update",
