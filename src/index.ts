@@ -3,12 +3,15 @@ import { advancement, MCFunction, Selector } from 'sandstone'
 import { SelectorProperties } from 'sandstone/variables'
 
 import { ticking } from './shared'
-import './sections/main'
 import './version'
-// TODO: Disabled while developing presentation
-import './sections/rhythm/index'
-import './sections/magic/index'
+
 import './sections/presentation/index'
+
+if (!Boolean(Bun.env.DISABLE_SHOWCASE ?? false)) {
+    await import('./sections/main')
+    await import('./sections/rhythm/index')
+    await import('./sections/magic/index')
+}
 
 import './ticked_functions'
 

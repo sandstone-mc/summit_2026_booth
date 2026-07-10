@@ -25,23 +25,14 @@ export const endShowcaseSession = MCFunction('sections/main/showcase/session/end
 
 
 // how many players are currently inside the shared showcase area
-const ShowcaseOccupancy = Variable(0, 'main.showcase.occupancy')
-
-// true (1) while at least one player is inside the shared showcase area, false (0) otherwise -
-// lets other sections (e.g. magic's tick) skip work entirely while the showcase is empty
-export const IsPlayerInShowcase = Variable(0, 'main.showcase.occupied')
+export const ShowcaseOccupancy = Variable(0, 'main.showcase.occupancy')
 
 MCFunction('sections/main/showcase/enter', () => {
     ShowcaseOccupancy.add(1)
-    IsPlayerInShowcase.set(1)
 })
 
 MCFunction('sections/main/showcase/exit', () => {
     ShowcaseOccupancy.remove(1)
-    _.if(ShowcaseOccupancy.lessThanOrEqualTo(0), () => {
-        ShowcaseOccupancy.set(0)
-        IsPlayerInShowcase.set(0)
-    })
 })
 
 // showcase bounding box (see `bounding_boxes.showcase` in booth_definition.json)

@@ -5,7 +5,7 @@ import { clearSelf, getSelf, saveSelf, io } from '../PlayerDB'
 import { mana, maxMana, manaRegen } from '../player_handler'
 import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
 import { SymbolEntity } from 'sandstone/arguments';
-import { endShowcaseSession, IsPlayerInShowcase, PlayersInShowcase, startShowcaseSession } from 'src/sections/main/showcase'
+import { endShowcaseSession, PlayersInShowcase, ShowcaseOccupancy, startShowcaseSession } from 'src/sections/main/showcase'
 
 export const State = Objective.create('showcase.state', 'dummy')
 export const GlobalState = State('#global')
@@ -305,7 +305,7 @@ export const startSession = MCFunction('sections/magic/showcase/session/start', 
 
 MCFunction('sections/magic/showcase/tick', () => {
     // Nothing in here matters while the shared showcase area is empty
-    _.if(IsPlayerInShowcase.equalTo(1), () => {
+    _.if(ShowcaseOccupancy.greaterThanOrEqualTo(1), () => {
         // Update which players are physically inside the booth volume
         InBoothLabel('@p').remove()
         execute.as(ShowcaseMarker).at('@s').run(() => {
