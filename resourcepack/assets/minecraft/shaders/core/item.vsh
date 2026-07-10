@@ -37,13 +37,24 @@ flat out ivec4 sdk_ivec4;
 flat out mat4 sdk_mat4;
 uniform sampler2D Sampler0;
 #moj_import <sdk:build/item.vsh/include.glsl>
+
+bool shouldShade(vec4 color) {
+    return abs(color.r * 255.0 - 1) < 0.5 &&
+        abs(color.g * 255.0 - 1) < 0.5 &&
+        abs(color.b * 255.0 - 254) < 0.5;
+}
+
 void main() {
     gl_Position = ProjMat * ModelViewMat * vec4(Position, 1.0);
 
     sphericalVertexDistance = fog_spherical_distance(Position);
     cylindricalVertexDistance = fog_cylindrical_distance(Position);
 
-    vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color);
+    if(!shouldShade(Color)) {
+        vertexColor = minecraft_mix_light(Light0_Direction, Light1_Direction, Normal, Color);
+    } else {
+        vertexColor = vec4(1.0);
+    }
     lightMapColor = sample_lightmap(Sampler2, UV2);
     overlayColor = texelFetch(Sampler1, UV1, 0);
 
