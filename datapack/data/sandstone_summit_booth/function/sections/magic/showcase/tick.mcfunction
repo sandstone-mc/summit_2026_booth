@@ -1,2 +1,2 @@
-execute if score main.showcase.occupied_0_WnYlBycD __sandstone matches 1 run return run function sandstone_summit_booth:sections/magic/showcase/tick/0_if/return_run
+execute if score main.showcase.occupancy_0_WnYlBycD __sandstone matches 1.. run return run function sandstone_summit_booth:sections/magic/showcase/tick/0_if/return_run
 execute if score #global sandstone_summit_booth.showcase.state matches 1.. run function sandstone_summit_booth:sections/magic/showcase/reset

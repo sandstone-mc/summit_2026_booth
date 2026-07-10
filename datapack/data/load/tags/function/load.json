@@ -2,12 +2,12 @@
   "replace": false,
   "values": [
     "sandstone_summit_booth:__init__",
+    "sandstone_summit_booth:version_check",
     "sandstone_summit_booth:sections/rhythm/scoring/init",
     "__sandstone:ticked/start/wnylbycd",
     "sandstone_summit_booth:sections/magic/playerdb/load",
     "sandstone_summit_booth:sections/magic/spellbook/load_spells",
     "sandstone_summit_booth:sections/magic/showcase/load",
-    "sandstone_summit_booth:version_check",
     "sandstone_summit_booth:sections/rhythm/leaderboard/init",
     "sandstone_summit_booth:sections/rhythm/reset",
     "sandstone_summit_booth:sections/rhythm/settings/init",

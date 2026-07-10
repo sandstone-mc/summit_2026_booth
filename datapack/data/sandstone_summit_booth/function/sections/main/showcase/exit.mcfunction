@@ -1,2 +1,1 @@
 scoreboard players remove main.showcase.occupancy_0_WnYlBycD __sandstone 1
-execute if score main.showcase.occupancy_0_WnYlBycD __sandstone matches ..0 run function sandstone_summit_booth:sections/main/showcase/exit/if
