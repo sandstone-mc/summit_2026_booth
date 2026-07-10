@@ -1,0 +1,2 @@
+execute if score #mob_type_pick sandstone_summit_booth.showcase.state matches 0 run return run function sandstone_summit_booth:sections/magic/showcase/tick/0_if/return_run/if2/execute_as2/if2/if/0_if/return_run/if
+function sandstone_summit_booth:sections/magic/showcase/tick/0_if/return_run/if2/execute_as2/if2/if/if
