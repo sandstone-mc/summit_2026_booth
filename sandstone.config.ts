@@ -5,7 +5,7 @@ export default {
     packs: {
         datapack: {
             description: ['The ', { text: 'Sandstone', color: 'gold' }, ' booth datapack for Smithed Summit 2026.'],
-            packFormat: 107.1,
+            packFormat: 107,
         } as DatapackConfig,
         resourcepack: {
             description: ['A ', { text: 'Sandstone', color: 'gold' }, ' resource pack.'],
