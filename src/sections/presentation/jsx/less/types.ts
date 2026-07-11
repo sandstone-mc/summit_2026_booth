@@ -1,12 +1,8 @@
 import less from 'less'
 
-// @types/less@3.0.8 declares LessStatic globally but only covers render() +
-// Options. It does NOT expose parse() or the `tree` namespace.
-// `declare module 'less' { ... }` does NOT work here — `less` uses
-// `export = less` (CJS-style), which TS treats as a non-module entity
-// (error TS2671). Workaround: extend the global LessStatic interface
-// directly via declare global. Interface declarations with the same name
-// in the same scope merge automatically.
+// @types/less@3.0.8 declares LessStatic globally but only covers render()
+// + Options. It does NOT expose parse() or the `tree` namespace. Workaround:
+// extend the global LessStatic interface directly via declare global.
 
 declare global {
 	interface LessStatic {
@@ -15,9 +11,7 @@ declare global {
 		tree: LessTree
 	}
 
-	// Source-position info (`_fileInfo`) carried on nodes that have one.
-	// Keys present on populated FileInfo objects; all optional since
-	// some node ctors never populate it.
+	// Source-position info carried on nodes that have one.
 	interface LessFileInfo {
 		currentDirectory: string
 		entryPath: string
@@ -27,11 +21,8 @@ declare global {
 		rootpath: string
 	}
 
-	// `toCSS(context)` argument. Less's Eval/Parse contexts are merged
-	// here — pass `{}` when calling `toCSS` on a single node outside a
-	// render.
+	// `toCSS(context)` argument — pass `{}` outside a render.
 	interface LessContext {
-		// Options carried into both Parse + Eval contexts
 		paths?: string[] | string
 		rewriteUrls?: boolean
 		rootpath?: string
@@ -52,24 +43,19 @@ declare global {
 		importMultiple?: boolean
 		urlArgs?: string
 		javascriptEnabled?: boolean
-		// Eval-only
 		frames?: LessTreeNode[]
 		importantScope?: LessTreeNode[]
 		calcStack?: boolean[]
 		inCalc?: boolean
 	}
 
-	// `toCSS(context?)` parameter type.
 	type LessToCSSContext = LessContext
 
-	// Source-map debug info attached to some nodes for line-number output.
 	interface LessDebugInfo {
 		lineNumber: number
 		fileName: string
 	}
 
-	// Function registry carried on Ruleset/MixinDefinition. Holds
-	// user-defined Less functions (`@func: ...`) and built-ins.
 	interface LessFunctionRegistry {
 		_data: Record<string, LessCallNode>
 		add(name: string, fn: LessCallNode): LessFunctionRegistry
@@ -81,11 +67,8 @@ declare global {
 	}
 }
 
-// ── AST base ────────────────────────────────────────────────
-// Every node carries these fields. `toCSS` returns `string | number`
-// because Dimension returns a number for unitless values. Fields ending
-// in `| undefined` are not initialized by the constructor (set lazily
-// by the evaluator or never).
+// AST base. Every node carries these; fields ending in `| undefined`
+// are lazily set by the evaluator or never set.
 export interface LessNodeBase {
 	type: string
 	parent: LessTreeNode | null
@@ -98,12 +81,8 @@ export interface LessNodeBase {
 	toCSS(context?: LessToCSSContext): string | number
 }
 
-// ── Containers / structural nodes ───────────────────────────
-// Types derived from @types/less source `lib/less/tree/*.js` — every
-// field reflects what the less.js constructor actually sets.
-
-// Root + nested rulesets. `selectors` is omitted on the synthetic
-// root ruleset that wraps an `@media` body. `rules` always an array.
+// Root + nested rulesets. `selectors` is omitted on the synthetic root
+// ruleset that wraps an `@media` body.
 export interface LessRulesetNode extends LessNodeBase {
 	type: 'Ruleset'
 	selectors?: LessSelectorNode[]
@@ -116,11 +95,9 @@ export interface LessRulesetNode extends LessNodeBase {
 	strictImports: boolean
 	debugInfo: LessDebugInfo | undefined
 	evalFirst: boolean
-	// Selector paths used by mixin resolution; null/empty until eval.
 	paths: LessSelectorNode[][] | undefined
 	originalRuleset: LessRulesetNode | undefined
 	functionRegistry: LessFunctionRegistry | undefined
-	// Internal caches populated during eval.
 	_lookups: Record<string, LessTreeNode>
 	_properties: Record<string, LessDeclarationNode[]> | null
 	_rulesets: LessRulesetNode[] | null
@@ -128,9 +105,6 @@ export interface LessRulesetNode extends LessNodeBase {
 	value: LessRulesetNode | undefined
 }
 
-// `@media`, `@supports`, `@document`, `@keyframes`. `features` is the
-// media-query expression; `rules` contains the body. Less initialises
-// `debugInfo` via the `debugInfo` option passed to constructors.
 export interface LessMediaNode extends LessNodeBase {
 	type: 'Media'
 	features: LessTreeNode
@@ -139,15 +113,11 @@ export interface LessMediaNode extends LessNodeBase {
 	simpleBlock: boolean | undefined
 	allowRoot: boolean
 	debugInfo: LessDebugInfo | undefined
-	// For `@media (foo) { ... }` simple blocks, declarations holds the
-	// ruleset body inline instead of inside `rules`.
 	declarations: LessTreeNode[] | undefined
 	name: string | null
 	value: LessTreeNode | undefined
 }
 
-// Mixin definition (`selector { ... }` with optional params). Inherits
-// Ruleset's eval-state shape but is its own constructor.
 export interface LessMixinDefinitionNode extends LessNodeBase {
 	type: 'MixinDefinition'
 	name: string
@@ -178,7 +148,6 @@ export interface LessMixinDefinitionNode extends LessNodeBase {
 	value: LessRulesetNode | undefined
 }
 
-// `.mixin(args)` — expands a mixin in place.
 export interface LessMixinCallNode extends LessNodeBase {
 	type: 'MixinCall'
 	selector: LessSelectorNode
@@ -188,7 +157,6 @@ export interface LessMixinCallNode extends LessNodeBase {
 	value: LessRulesetNode[] | undefined
 }
 
-// `@import "..."` or `@import (less) "..."`.
 export interface LessImportNode extends LessNodeBase {
 	type: 'Import'
 	path: LessTreeNode
@@ -210,16 +178,11 @@ export interface LessImportNode extends LessNodeBase {
 			tryAppendExtension: boolean | string,
 			currentFileInfo: LessFileInfo,
 			importOptions: LessImportOptions,
-			callback: (
-				err: Error | null,
-				root?: LessRulesetNode,
-				fullPath?: string,
-			) => void,
+			callback: (err: Error | null, root?: LessRulesetNode, fullPath?: string) => void,
 		): void
 	}
 	isLoaded: boolean
 	once: boolean
-	// Set during evaluation:
 	css: boolean | undefined
 	layerCss: boolean | undefined
 	importedFilename: string | undefined
@@ -228,8 +191,6 @@ export interface LessImportNode extends LessNodeBase {
 	value: LessTreeNode | undefined
 }
 
-// Options parsed from `@import (options) "..."` — `(reference)`,
-// `(inline)`, `(less)`, `(optional)`, `(once)`, etc.
 interface LessImportOptions {
 	reference?: boolean
 	inline?: boolean
@@ -240,7 +201,6 @@ interface LessImportOptions {
 	optional?: boolean
 }
 
-// `@charset`, `@page`, `@font-face`, etc.
 export interface LessAtRuleNode extends LessNodeBase {
 	type: 'AtRule'
 	name: string
@@ -248,22 +208,18 @@ export interface LessAtRuleNode extends LessNodeBase {
 	rules: LessTreeNode[] | undefined
 	debugInfo: LessDebugInfo | undefined
 	simpleBlock: boolean | undefined
-	// For simple-block at-rules `@page { ... }`, declarations holds the
-	// ruleset body inline.
 	declarations: LessTreeNode[] | undefined
 }
 
-// ── Selectors ───────────────────────────────────────────────
+// Selectors ────────────────────────────────────────────
+
 export interface LessSelectorNode extends LessNodeBase {
 	type: 'Selector'
 	elements: LessElementNode[]
 	evaldCondition: boolean
 	condition: LessConditionNode | null
-	// `extend` markers (for `@extend`).
 	extendList: LessExtendNode[] | undefined
-	// True when this selector matches an empty media block.
 	mediaEmpty: boolean | undefined
-	// Less internals for mixin argument counting.
 	mixinElements_: LessSelectorNode[] | undefined
 	value: undefined
 }
@@ -281,19 +237,16 @@ export interface LessCombinatorNode extends LessNodeBase {
 	emptyOrWhitespace: boolean
 }
 
-// `[attr]`, `[attr=val]`, `[attr^="val"]`.
 export interface LessAttributeNode extends LessNodeBase {
 	type: 'Attribute'
 	key: string
 	op: string
 	value: LessTreeNode
-	// `cif` = "case-insensitive flag" — true / false / unset.
 	cif: boolean | undefined
 }
 
-// ── Declarations ───────────────────────────────────────────
-// `property: value`. `name` is an array of Keyword nodes for property
-// declarations and a bare `@name` string for variable declarations.
+// Declarations ────────────────────────────────────────────
+
 export interface LessDeclarationNode extends LessNodeBase {
 	type: 'Declaration'
 	name: string | LessKeywordNode[]
@@ -314,7 +267,8 @@ export interface LessDeclarationNode extends LessNodeBase {
 	allowRoot: boolean
 }
 
-// ── Values ─────────────────────────────────────────────────
+// Values ────────────────────────────────────────────
+
 export interface LessValueNode extends LessNodeBase {
 	type: 'Value'
 	value: LessExpressionNode[]
@@ -384,7 +338,6 @@ export interface LessAnonymousNode extends LessNodeBase {
 	value: string
 	rulesetLike: boolean
 	allowRoot: boolean
-	// Source-map line tracking; undefined on simple parses.
 	mapLines: boolean | undefined
 }
 
@@ -403,7 +356,8 @@ export interface LessCallNode extends LessNodeBase {
 	value: LessTreeNode | null
 }
 
-// ── Misc ───────────────────────────────────────────────────
+// Misc ────────────────────────────────────────────
+
 export interface LessCommentNode extends LessNodeBase {
 	type: 'Comment'
 	value: string
@@ -412,8 +366,6 @@ export interface LessCommentNode extends LessNodeBase {
 	allowRoot: boolean
 }
 
-// `:extend(...)` selector extends the matched rules. `option` is the
-// keyword passed in `@extend(.b all)` — `'all'`, `'!all'`, etc.
 export interface LessExtendNode extends LessNodeBase {
 	type: 'Extend'
 	selector: LessSelectorNode
@@ -426,20 +378,17 @@ export interface LessExtendNode extends LessNodeBase {
 	value: undefined
 }
 
-// `\@var(--foo)` syntax.
 export interface LessVariableCallNode extends LessNodeBase {
 	type: 'VariableCall'
 	variable: string
 	value: undefined
 }
 
-// `-x` — wraps an expression with a unary minus.
 export interface LessNegativeNode extends LessNodeBase {
 	type: 'Negative'
 	value: LessTreeNode
 }
 
-// Lazy detached ruleset reference (advanced mixin feature).
 export interface LessDetachedRulesetNode extends LessNodeBase {
 	type: 'DetachedRuleset'
 	ruleset: LessRulesetNode
@@ -447,14 +396,12 @@ export interface LessDetachedRulesetNode extends LessNodeBase {
 	value: undefined
 }
 
-// Namespace lookup: `ns > .mixin(...)`.
 export interface LessNamespaceValueNode extends LessNodeBase {
 	type: 'NamespaceValue'
 	value: LessCallNode
 	lookups: string[]
 }
 
-// `when` condition inside mixin guards.
 export interface LessConditionNode extends LessNodeBase {
 	type: 'Condition'
 	op: string
@@ -463,7 +410,6 @@ export interface LessConditionNode extends LessNodeBase {
 	negate: boolean
 }
 
-// `~"escaped"` — escaped JavaScript expression. Disabled in modern LESS.
 export interface LessJavaScriptNode extends LessNodeBase {
 	type: 'JavaScript'
 	value: string
@@ -471,38 +417,31 @@ export interface LessJavaScriptNode extends LessNodeBase {
 	expression: string
 }
 
-// Unicode descriptor for IE7 font-face hacks. Legacy.
 export interface LessUnicodeDescriptorNode extends LessNodeBase {
 	type: 'UnicodeDescriptor'
 	value: string
 }
 
-// Mixin/function parameter descriptor. `name` is the `@name` token or
-// null for positional args; `value` is the default-value expression or
-// null for required args; `expand` is true for `...rest`.
+// `name` is the `@name` token or null for positional args; `value` is
+// the default-value expression or null for required args.
 export interface LessMixinParam {
 	name: string | null
 	value: LessTreeNode | null
 	expand: boolean | null
 }
 
-// Args passed to a mixin call share the same shape.
 export type LessMixinArg = LessMixinParam
 
-// ── CSS declarations ───────────────────────────────────────
-// CSS property names the resolver knows about. The index signature
-// below allows any other property at the cost of type-checking; keep
-// this union in sync with what `render.ts` actually reads.
+// CSS property names the resolver knows about. Index signature lets
+// other properties through at the cost of type-checking. Keep in sync
+// with what the renderer reads.
 export type CssPropertyName =
-	// Layout
 	| 'height'
 	| 'width'
-	// Typography
 	| 'font-size'
 	| 'font-weight'
 	| 'line-height'
 	| 'color'
-	// Text-display entity props (boolean-ish — read as `=== 'true'`)
 	| 'bold'
 	| 'italic'
 	| 'underline'
@@ -510,10 +449,20 @@ export type CssPropertyName =
 	| 'obfuscated'
 	| 'shadow'
 	| 'see-through'
-	// Background / opacity (numeric — parsed via parseInt/float)
 	| 'background'
 	| 'opacity'
 	| 'line-width'
+	| 'margin'
+	| 'margin-top'
+	| 'margin-bottom'
+	| 'border-color'
+	| 'lang-color'
+	| 'font'
+	| 'text-align'
+	| 'align-items'
+	| 'row-gap'
+	| 'column-gap'
+	| 'grid-auto-flow'
 
 export type CssDeclarations = {
 	[K in CssPropertyName]?: string
@@ -521,8 +470,7 @@ export type CssDeclarations = {
 	[key: string]: string
 }
 
-// ── Union ──────────────────────────────────────────────────
-// Every node reachable from `less.parse()`. Discriminate on `type`.
+// Discriminate on `type`.
 export type LessTreeNode =
 	| LessRulesetNode
 	| LessDeclarationNode
@@ -557,8 +505,7 @@ export type LessTreeNode =
 	| LessJavaScriptNode
 	| LessUnicodeDescriptorNode
 
-// Constructor signatures for the `less.tree.*` namespace. Less passes
-// `currentFileInfo` to most ctors; we type it as our file-info shape.
+// Constructor signatures for the `less.tree.*` namespace.
 export interface LessTree {
 	Node: new (value?: LessTreeNode | string | number | boolean | null) => LessTreeNode
 	Ruleset: new (
@@ -639,25 +586,10 @@ export interface LessTree {
 		currentFileInfo?: LessFileInfo,
 	) => LessTreeNode
 	Import: new (
-			path: LessTreeNode,
-			features?: LessTreeNode,
-			options?: string,
-			importManager?: LessImportNode['importManager'],
-			currentFileInfo?: LessFileInfo,
-		) => LessImportNode
+		path: LessTreeNode,
+		features?: LessTreeNode,
+		options?: string,
+		importManager?: LessImportNode['importManager'],
+		currentFileInfo?: LessFileInfo,
+	) => LessImportNode
 }
-
-// Compile LESS source → CSS string. Resolves @import, variables, mixins.
-export async function compile(lessSource: string): Promise<string> {
-	const out = await less.render(lessSource)
-	return out.css
-}
-
-// Parse LESS → AST. Used by the resolver to match selectors against JSX
-// elements at build time.
-export async function parse(lessSource: string): Promise<LessTreeNode> {
-	return less.parse(lessSource)
-}
-
-// Re-export tree node constructors so consumers can build/inspect ASTs.
-export const tree: LessTree = less.tree
