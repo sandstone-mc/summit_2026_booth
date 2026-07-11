@@ -56,6 +56,20 @@ type MCS_Routes = {
             time: number,
         },
     },
+    'files/download': {
+        params: {
+            file_name: string,
+        },
+        response: {
+            status: number,
+            data: {
+                password: string,
+                addr: string,
+                remoteMappings?: any[],
+            },
+            time: number,
+        },
+    },
 }
 
 async function MCS_API<Route extends keyof MCS_Routes>(
@@ -180,6 +194,88 @@ console.log('Deploy: zip ready, uploading to server...')
 await upload_zip(main_pack, `${SandstoneConfig.namespace}.zip`)
 
 console.log(`Deploy: main pack uploaded, checking for dependencies...`)
+
+// SCL (Summit Core Library) — version check + auto-update.
+// `scl_verison.txt` (sic, server-side typo) lives in /world/datapacks/ on the
+// server; the vendors mirror serves the latest version + the replacement zip.
+const SCL_ZIP_NAME = 'summit-dp-core.zip'
+const SCL_VERSION_FILENAME = 'scl_verison.txt'
+const SCL_VERSION_URL = 'https://vendors.internal.smithed.net/app/static/version.txt'
+const SCL_DOWNLOAD_URL = 'https://vendors.internal.smithed.net/app/static/summit-dp-core.zip'
+
+async function fetch_server_scl_version(): Promise<string | null> {
+    try {
+        const dl = await MCS_API('files/download', {
+            file_name: `/world/datapacks/${SCL_VERSION_FILENAME}`,
+        })
+        if (dl.status !== 200 || !dl.data?.password) return null
+
+        const host = new URL(process.env.MCS_MANAGER_ENDPOINT ?? '').hostname
+        const port = dl.data.addr.split(':')[1]
+        const url = `http://${host}:${port}/download/${dl.data.password}/${SCL_VERSION_FILENAME}`
+        const resp = await fetch(url)
+        if (!resp.ok) return null
+        return (await resp.text()).trim() || null
+    } catch {
+        return null
+    }
+}
+
+async function fetch_latest_scl_version(): Promise<string | null> {
+    try {
+        const resp = await fetch(SCL_VERSION_URL)
+        if (!resp.ok) return null
+        return (await resp.text()).trim() || null
+    } catch {
+        return null
+    }
+}
+
+console.log('SCL: checking installed vs latest version...')
+
+const server_scl_version = await fetch_server_scl_version()
+const latest_scl_version = await fetch_latest_scl_version()
+
+if (!server_scl_version) {
+    console.log('SCL: could not read server version file, skipping update')
+} else if (!latest_scl_version) {
+    console.log('SCL: could not reach version manifest, skipping update')
+} else if (server_scl_version === latest_scl_version) {
+    console.log(`SCL: up to date (${server_scl_version})`)
+} else {
+    console.log(`SCL: server=${server_scl_version}, latest=${latest_scl_version}, downloading update...`)
+    const zip_resp = await fetch(SCL_DOWNLOAD_URL)
+    if (!zip_resp.ok) throw new Error(`SCL: download failed (${zip_resp.status})`)
+    const zip_buffer = await zip_resp.arrayBuffer()
+    await upload_zip(zip_buffer, SCL_ZIP_NAME)
+    console.log(`SCL: uploaded ${SCL_ZIP_NAME} (${zip_buffer.byteLength} bytes)`)
+
+    // Stamp the new version onto the server so the next deploy sees up-to-date.
+    // Order matters: zip first, version last — if version write fails, future
+    // deploys loop and retry the (idempotent) zip upload.
+    console.log(`SCL: writing ${SCL_VERSION_FILENAME}...`)
+    const version_buf = new TextEncoder().encode(latest_scl_version).buffer
+
+    const vu = await MCS_API('files/upload', {
+        file_name: SCL_VERSION_FILENAME,
+        upload_dir: remote_datapacks_dir,
+    })
+    const vu_port = vu.data.addr.split(':')[1] as `${number}`
+
+    const vu_meta = await MCS_API(
+        'upload-new',
+        {
+            filename: SCL_VERSION_FILENAME,
+            overwrite: 'true',
+            size: `${version_buf.byteLength}`,
+            sum: '',
+        },
+        { port_override: vu_port, path: vu.data.password },
+    )
+
+    await upload_chunks(vu_meta.data.id, vu_port, version_buf)
+    console.log(`SCL: wrote ${SCL_VERSION_FILENAME} = ${latest_scl_version}`)
+}
 
 // Dependencies
 const SKIP_DEPS = ['summit-dp-core']
