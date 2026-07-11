@@ -1,1 +1,0 @@
-scoreboard players add main.showcase.occupancy_0_WnYlBycD __sandstone 1

@@ -1,1 +1,0 @@
-scoreboard players remove main.showcase.occupancy_0_WnYlBycD __sandstone 1

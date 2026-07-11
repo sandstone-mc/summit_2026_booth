@@ -93,7 +93,6 @@ scoreboard players set anon_WnYlBycD_45 __sandstone 0
 scoreboard players set anon_WnYlBycD_46 __sandstone 0
 scoreboard players set main.showcase.current_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.active_0_WnYlBycD __sandstone 0
-scoreboard players set main.showcase.occupancy_0_WnYlBycD __sandstone 0
 scoreboard players set 50 __sandstone 50
 scoreboard players set 20 __sandstone 20
 scoreboard players set 60 __sandstone 60

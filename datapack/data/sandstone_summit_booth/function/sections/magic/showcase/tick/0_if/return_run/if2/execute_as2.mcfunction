@@ -1,3 +1,0 @@
-execute if score #mob_count sandstone_summit_booth.showcase.state matches ..8 run function sandstone_summit_booth:sections/magic/showcase/tick/0_if/return_run/if2/execute_as2/if
-execute if score #mob_count sandstone_summit_booth.showcase.state matches ..8 run function sandstone_summit_booth:sections/magic/showcase/tick/0_if/return_run/if2/execute_as2/if2
-execute if score #mob_count sandstone_summit_booth.showcase.state matches ..8 run function sandstone_summit_booth:sections/magic/showcase/tick/0_if/return_run/if2/execute_as2/if3
