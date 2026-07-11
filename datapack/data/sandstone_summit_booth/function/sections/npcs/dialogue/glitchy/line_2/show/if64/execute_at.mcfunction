@@ -1,0 +1,1 @@
+execute as @e[tag=sandstone_summit_booth.npc.display, distance=0..2, type=minecraft:text_display] run data merge entity @s {text:[{text:'This whole booth?\nJust lines of '},{text:'code',color:'light_purple'},{text:".\nIt's "},{text:'TypeScript',color:'blue'},{text:' all the wa'}]}

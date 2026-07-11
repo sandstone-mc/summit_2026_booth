@@ -1,0 +1,1 @@
+execute unless entity @p[distance=0..5] run function sandstone_summit_booth:sections/npcs/dialogue/credits/end

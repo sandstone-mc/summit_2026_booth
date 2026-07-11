@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
+    "sandstone_summit_booth:sections/npcs/tick",
     "sandstone_summit_booth:sections/rhythm/tick_loop",
     "sandstone_summit_booth:sections/magic/playerdb/tick",
     "sandstone_summit_booth:sections/magic/showcase/selection/tick",

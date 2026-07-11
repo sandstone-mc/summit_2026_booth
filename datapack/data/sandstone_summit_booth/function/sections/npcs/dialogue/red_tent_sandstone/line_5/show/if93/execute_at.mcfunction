@@ -1,0 +1,1 @@
+execute as @e[tag=sandstone_summit_booth.npc.display, distance=0..2, type=minecraft:text_display] run data merge entity @s {text:[{text:'No mods, no plugins needed. It all compiles down to a normal datapack anyone can drop into th'}]}

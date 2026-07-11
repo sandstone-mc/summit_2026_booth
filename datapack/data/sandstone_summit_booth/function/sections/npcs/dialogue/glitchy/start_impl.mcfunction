@@ -1,0 +1,1 @@
+function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_0/show

@@ -1,0 +1,1 @@
+execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/red_tent_sandstone/line_3/show/if51/execute_at

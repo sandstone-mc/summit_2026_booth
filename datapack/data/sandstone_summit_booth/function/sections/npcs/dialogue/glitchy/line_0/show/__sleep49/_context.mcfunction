@@ -1,0 +1,2 @@
+execute store result score #current __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_0.show run time query gametime
+execute as @e[tag=__sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_0.show] if score @s __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_0.show = #current __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_0.show at @s run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_0/show/__sleep49
