@@ -95,6 +95,7 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
     const end = MCFunction(`sections/npcs/dialogue/${id}/end`, () => {
         DialogueLineIndex('@s').reset()
         mergeDisplayText('')
+        raw(`tag @a[tag=${interactorTag}] remove ${interactorTag}`)
     })
 
     const advance = MCFunction(`sections/npcs/dialogue/${id}/advance`, () => {
