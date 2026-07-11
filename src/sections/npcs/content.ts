@@ -53,17 +53,44 @@ interface Contributor {
     name: string
     role: string
     url: string
+    // One of the `summit_icons.*` translation keys
+    icon: string
 }
 
 // TODO: FInalize this list
 const CONTRIBUTORS: Contributor[] = [
-    { name: 'MulverineX', role: 'Sandstone Maintainer', url: 'https://github.com/MulverineX' },
-    { name: 'Ori', role: 'Rhythm Showcase', url: 'https://github.com/OrigamingWasTaken' },
-    { name: 'LilSpartan', role: 'Magic Showcase', url: 'https://github.com/Lilspartan' },
+    { name: 'MulverineX', role: 'Sandstone Maintainer', url: 'https://github.com/MulverineX', icon: 'summit_icons.github' },
+    { name: 'Ori', role: 'Rhythm Showcase', url: 'https://github.com/OrigamingWasTaken', icon: 'summit_icons.github' },
+    { name: 'LilSpartan', role: 'Magic Showcase', url: 'https://github.com/Lilspartan', icon: 'summit_icons.github' },
     // { name: 'Ewan', role: 'Stickers, Balloon, and Casino Build', url: 'h' },
     // { name: 'Comqote', role: 'Booth Build', url: 'h' },
     // { name: 'Meek', role: 'Rhythm Showcase Shaders', url: 'h' }
 ]
+
+interface ResourceLink {
+    name: string
+    url: string
+    icon?: string
+    glyph?: string
+}
+
+const LINKS: ResourceLink[] = [
+    { name: 'Sandstone Docs', url: 'https://sandstone.dev', glyph: '🌐' },
+    { name: 'Sandstone GitHub', url: 'https://github.com/sandstone-mc/sandstone', icon: 'summit_icons.github' },
+    { name: 'JMCS Discord', url: 'https://discord.com/invite/4tzM5aXDRe', icon: 'summit_icons.discord' },
+]
+
+function linkBody(name: string, url: string, icon?: string, glyph?: string) {
+    return {
+        type: 'minecraft:plain_message',
+        contents: [
+            { text: ` ${name} `, font: 'minecraft:default' },
+            icon
+                ? { font: 'summit_icons:icons', translate: icon, click_event: { action: 'open_url', url } }
+                : { text: glyph ?? '', click_event: { action: 'open_url', url } },
+        ],
+    }
+}
 
 const creditsDialogue = DialogueTree('credits', {
     lines: [
@@ -74,17 +101,15 @@ const creditsDialogue = DialogueTree('credits', {
             onComplete: () => dialog.show('@s', {
                 type: 'minecraft:notice',
                 title: { text: 'Thanks for stopping by!' },
-                body: CONTRIBUTORS.map((contributor) => ({
-                    type: 'minecraft:plain_message',
-                    contents: {
-                        text: `${contributor.name} - ${contributor.role}`,
-                        click_event: { action: 'open_url', url: contributor.url },
-                    },
-                })) as any,
+                body: [
+                    ...CONTRIBUTORS.map((c) => linkBody(`${c.name} - ${c.role}`, c.url, c.icon)),
+                    { type: 'minecraft:plain_message', contents: { text: ' ' } },
+                    ...LINKS.map((l) => linkBody(l.name, l.url, l.icon, l.glyph)),
+                ] as any,
             }),
         },
     ],
-    advance: 'click',
+    advance: 'auto',
 })
 
 CreateNPC('credits', {
@@ -130,13 +155,13 @@ const secretDialogue = DialogueTree('glitchy', {
     advance: 'click',
 })
 
-CreateNPC('secret_glitch', {
-    name: 'Sandy',
+CreateNPC('glitchy', {
+    name: 'glitchy',
     skin: { 
         signature: 'FTCqCqR0H++f9cUNR1kAeSjGybzm9PWzju3sELylI/ZrJjZfH7YfkkSBRxp+eUngorLENDtdHS7hs2bOrjPJWytYMsQiQAWFOOsX1VrBBW/VNp5vWgx6PtD5MaaDJ6f4fea3VV80DshquyU1xt3T/09Gb0mDv/ECJJpvf52TbErMmf/lzYMsC5E6O/79rSVGkajvAMwFc38mvdWv7WtVeh4eELnGpNsc38a3pS5hxT/BNmYa7WkniZNw3/P4q8vQfFj6GXxg3QQPPu6uKGIutk+JquFJjNxoS6oLM6NgI/7SqrId8MrntMzsZDOlK6Pu42p/2vMb/T5d5VCPNWswTwIJG/E23wWD2EV0HmBqsgZ1v9NeDNk3q8iXbY0f7qA86VjBJyJr9M/Hywx2IO+MSXOgrAeM476JA7r32bhFWX1KsqFxUf7gObyAuZsJmfehA8cdSEKhVyZU6MqcyJfLgqnKqVJp3zHZ85NZGzkwjSVi7R64mspTPqnHkLItzpzcmOc3p/InpQCQ32qtCV4FnGUkKHsRdao4RJyeSM+F8/2UxpBVF73Zw9oNo+d4nQtw9sXOhNnc2E5nwguRclUWYLZrL0b3N+aHjFlQJrfQq85ETaHPLE7S1gR79EaOIZARP7pNK0QauGu+Wqoh38iZL0Hg2mK+csowPCgeBK3SneQ=',
         texture:'ewogICJ0aW1lc3RhbXAiIDogMTc4Mzc0ODUxMTQ2NiwKICAicHJvZmlsZUlkIiA6ICJhN2Y3MzllNmFmY2U0ZGY3ODM3YmJhZWY1MzUyNWMzZiIsCiAgInByb2ZpbGVOYW1lIiA6ICJWM24wbW1YXyIsCiAgInNpZ25hdHVyZVJlcXVpcmVkIiA6IHRydWUsCiAgInRleHR1cmVzIiA6IHsKICAgICJTS0lOIiA6IHsKICAgICAgInVybCIgOiAiaHR0cDovL3RleHR1cmVzLm1pbmVjcmFmdC5uZXQvdGV4dHVyZS8zY2Q4ZjAyNTAxNzg1ZDE2YjA5M2Y0ZDY1OTY5OGE3OWZjZDUwYTAwOTRmNTMzNDlkNDhkNjYzMmZjNmUxMzJkIiwKICAgICAgIm1ldGFkYXRhIiA6IHsKICAgICAgICAibW9kZWwiIDogInNsaW0iCiAgICAgIH0KICAgIH0KICB9Cn0=' 
     },
-    position: [-87, 74, 43],
+    position: [-82, 104, 48],
     lookAt: 'nearest',
     dialogue: secretDialogue,
 })
