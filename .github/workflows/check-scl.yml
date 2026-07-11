@@ -1,0 +1,72 @@
+name: Check & update server SCL
+
+on:
+  schedule:
+    # Every 5 minutes. GH Actions may delay scheduled runs by ~15-30 min
+    # during high load; this is the minimum granularity.
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    # Manual trigger for testing — fires immediately, bypasses the schedule.
+
+concurrency:
+  # Cancel any in-flight run when a newer one starts (manual trigger while
+  # scheduled is running, or schedule catching up after an outage).
+  group: scl-check
+  cancel-in-progress: true
+
+jobs:
+  scl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source Git branch
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install deps
+        run: bun install
+
+      # deploy.ts reads auth from MCS_MANAGER_COOKIE / MCS_MANAGER_TOKEN env vars
+      # (not from .env via dotenv). The cookie rotates frequently — panelling
+      # the same .env back here keeps the next run pre-authed. On the very first
+      # run there's no cache; deploy.ts then runs login() against the static
+      # USERNAME/PASSWORD secrets to bootstrap and writes the rotated cookie.
+      - name: Restore auth cache
+        uses: actions/cache@v4
+        with:
+          path: .env
+          key: mcs-auth-v1
+
+      # If cache restored a .env, lift its MCS_MANAGER_* keys into the step env
+      # so deploy.ts sees them as process.env. Deploy.ts also writes back to
+      # .env when the cookie/token rotates, so the save step below catches it.
+      - name: Export cached auth (if any)
+        if: hashFiles('.env') != ''
+        run: |
+          set -a
+          # shellcheck disable=SC1091
+          . ./.env
+          set +a
+          echo "Loaded $(grep -c '^[A-Z]' .env || true) env vars from cached .env"
+
+      - name: Run SCL check + auto-update
+        env:
+          MCS_MANAGER_ENDPOINT: ${{ secrets.MCS_MANAGER_ENDPOINT }}
+          MCS_MANAGER_DAEMON_ID: ${{ secrets.MCS_MANAGER_DAEMON_ID }}
+          MCS_MANAGER_UUID: ${{ secrets.MCS_MANAGER_UUID }}
+          MCS_MANAGER_DATAPACKS_DIR: ${{ secrets.MCS_MANAGER_DATAPACKS_DIR }}
+          MCS_MANAGER_USERNAME: ${{ secrets.MCS_MANAGER_USERNAME }}
+          MCS_MANAGER_PASSWORD: ${{ secrets.MCS_MANAGER_PASSWORD }}
+        run: bun run scripts/deploy.ts --scl-only
+
+      # Re-save cache so the next run picks up the rotated cookie/token. Always
+      # runs — even on failure — so a partially-rewritten .env from a login
+      # attempt doesn't get orphaned against the stale cached copy.
+      - name: Save auth cache
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: .env
+          key: mcs-auth-v1
