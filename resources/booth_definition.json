@@ -1,69 +1,105 @@
 {
-    "namespace": "sandstone_summit_booth",
-    "booth_name": "Sandstone Pre-compiler",
-    "bounding_boxes": {
-        "castle":{"position":{"x":{"min":-86,"max":-53},"y":{"min":92,"max":118},"z":{"min":45,"max":73}}},
-        "casino_upper_floor":{"position":{"x":{"min":-88,"max":-53},"y":{"min":83,"max":91},"z":{"min":41,"max":67}}},
-        "casino_lower_floor_and_showcase":{"position":{"x":{"min":-93,"max":-53},"y":{"min":54,"max":82},"z":{"min":41,"max":60}}},
-        "back_hall":{"position":{"x":{"min":-93,"max":-79},"y":{"min":58,"max":79},"z":{"min":36,"max":41}}},
-        "side_stairs":{"position":{"x":{"min":-97,"max":-87},"y":{"min":85,"max":98},"z":{"min":50,"max":64}}},
-        "showcase": {
-            "position": {
-                "x": { "min": -80, "max": -60 },
-                "y": { "min": 63, "max": 72 },
-                "z": { "min": 21, "max": 51 }
-            },
-            "on_player_enter": "sandstone_summit_booth:sections/main/showcase/enter",
-            "on_player_exit": "sandstone_summit_booth:sections/main/showcase/exit"
-        },
-        "back_stairs":{"position":{"x":{"min":-84,"max":-68},"y":{"min":95,"max":102},"z":{"min":38,"max":44}}}
+  "namespace": "sandstone_summit_booth",
+  "booth_name": "Sandstone Pre-compiler",
+  "bounding_boxes": {
+    "castle": {
+      "position":{
+        "x": { "min": -88, "max": -52 },
+        "y": { "min": 92, "max": 119 },
+        "z": { "min": 44, "max": 74 }
+      }
     },
-    "on_player_enter": "sandstone_summit_booth:init_player",
-    "on_player_exit": "sandstone_summit_booth:clean_player",
-    "ticking_functions": {
-        "sandstone_summit_booth:ticked/1t": "1t",
-        "sandstone_summit_booth:ticked/5t": "5t",
-        "sandstone_summit_booth:ticked/10t": "10t"
+    "casino_upper_floor": {
+      "position":{
+        "x": { "min": -88, "max": -50 },
+        "y": { "min": 82, "max": 92 },
+        "z": { "min": 40, "max": 67 }
+      }
     },
-    "sticker_book": {
-        "background_color": "#b4ae94",
-        "region": "textured_tropics",
-        "stickers": [
-            {
-                "sticker_id": "enter_booth",
-                "sticker_texture": "sandstone_summit_booth:sticker/enter_booth",
-                "sticker_name": "Welcome to Sandstone",
-                "unobtained_text": "Visit the Sandstone booth",
-                "obtained_text": "You visited the Sandstone booth!"
-            },
-            {
-                "sticker_id": "arcane_arts",
-                "sticker_texture": "sandstone_summit_booth:sticker/arcane_arts",
-                "sticker_name": "Arcane Arts",
-                "unobtained_text": "Cast a spell in the Arcane Arts showcase",
-                "obtained_text": "You mastered the arcane arts!"
-            },
-            {
-                "sticker_id": "rhythm",
-                "sticker_texture": "sandstone_summit_booth:sticker/rhythm",
-                "sticker_name": "Rhythm Master",
-                "unobtained_text": "Play the rhythm game showcase",
-                "obtained_text": "You've got the beat!"
-            },
-            {
-                "sticker_id": "hidden",
-                "sticker_texture": "sandstone_summit_booth:sticker/hidden",
-                "sticker_name": "???",
-                "unobtained_text": "Discover the hidden secret...",
-                "obtained_text": "What was that guy rambling about?"
-            }
-        ]
+    "casino_lower_floor_and_showcase": {
+      "position":{
+        "x": { "min": -94, "max": -49 },
+        "y": { "min": 58, "max": 82 },
+        "z": { "min": 41, "max": 61 }
+      }
     },
-    "balloons": [
-        {
-            "balloon_id": "sand_castle",
-            "balloon_name": "Sand Castle",
-            "balloon_model": "sandstone_summit_booth:balloons/sand_castle"
-        }
+    "back_hall": {
+      "position":{
+        "x": { "min": -91, "max": -80 },
+        "y": { "min": 58, "max": 79 },
+        "z": { "min": 36, "max": 41 }
+      }
+    },
+    "side_stairs": {
+      "position":{
+        "x": { "min": -97, "max": -88 },
+        "y": { "min": 85, "max": 98},
+        "z": { "min": 49, "max": 61 }
+      }
+    },
+    "showcase": {
+      "position": {
+        "x": { "min": -80, "max": -59 },
+        "y": { "min": 63, "max": 73 },
+        "z": { "min": 21, "max": 51 }
+      },
+      "on_player_enter": "sandstone_summit_booth:sections/main/showcase/enter",
+      "on_player_exit": "sandstone_summit_booth:sections/main/showcase/exit"
+    },
+    "back_stairs": {
+      "position":{
+        "x": { "min": -84, "max": -68},
+        "y": { "min": 95, "max": 102},
+        "z": { "min": 38, "max": 44}
+      }
+    }
+  },
+  "on_player_enter": "sandstone_summit_booth:init_player",
+  "on_player_exit": "sandstone_summit_booth:clean_player",
+  "ticking_functions": {
+    "sandstone_summit_booth:ticked/1t": "1t",
+    "sandstone_summit_booth:ticked/5t": "5t",
+    "sandstone_summit_booth:ticked/10t": "10t"
+  },
+  "sticker_book": {
+    "background_color": "#b4ae94",
+    "region": "textured_tropics",
+    "stickers": [
+      {
+        "sticker_id": "enter_booth",
+        "sticker_texture": "sandstone_summit_booth:sticker/enter_booth",
+        "sticker_name": "Welcome to Sandstone",
+        "unobtained_text": "Visit the Sandstone booth",
+        "obtained_text": "You visited the Sandstone booth!"
+      },
+      {
+        "sticker_id": "arcane_arts",
+        "sticker_texture": "sandstone_summit_booth:sticker/arcane_arts",
+        "sticker_name": "Arcane Arts",
+        "unobtained_text": "Cast a spell in the Arcane Arts showcase",
+        "obtained_text": "You mastered the arcane arts!"
+      },
+      {
+        "sticker_id": "rhythm",
+        "sticker_texture": "sandstone_summit_booth:sticker/rhythm",
+        "sticker_name": "Rhythm Master",
+        "unobtained_text": "Play the rhythm game showcase",
+        "obtained_text": "You've got the beat!"
+      },
+      {
+        "sticker_id": "hidden",
+        "sticker_texture": "sandstone_summit_booth:sticker/hidden",
+        "sticker_name": "???",
+        "unobtained_text": "Discover the hidden secret...",
+        "obtained_text": "What was that guy rambling about?"
+      }
     ]
+  },
+  "balloons": [
+    {
+      "balloon_id": "sand_castle",
+      "balloon_name": "Sand Castle",
+      "balloon_model": "sandstone_summit_booth:balloons/sand_castle"
+    }
+  ]
 }
