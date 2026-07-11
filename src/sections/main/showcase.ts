@@ -1,4 +1,4 @@
-import { _, abs, execute, fill, kill, MCFunction, NBT, Selector, summon, tp, Variable } from 'sandstone'
+import { _, abs, execute, fill, kill, MCFunction, NBT, raw, Selector, summon, tp, Variable } from 'sandstone'
 import { panels } from '@rhythm/config/internal/derived'
 
 import { setup as rhythmSetup, cleanup as rhythmCleanup } from '../rhythm'
@@ -25,15 +25,17 @@ export const endShowcaseSession = MCFunction('sections/main/showcase/session/end
 
 
 // how many players are currently inside the shared showcase area
-export const ShowcaseOccupancy = Variable(0, 'main.showcase.occupancy')
+// export const ShowcaseOccupancy = Variable(0, 'main.showcase.occupancy')
 
-MCFunction('sections/main/showcase/enter', () => {
-    ShowcaseOccupancy.add(1)
-})
+// MCFunction('sections/main/showcase/enter', () => {
+//     ShowcaseOccupancy.add(1)
+//     raw('tellraw LilSpartan904 [{selector:"@s"},{text:" enter"}]')
+// })
 
-MCFunction('sections/main/showcase/exit', () => {
-    ShowcaseOccupancy.remove(1)
-})
+// MCFunction('sections/main/showcase/exit', () => {
+//     ShowcaseOccupancy.remove(1)
+//     raw('tellraw LilSpartan904 [{selector:"@s"},{text:" exit"}]')
+// })
 
 // showcase bounding box (see `bounding_boxes.showcase` in booth_definition.json)
 const SHOWCASE_MIN = { x: -80, y: 63, z: 21 }

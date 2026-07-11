@@ -5,7 +5,7 @@ import { clearSelf, getSelf, saveSelf, io } from '../PlayerDB'
 import { mana, maxMana, manaRegen } from '../player_handler'
 import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
 import { SymbolEntity } from 'sandstone/arguments';
-import { endShowcaseSession, PlayersInShowcase, ShowcaseOccupancy, startShowcaseSession } from 'src/sections/main/showcase'
+import { endShowcaseSession, PlayersInShowcase, startShowcaseSession } from 'src/sections/main/showcase'
 
 export const State = Objective.create('showcase.state', 'dummy')
 export const GlobalState = State('#global')
@@ -304,80 +304,75 @@ export const startSession = MCFunction('sections/magic/showcase/session/start', 
 }, { lazy: true })
 
 MCFunction('sections/magic/showcase/tick', () => {
-    // Nothing in here matters while the shared showcase area is empty
-    _.if(ShowcaseOccupancy.greaterThanOrEqualTo(1), () => {
-        // Update which players are physically inside the booth volume
-        InBoothLabel('@p').remove()
+    // Update which players are physically inside the booth volume
+    InBoothLabel('@p').remove()
+    execute.as(ShowcaseMarker).at('@s').run(() => {
+        execute.as(Selector('@a', { dx: BOOTH_DX, dy: BOOTH_DY, dz: BOOTH_DZ, gamemode: "!spectator" })).run(() => {
+            InBoothLabel('@s').add()
+        })
+    })
+
+    _.if(GlobalState.equalTo(STATES.IDLE), () => {
+        execute.as(Selector('@a', {
+            tag: [InBoothLabel, `!sandstone_summit_booth.${SessionPlayerLabel.name}` as `${any}${string}`],
+            gamemode: "!spectator"
+        })).run(() => {
+            startSession()
+        })
+    })
+
+    _.if(GlobalState.equalTo(STATES.FIGHTING), () => {
+        MobCount.set(0)
+        execute.as(ShowcaseMobs).run(() => { MobCount.add(1); })
+
         execute.as(ShowcaseMarker).at('@s').run(() => {
-            execute.as(Selector('@a', { dx: BOOTH_DX, dy: BOOTH_DY, dz: BOOTH_DZ, gamemode: "!spectator" })).run(() => {
-                InBoothLabel('@s').add()
-            })
-        })
+            for (let i = 0; i < Spawners.length; i++) {
+                const pos = Spawners[i]
+                _.if(MobCount.lessThan(9), () => {
+                    execute.store.result.score(MobTypePick.target, MobTypePick.objective)
+                        .run.random.value([0, MOB_TYPES.length - 1], 'showcase_mob_type')
+                    execute.store.result.score(ArmorPick.target, ArmorPick.objective)
+                        .run.random.value([0, MOB_ARMOR.length - 1], 'showcase_armor')
 
-        _.if(GlobalState.equalTo(STATES.IDLE), () => {
-            execute.as(Selector('@a', {
-                tag: [InBoothLabel, `!sandstone_summit_booth.${SessionPlayerLabel.name}` as `${any}${string}`],
-                gamemode: "!spectator"
-            })).run(() => {
-                startSession()
-            })
-        })
-
-        _.if(GlobalState.equalTo(STATES.FIGHTING), () => {
-            MobCount.set(0)
-            execute.as(ShowcaseMobs).run(() => { MobCount.add(1); })
-
-            execute.as(ShowcaseMarker).at('@s').run(() => {
-                for (let i = 0; i < Spawners.length; i++) {
-                    const pos = Spawners[i]
-                    _.if(MobCount.lessThan(9), () => {
-                        execute.store.result.score(MobTypePick.target, MobTypePick.objective)
-                            .run.random.value([0, MOB_TYPES.length - 1], 'showcase_mob_type')
-                        execute.store.result.score(ArmorPick.target, ArmorPick.objective)
-                            .run.random.value([0, MOB_ARMOR.length - 1], 'showcase_armor')
-
-                        _.if(MobTypePick.equalTo(0), () => {
-                            withRandomArmor((armor) => summon('minecraft:zombie', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
-                        }).else(() => {
-                            withRandomArmor((armor) => summon('minecraft:bogged', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
-                        })
-
-                        MobCount.add(1)
+                    _.if(MobTypePick.equalTo(0), () => {
+                        withRandomArmor((armor) => summon('minecraft:zombie', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
+                    }).else(() => {
+                        withRandomArmor((armor) => summon('minecraft:bogged', rel(pos.x, pos.y, pos.z), mobNbt(armor)))
                     })
-                }
-            })
+
+                    MobCount.add(1)
+                })
+            }
         })
+    })
 
-        _.if(GlobalState.greaterThan(STATES.IDLE), () => {
-            // Reset if session player left
-            execute.unless.entity(SessionPlayer).run(() => {
-                reset()
-            })
-            // Reset if a second player entered the booth
-            InBoothCount.set(0)
-            execute.as(InBoothPlayer).run(() => { InBoothCount.add(1); })
-            _.if(InBoothCount.greaterThan(1), () => {
-                reset()
-            })
-            // Safeguard: reset if the session player exists but isn't within the shared showcase area
-            execute.unless.entity(sessionPlayerInShowcase()).run(() => {
-                reset()
-            })
-
-            // Enforce the session time limit
-            SessionTimer.remove(1)
-            _.if(SessionTimer.lessThanOrEqualTo(0), () => {
-                reset()
-            })
-        })
-
-        execute.as(Selector('@a', { scores: { 'sandstone_summit_booth.showcase.reset': [1, null] } })).run(() => {
+    _.if(GlobalState.greaterThan(STATES.IDLE), () => {
+        // Reset if session player left
+        execute.unless.entity(SessionPlayer).run(() => {
             reset()
-            raw(`scoreboard players reset @s sandstone_summit_booth.showcase.reset`)
-            scoreboard.players.enable('@s', resetTrigger)
         })
-    }).elseIf(GlobalState.greaterThan(STATES.IDLE), () => {
+        // Reset if a second player entered the booth
+        InBoothCount.set(0)
+        execute.as(InBoothPlayer).run(() => { InBoothCount.add(1); })
+        _.if(InBoothCount.greaterThan(1), () => {
+            reset()
+        })
+        // Safeguard: reset if the session player exists but isn't within the shared showcase area
+        execute.unless.entity(sessionPlayerInShowcase()).run(() => {
+            reset()
+        })
+
+        // Enforce the session time limit
+        SessionTimer.remove(1)
+        _.if(SessionTimer.lessThanOrEqualTo(0), () => {
+            reset()
+        })
+    })
+
+    execute.as(Selector('@a', { scores: { 'sandstone_summit_booth.showcase.reset': [1, null] } })).run(() => {
         reset()
+        raw(`scoreboard players reset @s sandstone_summit_booth.showcase.reset`)
+        scoreboard.players.enable('@s', resetTrigger)
     })
 }, { runEveryTick: true })
 
