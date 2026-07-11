@@ -7,6 +7,6 @@ execute as @e[tag=sandstone_summit_booth.npc.red_tent_sandstone, type=minecraft:
 execute as @a[advancements={sandstone_summit_booth:npcs/interact/credits=true}] run function sandstone_summit_booth:sections/npcs/tick/execute_as7
 execute as @e[tag=sandstone_summit_booth.npc.credits, type=minecraft:mannequin] at @s run function sandstone_summit_booth:sections/npcs/tick/execute_as8
 execute as @e[tag=sandstone_summit_booth.npc.credits, type=minecraft:mannequin] at @s run rotate @s facing entity @p feet
-execute as @a[advancements={sandstone_summit_booth:npcs/interact/secret_glitch=true}] run function sandstone_summit_booth:sections/npcs/tick/execute_as10
-execute as @e[tag=sandstone_summit_booth.npc.secret_glitch, type=minecraft:mannequin] at @s run function sandstone_summit_booth:sections/npcs/tick/execute_as11
-execute as @e[tag=sandstone_summit_booth.npc.secret_glitch, type=minecraft:mannequin] at @s run rotate @s facing entity @p feet
+execute as @a[advancements={sandstone_summit_booth:npcs/interact/glitchy=true}] run function sandstone_summit_booth:sections/npcs/tick/execute_as10
+execute as @e[tag=sandstone_summit_booth.npc.glitchy, type=minecraft:mannequin] at @s run function sandstone_summit_booth:sections/npcs/tick/execute_as11
+execute as @e[tag=sandstone_summit_booth.npc.glitchy, type=minecraft:mannequin] at @s run rotate @s facing entity @p feet

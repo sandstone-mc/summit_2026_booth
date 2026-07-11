@@ -54,6 +54,7 @@ scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.red_tent_sandstone.line_4.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.red_tent_sandstone.line_5.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.red_tent_sandstone.line_6.show dummy
+scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.credits.line_0.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_0.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_1.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_2.show dummy

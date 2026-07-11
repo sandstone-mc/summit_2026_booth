@@ -5,7 +5,7 @@
       "conditions": {
         "entity": {
           "entity_type": "minecraft:interaction",
-          "nbt": "{Tags:[\"sandstone_summit_booth.npc.secret_glitch\"]}"
+          "nbt": "{Tags:[\"sandstone_summit_booth.npc.glitchy\"]}"
         }
       }
     }
