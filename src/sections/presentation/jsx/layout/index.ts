@@ -43,6 +43,20 @@ export type ScrollSpec = {
 	type: string
 }
 
+/**
+ * Where an entity will be rendered after placement. Captured during the
+ * `runLayout` placement pass so off-screen / overflow checks can compare
+ * the rendered bounds against the slide. `y` is the world Y the entity
+ * sits at (text extends UPWARD from this point, so `y` is the bottom of
+ * the rendered text for `<code>` / `<p>` / `<h*>` elements).
+ */
+export type Placement = {
+	el: ElementLayout
+	x: number
+	y: number
+	z: number
+}
+
 export function summonVisibleElements(
 	visible: NodeWithPath[],
 	styles: Styles,
@@ -54,7 +68,7 @@ export function summonVisibleElements(
 	codePrecomputed: CodePrecomputedMap,
 	imgResources: ImgResourceMap,
 	sceneTag: LabelClass,
-): { scrollSpecs: ScrollSpec[] } {
+): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	return runLayout(
 		visible,
 		styles,
@@ -83,7 +97,7 @@ export function computeSlideScrollSpecs(
 	origin: readonly [number, number, number],
 	codePrecomputed: CodePrecomputedMap,
 	imgResources: ImgResourceMap,
-): ScrollSpec[] {
+): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	return runLayout(
 		visible,
 		styles,
@@ -93,7 +107,7 @@ export function computeSlideScrollSpecs(
 		codePrecomputed,
 		imgResources,
 		() => {},
-	).scrollSpecs
+	)
 }
 
 function runLayout(
@@ -105,7 +119,7 @@ function runLayout(
 	codePrecomputed: CodePrecomputedMap,
 	imgResources: ImgResourceMap,
 	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
-): { scrollSpecs: ScrollSpec[] } {
+): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	const elements: ElementLayout[] = visible.map((nodeWithPath) =>
 		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed),
 	)
@@ -138,28 +152,50 @@ function runLayout(
 	let accY = startingY(sceneH, totalH, stackDecs)
 	const z = origin[2] + Z_VISUAL_OFFSET
 
+	const placements: Placement[] = []
 	const scrollSpecs: ScrollSpec[] = []
 	for (let bi = 0; bi < blocks.length; bi++) {
 		const block = blocks[bi]
 		if (block.kind === 'element') {
 			const el = block.el
 			const cellY = origin[1] + accY - el.marginTop - el.cellH
+			// Entity Y depends on element kind:
+			//   scroll `<code>`:  cellY (bottom border flush with slide bottom)
+			//   prose/h/code:     cellY - 1 (descender slot)
+			//   image:            cellY + cellH / 2 (image is centered in cell)
+			const entityY =
+				el.kind === 'text' && typeof el.scrollTag === 'string'
+					? cellY
+					: el.kind === 'image'
+						? cellY + el.cellH / 2
+						: cellY - 1
 			const entityX = origin[0] + sceneW / 2
 			onElement(el, entityX, cellY, z)
-			maybeRecordScroll(el, cellY - 1, scrollSpecs)
+			placements.push({ el, x: entityX, y: entityY, z })
+			maybeRecordScroll(el, entityY, scrollSpecs)
 			accY -= el.marginTop + el.cellH
 			if (bi < blocks.length - 1) {
 				accY -= blockGap(block, blocks[bi + 1], sceneH) + el.marginBottom
 			}
 		} else {
-			accY = placeRowBlocks(block, accY, sceneW, sceneH, origin, z, onElement, scrollSpecs)
+			accY = placeRowBlocks(
+				block,
+				accY,
+				sceneW,
+				sceneH,
+				origin,
+				z,
+				onElement,
+				scrollSpecs,
+				placements,
+			)
 			if (bi < blocks.length - 1) {
 				const lastChild = block.children[block.children.length - 1]
 				accY -= blockGap(block, blocks[bi + 1], sceneH) + lastChild.marginBottom
 			}
 		}
 	}
-	return { scrollSpecs }
+	return { scrollSpecs, placements }
 }
 
 function placeRowBlocks(
@@ -171,6 +207,7 @@ function placeRowBlocks(
 	z: number,
 	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
 	scrollSpecs: ScrollSpec[],
+	placements: Placement[],
 ): number {
 	const columnGap = parseLength(block.parentStack['column-gap'] ?? '', sceneW)?.meters ?? 0
 
@@ -221,8 +258,17 @@ function placeRowBlocks(
 	for (const child of block.children) {
 		const subCellY = containerCenterY - child.cellH / 2
 		const childCenterX = accX + child.cellW / 2
+		// Entity Y depends on element kind — mirrors the non-row placement
+		// (scroll/prose/image each have their own anchor convention).
+		const entityY =
+			child.kind === 'text' && typeof child.scrollTag === 'string'
+				? subCellY
+				: child.kind === 'image'
+					? subCellY + child.cellH / 2
+					: subCellY - 1
 		onElement(child, childCenterX, subCellY, z)
-		maybeRecordScroll(child, subCellY - 1, scrollSpecs)
+		placements.push({ el: child, x: childCenterX, y: entityY, z })
+		maybeRecordScroll(child, entityY, scrollSpecs)
 		accX += child.cellW + columnGap
 	}
 
