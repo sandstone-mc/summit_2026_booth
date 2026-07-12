@@ -3,9 +3,11 @@ import { Styles } from './style'
 import { DEFAULT_FONT_ID, loadFontMetrics } from './text-metrics'
 import { extractText, flatWalk } from './tree'
 import { type SlidesTiming } from '../slides'
-import { summonVisibleElements, isTextType, isVisibleType } from './layout'
+import { computeSlideScrollSpecs, summonVisibleElements, isTextType, isVisibleType } from './layout'
+import { resetScrollIds } from './layout/element'
 import { prepareCodeHighlights, prepareImgResources } from './prepare'
 import { SlideShow, SCENE_TAG } from './slides'
+import { diagnosePlacements, formatIssues } from './diagnose'
 
 export type VNode = { type: any; props: any; key: any }
 
@@ -175,8 +177,51 @@ export async function renderSlides(
 	const codePrecomputed = await prepareCodeHighlights(slideVisibles, styles, sceneW, sceneH)
 	const imgResources = await prepareImgResources(trees)
 
+	// Off-screen diagnostic — run the placement math per slide once more
+	// (no entity emission) to discover elements whose rendered text would
+	// extend partially or fully outside the slide. Prints warnings via
+	// `console.warn`. Fully off-screen elements are also dropped from
+	// `slideVisibles` so SlideShow never summons them. `resetScrollIds()`
+	// afterward keeps the scroll-tag sequence stable for SlideShow's own
+	// pre-pass + mount emit.
+	const allIssues = [] as ReturnType<typeof diagnosePlacements>['issues']
+	const excludedBySlide: Set<string>[] = []
+	for (let i = 0; i < slideVisibles.length; i++) {
+		const { placements } = computeSlideScrollSpecs(
+			slideVisibles[i],
+			styles,
+			sceneW,
+			sceneH,
+			options.origin,
+			codePrecomputed,
+			imgResources,
+		)
+		const result = diagnosePlacements(placements, i, options.origin[1], sceneH)
+		allIssues.push(...result.issues)
+		excludedBySlide.push(result.excludedNodePaths)
+	}
+	resetScrollIds()
+	if (allIssues.length > 0) {
+		const fullyOff = allIssues.filter((i) => i.kind === 'full')
+		const partial = allIssues.filter((i) => i.kind === 'partial')
+		if (partial.length > 0) {
+			console.warn(
+				`\n[sandstone-jsx] [WARN] ${partial.length} element(s) partially off-screen (rendered but clipped):\n${formatIssues(partial)}\n`,
+			)
+		}
+		if (fullyOff.length > 0) {
+			console.warn(
+				`[sandstone-jsx] [WARN] ${fullyOff.length} element(s) fully off-screen — REMOVED from output (no summon command emitted):\n${formatIssues(fullyOff)}\n`,
+			)
+		}
+	}
+	const filteredSlideVisibles = slideVisibles.map((slide, i) =>
+		slide.filter((v) => !excludedBySlide[i].has(JSON.stringify(v.path))),
+	)
+
 	const show = new SlideShow({
 		trees,
+		slideVisibles: filteredSlideVisibles,
 		sceneW,
 		sceneH,
 		origin: options.origin,

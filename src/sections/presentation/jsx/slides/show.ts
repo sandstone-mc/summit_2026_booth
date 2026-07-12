@@ -34,6 +34,14 @@ import { computeDurationsSeconds, type SlidesTiming } from '../../slides'
 
 export interface SlideShowInput {
 	trees: VNode[]
+	/**
+	 * Optional pre-filtered visible-element lists per slide. When
+	 * provided, used in place of `flatWalk(trees[i]).filter(isVisibleType)`
+	 * — lets the caller (e.g. the off-screen diagnostic) drop fully
+	 * off-screen elements before layout runs. Defaults to deriving from
+	 * `trees` if omitted.
+	 */
+	slideVisibles?: NodeWithPath[][]
 	sceneW: number
 	sceneH: number
 	origin: readonly [number, number, number]
@@ -90,13 +98,17 @@ export class SlideShow {
 		this.codePrecomputed = input.codePrecomputed
 		this.imgResources = input.imgResources ?? new Map()
 		this.durations = computeDurationsSeconds(input.slideTexts, input.timing)
-		this.slideVisibles = input.trees.map((t) =>
-			flatWalk(t).filter(({ node }) => isVisibleType(node.type)),
-		)
+		this.slideVisibles =
+			input.slideVisibles ??
+			input.trees.map((t) =>
+				flatWalk(t).filter(({ node }) => isVisibleType(node.type)),
+			)
 		// Pre-pass: run the placement math to discover each scrolling
 		// `<code>`'s start Y + total scroll distance. Runs without emitting
 		// any `summon` commands (the same helper powers the actual emit).
-		// The collected specs drive scroll-tick generation below.
+		// The collected specs drive scroll-tick generation below. Placements
+		// are also returned but unused here — the diagnostic runs separately
+		// at JS-build time in `renderSlides` to log off-screen warnings.
 		this.scrollSpecsPerSlide = this.slideVisibles.map((visible) =>
 			computeSlideScrollSpecs(
 				visible,
@@ -106,7 +118,7 @@ export class SlideShow {
 				this.origin,
 				this.codePrecomputed,
 				this.imgResources,
-			),
+			).scrollSpecs,
 		)
 		// The pre-pass walked the layout counter; reset so the actual
 		// summon pass in `mount` produces the same tag sequence.
