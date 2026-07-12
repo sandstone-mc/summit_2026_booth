@@ -1,3 +1,0 @@
-tag @s remove __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_4.show
-execute if score @s sandstone_summit_booth.npc.dialogue.line matches 4 run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/if7
-execute if score @s sandstone_summit_booth.npc.dialogue.line matches 4 run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/if8

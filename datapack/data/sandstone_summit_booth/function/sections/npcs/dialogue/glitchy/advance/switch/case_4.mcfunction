@@ -1,1 +1,1 @@
-return run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_5/show
+return run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/end

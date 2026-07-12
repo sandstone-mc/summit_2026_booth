@@ -1,0 +1,3 @@
+tag @s remove __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.red_tent_sandstone.line_4.reveal
+execute if score @s sandstone_summit_booth.npc.dialogue.line matches 4 run function sandstone_summit_booth:sections/npcs/dialogue/red_tent_sandstone/line_4/reveal/if33
+execute if score @s sandstone_summit_booth.npc.dialogue.line matches 4 run function sandstone_summit_booth:sections/npcs/dialogue/red_tent_sandstone/line_4/reveal/if34

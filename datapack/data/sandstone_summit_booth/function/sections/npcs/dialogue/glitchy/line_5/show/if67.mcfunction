@@ -1,1 +1,0 @@
-execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_5/show/if67/execute_at

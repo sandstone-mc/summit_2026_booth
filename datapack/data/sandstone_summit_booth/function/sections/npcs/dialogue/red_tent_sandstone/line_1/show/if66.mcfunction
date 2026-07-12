@@ -1,1 +1,0 @@
-execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/red_tent_sandstone/line_1/show/if66/execute_at

@@ -1,6 +1,5 @@
-scoreboard players set @s sandstone_summit_booth.npc.dialogue.line 4
-execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_at
-execute store result score @s __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_4.show run time query gametime
-scoreboard players add @s __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_4.show 2
-tag @s add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_4.show
-schedule function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/__sleep/_context 2t replace
+execute if entity @s[tag=sandstone_summit_booth.npc.blue_tent_guide] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if
+execute if entity @s[tag=sandstone_summit_booth.npc.red_tent_sandstone] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if2
+execute if entity @s[tag=sandstone_summit_booth.npc.credits] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if3
+execute if entity @s[tag=sandstone_summit_booth.npc.glitchy] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if4
+execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_1] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if5

@@ -1,0 +1,1 @@
+execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/credits/line_0/reveal/if15/execute_at

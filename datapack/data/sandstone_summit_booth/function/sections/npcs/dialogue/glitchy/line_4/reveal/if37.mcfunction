@@ -1,0 +1,1 @@
+execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/reveal/if37/execute_at
