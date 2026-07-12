@@ -1,4 +1,4 @@
 export * from './NPC'
 export * from './DialogueTree'
 
-import './content'
+import './npcs/index'

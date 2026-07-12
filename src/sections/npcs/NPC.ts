@@ -1,4 +1,4 @@
-import { _, abs, Advancement, advancement, execute, kill, Label, MCFunction, NBT, Objective, raw, Selector, summon } from 'sandstone'
+import { _, abs, Advancement, advancement, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
 import { NAMESPACE } from '@shared'
 import type { DialogueTree } from './DialogueTree'
@@ -24,6 +24,10 @@ export interface NPCSkin {
 }
 
 export type LookAtMode = 'nearest' | 'none'
+
+// 'sitting' is faked by mounting the mannequin on an invisible zero-height interaction seat
+export type NPCPose = 'standing' | 'crouching' | 'sleeping' | 'sitting'
+
 export interface NPCOptions {
     name: string
     skin: NPCSkin
@@ -32,16 +36,21 @@ export interface NPCOptions {
     rotation?: [number, number]
     // Defaults to 'nearest'
     lookAt?: LookAtMode
-    dialogue: DialogueTree
+    // Defaults to 'standing'
+    pose?: NPCPose
+    mainHand?: string
+    offHand?: string
+    // Omit for a purely decorative NPC, no click detection gets set up for it
+    dialogue?: DialogueTree
 }
 
-interface RegisteredNPC extends NPCOptions {
+export interface RegisteredNPC extends NPCOptions {
     id: string
     instanceTag: `${any}${string}`
     interactorTag: `${any}${string}`
 }
 
-const registry: RegisteredNPC[] = []
+export const registry: RegisteredNPC[] = []
 
 function profileFor(skin: NPCSkin) {
     if (skin.texture) {
@@ -63,7 +72,10 @@ export function CreateNPC(id: string, options: NPCOptions) {
 
 MCFunction('sections/npcs/spawn', () => {
     for (const npc of registry) {
+        const seatTag = `${npc.instanceTag}.seat` as `${any}${string}`
+
         kill(Selector('@e', { tag: npc.instanceTag }))
+        kill(Selector('@e', { tag: seatTag }))
 
         const [x, y, z] = npc.position
         const [yaw, pitch] = npc.rotation ?? [0, 0]
@@ -73,6 +85,11 @@ MCFunction('sections/npcs/spawn', () => {
             Rotation: NBT.float([yaw, pitch]),
             immovable: true,
             profile: profileFor(npc.skin),
+            pose: npc.pose === 'sitting' ? 'standing' : (npc.pose ?? 'standing'),
+            equipment: {
+                ...(npc.mainHand ? { mainhand: { id: npc.mainHand as any, count: NBT.int(1) } } : {}),
+                ...(npc.offHand ? { offhand: { id: npc.offHand as any, count: NBT.int(1) } } : {}),
+            },
             Passengers: [
                 {
                     id: 'minecraft:text_display',
@@ -96,23 +113,35 @@ MCFunction('sections/npcs/spawn', () => {
 
         summon('minecraft:mannequin', abs(x, y, z), mannequinNbt)
 
-        summon('minecraft:interaction', abs(x, y, z), {
-            Tags: [npc.instanceTag, BOOTH_ENTITY_TAG],
-            width: NBT.float(0.8),
-            height: NBT.float(2),
-            response: true,
-        })
+        if (npc.pose === 'sitting') {
+            summon('minecraft:interaction', abs(x, y, z), {
+                Tags: [seatTag, BOOTH_ENTITY_TAG],
+                width: NBT.float(1),
+                height: NBT.float(0),
+                response: false,
+            })
+            ride(Selector('@e', { tag: npc.instanceTag, type: 'minecraft:mannequin', limit: 1 })).mount(Selector('@e', { tag: seatTag, type: 'minecraft:interaction', limit: 1 }))
+        }
 
-        Advancement(`npcs/interact/${npc.id}`, {
-            criteria: {
-                click: {
-                    trigger: 'minecraft:player_interacted_with_entity',
-                    conditions: {
-                        entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${npc.instanceTag}"]}` },
+        if (npc.dialogue) {
+            summon('minecraft:interaction', abs(x, y, z), {
+                Tags: [npc.instanceTag, BOOTH_ENTITY_TAG],
+                width: NBT.float(0.8),
+                height: NBT.float(2),
+                response: true,
+            })
+
+            Advancement(`npcs/interact/${npc.id}`, {
+                criteria: {
+                    click: {
+                        trigger: 'minecraft:player_interacted_with_entity',
+                        conditions: {
+                            entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${npc.instanceTag}"]}` },
+                        },
                     },
                 },
-            },
-        })
+            })
+        }
     }
 }, { runOnLoad: true })
 
@@ -120,31 +149,35 @@ MCFunction('sections/npcs/tick', () => {
     for (const npc of registry) {
         const npcSelector = Selector('@e', { tag: npc.instanceTag, type: 'minecraft:mannequin' })
 
-        execute.as(Selector('@a', { 
-            advancements: { [`${NAMESPACE}:npcs/interact/${npc.id}`]: true }
-        })).run(() => {
-            // @s is the clicking player here 
-            raw(`tag @a[tag=${npc.interactorTag}] remove ${npc.interactorTag}`)
-            raw(`tag @s add ${npc.interactorTag}`)
-            advancement.revoke('@s').only(`${NAMESPACE}:npcs/interact/${npc.id}`)
+        if (npc.dialogue) {
+            const dialogue = npc.dialogue
 
-            execute.as(npcSelector).run(() => {
+            execute.as(Selector('@a', {
+                advancements: { [`${NAMESPACE}:npcs/interact/${npc.id}`]: true }
+            })).run(() => {
+                // @s is the clicking player here
+                raw(`tag @a[tag=${npc.interactorTag}] remove ${npc.interactorTag}`)
+                raw(`tag @s add ${npc.interactorTag}`)
+                advancement.revoke('@s').only(`${NAMESPACE}:npcs/interact/${npc.id}`)
+
+                execute.as(npcSelector).run(() => {
+                    _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
+                        dialogue.advance()
+                    }).else(() => {
+                        dialogue.start()
+                    })
+                })
+            })
+
+            // cancel the dialogue if nobody is around
+            execute.as(npcSelector).at('@s').run(() => {
                 _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
-                    npc.dialogue.advance()
-                }).else(() => {
-                    npc.dialogue.start()
+                    execute.unless.entity(Selector('@p', { distance: [0, 5] })).run(() => {
+                        dialogue.end()
+                    })
                 })
             })
-        })
-
-        // cancel the dialogue if nobody is around
-        execute.as(npcSelector).at('@s').run(() => {
-            _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
-                execute.unless.entity(Selector('@p', { distance: [0, 5] })).run(() => {
-                    npc.dialogue.end()
-                })
-            })
-        })
+        }
 
         if (npc.lookAt === 'nearest') {
             execute.as(npcSelector).at('@s').run(() => {

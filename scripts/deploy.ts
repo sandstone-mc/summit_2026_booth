@@ -333,7 +333,7 @@ if (!SCL_ONLY) {
 
     console.log('Deploy: zip ready, uploading to server...')
 
-    await upload_zip(main_pack, `${SandstoneConfig.namespace}.zip`)
+    await upload_zip(main_pack, `spartansawesomepack.zip`)
 
     console.log(`Deploy: main pack uploaded, checking for dependencies...`)
 }
