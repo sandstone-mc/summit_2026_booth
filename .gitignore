@@ -16,5 +16,8 @@ resources/jsx/parser/*
 songs/private/*
 .temp
 
+# baseline dir for scripts/diff-build.ts
+.previous-builds/
+
 # never publish summit internals
 resources/datapack_dependencies/*do-not-share*

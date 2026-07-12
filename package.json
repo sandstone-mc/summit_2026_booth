@@ -8,6 +8,10 @@
     "dev:watch": "sand watch",
     "dev:build": "sand build && bun run scripts/minify-resourcepack.ts",
     "dev:build:force": "FORCE_RENDER=1 bun dev:build",
+    "dev:diff:snapshot": "bun run scripts/diff-build.ts snapshot",
+    "dev:diff:check": "bun run scripts/diff-build.ts check",
+    "dev:diff:all": "bun run scripts/diff-build.ts all",
+    "dev:diff:list": "bun run scripts/diff-build.ts list",
     "dev:deploy": "bun run scripts/deploy.ts",
     "fetch:parsers": "bun run scripts/fetch-syntax-parsers.ts",
     "typecheck": "tsc --noEmit 2>&1 | awk '/^src\\/sections\\/(magic|rhythm|elevator)/{s=1;next} s&&/^[[:space:]]/{next} /^[^[:space:]]/{s=0} {print}'"
