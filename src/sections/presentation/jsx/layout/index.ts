@@ -15,7 +15,7 @@ import type { NodeWithPath } from '../tree/walk'
 import type { VNode, StyledSegment } from '../render'
 import type { Styles } from '../style'
 import type { CssDeclarations } from '../less/types'
-import { computeElementLayout, type ElementLayout, type ImgResourceMap } from './element'
+import { computeElementLayout, finalizeScrollCodeLayout, type ElementLayout, type ImgResourceMap } from './element'
 import type { Precomputed } from './code-borders'
 import { blockCellH, blockGap, groupIntoBlocks, startingY, totalStackHeight, type Block } from './blocks'
 import { summonElement } from './summon-entity'
@@ -109,6 +109,28 @@ function runLayout(
 	const elements: ElementLayout[] = visible.map((nodeWithPath) =>
 		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed),
 	)
+
+	// Scrolling `<code>` blocks start with `cellH = 0` placeholder; the
+	// layout engine sizes them to fill remaining slide space after other
+	// elements are placed. Measure the non-scroll stack first by simulating
+	// `accY` advance (margins + gaps + row block heights included), divide
+	// the remaining space across scroll elements, then rebuild chunks.
+	{
+		const blocks0 = groupIntoBlocks(elements)
+		const nonScrollH = simulateStackAdvance(blocks0, sceneH)
+		const scrollEls = elements.filter(
+			(el) => el.kind === 'text' && typeof el.scrollTag === 'string',
+		)
+		// Each scroll element takes the full remaining space (equal split
+		// when more than one). Clamp to ≥ 2 blocks so the box stays
+		// non-degenerate if other elements overflow.
+		const remaining = Math.max(2, sceneH - nonScrollH)
+		const perScrollCellH = remaining / Math.max(1, scrollEls.length)
+		for (const el of scrollEls) {
+			el.cellH = perScrollCellH
+			finalizeScrollCodeLayout(el)
+		}
+	}
 
 	const blocks = groupIntoBlocks(elements)
 	const totalH = totalStackHeight(blocks, sceneH)
@@ -205,6 +227,37 @@ function placeRowBlocks(
 	}
 
 	return workingY
+}
+
+// Simulate the vertical advance of `accY` over a stack of blocks —
+// mirrors the math in `runLayout` (margins + gaps included) but never
+// emits entities. Used to measure how much vertical space the non-scroll
+// content consumes before scroll `<code>` blocks are sized to fill the
+// rest of the slide.
+//
+// Row blocks contribute their natural cellH (max child cellH) — for
+// rows containing only a scroll-code placeholder, this is 0, so the
+// scroll element absorbs the row's `height: 100%` budget in the real
+// `placeRowBlocks` pass. That keeps the simulated non-scroll height
+// from double-counting the space the scroll code is about to claim.
+function simulateStackAdvance(blocks: Block[], sceneH: number): number {
+	let accY = sceneH
+	for (let i = 0; i < blocks.length; i++) {
+		const b = blocks[i]
+		if (b.kind === 'element') {
+			accY -= b.el.marginTop + b.el.cellH
+			if (i < blocks.length - 1) {
+				accY -= blockGap(b, blocks[i + 1], sceneH) + b.el.marginBottom
+			}
+		} else {
+			accY -= blockCellH(b)
+			if (i < blocks.length - 1) {
+				const lastChild = b.children[b.children.length - 1]
+				accY -= blockGap(b, blocks[i + 1], sceneH) + lastChild.marginBottom
+			}
+		}
+	}
+	return sceneH - accY
 }
 
 function maybeRecordScroll(

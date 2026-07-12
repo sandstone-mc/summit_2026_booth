@@ -59,9 +59,16 @@ export function summonTextEntity(
 		if (align) nbt.alignment = align
 		// Scroll entity starts visible — slide show/hide owns visibility.
 		nbt.text_opacity = NBT.int(-1)
+		// Anchor the entity AT `cellY` (cell top), not `cellY - 1`. The
+		// generic `textY = cellY - 1` below reserves a 1-block descender
+		// space below the cell — fine for normal text where the descender
+		// is empty glyph space, but scroll chunks ALWAYS have a non-empty
+		// last visual row (the bottom border) sitting at that descender
+		// position, so it would render 1 block below the slide edge when
+		// the cell is flush against the slide bottom.
 		summon(
 			'text_display',
-			`${fmt(entityX)} ${fmt(textY)} ${fmt(z)}`,
+			`${fmt(entityX)} ${fmt(cellY)} ${fmt(z)}`,
 			nbt,
 		)
 		return

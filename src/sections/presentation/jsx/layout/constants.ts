@@ -30,13 +30,6 @@ export const DEFAULT_IMG_HEIGHT = '30vh'
 export const DEFAULT_CODE_BORDER_COLOR = '#6a6a6a' as const
 export const DEFAULT_CODE_LANG_COLOR = '#4ec9b0' as const
 
-// Fixed vertical viewport (in blocks) for scrolling `<code>` blocks.
-// Bounds the cell regardless of how tall the source code is, so the
-// layout reserves a stable amount of vertical space and the rest of
-// the content scrolls past it. Slide bounds are 12 blocks; 11 leaves
-// one block of padding below the code-grid (header sits above).
-export const SCROLL_VIEWPORT_BLOCKS = 11
-
 // Repository of grammars available to `<code lang="…">` blocks.
 // `scripts/fetch-syntax-parsers.ts` populates the wasm + .scm files.
 import type { Grammar } from '../highlight/highlighter'

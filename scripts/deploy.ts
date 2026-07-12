@@ -382,6 +382,19 @@ async function send_reload() {
 
     console.log('Reload: WS session authenticated, sending /reload to server...')
 
+    sock.emit('stream/input', { data: { command: 'say [sandstone-deploy] Running `/reload`...' } })
+
+    await new Promise<boolean>((resolve, reject) => {
+        const timer = setTimeout(() => resolve(false), 10_000)
+        sock.on('instance/stdout', (packet: any) => {
+            const text = packet?.data?.text as string | undefined
+            if (text?.includes('[sandstone-deploy] Running `/reload`...')) {
+                clearTimeout(timer)
+                resolve(true)
+            }
+        })
+    })
+
     sock.emit('stream/input', { data: { command: 'reload' } })
 
     // Wait for `instance/stdout` to show the reload actually ran before disconnecting,
