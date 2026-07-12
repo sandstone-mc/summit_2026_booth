@@ -1,0 +1,1 @@
+execute store result entity @s Pos[1] double 0.0001 run scoreboard players get #target sandstone_summit_booth.presentation.scroll

@@ -1,0 +1,16 @@
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 0 run function sandstone_summit_booth:presentation/slides/scroll/0
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 1 run function sandstone_summit_booth:presentation/slides/scroll/1
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 2 run function sandstone_summit_booth:presentation/slides/scroll/2
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 3 run function sandstone_summit_booth:presentation/slides/scroll/3
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 4 run function sandstone_summit_booth:presentation/slides/scroll/4
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 5 run function sandstone_summit_booth:presentation/slides/scroll/5
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 6 run function sandstone_summit_booth:presentation/slides/scroll/6
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 7 run function sandstone_summit_booth:presentation/slides/scroll/7
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 8 run function sandstone_summit_booth:presentation/slides/scroll/8
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 9 run function sandstone_summit_booth:presentation/slides/scroll/9
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 10 run function sandstone_summit_booth:presentation/slides/scroll/10
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 11 run function sandstone_summit_booth:presentation/slides/scroll/11
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 12 run function sandstone_summit_booth:presentation/slides/scroll/12
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 13 run function sandstone_summit_booth:presentation/slides/scroll/13
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 14 run function sandstone_summit_booth:presentation/slides/scroll/14
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 15 run function sandstone_summit_booth:presentation/slides/scroll/15

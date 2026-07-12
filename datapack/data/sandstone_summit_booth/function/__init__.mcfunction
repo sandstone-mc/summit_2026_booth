@@ -2,6 +2,7 @@ scoreboard objectives add load.status dummy
 scoreboard objectives add __sandstone dummy [{"text":"Sandstone","color":"gold"}," internals"]
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.line dummy
 scoreboard objectives add sandstone_summit_booth.presentation.slide_idx dummy
+scoreboard objectives add sandstone_summit_booth.presentation.scroll dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.wall.age dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.wall.depth dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.wall.pos dummy

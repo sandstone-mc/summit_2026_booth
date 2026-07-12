@@ -1,3 +1,4 @@
+execute store result score #shown_at sandstone_summit_booth.presentation.scroll run time query gametime
 function sandstone_summit_booth:presentation/slides/hide/0
 function sandstone_summit_booth:presentation/slides/hide/1
 function sandstone_summit_booth:presentation/slides/hide/2
@@ -11,4 +12,6 @@ function sandstone_summit_booth:presentation/slides/hide/9
 function sandstone_summit_booth:presentation/slides/hide/10
 function sandstone_summit_booth:presentation/slides/hide/12
 function sandstone_summit_booth:presentation/slides/hide/13
+function sandstone_summit_booth:presentation/slides/hide/14
+function sandstone_summit_booth:presentation/slides/hide/15
 function sandstone_summit_booth:presentation/slides/show/11
