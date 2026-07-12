@@ -1,5 +1,9 @@
-import rhythmCode from '../../../rhythm/game/calibration.ts' with { type: 'text' }
-import magicCode from '../../../magic/Spells/Lightning/Thunderbolt.ts' with { type: 'text' }
+// import rhythmCode from '../../../rhythm/game/calibration.ts' with { type: 'text' }
+// import magicCode from '../../../magic/Spells/Lightning/Thunderbolt.ts' with { type: 'text' }
+
+// TODO: fix
+const rhythmCode = 'placeholder'.repeat(100)
+const magicCode = 'placeholder'.repeat(100)
 
 // INFO: explorer path-start=3 means to omit the `.sandstone/output/datapack/` part of the path
 
