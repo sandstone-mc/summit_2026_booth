@@ -4,7 +4,7 @@ scoreboard players operation #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 4
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll = #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll /= #limit sandstone_summit_booth.presentation.scroll
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 40
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 44
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll < #limit sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 0
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll > #limit sandstone_summit_booth.presentation.scroll
@@ -131,3 +131,15 @@ execute if score #limit sandstone_summit_booth.presentation.scroll matches 39 ru
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 40
 scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
 execute if score #limit sandstone_summit_booth.presentation.scroll matches 40 run function sandstone_summit_booth:presentation/slides/scroll/5/if41
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 41
+scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
+execute if score #limit sandstone_summit_booth.presentation.scroll matches 41 run function sandstone_summit_booth:presentation/slides/scroll/5/if42
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 42
+scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
+execute if score #limit sandstone_summit_booth.presentation.scroll matches 42 run function sandstone_summit_booth:presentation/slides/scroll/5/if43
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 43
+scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
+execute if score #limit sandstone_summit_booth.presentation.scroll matches 43 run function sandstone_summit_booth:presentation/slides/scroll/5/if44
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 44
+scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
+execute if score #limit sandstone_summit_booth.presentation.scroll matches 44 run function sandstone_summit_booth:presentation/slides/scroll/5/if45
