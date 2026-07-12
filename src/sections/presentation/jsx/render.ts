@@ -7,7 +7,7 @@ import { computeSlideScrollSpecs, summonVisibleElements, isTextType, isVisibleTy
 import { resetScrollIds } from './layout/element'
 import { prepareCodeHighlights, prepareImgResources } from './prepare'
 import { SlideShow, SCENE_TAG } from './slides'
-import { diagnosePlacements, formatIssues } from './diagnose'
+import { diagnosePlacements, filterVisibleByVNode, formatIssues } from './diagnose'
 
 export type VNode = { type: any; props: any; key: any }
 
@@ -185,7 +185,7 @@ export async function renderSlides(
 	// afterward keeps the scroll-tag sequence stable for SlideShow's own
 	// pre-pass + mount emit.
 	const allIssues = [] as ReturnType<typeof diagnosePlacements>['issues']
-	const excludedBySlide: Set<string>[] = []
+	const excludedBySlide: Set<VNode>[] = []
 	for (let i = 0; i < slideVisibles.length; i++) {
 		const { placements } = computeSlideScrollSpecs(
 			slideVisibles[i],
@@ -196,9 +196,9 @@ export async function renderSlides(
 			codePrecomputed,
 			imgResources,
 		)
-		const result = diagnosePlacements(placements, i, options.origin[1], sceneH)
+		const result = diagnosePlacements(placements, i, options.origin[0], options.origin[1], sceneW, sceneH)
 		allIssues.push(...result.issues)
-		excludedBySlide.push(result.excludedNodePaths)
+		excludedBySlide.push(result.excludedVNodes)
 	}
 	resetScrollIds()
 	if (allIssues.length > 0) {
@@ -216,7 +216,7 @@ export async function renderSlides(
 		}
 	}
 	const filteredSlideVisibles = slideVisibles.map((slide, i) =>
-		slide.filter((v) => !excludedBySlide[i].has(JSON.stringify(v.path))),
+		filterVisibleByVNode(slide, excludedBySlide[i]),
 	)
 
 	const show = new SlideShow({

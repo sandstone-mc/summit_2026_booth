@@ -9,12 +9,17 @@
 // world Y, the rendered region is `[entityY, entityY + textHeight]`.
 //
 // Slide bounds are `[originY, originY + sceneH]`.
+//
+// Identity for exclusion uses the VNode reference (not the JSX path) —
+// sibling elements without distinguishing id/class share the same
+// path string, which would cause the exclusion Set to over-match.
 
 import type { ElementLayout } from './layout/element'
 import type { Placement } from './layout'
 import { wrapLines } from './text-metrics'
 import { pxToTextLineHeight } from './length'
 import { DEFAULT_FONT_ID } from './text-metrics/font-loader'
+import type { VNode } from './render'
 
 // Local type alias — `TextElementLayout` is internal to `element.ts`.
 type TextElementLayout = Extract<ElementLayout, { kind: 'text' }>
@@ -29,60 +34,93 @@ export type OffScreenIssue = {
 	/** Path of the offending VNode within its slide tree (for filtering). */
 	nodePath: readonly string[]
 	entityY: number
+	entityX: number
 	textTop: number
 	textBottom: number
+	textLeft: number
+	textRight: number
 	slideBottom: number
 	slideTop: number
+	slideLeft: number
+	slideRight: number
+	/** Which axes are clipped: 'vertical', 'horizontal', or both. */
+	offAxis: string[]
 }
 
 export type DiagnoseResult = {
 	issues: OffScreenIssue[]
-	/** Node paths of fully-off-screen elements — caller may skip these. */
-	excludedNodePaths: Set<string>
+	/** VNode references of fully-off-screen elements — caller may skip these. */
+	excludedVNodes: Set<VNode>
 }
 
 /**
- * Scan a list of placements and flag text elements whose rendered text
- * doesn't fit inside the slide. `originY` is the world Y of the slide's
- * BOTTOM edge; `sceneH` is the slide height in blocks.
+ * Scan a list of placements and flag elements whose rendered region
+ * doesn't fit inside the slide. Checks both vertical (Y) and horizontal
+ * (X) bounds. `originY` / `originX` are the slide's bottom-left corner
+ * in world coords; `sceneW` / `sceneH` are the slide dimensions.
  */
 export function diagnosePlacements(
 	placements: readonly Placement[],
 	slideIdx: number,
+	originX: number,
 	originY: number,
+	sceneW: number,
 	sceneH: number,
 ): DiagnoseResult {
+	const slideLeft = originX
+	const slideRight = originX + sceneW
 	const slideBottom = originY
 	const slideTop = originY + sceneH
 	const issues: OffScreenIssue[] = []
-	const excludedNodePaths = new Set<string>()
+	const excludedVNodes = new Set<VNode>()
 
 	for (const placement of placements) {
-		const { renderBottom, renderTop, contentPreview } = estimateRenderBounds(placement)
-		if (renderBottom === null || renderTop === null) continue
-		const fullyOff = renderTop <= slideBottom || renderBottom >= slideTop
-		const partialOff =
-			!fullyOff && (renderBottom < slideBottom || renderTop > slideTop)
-		if (!fullyOff && !partialOff) continue
+		const bounds = estimateRenderBounds(placement)
+		if (
+			bounds.renderBottom === null ||
+			bounds.renderTop === null ||
+			bounds.renderLeft === null ||
+			bounds.renderRight === null
+		) {
+			continue
+		}
+		const fullyOffY = bounds.renderTop <= slideBottom || bounds.renderBottom >= slideTop
+		const fullyOffX = bounds.renderRight <= slideLeft || bounds.renderLeft >= slideRight
+		const partialOffY =
+			!fullyOffY && (bounds.renderBottom < slideBottom || bounds.renderTop > slideTop)
+		const partialOffX =
+			!fullyOffX && (bounds.renderLeft < slideLeft || bounds.renderRight > slideRight)
+		const fullyOff = fullyOffY || fullyOffX
+		if (!fullyOff && !partialOffY && !partialOffX) continue
 
 		const nodePath = placement.el.path
+		const offAxis: string[] = []
+		if (fullyOffY || partialOffY) offAxis.push('vertical')
+		if (fullyOffX || partialOffX) offAxis.push('horizontal')
+
 		issues.push({
 			slideIdx,
 			kind: fullyOff ? 'full' : 'partial',
-			contentPreview,
+			contentPreview: bounds.contentPreview,
 			nodePath,
 			entityY: placement.y,
-			textTop: renderTop,
-			textBottom: renderBottom,
+			entityX: placement.x,
+			textTop: bounds.renderTop,
+			textBottom: bounds.renderBottom,
+			textLeft: bounds.renderLeft,
+			textRight: bounds.renderRight,
 			slideBottom,
 			slideTop,
+			slideLeft,
+			slideRight,
+			offAxis,
 		})
 		if (fullyOff) {
-			excludedNodePaths.add(JSON.stringify(nodePath))
+			excludedVNodes.add(placement.el.node)
 		}
 	}
 
-	return { issues, excludedNodePaths }
+	return { issues, excludedVNodes }
 }
 
 /**
@@ -150,38 +188,74 @@ function previewFor(el: TextElementLayout): string {
 
 /**
  * Compute the rendered region for any visible element. Returns `null`
- * for either bound when the element can't be measured (e.g. unknown kind).
- *   - text/code:    `[entityY, entityY + lineHeight × visualRows]` (text
- *                   extends upward from the entity anchor)
- *   - image:        `[entityY - cellH/2, entityY + cellH/2]` (image is
- *                   centered on its entity anchor)
+ * for any bound that can't be measured.
+ *   - text/code:    `[entityY, entityY + lineHeight × visualRows]` vertically
+ *                   (text extends upward from the entity anchor); horizontally
+ *                   `[entityX, entityX + textWidth]` for left-aligned code,
+ *                   `[entityX - textWidth/2, entityX + textWidth/2]` for prose.
+ *   - image:        `[entityY ± cellH/2, entityX ± cellW/2]` (centered).
  */
 function estimateRenderBounds(placement: Placement): {
 	renderBottom: number | null
 	renderTop: number | null
+	renderLeft: number | null
+	renderRight: number | null
 	contentPreview: string
 } {
 	const el = placement.el
 	if (el.kind === 'image') {
 		const halfH = el.cellH / 2
+		const halfW = el.cellW / 2
 		return {
 			renderBottom: placement.y - halfH,
 			renderTop: placement.y + halfH,
+			renderLeft: placement.x - halfW,
+			renderRight: placement.x + halfW,
 			contentPreview: `<img src="${el.imgSrc ?? ''}">`,
 		}
 	}
 	if (el.kind === 'text') {
 		const textHeight = estimateTextHeightBlocks(el)
 		if (textHeight <= 0) {
-			return { renderBottom: null, renderTop: null, contentPreview: '' }
+			return {
+				renderBottom: null,
+				renderTop: null,
+				renderLeft: null,
+				renderRight: null,
+				contentPreview: '',
+			}
 		}
+		const textWidth = estimateTextWidthBlocks(el)
+		// `<code>` defaults to `alignment: 'left'`; prose uses MC's default
+		// (centered). Treat everything except `code` as centered.
+		const centered = el.type !== 'code'
+		const halfW = textWidth / 2
 		return {
 			renderBottom: placement.y,
 			renderTop: placement.y + textHeight,
+			renderLeft: centered ? placement.x - halfW : placement.x,
+			renderRight: centered ? placement.x + halfW : placement.x + textWidth,
 			contentPreview: previewFor(el),
 		}
 	}
-	return { renderBottom: null, renderTop: null, contentPreview: '' }
+	return {
+		renderBottom: null,
+		renderTop: null,
+		renderLeft: null,
+		renderRight: null,
+		contentPreview: '',
+	}
+}
+
+/**
+ * Approximate the rendered text width in blocks. Uses the element's
+ * LESS `width` declaration (in px, 1 block = 16 px) as the wrap width.
+ * `line_width` is in pre-scale pixels so doesn't map directly to blocks.
+ */
+function estimateTextWidthBlocks(el: TextElementLayout): number {
+	if (el.kind !== 'text') return 0
+	if (el.width) return el.width.px / 16
+	return 0
 }
 
 /**
@@ -204,25 +278,35 @@ export function formatIssues(issues: readonly OffScreenIssue[]): string {
 		lines.push(`Slide ${slideIdx}: ${issues.length} off-screen element(s)`)
 		for (const issue of issues) {
 			lines.push(
-				`  ${issue.kind === 'full' ? 'FULLY ' : 'PARTIAL '}off-screen: ${JSON.stringify(issue.contentPreview)}`,
+				`  ${issue.kind === 'full' ? 'FULLY ' : 'PARTIAL '}off-screen (${issue.offAxis.join('+')}): ${JSON.stringify(issue.contentPreview)}`,
 			)
-			lines.push(
-				`    entity Y=${issue.entityY.toFixed(3)}, rendered bounds [${issue.textBottom.toFixed(3)}, ${issue.textTop.toFixed(3)}], slide [${issue.slideBottom}, ${issue.slideTop}]`,
-			)
+			const parts: string[] = []
+			if (issue.offAxis.includes('vertical')) {
+				parts.push(
+					`Y: rendered [${issue.textBottom.toFixed(2)}, ${issue.textTop.toFixed(2)}], slide [${issue.slideBottom}, ${issue.slideTop}]`,
+				)
+			}
+			if (issue.offAxis.includes('horizontal')) {
+				parts.push(
+					`X: rendered [${issue.textLeft.toFixed(2)}, ${issue.textRight.toFixed(2)}], slide [${issue.slideLeft}, ${issue.slideRight}]`,
+				)
+			}
+			lines.push(`    ${parts.join('; ')}`)
 		}
 	}
 	return lines.join('\n')
 }
 
 /**
- * Drop `visible` entries whose node path is in `excludedNodePaths`. Used
- * after the diagnostic runs to prevent fully off-screen elements from
- * being summoned at all.
+ * Drop `visible` entries whose VNode is in `excludedVNodes`. Used after
+ * the diagnostic runs to prevent fully off-screen elements from being
+ * summoned at all. Uses VNode identity (not path) so sibling elements
+ * without distinguishing id/class aren't over-matched.
  */
-export function filterVisible(
-	visible: readonly { node: unknown; path: readonly string[] }[],
-	excludedNodePaths: Set<string>,
-): typeof visible[number][] {
-	if (excludedNodePaths.size === 0) return visible.slice()
-	return visible.filter((v) => !excludedNodePaths.has(JSON.stringify(v.path)))
+export function filterVisibleByVNode<T extends { node: VNode }>(
+	visible: readonly T[],
+	excludedVNodes: Set<VNode>,
+): T[] {
+	if (excludedVNodes.size === 0) return visible.slice()
+	return visible.filter((v) => !excludedVNodes.has(v.node))
 }
