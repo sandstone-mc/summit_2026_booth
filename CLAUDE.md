@@ -73,7 +73,7 @@ MCFunction('tick_loop', () => {
   execute.as(Selector('@a')).run(() => {
     // Commands here run as each player
   })
-}, { runOnTick: true })
+}, { runEveryTick: true })
 ```
 
 ## Documentation
@@ -100,7 +100,7 @@ execute.as('@a').at('@s').run(() => {
 
 - `MCFunction('name', () => {...})` - Creates a .mcfunction file
 - `MCFunction('name', () => {...}, { runOnLoad: true })` - Runs on datapack load
-- `MCFunction('name', () => {...}, { runOnTick: true })` - Runs every tick
+- `MCFunction('name', () => {...}, { runEveryTick: true })` - Runs every tick
 - `{ lazy: true }` - Only creates file if called from another function
 - Async functions with `sleep()`: `MCFunction('name', async () => { sleep('1s') })`
 - Inline functions (JS functions) don't create files, commands are inlined

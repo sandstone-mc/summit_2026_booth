@@ -8,7 +8,6 @@ import {
 	Selector,
 	NBT,
 	data,
-	Data,
 	execute,
 	sleep,
 	schedule,
@@ -23,14 +22,12 @@ import {
 	resetScrollIds,
 	type ScrollSpec,
 } from '../layout'
-import { prepareImgResources } from '../prepare/img-resources'
 import { flatWalk } from '../tree/walk'
-import { extractText } from '../tree/extract'
 import type { VNode } from '../render'
 import type { NodeWithPath } from '../tree/walk'
 import type { Styles } from '../style'
 import type { ImgResourceMap, CodePrecomputedMap } from '../layout'
-import { SCENE_TAG, slideTag } from './tags'
+import { SCENE_TAG, slideTag, KIND_TEXT_TAG } from './tags'
 import { computeDurationsSeconds, type SlidesTiming } from '../../slides'
 
 export interface SlideShowInput {
@@ -65,7 +62,6 @@ export class SlideShow {
 	private readonly tempCurrentTime = this.scrollObj('#current_time')
 	private readonly tempElapsed = this.scrollObj('#elapsed')
 	private readonly tempOffset = this.scrollObj('#offset')
-	private readonly tempTarget = this.scrollObj('#target')
 	// Scratch score reused to hold per-spec constants (lineHeightInt,
 	// scrollSteps) inside the scroll-tick MCFunction. Reading the source
 	// while holding scratch data is fine since MCFunctions run sequentially
@@ -118,9 +114,17 @@ export class SlideShow {
 		this.hideSlide = []
 		for (let s = 0; s < this.totalSlides; s++) {
 			const tag = slideTag(s)
+			// `text_opacity` only applies to text_display — `item_display`
+			// (images) has no such field, so we MUST skip non-text here.
+			// The `KIND_TEXT_TAG` filter also keeps scrolling `<code>`
+			// chunks untouched (chunks carry `code_scroll_*_c*` and no
+			// `kind.text`); the scroll-tick owns chunk visibility.
+			// `view_range` applies to BOTH text_display and item_display,
+			// so this selector must hit every slide entity — that includes
+			// images, which carry `slide_<n>` but not `kind.text`.
 			this.showSlide.push(
 				MCFunction(`presentation/slides/show/${s}`, () => {
-					execute.as(Selector('@e', { tag })).run.data.modify
+					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG] })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(-1))
 					execute.as(Selector('@e', { tag })).run.data.modify
@@ -130,7 +134,7 @@ export class SlideShow {
 			)
 			this.hideSlide.push(
 				MCFunction(`presentation/slides/hide/${s}`, () => {
-					execute.as(Selector('@e', { tag })).run.data.modify
+					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG] })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(0))
 					execute.as(Selector('@e', { tag })).run.data.modify
@@ -158,14 +162,12 @@ export class SlideShow {
 			)
 		}
 
-		// Per-slide scroll-tick. Each reads gametime, computes elapsed
-		// since `slideShownAt`, and rewrites the entity's Pos[1] so the
-		// code content slides downward one line (TUI-style) per tick.
-		// Generated for every slide (no-op when that slide has none).
-		// `offset = elapsed * lineHeightInt` advances by exactly one visual
-		// line per tick; we clamp against `scrollDistInt` so the entity
-		// parks at the bottom of the scroll once it has fully traversed
-		// the content (further ticks are no-ops).
+		// Per-slide scroll-tick. Reads gametime, computes elapsed ticks
+		// since the slide was shown, then rotates `text_opacity` and
+		// `view_range` across the N chunk entities of each scrolling
+		// `<code>` block. Exactly one chunk is visible per tick; the
+		// rest are hidden. Once all chunks have been visited, the last
+		// one stays visible (clamp parks).
 		this.scrollTickFns = []
 		for (let s = 0; s < this.totalSlides; s++) {
 			const idx = s
@@ -184,38 +186,55 @@ export class SlideShow {
 					scoreboard.players.operation(this.tempElapsed, '=', this.tempCurrentTime)
 					scoreboard.players.operation(this.tempElapsed, '-=', this.slideShownAt)
 					for (const spec of specs) {
-						const scrollDistInt = Math.round(spec.scrollDistBlocks * 10000)
-						const startYInt = Math.round(spec.startY * 10000)
-						const lineHeightInt = Math.round(spec.lineHeightBlocks * 10000)
-						// TUI-style line-by-line scroll: clamp `elapsed`
-						// (number of ticks since slide shown) to the line-step
-						// count, then multiply by line height for the offset.
-						// Each tick advances exactly one visual line; once we
-						// hit the bottom the entity parks at the end position.
-						const scrollSteps = Math.max(
-							1,
-							Math.round(spec.scrollDistBlocks / spec.lineHeightBlocks),
-						)
-						// offset = clamp(elapsed, 0, scrollSteps)
-						scoreboard.players.set(this.tempOffset, this.tempElapsed)
-						scoreboard.players.set(this.tempLimit, scrollSteps)
+						// One chunk becomes visible per `ticksPerChunk` ticks.
+						// `ticksPerChunk` defaults to 4 (≈0.2s at 20 tps).
+						const ticksPerChunk = 4
+						const chunkCount = Math.max(1, spec.chunkCount)
+						// Stash `ticksPerChunk` in tempLimit so the divide op
+						// below has a Score target (scoreboard ops don't accept
+						// integer literals).
+						scoreboard.players.set(this.tempLimit, ticksPerChunk)
+						// visibleIdx = clamp(elapsed / ticksPerChunk, 0, chunkCount-1).
+						// Use `operation =` (not `set`) to copy between scores —
+						// `set` only accepts integer literals in 1.21+.
+						scoreboard.players.operation(this.tempOffset, '=', this.tempElapsed)
+						scoreboard.players.operation(this.tempOffset, '/=', this.tempLimit)
+						scoreboard.players.set(this.tempLimit, chunkCount - 1)
 						scoreboard.players.operation(this.tempOffset, '<', this.tempLimit)
 						scoreboard.players.set(this.tempLimit, 0)
 						scoreboard.players.operation(this.tempOffset, '>', this.tempLimit)
-						// offset *= lineHeightInt
-						scoreboard.players.set(this.tempLimit, lineHeightInt)
-						scoreboard.players.operation(this.tempOffset, '*=', this.tempLimit)
-						// targetY = startYInt - offset
-						scoreboard.players.set(this.tempTarget, startYInt)
-						scoreboard.players.operation(this.tempTarget, '-=', this.tempOffset)
-						// Apply Pos[1] (Y) — double storage with 0.0001 scale
-						// gives 0.1 mm precision over the full ±8 block range.
-						const selectors = Selector('@e', {
-							tag: [spec.scrollTag as `${any}${string}`, slideTag(idx)],
-						})
-						execute.as(selectors).run(() => {
-							Data('entity', '@s').select('Pos[1]').set(this.tempTarget, 'double', 0.0001)
-						})
+						// Now `tempOffset` holds the index of the visible chunk.
+						for (let ci = 0; ci < chunkCount; ci++) {
+							const chunkTag = `${spec.scrollTag}_c${ci}`
+							const selectors = Selector('@e', {
+								tag: [
+									chunkTag as `${any}${string}`,
+									spec.scrollTag as `${any}${string}`,
+									slideTag(idx),
+								],
+							})
+							// Set text_opacity to -1 (visible) when ci == visibleIdx,
+							// otherwise 0 (hidden). MC supports running `if` with a
+							// scoreboard comparison; we use `_.if` on `tempOffset`.
+							scoreboard.players.set(this.tempLimit, ci)
+							scoreboard.players.operation(this.tempLimit, '=', this.tempOffset)
+							_.if(_.not(this.tempLimit.equals(ci)), () => {
+								execute.as(selectors).run.data.modify
+									.entity('@s', 'text_opacity')
+									.set.value(NBT.int(0))
+								execute.as(selectors).run.data.modify
+									.entity('@s', 'view_range')
+									.set.value(NBT.float(0.0))
+							})
+							_.if(this.tempLimit.equals(ci), () => {
+								execute.as(selectors).run.data.modify
+									.entity('@s', 'text_opacity')
+									.set.value(NBT.int(-1))
+								execute.as(selectors).run.data.modify
+									.entity('@s', 'view_range')
+									.set.value(NBT.float(1.0))
+							})
+						}
 					}
 				}),
 			)
@@ -289,7 +308,7 @@ export class SlideShow {
 					this.scrollTickFns[s]()
 				})
 			}
-		}, { runOnTick: true })
+		}, { runEveryTick: true })
 
 		this.unmount = MCFunction('presentation/unmount', () => {
 			// Cancel every pending loop run — main entry, the

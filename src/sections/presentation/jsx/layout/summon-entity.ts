@@ -7,6 +7,7 @@ import type { SymbolEntity } from 'sandstone/arguments'
 import { parseColorInt } from './color'
 import { buildTextJson, buildIdentityTransform, applyBackgroundColor } from './nbt'
 import { Z_VISUAL_OFFSET } from './constants'
+import { KIND_TEXT_TAG } from '../slides/tags'
 import type { ElementLayout } from './element'
 
 const ROTATION_QUATERNION = NBT.float([0, 0, 0, 1])
@@ -29,9 +30,50 @@ export function summonTextEntity(
 	initialOpacity: number | undefined,
 ): void {
 	const textY = cellY - 1
-	// Scrolling `<code>` entities get a unique tag so the per-slide
-	// scroll-tick can target just them. The block name is supplied by
-	// the layout (`code_scroll_${id}`) and never collides.
+	// Scrolling `<code>` blocks fan out into N entities (one per chunk)
+	// at the same XZ. Only chunk 0 starts visible; the scroll-tick
+	// rotates which chunk is opaque per tick.
+	if (el.chunks && el.chunks.length > 0 && el.scrollTag) {
+		for (let ci = 0; ci < el.chunks.length; ci++) {
+			const chunk = el.chunks[ci]
+			const tags: (`${any}${string}` | LabelClass)[] = [
+				sceneTag,
+				...extraTags,
+				el.scrollTag as `${any}${string}`,
+				chunk.tag as `${any}${string}`,
+			]
+			const nbt: SymbolEntity['text_display'] = {
+				Tags: tags,
+				text: buildTextJson(chunk.content, el.declarations, el.type),
+				transformation: buildIdentityTransform(el.textScale),
+			}
+			applyBackgroundColor(
+				el.declarations,
+				nbt as unknown as { background?: ReturnType<typeof NBT.int> },
+			)
+			if (el.width !== undefined)
+				nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
+			else if (el.declarations['line-width'])
+				nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
+			if (el.declarations.shadow === 'true') nbt.shadow = true
+			if (el.declarations['see-through'] === 'true') nbt.see_through = true
+			let align: 'center' | 'left' | 'right' | undefined
+			if (el.type === 'code') align = 'left'
+			const ta = el.declarations['text-align']?.toLowerCase().trim()
+			if (ta === 'left' || ta === 'right' || ta === 'center') align = ta
+			if (align) nbt.alignment = align
+			// Chunk visibility: chunk 0 visible, others hidden at mount.
+			nbt.text_opacity = NBT.int(ci === 0 ? -1 : 0)
+			summon(
+				'text_display',
+				`${fmt(entityX)} ${fmt(textY)} ${fmt(z)}`,
+				nbt,
+			)
+		}
+		return
+	}
+
+	// Single entity (non-scroll, or scroll with no chunks).
 	const tags: (`${any}${string}` | LabelClass)[] = [sceneTag, ...extraTags]
 	if (el.scrollTag) tags.push(el.scrollTag as `${any}${string}`)
 	const nbt: SymbolEntity['text_display'] = {
@@ -113,7 +155,19 @@ export function summonElement(
 	initialOpacity: number | undefined,
 ): void {
 	if (el.kind === 'text') {
-		summonTextEntity(el, entityX, cellY, z, extraTags, sceneTag, initialOpacity)
+		// Tag every text entity with `kind.text` so showSlide/hideSlide
+		// can distinguish it from scrolling `<code>` chunks (which carry
+		// `code_scroll_*_c*` tags instead). The slide show needs to leave
+		// chunk opacity alone — the scroll-tick owns chunk visibility.
+		summonTextEntity(
+			el,
+			entityX,
+			cellY,
+			z,
+			[...extraTags, KIND_TEXT_TAG],
+			sceneTag,
+			initialOpacity,
+		)
 	} else {
 		summonImageEntity(el, entityX, cellY, z, extraTags, sceneTag, initialOpacity)
 	}

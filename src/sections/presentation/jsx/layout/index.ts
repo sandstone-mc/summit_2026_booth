@@ -24,7 +24,7 @@ export type CodePrecomputedMap = WeakMap<VNode, Precomputed>
 
 /** Spec captured during layout, consumed by the slide's scroll-tick. */
 export type ScrollSpec = {
-	/** Unique tag set on the scrolling entity at summon time. */
+	/** Unique tag set on every chunk entity at summon time. */
 	scrollTag: string
 	/** Entity's initial Y in world blocks (cellY - 1). */
 	startY: number
@@ -32,6 +32,8 @@ export type ScrollSpec = {
 	scrollDistBlocks: number
 	/** Height of one visual line in blocks — drives the TUI line-step. */
 	lineHeightBlocks: number
+	/** Number of viewport-sized chunks the scroll block was split into. */
+	chunkCount: number
 }
 
 export function summonVisibleElements(
@@ -203,12 +205,14 @@ function maybeRecordScroll(
 	startY: number,
 	scrollSpecs: ScrollSpec[],
 ): void {
-	if (el.kind !== 'text' || !el.scrollTag || !el.scrollDistBlocks || el.scrollDistBlocks <= 0) return
+	if (el.kind !== 'text') return
+	if (!el.scrollTag || !el.scrollDistBlocks || el.scrollDistBlocks <= 0) return
 	scrollSpecs.push({
 		scrollTag: el.scrollTag,
 		startY,
 		scrollDistBlocks: el.scrollDistBlocks,
 		lineHeightBlocks: pxToTextLineHeight(el.scalePx),
+		chunkCount: el.chunkCount ?? 1,
 	})
 }
 

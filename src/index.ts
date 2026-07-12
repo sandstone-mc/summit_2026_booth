@@ -6,10 +6,10 @@ import { ticking } from './shared'
 import './version'
 
 import './sections/presentation/index'
-import './sections/npcs'
 
 if (!(Bun.env.DISABLE_SHOWCASE === undefined ? false : Bun.env.DISABLE_SHOWCASE === 'true')) {
     await import('./sections/main')
+    await import('./sections/npcs')
     await import('./sections/rhythm/index')
     await import('./sections/magic/index')
 }
