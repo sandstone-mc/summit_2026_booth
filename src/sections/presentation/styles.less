@@ -29,11 +29,12 @@ p {
 
 // `<code>` block styling. The dark background fills the text_display's
 // rendered area (text_background fills where text actually lives). Color
-// is light for contrast; width stays smaller than the cell so the
-// background floats centered with visual padding on both sides.
+// is light for contrast; width fills the slide so each visual row uses
+// the full available screen width (fewer wrap-induced rows = shorter
+// content height).
 code {
     font-size: 8px;
-    width: 90vw;
+    width: 100vw;
     color: #d4d4d4;
     background: #1e1e1e;
 }

@@ -10,11 +10,32 @@ import type { NodeWithPath } from '../tree/walk'
 import type { Styles } from '../style'
 import type { Precomputed } from './code-borders'
 import { CodeBorders } from './code-borders'
-import { DEFAULT_CODE_BORDER_COLOR, DEFAULT_CODE_LANG_COLOR, DEFAULT_IMG_HEIGHT, defaultFontPx } from './constants'
+import {
+	DEFAULT_CODE_BORDER_COLOR,
+	DEFAULT_CODE_LANG_COLOR,
+	DEFAULT_IMG_HEIGHT,
+	SCROLL_VIEWPORT_BLOCKS,
+	defaultFontPx,
+} from './constants'
 import { parseMarginBox } from './margin'
 import { extractCodeSource, extractText } from '../tree/extract'
 
 const codeBorders = new CodeBorders()
+
+// Module-level counter: each scrolling `<code>` element gets a unique
+// tag string (`code_scroll_${id}`) so the per-slide scroll-tick can
+// target its entity even when several scrolls share one slide.
+//
+// The counter is shared by both the pre-pass (which builds the
+// per-slide scroll specs) and the summon pass (which actually emits
+// `summon` commands). Both walks must produce the same tag sequence,
+// so `resetScrollIds()` is called between them.
+let nextScrollId = 0
+
+/** Reset the scroll-id counter so the next walk starts from `code_scroll_0`. */
+export function resetScrollIds(): void {
+	nextScrollId = 0
+}
 
 type TextElementLayout = {
 	kind: 'text'
@@ -33,6 +54,16 @@ type TextElementLayout = {
 	cellW: number
 	marginTop: number
 	marginBottom: number
+	/** True when this `<code>` should auto-scroll its content. */
+	scrolling?: boolean
+	/** Number of source (pre-wrap) lines — drives the gutter width and scroll distance. */
+	sourceLineCount?: number
+	/** Unique tag identifying this scrolling block (set when `scrolling`). */
+	scrollTag?: string
+	/** Total scroll distance in blocks (positive; 0 when content fits). */
+	scrollDistBlocks?: number
+	/** Visual-line count of the bordered content (used by the scroll math). */
+	visualLines?: number
 	imgSrc?: undefined
 	imgItemModel?: undefined
 	imgAspect?: undefined
@@ -200,6 +231,11 @@ function computeTextLayout(
 	const langColor =
 		(declarations['lang-color'] as `#${string}` | undefined) ??
 		(type === 'code' ? DEFAULT_CODE_LANG_COLOR : codeColor)
+	// `<code line-numbers>` props
+	const lineNumbers = type === 'code' && (node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true')
+	const gutterColor = (declarations['gutter-color'] as `#${string}` | undefined) ?? '#858585'
+	const sourceLineCount = type === 'code' ? content.split('\n').length : 0
+	const scrolling = type === 'code' && (node.props?.scrolling === true || node.props?.scrolling === 'true')
 	const codeBordered: StyledSegment[] | undefined =
 		type === 'code'
 			? codeBorders.wrap(
@@ -212,6 +248,9 @@ function computeTextLayout(
 					langColor,
 					codeColor,
 					codePrecomputed.get(node),
+					lineNumbers,
+					sourceLineCount,
+					gutterColor,
 				)
 			: undefined
 
@@ -220,7 +259,19 @@ function computeTextLayout(
 		type === 'code'
 			? wrapCodeLines(renderText, wrapWidthPx, isBold, fontId)
 			: wrapLines(content, wrapWidthPx, isBold, fontId)
-	const cellH = heightLen?.meters ?? pxToTextLineHeight(scalePx) * lines
+	// Scrolling code blocks claim a fixed viewport of vertical space —
+	// the layout pass shouldn't grow the cell with the content height.
+	// The content overflows above the cell; the scroll-tick slides it
+	// back down into view over the slide's duration.
+	const lineHeightBlocks = pxToTextLineHeight(scalePx)
+	const cellH =
+		heightLen?.meters ?? (scrolling ? SCROLL_VIEWPORT_BLOCKS : lineHeightBlocks * lines)
+	// Scroll math: total bordered height minus viewport, clamped to ≥ 0.
+	// `lines` already counts the bordered visual rows (top + bottom + code).
+	const totalHeightBlocks = lineHeightBlocks * lines
+	const scrollDistBlocks = scrolling ? Math.max(0, totalHeightBlocks - SCROLL_VIEWPORT_BLOCKS) : 0
+	const scrollTag = scrolling && scrollDistBlocks > 0 ? `code_scroll_${nextScrollId++}` : undefined
+
 	const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
 	return {
 		kind: 'text',
@@ -239,5 +290,10 @@ function computeTextLayout(
 		cellW: sceneW,
 		marginTop,
 		marginBottom,
+		scrolling: scrolling || undefined,
+		sourceLineCount: type === 'code' ? sourceLineCount : undefined,
+		scrollTag,
+		scrollDistBlocks: scrollTag ? scrollDistBlocks : undefined,
+		visualLines: type === 'code' ? lines : undefined,
 	}
 }

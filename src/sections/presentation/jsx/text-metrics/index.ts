@@ -59,3 +59,13 @@ export function wrapCodeLinesAsArray(
 ): string[] {
 	return wrap.wrapCodeLinesAsArray(text, lineWidth, bold, fontId)
 }
+
+/** Same as `wrapCodeLinesAsArray` but each entry also tracks its source line. */
+export function wrapCodeLinesAsTuples(
+	text: string,
+	lineWidth: number,
+	bold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): { line: string; sourceLine: number }[] {
+	return wrap.wrapCodeLinesAsTuples(text, lineWidth, bold, fontId)
+}

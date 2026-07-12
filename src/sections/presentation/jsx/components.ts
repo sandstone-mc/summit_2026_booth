@@ -20,10 +20,20 @@ export type StyleProps = { children?: string; source?: string }
  * file at build time. Otherwise `children` is accepted as either a
  * string (raw source) or a function (rendered via `Function.toString()`,
  * so you can keep the snippet type-checked inside the slide file).
+ *
+ * Optional rendering flags:
+ *   `lineNumbers` — prepend a right-aligned line-number gutter inside
+ *      the bordered box; widths the gutter automatically from the line
+ *      count. Default: false.
+ *   `scrolling` — when the wrapped content is taller than the cell,
+ *      auto-scroll the text upward through the slide over the slide's
+ *      duration. Default: false.
  */
 export type CodeProps = CommonProps & {
 	lang?: string
 	src?: string
+	'line-numbers'?: boolean
+	scrolling?: boolean
 }
 
 /**

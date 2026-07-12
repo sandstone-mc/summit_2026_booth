@@ -4,8 +4,12 @@
 //   1. computeElementLayout → per-element layout records
 //   2. groupIntoBlocks → split into single-element blocks + row-flow blocks
 //   3. iterate blocks, compute positioning, summon each entity
+//
+// The placement pass is shared with `computeSlideScrollSpecs`, which
+// runs the same math without emitting any `summon` commands — letting
+// the slide show build its scroll-tick MCFunctions ahead of mount.
 
-import { parseLength } from '../length'
+import { parseLength, pxToTextLineHeight } from '../length'
 import type { LabelClass } from 'sandstone'
 import type { NodeWithPath } from '../tree/walk'
 import type { VNode } from '../render'
@@ -18,6 +22,18 @@ import { Z_VISUAL_OFFSET } from './constants'
 
 export type CodePrecomputedMap = WeakMap<VNode, Precomputed>
 
+/** Spec captured during layout, consumed by the slide's scroll-tick. */
+export type ScrollSpec = {
+	/** Unique tag set on the scrolling entity at summon time. */
+	scrollTag: string
+	/** Entity's initial Y in world blocks (cellY - 1). */
+	startY: number
+	/** Total scroll distance in world blocks (positive). */
+	scrollDistBlocks: number
+	/** Height of one visual line in blocks — drives the TUI line-step. */
+	lineHeightBlocks: number
+}
+
 export function summonVisibleElements(
 	visible: NodeWithPath[],
 	styles: Styles,
@@ -29,7 +45,58 @@ export function summonVisibleElements(
 	codePrecomputed: CodePrecomputedMap,
 	imgResources: ImgResourceMap,
 	sceneTag: LabelClass,
-): void {
+): { scrollSpecs: ScrollSpec[] } {
+	return runLayout(
+		visible,
+		styles,
+		sceneW,
+		sceneH,
+		origin,
+		codePrecomputed,
+		imgResources,
+		(el, x, y, z) => {
+			summonElement(el, x, y, z, extraTags, sceneTag, initialOpacity)
+		},
+	)
+}
+
+/**
+ * Layout-only twin of `summonVisibleElements`. Runs the placement math
+ * without emitting any `summon` commands — used during SlideShow
+ * construction to collect per-slide scroll specs before any MCFunction
+ * is built.
+ */
+export function computeSlideScrollSpecs(
+	visible: NodeWithPath[],
+	styles: Styles,
+	sceneW: number,
+	sceneH: number,
+	origin: readonly [number, number, number],
+	codePrecomputed: CodePrecomputedMap,
+	imgResources: ImgResourceMap,
+): ScrollSpec[] {
+	return runLayout(
+		visible,
+		styles,
+		sceneW,
+		sceneH,
+		origin,
+		codePrecomputed,
+		imgResources,
+		() => {},
+	).scrollSpecs
+}
+
+function runLayout(
+	visible: NodeWithPath[],
+	styles: Styles,
+	sceneW: number,
+	sceneH: number,
+	origin: readonly [number, number, number],
+	codePrecomputed: CodePrecomputedMap,
+	imgResources: ImgResourceMap,
+	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
+): { scrollSpecs: ScrollSpec[] } {
 	const elements: ElementLayout[] = visible.map((nodeWithPath) =>
 		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed),
 	)
@@ -40,52 +107,39 @@ export function summonVisibleElements(
 	let accY = startingY(sceneH, totalH, stackDecs)
 	const z = origin[2] + Z_VISUAL_OFFSET
 
+	const scrollSpecs: ScrollSpec[] = []
 	for (let bi = 0; bi < blocks.length; bi++) {
 		const block = blocks[bi]
 		if (block.kind === 'element') {
-			placeElementBlock(block, accY, sceneW, sceneH, origin, z, extraTags, initialOpacity, sceneTag)
-			accY -= block.el.marginTop + block.el.cellH
+			const el = block.el
+			const cellY = origin[1] + accY - el.marginTop - el.cellH
+			const entityX = origin[0] + sceneW / 2
+			onElement(el, entityX, cellY, z)
+			maybeRecordScroll(el, cellY - 1, scrollSpecs)
+			accY -= el.marginTop + el.cellH
 			if (bi < blocks.length - 1) {
-				accY -= blockGap(block, blocks[bi + 1], sceneH) + block.el.marginBottom
+				accY -= blockGap(block, blocks[bi + 1], sceneH) + el.marginBottom
 			}
 		} else {
-			const nextAccY = placeRowBlock(block, accY, sceneW, sceneH, origin, z, extraTags, initialOpacity, sceneTag)
-			accY = nextAccY
+			accY = placeRowBlocks(block, accY, sceneW, sceneH, origin, z, onElement, scrollSpecs)
 			if (bi < blocks.length - 1) {
 				const lastChild = block.children[block.children.length - 1]
 				accY -= blockGap(block, blocks[bi + 1], sceneH) + lastChild.marginBottom
 			}
 		}
 	}
+	return { scrollSpecs }
 }
 
-function placeElementBlock(
-	block: Extract<Block, { kind: 'element' }>,
-	accY: number,
-	sceneW: number,
-	sceneH: number,
-	origin: readonly [number, number, number],
-	z: number,
-	extraTags: (`${any}${string}` | LabelClass)[],
-	initialOpacity: number | undefined,
-	sceneTag: LabelClass,
-): void {
-	const el = block.el
-	const cellY = origin[1] + accY - el.marginTop - el.cellH
-	const entityX = origin[0] + sceneW / 2
-	summonElement(el, entityX, cellY, z, extraTags, sceneTag, initialOpacity)
-}
-
-function placeRowBlock(
+function placeRowBlocks(
 	block: Extract<Block, { kind: 'row' }>,
 	accY: number,
 	sceneW: number,
 	sceneH: number,
 	origin: readonly [number, number, number],
 	z: number,
-	extraTags: (`${any}${string}` | LabelClass)[],
-	initialOpacity: number | undefined,
-	sceneTag: LabelClass,
+	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
+	scrollSpecs: ScrollSpec[],
 ): number {
 	const columnGap = parseLength(block.parentStack['column-gap'] ?? '', sceneW)?.meters ?? 0
 
@@ -136,13 +190,28 @@ function placeRowBlock(
 	for (const child of block.children) {
 		const subCellY = containerCenterY - child.cellH / 2
 		const childCenterX = accX + child.cellW / 2
-		summonElement(child, childCenterX, subCellY, z, extraTags, sceneTag, initialOpacity)
+		onElement(child, childCenterX, subCellY, z)
+		maybeRecordScroll(child, subCellY - 1, scrollSpecs)
 		accX += child.cellW + columnGap
 	}
 
 	return workingY
 }
 
+function maybeRecordScroll(
+	el: ElementLayout,
+	startY: number,
+	scrollSpecs: ScrollSpec[],
+): void {
+	if (el.kind !== 'text' || !el.scrollTag || !el.scrollDistBlocks || el.scrollDistBlocks <= 0) return
+	scrollSpecs.push({
+		scrollTag: el.scrollTag,
+		startY,
+		scrollDistBlocks: el.scrollDistBlocks,
+		lineHeightBlocks: pxToTextLineHeight(el.scalePx),
+	})
+}
+
 export type { Precomputed } from './code-borders'
 export type { ElementLayout, ImgResource, ImgResourceMap } from './element'
-export { isTextType, isImgType, isVisibleType } from './element'
+export { isTextType, isImgType, isVisibleType, resetScrollIds } from './element'

@@ -29,8 +29,13 @@ export function summonTextEntity(
 	initialOpacity: number | undefined,
 ): void {
 	const textY = cellY - 1
+	// Scrolling `<code>` entities get a unique tag so the per-slide
+	// scroll-tick can target just them. The block name is supplied by
+	// the layout (`code_scroll_${id}`) and never collides.
+	const tags: (`${any}${string}` | LabelClass)[] = [sceneTag, ...extraTags]
+	if (el.scrollTag) tags.push(el.scrollTag as `${any}${string}`)
 	const nbt: SymbolEntity['text_display'] = {
-		Tags: [sceneTag, ...extraTags],
+		Tags: tags,
 		text: buildTextJson(el.borderedContent ?? el.content, el.declarations, el.type),
 		transformation: buildIdentityTransform(el.textScale),
 	}

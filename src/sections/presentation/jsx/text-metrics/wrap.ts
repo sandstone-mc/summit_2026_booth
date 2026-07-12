@@ -134,4 +134,31 @@ export class TextWrap {
 		}
 		return out
 	}
+
+	/**
+	 * Like `wrapCodeLinesAsArray` but each returned entry also carries
+	 * the index of the source line it came from. Needed by code-borders
+	 * so wrapped continuations share their source line's number — without
+	 * this, a long line split across two visual rows would get numbered
+	 * 1 and 2 instead of both being numbered 1.
+	 */
+	wrapCodeLinesAsTuples(
+		text: string,
+		lineWidth: number,
+		bold: boolean,
+		fontId: string = DEFAULT_FONT_ID,
+	): { line: string; sourceLine: number }[] {
+		const sources = text.split('\n')
+		const out: { line: string; sourceLine: number }[] = []
+		sources.forEach((line, sourceLine) => {
+			if (line.length === 0) {
+				out.push({ line: '', sourceLine })
+			} else {
+				for (const wrapped of this.wrapToLines(line, lineWidth, bold, fontId)) {
+					out.push({ line: wrapped, sourceLine })
+				}
+			}
+		})
+		return out
+	}
 }
