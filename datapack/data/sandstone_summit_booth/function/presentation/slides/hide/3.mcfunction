@@ -1,2 +1,2 @@
-execute as @e[tag=sandstone_summit_booth.slide_3] run data modify entity @s text_opacity set value 0i
+execute as @e[tag=sandstone_summit_booth.slide_3, tag=sandstone_summit_booth.kind.text] run data modify entity @s text_opacity set value 0i
 execute as @e[tag=sandstone_summit_booth.slide_3] run data modify entity @s view_range set value 0f

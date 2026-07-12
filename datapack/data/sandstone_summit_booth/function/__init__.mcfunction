@@ -1,6 +1,5 @@
 scoreboard objectives add load.status dummy
 scoreboard objectives add __sandstone dummy [{"text":"Sandstone","color":"gold"}," internals"]
-scoreboard objectives add sandstone_summit_booth.npc.dialogue.line dummy
 scoreboard objectives add sandstone_summit_booth.presentation.slide_idx dummy
 scoreboard objectives add sandstone_summit_booth.presentation.scroll dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.wall.age dummy
@@ -44,6 +43,8 @@ scoreboard objectives add sandstone_summit_booth.rhythm.hits dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.wall.hit_cooldown dummy
 scoreboard objectives add sandstone_summit_booth.ssb.flash_phase dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.cal dummy
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.line dummy
+scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.magic.spells.lightning.static_field.do_cast dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.blue_tent_guide.line_0.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.blue_tent_guide.line_1.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.blue_tent_guide.line_2.show dummy
@@ -62,7 +63,6 @@ scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_3.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_4.show dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.npcs.dialogue.glitchy.line_5.show dummy
-scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.magic.spells.lightning.static_field.do_cast dummy
 scoreboard players set sandstone_summit_booth load.status 1
 scoreboard players set anon_WnYlBycD_0 __sandstone 0
 scoreboard players set anon_WnYlBycD_1 __sandstone 0

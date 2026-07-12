@@ -1,0 +1,2 @@
+execute as @e[tag=code_scroll_1_c29, tag=code_scroll_1, tag=sandstone_summit_booth.slide_5] run data modify entity @s text_opacity set value 0i
+execute as @e[tag=code_scroll_1_c29, tag=code_scroll_1, tag=sandstone_summit_booth.slide_5] run data modify entity @s view_range set value 0f

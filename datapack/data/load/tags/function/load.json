@@ -3,7 +3,6 @@
   "values": [
     "sandstone_summit_booth:__init__",
     "sandstone_summit_booth:version_check",
-    "sandstone_summit_booth:sections/npcs/spawn",
     "__sandstone:ticked/start/wnylbycd",
     "sandstone_summit_booth:sections/rhythm/scoring/init",
     "sandstone_summit_booth:sections/magic/playerdb/load",
@@ -12,6 +11,7 @@
     "sandstone_summit_booth:sections/rhythm/leaderboard/init",
     "sandstone_summit_booth:sections/rhythm/reset",
     "sandstone_summit_booth:sections/rhythm/settings/init",
-    "sandstone_summit_booth:sections/main/showcase/spawn_button"
+    "sandstone_summit_booth:sections/main/showcase/spawn_button",
+    "sandstone_summit_booth:sections/npcs/spawn"
   ]
 }
