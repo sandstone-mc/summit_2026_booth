@@ -3,7 +3,7 @@
 // line list + tree-sitter styled segments, so the layout pass can
 // look them up without re-wrapping or re-parsing.
 
-import { charWidth, wrapCodeLinesAsArray } from '../text-metrics'
+import { charWidth, wrapCodeLinesAsArray, wrapCodeLinesAsTuples } from '../text-metrics'
 import { parseLength, pxToTextScale } from '../length'
 import type { Styles } from '../style'
 import type { VNode, StyledSegment } from '../render'
@@ -27,7 +27,13 @@ export async function prepareCodeHighlights(
 ): Promise<WeakMap<VNode, Precomputed>> {
 	const map: WeakMap<VNode, Precomputed> = new WeakMap()
 
-	type Entry = { node: VNode; source: string; lang: string; codeLines: string[] }
+	type Entry = {
+		node: VNode
+		source: string
+		lang: string
+		codeLines: string[]
+		sourceLineOfVisualRow: number[]
+	}
 	const entries: Entry[] = []
 	for (const visible of visiblePerSlide) {
 		for (const { node, path } of visible) {
@@ -46,10 +52,27 @@ export async function prepareCodeHighlights(
 			const BASELINE_TEXT_SCALE = pxToTextScale(10)
 			const widthCompensation = BASELINE_TEXT_SCALE / textScale
 			const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
+			const lineNumbers =
+				node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true'
+			const sourceLineCount = source.split('\n').length
+			const gutterChars = lineNumbers ? Math.max(2, String(sourceLineCount).length) : 0
 			const barW = charWidth('│', false, fontId)
-			const innerWidth = Math.max(50, wrapWidthPx - 2 * barW)
+			const spaceW = charWidth(' ', false, fontId)
+			// Same `innerWidth` formula as `code-borders.ts` so the
+			// precomputed wrap matches the rendered rows.
+			const DEFAULT_CHAR_PX = 6
+			const maxRowChars = Math.max(10, Math.floor(wrapWidthPx / DEFAULT_CHAR_PX) - 2)
+			const maxCodeChars = Math.max(10, maxRowChars - gutterChars - 5)
+			const wrapCodeChars = Math.max(10, maxCodeChars - 8)
+			const innerWidth = Math.max(50, wrapCodeChars * barW)
 			const codeLines = wrapCodeLinesAsArray(source, innerWidth, bold, fontId)
-			entries.push({ node, source: codeLines.join('\n'), lang, codeLines })
+			const sourceLineOfVisualRow = wrapCodeLinesAsTuples(
+				source,
+				innerWidth,
+				bold,
+				fontId,
+			).map((t) => t.sourceLine)
+			entries.push({ node, source: codeLines.join('\n'), lang, codeLines, sourceLineOfVisualRow })
 		}
 	}
 
@@ -57,7 +80,11 @@ export async function prepareCodeHighlights(
 
 	for (const entry of entries) {
 		const highlighted = lookup(entry.source, entry.lang) as StyledSegment[] | null
-		map.set(entry.node, { codeLines: entry.codeLines, highlighted })
+		map.set(entry.node, {
+			codeLines: entry.codeLines,
+			sourceLineOfVisualRow: entry.sourceLineOfVisualRow,
+			highlighted,
+		})
 	}
 	return map
 }

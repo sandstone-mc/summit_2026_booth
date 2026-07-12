@@ -13,16 +13,21 @@ import {
 	schedule,
 	Objective,
 	_,
+	scoreboard,
 } from 'sandstone'
-import { summonVisibleElements, isVisibleType } from '../layout'
-import { prepareImgResources } from '../prepare/img-resources'
+import {
+	summonVisibleElements,
+	isVisibleType,
+	computeSlideScrollSpecs,
+	resetScrollIds,
+	type ScrollSpec,
+} from '../layout'
 import { flatWalk } from '../tree/walk'
-import { extractText } from '../tree/extract'
 import type { VNode } from '../render'
 import type { NodeWithPath } from '../tree/walk'
 import type { Styles } from '../style'
 import type { ImgResourceMap, CodePrecomputedMap } from '../layout'
-import { SCENE_TAG, slideTag } from './tags'
+import { SCENE_TAG, slideTag, KIND_TEXT_TAG } from './tags'
 import { computeDurationsSeconds, type SlidesTiming } from '../../slides'
 
 export interface SlideShowInput {
@@ -44,8 +49,24 @@ export class SlideShow {
 	readonly showSlide: MCFunctionClass<undefined, undefined>[]
 	readonly hideSlide: MCFunctionClass<undefined, undefined>[]
 	private readonly setSlideFns: MCFunctionClass<undefined, undefined>[]
+	private readonly scrollTickFns: MCFunctionClass<undefined, undefined>[]
+	private readonly scrollSpecsPerSlide: ScrollSpec[][]
 	private readonly slideIdx = Objective.create('presentation.slide_idx', 'dummy')
 	private readonly currentSlide = this.slideIdx('#current')
+	private readonly scrollObj = Objective.create('presentation.scroll', 'dummy')
+	// Gametime recorded when the current slide started showing. Read each
+	// tick by the scroll-tick to compute the elapsed-time fraction.
+	private readonly slideShownAt = this.scrollObj('#shown_at')
+	// Scratch scores for the per-tick scroll math. Shared across slides —
+	// each MCFunction fully rewrites them on entry.
+	private readonly tempCurrentTime = this.scrollObj('#current_time')
+	private readonly tempElapsed = this.scrollObj('#elapsed')
+	private readonly tempOffset = this.scrollObj('#offset')
+	// Scratch score reused to hold per-spec constants (lineHeightInt,
+	// scrollSteps) inside the scroll-tick MCFunction. Reading the source
+	// while holding scratch data is fine since MCFunctions run sequentially
+	// within a tick — no other reader reads these temps.
+	private readonly tempLimit = this.scrollObj('#limit')
 	private readonly imgResources: ImgResourceMap
 	private readonly styles: Styles
 	private readonly sceneW: number
@@ -70,14 +91,40 @@ export class SlideShow {
 		this.slideVisibles = input.trees.map((t) =>
 			flatWalk(t).filter(({ node }) => isVisibleType(node.type)),
 		)
+		// Pre-pass: run the placement math to discover each scrolling
+		// `<code>`'s start Y + total scroll distance. Runs without emitting
+		// any `summon` commands (the same helper powers the actual emit).
+		// The collected specs drive scroll-tick generation below.
+		this.scrollSpecsPerSlide = this.slideVisibles.map((visible) =>
+			computeSlideScrollSpecs(
+				visible,
+				this.styles,
+				this.sceneW,
+				this.sceneH,
+				this.origin,
+				this.codePrecomputed,
+				this.imgResources,
+			),
+		)
+		// The pre-pass walked the layout counter; reset so the actual
+		// summon pass in `mount` produces the same tag sequence.
+		resetScrollIds()
 
 		this.showSlide = []
 		this.hideSlide = []
 		for (let s = 0; s < this.totalSlides; s++) {
 			const tag = slideTag(s)
+			// `text_opacity` only applies to text_display — `item_display`
+			// (images) has no such field, so we MUST skip non-text here.
+			// The `KIND_TEXT_TAG` filter also keeps scrolling `<code>`
+			// chunks untouched (chunks carry `code_scroll_*_c*` and no
+			// `kind.text`); the scroll-tick owns chunk visibility.
+			// `view_range` applies to BOTH text_display and item_display,
+			// so this selector must hit every slide entity — that includes
+			// images, which carry `slide_<n>` but not `kind.text`.
 			this.showSlide.push(
 				MCFunction(`presentation/slides/show/${s}`, () => {
-					execute.as(Selector('@e', { tag })).run.data.modify
+					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG] })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(-1))
 					execute.as(Selector('@e', { tag })).run.data.modify
@@ -87,7 +134,7 @@ export class SlideShow {
 			)
 			this.hideSlide.push(
 				MCFunction(`presentation/slides/hide/${s}`, () => {
-					execute.as(Selector('@e', { tag })).run.data.modify
+					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG] })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(0))
 					execute.as(Selector('@e', { tag })).run.data.modify
@@ -102,10 +149,93 @@ export class SlideShow {
 			const index = i
 			this.setSlideFns.push(
 				MCFunction(`presentation/slides/set/${index}`, () => {
+					// Stamp the moment this slide became visible so the
+					// scroll-tick can derive elapsed time per-tick.
+					execute.store.result
+						.score(this.slideShownAt)
+						.run.time.query('gametime')
 					for (let s = 0; s < this.totalSlides; s++) {
 						if (s !== index) this.hideSlide[s]()
 					}
 					this.showSlide[index]()
+				}),
+			)
+		}
+
+		// Per-slide scroll-tick. Reads gametime, computes elapsed ticks
+		// since the slide was shown, then rotates `text_opacity` and
+		// `view_range` across the N chunk entities of each scrolling
+		// `<code>` block. Exactly one chunk is visible per tick; the
+		// rest are hidden. Once all chunks have been visited, the last
+		// one stays visible (clamp parks).
+		this.scrollTickFns = []
+		for (let s = 0; s < this.totalSlides; s++) {
+			const idx = s
+			const specs = this.scrollSpecsPerSlide[idx]
+			if (specs.length === 0) {
+				this.scrollTickFns.push(
+					MCFunction(`presentation/slides/scroll/${idx}`, () => {}),
+				)
+				continue
+			}
+			this.scrollTickFns.push(
+				MCFunction(`presentation/slides/scroll/${idx}`, () => {
+					execute.store.result
+						.score(this.tempCurrentTime)
+						.run.time.query('gametime')
+					scoreboard.players.operation(this.tempElapsed, '=', this.tempCurrentTime)
+					scoreboard.players.operation(this.tempElapsed, '-=', this.slideShownAt)
+					for (const spec of specs) {
+						// One chunk becomes visible per `ticksPerChunk` ticks.
+						// `ticksPerChunk` defaults to 4 (≈0.2s at 20 tps).
+						const ticksPerChunk = 4
+						const chunkCount = Math.max(1, spec.chunkCount)
+						// Stash `ticksPerChunk` in tempLimit so the divide op
+						// below has a Score target (scoreboard ops don't accept
+						// integer literals).
+						scoreboard.players.set(this.tempLimit, ticksPerChunk)
+						// visibleIdx = clamp(elapsed / ticksPerChunk, 0, chunkCount-1).
+						// Use `operation =` (not `set`) to copy between scores —
+						// `set` only accepts integer literals in 1.21+.
+						scoreboard.players.operation(this.tempOffset, '=', this.tempElapsed)
+						scoreboard.players.operation(this.tempOffset, '/=', this.tempLimit)
+						scoreboard.players.set(this.tempLimit, chunkCount - 1)
+						scoreboard.players.operation(this.tempOffset, '<', this.tempLimit)
+						scoreboard.players.set(this.tempLimit, 0)
+						scoreboard.players.operation(this.tempOffset, '>', this.tempLimit)
+						// Now `tempOffset` holds the index of the visible chunk.
+						for (let ci = 0; ci < chunkCount; ci++) {
+							const chunkTag = `${spec.scrollTag}_c${ci}`
+							const selectors = Selector('@e', {
+								tag: [
+									chunkTag as `${any}${string}`,
+									spec.scrollTag as `${any}${string}`,
+									slideTag(idx),
+								],
+							})
+							// Set text_opacity to -1 (visible) when ci == visibleIdx,
+							// otherwise 0 (hidden). MC supports running `if` with a
+							// scoreboard comparison; we use `_.if` on `tempOffset`.
+							scoreboard.players.set(this.tempLimit, ci)
+							scoreboard.players.operation(this.tempLimit, '=', this.tempOffset)
+							_.if(_.not(this.tempLimit.equals(ci)), () => {
+								execute.as(selectors).run.data.modify
+									.entity('@s', 'text_opacity')
+									.set.value(NBT.int(0))
+								execute.as(selectors).run.data.modify
+									.entity('@s', 'view_range')
+									.set.value(NBT.float(0.0))
+							})
+							_.if(this.tempLimit.equals(ci), () => {
+								execute.as(selectors).run.data.modify
+									.entity('@s', 'text_opacity')
+									.set.value(NBT.int(-1))
+								execute.as(selectors).run.data.modify
+									.entity('@s', 'view_range')
+									.set.value(NBT.float(1.0))
+							})
+						}
+					}
 				}),
 			)
 		}
@@ -133,6 +263,10 @@ export class SlideShow {
 			_.if(this.currentSlide.greaterThanOrEqualTo(this.totalSlides), () => {
 				this.currentSlide.set(0)
 			})
+			// Re-stamp shown-at so the next slide's scroll starts from 0.
+			execute.store.result
+				.score(this.slideShownAt)
+				.run.time.query('gametime')
 			for (let s = 0; s < this.totalSlides; s++) {
 				this.hideSlide[s]()
 			}
@@ -165,7 +299,16 @@ export class SlideShow {
 			schedule.function(this.slideLoop, '1t', 'replace')
 		})
 
-		this.tick = MCFunction('presentation/tick', () => {}, { runOnTick: true })
+		this.tick = MCFunction('presentation/tick', () => {
+			// Per-slide scroll-tick is gated on `currentSlide`. Runs every
+			// game tick; the `_.if` chain only fires the matching slide's
+			// scroll MCFunction (others are skipped).
+			for (let s = 0; s < this.totalSlides; s++) {
+				_.if(this.currentSlide.equalTo(s), () => {
+					this.scrollTickFns[s]()
+				})
+			}
+		}, { runEveryTick: true })
 
 		this.unmount = MCFunction('presentation/unmount', () => {
 			// Cancel every pending loop run — main entry, the

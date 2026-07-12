@@ -10,3 +10,11 @@ export const SCENE_TAG = Label('presentation')
 export function slideTag(index: number): LabelClass {
 	return Label(`slide_${index}`)
 }
+
+/**
+ * Marks every `<code>` chunk (and every other text entity) so the slide
+ * show can target text entities distinct from scrolling chunks. Chunks
+ * carry `code_scroll_*_c*` tags instead and are managed by the
+ * scroll-tick MCFunction.
+ */
+export const KIND_TEXT_TAG = Label('kind.text')

@@ -126,7 +126,7 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 
 	const tick = MCFunction('presentation/tick', () => {
 		// no-op
-	}, { runOnTick: true })
+	}, { runEveryTick: true })
 
 	const unmount = MCFunction('presentation/unmount', () => {
 		execute.run.kill(Selector('@e', { tag: SCENE_TAG }))

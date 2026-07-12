@@ -10,11 +10,32 @@ import type { NodeWithPath } from '../tree/walk'
 import type { Styles } from '../style'
 import type { Precomputed } from './code-borders'
 import { CodeBorders } from './code-borders'
-import { DEFAULT_CODE_BORDER_COLOR, DEFAULT_CODE_LANG_COLOR, DEFAULT_IMG_HEIGHT, defaultFontPx } from './constants'
+import {
+	DEFAULT_CODE_BORDER_COLOR,
+	DEFAULT_CODE_LANG_COLOR,
+	DEFAULT_IMG_HEIGHT,
+	SCROLL_VIEWPORT_BLOCKS,
+	defaultFontPx,
+} from './constants'
 import { parseMarginBox } from './margin'
 import { extractCodeSource, extractText } from '../tree/extract'
 
 const codeBorders = new CodeBorders()
+
+// Module-level counter: each scrolling `<code>` element gets a unique
+// tag string (`code_scroll_${id}`) so the per-slide scroll-tick can
+// target its entity even when several scrolls share one slide.
+//
+// The counter is shared by both the pre-pass (which builds the
+// per-slide scroll specs) and the summon pass (which actually emits
+// `summon` commands). Both walks must produce the same tag sequence,
+// so `resetScrollIds()` is called between them.
+let nextScrollId = 0
+
+/** Reset the scroll-id counter so the next walk starts from `code_scroll_0`. */
+export function resetScrollIds(): void {
+	nextScrollId = 0
+}
 
 type TextElementLayout = {
 	kind: 'text'
@@ -33,6 +54,25 @@ type TextElementLayout = {
 	cellW: number
 	marginTop: number
 	marginBottom: number
+	/** True when this `<code>` should auto-scroll its content. */
+	scrolling?: boolean
+	/** Number of source (pre-wrap) lines — drives the gutter width and scroll distance. */
+	sourceLineCount?: number
+	/** Unique tag identifying this scrolling block (set when `scrolling`). */
+	scrollTag?: string
+	/** Total scroll distance in blocks (positive; 0 when content fits). */
+	scrollDistBlocks?: number
+	/** Visual-line count of the bordered content (used by the scroll math). */
+	visualLines?: number
+	/** Number of viewport-sized chunks the scrolling block was split into. */
+	chunkCount?: number
+	/**
+	 * Per-chunk bordered content + tag, set when scrolling. The layout
+	 * pass treats the scroll block as a SINGLE entity (one cell, one X);
+	 * the summon pass fans out to N text_display entities at the same
+	 * XZ, each tagged with `chunk.tag`.
+	 */
+	chunks?: { content: StyledSegment[]; tag: string }[]
 	imgSrc?: undefined
 	imgItemModel?: undefined
 	imgAspect?: undefined
@@ -92,7 +132,10 @@ export { TEXT_TYPES, IMG_TYPES }
 // font pixel than a p (scale 2.5) and overflows the cell before MC wraps.
 const BASELINE_TEXT_SCALE = pxToTextScale(10)
 
-// Build the layout record for a single visible element.
+// Build the layout record for a single visible element. Scrolling
+// `<code>` blocks remain a single record (one cell, one X); the
+// per-chunk bordered content lives in `layout.chunks` and is fanned
+// out into multiple text_display entities by the summon pass.
 export function computeElementLayout(
 	nodeWithPath: NodeWithPath,
 	styles: Styles,
@@ -200,28 +243,106 @@ function computeTextLayout(
 	const langColor =
 		(declarations['lang-color'] as `#${string}` | undefined) ??
 		(type === 'code' ? DEFAULT_CODE_LANG_COLOR : codeColor)
-	const codeBordered: StyledSegment[] | undefined =
-		type === 'code'
-			? codeBorders.wrap(
-					content,
-					String(node.props?.lang ?? ''),
-					fontId,
-					wrapWidthPx,
-					isBold,
-					borderColor,
-					langColor,
-					codeColor,
-					codePrecomputed.get(node),
-				)
-			: undefined
+	// `<code line-numbers>` props
+	const lineNumbers = type === 'code' && (node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true')
+	const gutterColor = (declarations['gutter-color'] as `#${string}` | undefined) ?? '#858585'
+	const sourceLineCount = type === 'code' ? content.split('\n').length : 0
+	const scrolling = type === 'code' && (node.props?.scrolling === true || node.props?.scrolling === 'true')
 
-	const renderText = codeBordered ? codeBordered.map((s) => s.text).join('') : content
-	const lines =
-		type === 'code'
-			? wrapCodeLines(renderText, wrapWidthPx, isBold, fontId)
-			: wrapLines(content, wrapWidthPx, isBold, fontId)
-	const cellH = heightLen?.meters ?? pxToTextLineHeight(scalePx) * lines
 	const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
+
+	if (type !== 'code') {
+		const lines = wrapLines(content, wrapWidthPx, isBold, fontId)
+		const lineHeightBlocks = pxToTextLineHeight(scalePx)
+		const cellH = heightLen?.meters ?? lineHeightBlocks * lines
+		return {
+			kind: 'text',
+			node,
+			path,
+			parentStack,
+			declarations,
+			type,
+			content,
+			width,
+			scalePx,
+			textScale,
+			widthCompensation,
+			cellH,
+			cellW: sceneW,
+			marginTop,
+			marginBottom,
+		}
+	}
+
+	// `<code>` path. Build the row-by-row bordered output once, then
+	// either serialize the full window (non-scroll case) or split into
+	// viewport-sized chunks (scroll case).
+	const rows = codeBorders.buildRows({
+		content,
+		language: String(node.props?.lang ?? ''),
+		fontId,
+		lineWidthPx: wrapWidthPx,
+		bold: isBold,
+		borderColor,
+		langColor,
+		codeColor,
+		precomputed: codePrecomputed.get(node),
+		lineNumbers,
+		lineCount: sourceLineCount,
+		gutterColor,
+	})
+
+	// `lines` (visual row count) = top border + codeRows + bottom border.
+	const lines = rows.codeRows.length + 2
+	const lineHeightBlocks = pxToTextLineHeight(scalePx)
+	const cellH = heightLen?.meters ?? (scrolling ? SCROLL_VIEWPORT_BLOCKS : lineHeightBlocks * lines)
+	const totalHeightBlocks = lineHeightBlocks * lines
+	const scrollDistBlocks = scrolling ? Math.max(0, totalHeightBlocks - SCROLL_VIEWPORT_BLOCKS) : 0
+	const needsScroll = scrolling && scrollDistBlocks > 0
+
+	if (!needsScroll) {
+		const codeBordered = codeBorders.serializeWindow(rows, 0, rows.codeRows.length)
+		return {
+			kind: 'text',
+			node,
+			path,
+			parentStack,
+			declarations,
+			type,
+			content,
+			borderedContent: codeBordered,
+			width,
+			scalePx,
+			textScale,
+			widthCompensation,
+			cellH,
+			cellW: sceneW,
+			marginTop,
+			marginBottom,
+		}
+	}
+
+	// One chunk per scroll offset — each chunk shows `viewportCodeRows`
+	// code rows starting at index `i`. Total chunks = N - V + 1 so the
+	// last chunk starts at row N - V and still fits V rows. Every chunk
+	// has exactly V code rows, so they all render the same height.
+	const viewportCodeRows = Math.max(
+		1,
+		Math.floor(SCROLL_VIEWPORT_BLOCKS / lineHeightBlocks) - 2,
+	)
+	const totalCodeRows = rows.codeRows.length
+	const chunkCount = Math.max(1, totalCodeRows - viewportCodeRows + 1)
+	const scrollTag = `code_scroll_${nextScrollId++}`
+
+	const chunks: { content: StyledSegment[]; tag: string }[] = []
+	for (let i = 0; i < chunkCount; i++) {
+		const start = i
+		chunks.push({
+			content: codeBorders.serializeWindow(rows, start, viewportCodeRows),
+			tag: `${scrollTag}_c${i}`,
+		})
+	}
+
 	return {
 		kind: 'text',
 		node,
@@ -230,7 +351,6 @@ function computeTextLayout(
 		declarations,
 		type,
 		content,
-		borderedContent: codeBordered,
 		width,
 		scalePx,
 		textScale,
@@ -239,5 +359,12 @@ function computeTextLayout(
 		cellW: sceneW,
 		marginTop,
 		marginBottom,
+		scrolling: true,
+		sourceLineCount,
+		scrollTag,
+		scrollDistBlocks,
+		visualLines: lines,
+		chunkCount,
+		chunks,
 	}
 }
