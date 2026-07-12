@@ -5,7 +5,7 @@ import { PLACEHOLDER_SKIN } from './skins'
 const presentationWatcherDialogue = DialogueTree('casino_crowd_1', {
     nodes: [{
         id: 'main',
-        advance: 'auto',
+        advance: 'click',
         lines: [
             {
                 variants: [

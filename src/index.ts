@@ -5,7 +5,7 @@ import { SelectorProperties } from 'sandstone/variables'
 import { ticking } from './shared'
 import './version'
 
-// import './sections/presentation/index'
+import './sections/presentation/index'
 import './sections/npcs'
 
 if (!(Bun.env.DISABLE_SHOWCASE === undefined ? false : Bun.env.DISABLE_SHOWCASE === 'true')) {
