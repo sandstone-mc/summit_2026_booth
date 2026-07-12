@@ -39,19 +39,27 @@ jobs:
           path: .env
           key: mcs-auth-v1
 
-      # If cache restored a .env, lift its MCS_MANAGER_* keys into the step env
-      # so deploy.ts sees them as process.env. Deploy.ts also writes back to
-      # .env when the cookie/token rotates, so the save step below catches it.
-      - name: Export cached auth (if any)
-        if: hashFiles('.env') != ''
+      # actions/cache does NOT create the path on a miss. On first run, seed
+      # .env from secrets with empty COOKIE/TOKEN so deploy.ts login() can
+      # bootstrap. Cache hit → file already populated, skip. Bun auto-loads
+      # .env into process.env at run-time.
+      - name: Bootstrap .env from secrets (on cache miss)
         run: |
-          set -a
-          # shellcheck disable=SC1091
-          . ./.env
-          set +a
-          echo "Loaded $(grep -c '^[A-Z]' .env || true) env vars from cached .env"
-
-      - name: Run SCL check + auto-update
+          if [ ! -f .env ]; then
+            {
+              echo "MCS_MANAGER_COOKIE="
+              echo "MCS_MANAGER_TOKEN="
+              echo "MCS_MANAGER_ENDPOINT=${MCS_MANAGER_ENDPOINT}"
+              echo "MCS_MANAGER_DAEMON_ID=${MCS_MANAGER_DAEMON_ID}"
+              echo "MCS_MANAGER_UUID=${MCS_MANAGER_UUID}"
+              echo "MCS_MANAGER_DATAPACKS_DIR=${MCS_MANAGER_DATAPACKS_DIR}"
+              echo "MCS_MANAGER_USERNAME=${MCS_MANAGER_USERNAME}"
+              echo "MCS_MANAGER_PASSWORD=${MCS_MANAGER_PASSWORD}"
+            } > .env
+            echo "Bootstrapped .env from secrets"
+          else
+            echo "Using cached .env"
+          fi
         env:
           MCS_MANAGER_ENDPOINT: ${{ secrets.MCS_MANAGER_ENDPOINT }}
           MCS_MANAGER_DAEMON_ID: ${{ secrets.MCS_MANAGER_DAEMON_ID }}
@@ -59,6 +67,8 @@ jobs:
           MCS_MANAGER_DATAPACKS_DIR: ${{ secrets.MCS_MANAGER_DATAPACKS_DIR }}
           MCS_MANAGER_USERNAME: ${{ secrets.MCS_MANAGER_USERNAME }}
           MCS_MANAGER_PASSWORD: ${{ secrets.MCS_MANAGER_PASSWORD }}
+
+      - name: Run SCL check + auto-update
         run: bun run scripts/deploy.ts --scl-only
 
       # Re-save cache so the next run picks up the rotated cookie/token. Always
