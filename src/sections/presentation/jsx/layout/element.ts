@@ -9,7 +9,7 @@ import type { VNode, StyledSegment } from '../render'
 import type { NodeWithPath } from '../tree/walk'
 import type { Styles } from '../style'
 import type { Precomputed } from './code-borders'
-import { CodeBorders } from './code-borders'
+import { CodeBorders, computeMinCodeLineWidthPx } from './code-borders'
 import {
 	DEFAULT_CODE_BORDER_COLOR,
 	DEFAULT_CODE_LANG_COLOR,
@@ -222,7 +222,6 @@ function computeTextLayout(
 	const content = type === 'code' ? extractCodeSource(node.props) : extractText(node.props?.children)
 
 	const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
-	const width = parseLength(declarations.width ?? '', sceneW)
 
 	const scalePx = fontSize?.px ?? defaultFontPx(type)
 	const textScale = pxToTextScale(scalePx) // NBT `transformation.scale`
@@ -234,6 +233,22 @@ function computeTextLayout(
 
 	const heightLen = parseLength(declarations.height ?? '', sceneH)
 	const isBold = type === 'h1' || type === 'h2' || declarations.bold === 'true'
+	// `<code>` line-numbers props
+	const lineNumbers = type === 'code' && (node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true')
+	const sourceLineCount = type === 'code' ? content.split('\n').length : 0
+	const gutterChars = lineNumbers ? Math.max(2, String(sourceLineCount).length) : 0
+	const scrolling = type === 'code' && (node.props?.scrolling === true || node.props?.scrolling === 'true')
+
+	// `<code>` with no explicit width: shrink to the minimum needed to
+	// render the longest source line without wrapping. Synthesize a
+	// `Length` for `width` so the rest of the pipeline (border build +
+	// MC `line_width` in `summon-entity`) just sees a defined width.
+	let width = parseLength(declarations.width ?? '', sceneW)
+	if (type === 'code' && width === undefined) {
+		const minLineWidthPx = computeMinCodeLineWidthPx(content, gutterChars)
+		const pxInDefault = minLineWidthPx / widthCompensation
+		width = { value: pxInDefault, unit: 'px', px: pxInDefault, meters: pxInDefault / 16 }
+	}
 	const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 
 	const codeColor = declarations.color as `#${string}` | undefined
@@ -244,11 +259,7 @@ function computeTextLayout(
 	const langColor =
 		(declarations['lang-color'] as `#${string}` | undefined) ??
 		(type === 'code' ? DEFAULT_CODE_LANG_COLOR : codeColor)
-	// `<code line-numbers>` props
-	const lineNumbers = type === 'code' && (node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true')
 	const gutterColor = (declarations['gutter-color'] as `#${string}` | undefined) ?? '#858585'
-	const sourceLineCount = type === 'code' ? content.split('\n').length : 0
-	const scrolling = type === 'code' && (node.props?.scrolling === true || node.props?.scrolling === 'true')
 
 	const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
 

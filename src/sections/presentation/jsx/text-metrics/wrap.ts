@@ -1,7 +1,13 @@
 // Text wrapping math. Two regimes:
 //
-//   - `wrapToLines` — proportional wrap for prose (`<p>`, `<h1>`, `<h2>`).
-//     Greedy char-fill using per-char pixel widths from `FontLoader`.
+//   - `wrapToLines` — word-wrap for prose (`<p>`, `<h1>`, `<h2>`).
+//     Greedy word-fill using per-char pixel widths from `FontLoader`.
+//     MUST match Minecraft's text_display `line_width` behavior, since
+//     the same value is handed to MC and a mismatch makes the entity
+//     render with more/fewer lines than the layout reserved space for.
+//     A single word wider than `lineWidth` is char-wrapped as a fallback.
+//     Leading whitespace on each source line is preserved on the first
+//     visual line so wrapped continuations line up with the source.
 //
 //   - `wrapCodeLinesAsArray` / `wrapCodeLinesAsTuples` — MONOSPACE wrap
 //     for `<code>` blocks. Every character (including spaces) is treated
@@ -15,11 +21,10 @@ import { DEFAULT_FONT_ID } from './font-loader'
 export class TextWrap {
 	constructor(private loader: FontLoader) {}
 
-	// Proportional greedy char-fill. Used by prose. Packs chars onto a
-	// line until the next char's pixel width would exceed `lineWidth`,
-	// then breaks and continues. Leading whitespace on each source line
-	// is preserved at the start of every visual line so wrapped
-	// continuations stay aligned with the source's indent.
+	// Proportional greedy word-fill. Used by prose. Mirrors Minecraft's
+	// text_display `line_width` wrap so the line count we compute here
+	// matches the entity's actual render. A single word wider than
+	// `lineWidth` is char-wrapped across multiple lines.
 	wrapToLines(
 		text: string,
 		lineWidth: number,
@@ -30,29 +35,75 @@ export class TextWrap {
 
 		const out: string[] = []
 		for (const sourceLine of text.split('\n')) {
-			if (sourceLine.length === 0) {
-				out.push('')
-				continue
-			}
 			const m = sourceLine.match(/^([ \t]*)([\s\S]*)$/)
 			const leading = m ? m[1] : ''
 			const body = m ? m[2] : sourceLine
-			const leadingWidth = this.loader.textWidth(leading, bold, fontId)
 
-			let current = leading
-			let currentWidth = leadingWidth
-			for (const ch of body) {
-				const cw = this.loader.charWidth(ch, bold, fontId)
-				if (currentWidth + cw > lineWidth && current.length > leading.length) {
-					out.push(current)
-					current = leading + ch
-					currentWidth = leadingWidth + cw
-				} else {
-					current += ch
-					currentWidth += cw
+			const words = body.split(/\s+/).filter(Boolean)
+			if (words.length === 0) {
+				out.push(leading)
+				continue
+			}
+
+			const spaceW = this.loader.charWidth(' ', bold, fontId)
+			const lines: string[] = []
+			let currentWidth = 0
+			let currentLine: string[] = []
+
+			const flush = () => {
+				if (currentLine.length) {
+					lines.push(currentLine.join(' '))
+					currentLine = []
+					currentWidth = 0
 				}
 			}
-			out.push(current)
+
+			for (const word of words) {
+				const wordWidth = this.loader.textWidth(word, bold, fontId)
+
+				// Word wider than the line — char-wrap across multiple lines.
+				if (wordWidth > lineWidth) {
+					flush()
+					let chunk = ''
+					let chunkWidth = 0
+					for (const ch of word) {
+						const cw = this.loader.charWidth(ch, bold, fontId)
+						if (chunkWidth + cw > lineWidth && chunk) {
+							lines.push(chunk)
+							chunk = ch
+							chunkWidth = cw
+						} else {
+							chunk += ch
+							chunkWidth += cw
+						}
+					}
+					if (chunk) {
+						currentLine = [chunk]
+						currentWidth = chunkWidth
+					}
+					continue
+				}
+
+				if (currentLine.length === 0) {
+					currentLine = [word]
+					currentWidth = wordWidth
+				} else if (currentWidth + spaceW + wordWidth <= lineWidth) {
+					currentLine.push(word)
+					currentWidth += spaceW + wordWidth
+				} else {
+					flush()
+					currentLine = [word]
+					currentWidth = wordWidth
+				}
+			}
+			flush()
+			if (lines.length === 0) lines.push('')
+
+			// Restore leading whitespace on the first visual line so it
+			// lines up with the source's indent (wrap continuations start
+			// without indent — matches MC's behavior).
+			if (lines[0] !== undefined) lines[0] = leading + lines[0]
+			out.push(...lines)
 		}
 
 		return out.length > 0 ? out : ['']

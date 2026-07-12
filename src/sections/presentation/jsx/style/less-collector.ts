@@ -91,9 +91,20 @@ export class LessCollector {
 		for (const el of elements) {
 			const comb = el.combinator?.value ?? ''
 			const isAmp = el.value === '&' || el.value === null
-			if (isAmp && !firstConsumed) {
-				// Leading `&` absorbs into the prefix; no leading combinator.
-				result = parent
+			if (!firstConsumed) {
+				// First element decides how parent integrates.
+				if (isAmp) {
+					// `&` absorbs parent literally; parent's combinator
+					// (if any) carries over to subsequent elements.
+					result = parent
+				} else {
+					// No `&`: nest as a descendant of `parent`. Prepend
+					// parent + descendant combinator + this element's own
+					// combinator (so `> .y` becomes `parent > .y`, not
+					// `parent > .y` after the space — both work but the
+					// explicit form reads better in the resolved map).
+					result = parent + ' ' + comb + (el.value ?? '')
+				}
 				firstConsumed = true
 			} else {
 				result += comb + (isAmp ? parent : el.value ?? '')

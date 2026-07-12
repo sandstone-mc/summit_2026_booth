@@ -13,6 +13,30 @@
 import { wrapCodeLinesAsArray, wrapCodeLinesAsTuples } from '../text-metrics'
 import type { StyledSegment } from '../render'
 
+// Monospace char width used both for the wrap budget (chars per row)
+// and the back-translation to MC's `line_width` (pixels per row). Every
+// glyph in the monospace font is treated as this width — caller's job
+// to fix the font if a glyph is wider/narrower than this assumption.
+export const DEFAULT_MONO_CHAR_PX = 6
+
+/**
+ * Minimum `line_width` (in default-scale pixels) needed to render a
+ * `<code>` block without wrapping any of its source lines. Used when
+ * the caller didn't set `width` — the box then shrinks to fit content
+ * rather than padding out to infinity.
+ *
+ * Mirrors the budget math in `buildRows` so the borders end up exactly
+ * as wide as MC's `line_width` allows: longest source line + gutter +
+ * 5 chars of internal padding + 2 chars for the two `│` bars.
+ */
+export function computeMinCodeLineWidthPx(content: string, gutterChars: number): number {
+	const longestSourceLineLen = content
+		.split('\n')
+		.reduce((max, line) => Math.max(max, line.length), 0)
+	const maxRowChars = longestSourceLineLen + gutterChars + 5
+	return (maxRowChars + 2) * DEFAULT_MONO_CHAR_PX
+}
+
 export type Precomputed = {
 	codeLines: string[]
 	/** Source line (0-indexed) per visual row in `codeLines`. */
@@ -125,7 +149,7 @@ export class CodeBorders {
 			gutterColor,
 		} = args
 		const gutterChars = lineNumbers ? Math.max(2, String(lineCount ?? 0).length) : 0
-		const DEFAULT_CHAR_PX = 6
+		const DEFAULT_CHAR_PX = DEFAULT_MONO_CHAR_PX
 		// `line_width` (MC NBT) caps total row chars between the two `│`s
 		// at `lineWidthPx / DEFAULT_CHAR_PX`. Row overhead =
 		// `gutterChars + 5` chars (leading ' ', gutter prefix, ' │ ')

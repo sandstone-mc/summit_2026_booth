@@ -10,6 +10,7 @@ import type { VNode, StyledSegment } from '../render'
 import type { NodeWithPath } from '../tree/walk'
 import { extractCodeSource } from '../tree/extract'
 import { defaultFontPx } from '../layout/constants'
+import { computeMinCodeLineWidthPx, DEFAULT_MONO_CHAR_PX } from '../layout/code-borders'
 import type { Precomputed } from '../layout/code-borders'
 import { precomputeHighlights } from '../highlight'
 import { GRAMMARS } from '../layout/constants'
@@ -46,21 +47,28 @@ export async function prepareCodeHighlights(
 			const fontId = declarations.font ?? 'monocraft:default'
 			const bold = declarations.bold === 'true'
 			const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
-			const width = parseLength(declarations.width ?? '', sceneW)
+			let width = parseLength(declarations.width ?? '', sceneW)
 			const scalePx = fontSize?.px ?? defaultFontPx('code')
 			const textScale = pxToTextScale(scalePx)
 			const BASELINE_TEXT_SCALE = pxToTextScale(10)
 			const widthCompensation = BASELINE_TEXT_SCALE / textScale
-			const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 			const lineNumbers =
 				node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true'
 			const sourceLineCount = source.split('\n').length
 			const gutterChars = lineNumbers ? Math.max(2, String(sourceLineCount).length) : 0
+			// Same shrink-to-fit rule as `layout/element.ts`: when no
+			// width is set, use the minimum `line_width` needed to render
+			// the longest source line without wrapping.
+			if (width === undefined) {
+				const minLineWidthPx = computeMinCodeLineWidthPx(source, gutterChars)
+				const pxInDefault = minLineWidthPx / widthCompensation
+				width = { value: pxInDefault, unit: 'px', px: pxInDefault, meters: pxInDefault / 16 }
+			}
+			const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 			// Same `wrapCodeChars` formula as `code-borders.ts` so the
 			// precomputed wrap matches the rendered rows. Code is treated
 			// as monospace: every char (including space) counts as 1.
-			const DEFAULT_CHAR_PX = 6
-			const maxRowChars = Math.max(10, Math.floor(wrapWidthPx / DEFAULT_CHAR_PX) - 2)
+			const maxRowChars = Math.max(10, Math.floor(wrapWidthPx / DEFAULT_MONO_CHAR_PX) - 2)
 			const maxCodeChars = Math.max(10, maxRowChars - gutterChars - 5)
 			const wrapCodeChars = Math.max(10, maxCodeChars)
 			const codeLines = wrapCodeLinesAsArray(source, wrapCodeChars, bold, fontId)
