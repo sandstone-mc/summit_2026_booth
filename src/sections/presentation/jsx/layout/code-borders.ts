@@ -10,8 +10,32 @@
 //     text_display entity and the scroll-tick toggles which chunk
 //     is visible).
 
-import { charWidth, wrapCodeLinesAsArray, wrapCodeLinesAsTuples } from '../text-metrics'
+import { wrapCodeLinesAsArray, wrapCodeLinesAsTuples } from '../text-metrics'
 import type { StyledSegment } from '../render'
+
+// Monospace char width used both for the wrap budget (chars per row)
+// and the back-translation to MC's `line_width` (pixels per row). Every
+// glyph in the monospace font is treated as this width — caller's job
+// to fix the font if a glyph is wider/narrower than this assumption.
+export const DEFAULT_MONO_CHAR_PX = 6
+
+/**
+ * Minimum `line_width` (in default-scale pixels) needed to render a
+ * `<code>` block without wrapping any of its source lines. Used when
+ * the caller didn't set `width` — the box then shrinks to fit content
+ * rather than padding out to infinity.
+ *
+ * Mirrors the budget math in `buildRows` so the borders end up exactly
+ * as wide as MC's `line_width` allows: longest source line + gutter +
+ * 5 chars of internal padding + 2 chars for the two `│` bars.
+ */
+export function computeMinCodeLineWidthPx(content: string, gutterChars: number): number {
+	const longestSourceLineLen = content
+		.split('\n')
+		.reduce((max, line) => Math.max(max, line.length), 0)
+	const maxRowChars = longestSourceLineLen + gutterChars + 5
+	return (maxRowChars + 2) * DEFAULT_MONO_CHAR_PX
+}
 
 export type Precomputed = {
 	codeLines: string[]
@@ -125,26 +149,25 @@ export class CodeBorders {
 			gutterColor,
 		} = args
 		const gutterChars = lineNumbers ? Math.max(2, String(lineCount ?? 0).length) : 0
-		const DEFAULT_CHAR_PX = 6
+		const DEFAULT_CHAR_PX = DEFAULT_MONO_CHAR_PX
 		// `line_width` (MC NBT) caps total row chars between the two `│`s
 		// at `lineWidthPx / DEFAULT_CHAR_PX`. Row overhead =
 		// `gutterChars + 5` chars (leading ' ', gutter prefix, ' │ ')
 		// between the bars; plus the 2 `│`s themselves.
 		const maxRowChars = Math.max(10, Math.floor(lineWidthPx / DEFAULT_CHAR_PX) - 2)
 		const maxCodeChars = Math.max(10, maxRowChars - gutterChars - 5)
-		// Wrap cap: tighter than the padEnd target so the row fits
-		// comfortably even when narrow chars let the wrap go slightly
-		// over the bitmap-px budget.
-		const wrapCodeChars = Math.max(10, maxCodeChars - 8)
-		const codeCharW = charWidth('│', false, fontId)
-		const innerWidth = Math.max(50, wrapCodeChars * codeCharW)
+		// Wrap budget: char count per visual row. Treat every glyph as
+		// monospace — if a char ends up the wrong width that's a font
+		// bug, not something the wrap compensates for. We pack right up
+		// to `maxCodeChars` so no trailing slack is wasted.
+		const wrapCodeChars = Math.max(10, maxCodeChars)
 		const codeLines =
 			precomputed?.codeLines ??
-			wrapCodeLinesAsArray(content, innerWidth, bold, fontId)
+			wrapCodeLinesAsArray(content, wrapCodeChars, bold, fontId)
 		const sourceLineOfVisualRow: number[] | null =
 			precomputed?.sourceLineOfVisualRow ??
 			(lineNumbers
-				? wrapCodeLinesAsTuples(content, innerWidth, bold, fontId).map((t) => t.sourceLine)
+				? wrapCodeLinesAsTuples(content, wrapCodeChars, bold, fontId).map((t) => t.sourceLine)
 				: null)
 		const highlighted = precomputed?.highlighted ?? null
 		const longestInnerChars = maxCodeChars

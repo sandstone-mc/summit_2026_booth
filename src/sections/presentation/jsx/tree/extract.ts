@@ -66,8 +66,8 @@ export function extractCodeSource(props: any): string {
 		const afterStart = src.indexOf('\n', startIdx)
 		if (afterStart !== -1) {
 			const inner = src.slice(afterStart + 1, endIdx)
-			return dedentBlock(inner).replace(/\n+$/, '')
+			return dedentBlock(inner).replace(/\n+$/, '').replace(/\t/g, '    ')
 		}
 	}
-	return src
+	return src.replace(/\t/g, '    ')
 }

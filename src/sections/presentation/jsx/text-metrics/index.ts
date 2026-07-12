@@ -53,19 +53,24 @@ export function wrapCodeLines(
 
 export function wrapCodeLinesAsArray(
 	text: string,
-	lineWidth: number,
-	bold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
+	_maxChars: number,
+	_bold: boolean,
+	_fontId: string = DEFAULT_FONT_ID,
 ): string[] {
-	return wrap.wrapCodeLinesAsArray(text, lineWidth, bold, fontId)
+	return wrap.wrapCodeLinesAsArrayMonospace(text, _maxChars)
 }
 
 /** Same as `wrapCodeLinesAsArray` but each entry also tracks its source line. */
 export function wrapCodeLinesAsTuples(
 	text: string,
-	lineWidth: number,
-	bold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
+	_maxChars: number,
+	_bold: boolean,
+	_fontId: string = DEFAULT_FONT_ID,
 ): { line: string; sourceLine: number }[] {
-	return wrap.wrapCodeLinesAsTuples(text, lineWidth, bold, fontId)
+	return wrap.wrapCodeLinesAsTuplesMonospace(text, _maxChars)
+}
+
+/** Total visual lines a `<code>` source produces when wrapped in monospace. */
+export function wrapCodeLinesMonospace(text: string, maxChars: number): number {
+	return wrap.wrapCodeLinesMonospace(text, maxChars)
 }

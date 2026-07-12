@@ -8,13 +8,13 @@ import type { CssDeclarations } from '../less/types'
 import type { VNode, StyledSegment } from '../render'
 import type { NodeWithPath } from '../tree/walk'
 import type { Styles } from '../style'
-import type { Precomputed } from './code-borders'
-import { CodeBorders } from './code-borders'
+import type { BorderedRows, Precomputed } from './code-borders'
+import { CodeBorders, computeMinCodeLineWidthPx } from './code-borders'
 import {
 	DEFAULT_CODE_BORDER_COLOR,
 	DEFAULT_CODE_LANG_COLOR,
 	DEFAULT_IMG_HEIGHT,
-	SCROLL_VIEWPORT_BLOCKS,
+	TEXT_DESCENDER,
 	defaultFontPx,
 } from './constants'
 import { parseMarginBox } from './margin'
@@ -64,15 +64,27 @@ type TextElementLayout = {
 	scrollDistBlocks?: number
 	/** Visual-line count of the bordered content (used by the scroll math). */
 	visualLines?: number
+	/** Rows per scroll chunk (set by `finalizeScrollCodeLayout`). */
+	viewportCodeRows?: number
 	/** Number of viewport-sized chunks the scrolling block was split into. */
 	chunkCount?: number
 	/**
-	 * Per-chunk bordered content + tag, set when scrolling. The layout
-	 * pass treats the scroll block as a SINGLE entity (one cell, one X);
-	 * the summon pass fans out to N text_display entities at the same
-	 * XZ, each tagged with `chunk.tag`.
+	 * Per-chunk bordered content, set when scrolling. The layout pass
+	 * treats the scroll block as a SINGLE entity (one cell, one X);
+	 * the summon pass creates ONE text_display at that XZ with chunk 0
+	 * baked in. The scroll-tick swaps the entity's `text` field for
+	 * chunks 1..N-1 via `data modify entity @s text set value [...]`.
 	 */
-	chunks?: { content: StyledSegment[]; tag: string }[]
+	chunks?: { content: StyledSegment[] }[]
+	/**
+	 * Rows from `codeBorders.buildRows` stashed on the element so
+	 * `finalizeScrollCodeLayout` can build chunks once the layout
+	 * engine has decided the scroll block's `cellH`. Internal —
+	 * callers outside `element.ts` should not touch this.
+	 */
+	__scrollRows?: BorderedRows
+	/** `lineHeightBlocks` cached at the same time as `__scrollRows`. */
+	__scrollLineHeightBlocks?: number
 	imgSrc?: undefined
 	imgItemModel?: undefined
 	imgAspect?: undefined
@@ -110,7 +122,7 @@ export type ImgResource = {
 export type ImgResourceMap = Map<string, ImgResource>
 
 // Element-type predicates used across the render + prepare passes.
-const TEXT_TYPES = new Set(['h1', 'h2', 'p', 'code'])
+const TEXT_TYPES = new Set(['h1', 'h2', 'h3', 'p', 'code'])
 const IMG_TYPES = new Set(['img'])
 
 export function isTextType(t: any): boolean {
@@ -221,7 +233,6 @@ function computeTextLayout(
 	const content = type === 'code' ? extractCodeSource(node.props) : extractText(node.props?.children)
 
 	const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
-	const width = parseLength(declarations.width ?? '', sceneW)
 
 	const scalePx = fontSize?.px ?? defaultFontPx(type)
 	const textScale = pxToTextScale(scalePx) // NBT `transformation.scale`
@@ -233,6 +244,22 @@ function computeTextLayout(
 
 	const heightLen = parseLength(declarations.height ?? '', sceneH)
 	const isBold = type === 'h1' || type === 'h2' || declarations.bold === 'true'
+	// `<code>` line-numbers props
+	const lineNumbers = type === 'code' && (node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true')
+	const sourceLineCount = type === 'code' ? content.split('\n').length : 0
+	const gutterChars = lineNumbers ? Math.max(2, String(sourceLineCount).length) : 0
+	const scrolling = type === 'code' && (node.props?.scrolling === true || node.props?.scrolling === 'true')
+
+	// `<code>` with no explicit width: shrink to the minimum needed to
+	// render the longest source line without wrapping. Synthesize a
+	// `Length` for `width` so the rest of the pipeline (border build +
+	// MC `line_width` in `summon-entity`) just sees a defined width.
+	let width = parseLength(declarations.width ?? '', sceneW)
+	if (type === 'code' && width === undefined) {
+		const minLineWidthPx = computeMinCodeLineWidthPx(content, gutterChars)
+		const pxInDefault = minLineWidthPx / widthCompensation
+		width = { value: pxInDefault, unit: 'px', px: pxInDefault, meters: pxInDefault / 16 }
+	}
 	const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 
 	const codeColor = declarations.color as `#${string}` | undefined
@@ -243,11 +270,7 @@ function computeTextLayout(
 	const langColor =
 		(declarations['lang-color'] as `#${string}` | undefined) ??
 		(type === 'code' ? DEFAULT_CODE_LANG_COLOR : codeColor)
-	// `<code line-numbers>` props
-	const lineNumbers = type === 'code' && (node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true')
 	const gutterColor = (declarations['gutter-color'] as `#${string}` | undefined) ?? '#858585'
-	const sourceLineCount = type === 'code' ? content.split('\n').length : 0
-	const scrolling = type === 'code' && (node.props?.scrolling === true || node.props?.scrolling === 'true')
 
 	const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
 
@@ -295,12 +318,11 @@ function computeTextLayout(
 	// `lines` (visual row count) = top border + codeRows + bottom border.
 	const lines = rows.codeRows.length + 2
 	const lineHeightBlocks = pxToTextLineHeight(scalePx)
-	const cellH = heightLen?.meters ?? (scrolling ? SCROLL_VIEWPORT_BLOCKS : lineHeightBlocks * lines)
-	const totalHeightBlocks = lineHeightBlocks * lines
-	const scrollDistBlocks = scrolling ? Math.max(0, totalHeightBlocks - SCROLL_VIEWPORT_BLOCKS) : 0
-	const needsScroll = scrolling && scrollDistBlocks > 0
 
-	if (!needsScroll) {
+	// Non-scroll path: cellH is the bordered content height; serialize
+	// the full window once and return.
+	if (!scrolling) {
+		const cellH = heightLen?.meters ?? lineHeightBlocks * lines
 		const codeBordered = codeBorders.serializeWindow(rows, 0, rows.codeRows.length)
 		return {
 			kind: 'text',
@@ -322,26 +344,18 @@ function computeTextLayout(
 		}
 	}
 
-	// One chunk per scroll offset — each chunk shows `viewportCodeRows`
-	// code rows starting at index `i`. Total chunks = N - V + 1 so the
-	// last chunk starts at row N - V and still fits V rows. Every chunk
-	// has exactly V code rows, so they all render the same height.
-	const viewportCodeRows = Math.max(
-		1,
-		Math.floor(SCROLL_VIEWPORT_BLOCKS / lineHeightBlocks) - 2,
-	)
-	const totalCodeRows = rows.codeRows.length
-	const chunkCount = Math.max(1, totalCodeRows - viewportCodeRows + 1)
+	// Scroll path: defer cellH + chunk math to `finalizeScrollCodeLayout`.
+	// The layout engine decides cellH from the slide's remaining space
+	// after non-scroll elements are placed, then calls finalize so each
+	// chunk's viewport row count fits the actual cellH. Until then, stash
+	// the bordered rows + line height so finalize can rebuild chunks.
+	// `heightLen` is intentionally ignored here — for scroll blocks, cellH
+	// is layout-driven; any LESS `height` on the code element (or
+	// cascading in from a parent like `#code-grid { height: 100% }`)
+	// would lock the block at the wrong size and make the layout engine's
+	// "fill remaining space" math collapse.
 	const scrollTag = `code_scroll_${nextScrollId++}`
-
-	const chunks: { content: StyledSegment[]; tag: string }[] = []
-	for (let i = 0; i < chunkCount; i++) {
-		const start = i
-		chunks.push({
-			content: codeBorders.serializeWindow(rows, start, viewportCodeRows),
-			tag: `${scrollTag}_c${i}`,
-		})
-	}
+	const placeholderCellH = 0
 
 	return {
 		kind: 'text',
@@ -355,16 +369,56 @@ function computeTextLayout(
 		scalePx,
 		textScale,
 		widthCompensation,
-		cellH,
+		cellH: placeholderCellH,
 		cellW: sceneW,
 		marginTop,
 		marginBottom,
 		scrolling: true,
 		sourceLineCount,
 		scrollTag,
-		scrollDistBlocks,
+		scrollDistBlocks: 0,
 		visualLines: lines,
-		chunkCount,
-		chunks,
+		chunkCount: 0,
+		chunks: [],
+		__scrollRows: rows,
+		__scrollLineHeightBlocks: lineHeightBlocks,
 	}
+}
+
+/**
+ * Build chunks for a scrolling `<code>` element once the layout engine
+ * has set its `cellH`. Reserves 2 lines inside the chunk for its own
+ * top + bottom border, plus 1 block of `TEXT_DESCENDER` slack below
+ * the cell (the text_display entity sits 1 block under the cell
+ * bottom and renders upward — without this slack the bottom border
+ * spills off-screen). The rest becomes `viewportCodeRows` of code.
+ * Mutates the element in place. No-op for non-scroll or non-text.
+ */
+export function finalizeScrollCodeLayout(el: ElementLayout): void {
+	if (el.kind !== 'text' || !el.scrolling) return
+	const rows = el.__scrollRows
+	const lineHeightBlocks = el.__scrollLineHeightBlocks ?? 0
+	if (!rows || lineHeightBlocks <= 0) return
+
+	const cellH = el.cellH
+	// Subtracted from cellH: 1 block for the descender + 2 line heights
+	// (top + bottom border rows of this chunk).
+	const codeAreaBlocks = Math.max(0, cellH - TEXT_DESCENDER - 2 * lineHeightBlocks)
+	const viewportCodeRows = Math.max(1, Math.floor(codeAreaBlocks / lineHeightBlocks))
+	const totalCodeRows = rows.codeRows.length
+	const chunkCount = Math.max(1, totalCodeRows - viewportCodeRows + 1)
+
+	const chunks: { content: StyledSegment[] }[] = []
+	for (let i = 0; i < chunkCount; i++) {
+		chunks.push({
+			content: codeBorders.serializeWindow(rows, i, viewportCodeRows),
+		})
+	}
+
+	// Total height the bordered content would occupy if fully shown.
+	const totalHeightBlocks = lineHeightBlocks * (totalCodeRows + 2)
+	el.viewportCodeRows = viewportCodeRows
+	el.chunkCount = chunkCount
+	el.chunks = chunks
+	el.scrollDistBlocks = Math.max(0, totalHeightBlocks - cellH)
 }

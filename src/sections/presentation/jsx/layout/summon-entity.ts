@@ -30,46 +30,47 @@ export function summonTextEntity(
 	initialOpacity: number | undefined,
 ): void {
 	const textY = cellY - 1
-	// Scrolling `<code>` blocks fan out into N entities (one per chunk)
-	// at the same XZ. Only chunk 0 starts visible; the scroll-tick
-	// rotates which chunk is opaque per tick.
+	// Scrolling `<code>` blocks: ONE text_display per block. Initial `text`
+	// is chunk 0's bordered content so it renders correctly from tick 1.
+	// The scroll-tick swaps the entity's `text` field via
+	// `data modify entity @s text set value [...]` for chunks 1..N-1.
 	if (el.chunks && el.chunks.length > 0 && el.scrollTag) {
-		for (let ci = 0; ci < el.chunks.length; ci++) {
-			const chunk = el.chunks[ci]
-			const tags: (`${any}${string}` | LabelClass)[] = [
-				sceneTag,
-				...extraTags,
-				el.scrollTag as `${any}${string}`,
-				chunk.tag as `${any}${string}`,
-			]
-			const nbt: SymbolEntity['text_display'] = {
-				Tags: tags,
-				text: buildTextJson(chunk.content, el.declarations, el.type),
-				transformation: buildIdentityTransform(el.textScale),
-			}
-			applyBackgroundColor(
-				el.declarations,
-				nbt as unknown as { background?: ReturnType<typeof NBT.int> },
-			)
-			if (el.width !== undefined)
-				nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
-			else if (el.declarations['line-width'])
-				nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
-			if (el.declarations.shadow === 'true') nbt.shadow = true
-			if (el.declarations['see-through'] === 'true') nbt.see_through = true
-			let align: 'center' | 'left' | 'right' | undefined
-			if (el.type === 'code') align = 'left'
-			const ta = el.declarations['text-align']?.toLowerCase().trim()
-			if (ta === 'left' || ta === 'right' || ta === 'center') align = ta
-			if (align) nbt.alignment = align
-			// Chunk visibility: chunk 0 visible, others hidden at mount.
-			nbt.text_opacity = NBT.int(ci === 0 ? -1 : 0)
-			summon(
-				'text_display',
-				`${fmt(entityX)} ${fmt(textY)} ${fmt(z)}`,
-				nbt,
-			)
+		const tags: (`${any}${string}` | LabelClass)[] = [sceneTag, ...extraTags]
+		tags.push(el.scrollTag as `${any}${string}`)
+		const nbt: SymbolEntity['text_display'] = {
+			Tags: tags,
+			text: buildTextJson(el.chunks[0].content, el.declarations, el.type),
+			transformation: buildIdentityTransform(el.textScale),
 		}
+		applyBackgroundColor(
+			el.declarations,
+			nbt as unknown as { background?: ReturnType<typeof NBT.int> },
+		)
+		if (el.width !== undefined)
+			nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
+		else if (el.declarations['line-width'])
+			nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
+		if (el.declarations.shadow === 'true') nbt.shadow = true
+		if (el.declarations['see-through'] === 'true') nbt.see_through = true
+		let align: 'center' | 'left' | 'right' | undefined
+		if (el.type === 'code') align = 'left'
+		const ta = el.declarations['text-align']?.toLowerCase().trim()
+		if (ta === 'left' || ta === 'right' || ta === 'center') align = ta
+		if (align) nbt.alignment = align
+		// Scroll entity starts visible — slide show/hide owns visibility.
+		nbt.text_opacity = NBT.int(-1)
+		// Anchor the entity AT `cellY` (cell top), not `cellY - 1`. The
+		// generic `textY = cellY - 1` below reserves a 1-block descender
+		// space below the cell — fine for normal text where the descender
+		// is empty glyph space, but scroll chunks ALWAYS have a non-empty
+		// last visual row (the bottom border) sitting at that descender
+		// position, so it would render 1 block below the slide edge when
+		// the cell is flush against the slide bottom.
+		summon(
+			'text_display',
+			`${fmt(entityX)} ${fmt(cellY)} ${fmt(z)}`,
+			nbt,
+		)
 		return
 	}
 
@@ -156,9 +157,10 @@ export function summonElement(
 ): void {
 	if (el.kind === 'text') {
 		// Tag every text entity with `kind.text` so showSlide/hideSlide
-		// can distinguish it from scrolling `<code>` chunks (which carry
-		// `code_scroll_*_c*` tags instead). The slide show needs to leave
-		// chunk opacity alone — the scroll-tick owns chunk visibility.
+		// can target text_display entities (text_opacity) while leaving
+		// item_display images alone. Scrolling `<code>` blocks are a
+		// single entity that carries this tag too — the slide show owns
+		// its visibility; the scroll-tick only swaps its `text` field.
 		summonTextEntity(
 			el,
 			entityX,
