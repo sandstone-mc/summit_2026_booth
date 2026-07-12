@@ -15,6 +15,7 @@ import {
 	_,
 	scoreboard,
 } from 'sandstone'
+import type { NBTObject } from 'sandstone/arguments'
 import {
 	summonVisibleElements,
 	isVisibleType,
@@ -22,6 +23,7 @@ import {
 	resetScrollIds,
 	type ScrollSpec,
 } from '../layout'
+import { buildTextJson } from '../layout/nbt'
 import { flatWalk } from '../tree/walk'
 import type { VNode } from '../render'
 import type { NodeWithPath } from '../tree/walk'
@@ -163,11 +165,12 @@ export class SlideShow {
 		}
 
 		// Per-slide scroll-tick. Reads gametime, computes elapsed ticks
-		// since the slide was shown, then rotates `text_opacity` and
-		// `view_range` across the N chunk entities of each scrolling
-		// `<code>` block. Exactly one chunk is visible per tick; the
-		// rest are hidden. Once all chunks have been visited, the last
-		// one stays visible (clamp parks).
+		// since the slide was shown, then swaps the single text_display
+		// entity's `text` field to the bordered content of chunk N (one
+		// `data modify entity ... text set value [...]` per chunk, gated
+		// on `visibleIdx == N`). Visibility (text_opacity / view_range)
+		// is owned by the slide show/hide MCFunctions — the scroll-tick
+		// only mutates `text`.
 		this.scrollTickFns = []
 		for (let s = 0; s < this.totalSlides; s++) {
 			const idx = s
@@ -204,35 +207,21 @@ export class SlideShow {
 						scoreboard.players.set(this.tempLimit, 0)
 						scoreboard.players.operation(this.tempOffset, '>', this.tempLimit)
 						// Now `tempOffset` holds the index of the visible chunk.
+						const entitySel = Selector('@e', {
+							tag: [spec.scrollTag as `${any}${string}`, slideTag(idx)],
+						})
 						for (let ci = 0; ci < chunkCount; ci++) {
-							const chunkTag = `${spec.scrollTag}_c${ci}`
-							const selectors = Selector('@e', {
-								tag: [
-									chunkTag as `${any}${string}`,
-									spec.scrollTag as `${any}${string}`,
-									slideTag(idx),
-								],
-							})
-							// Set text_opacity to -1 (visible) when ci == visibleIdx,
-							// otherwise 0 (hidden). MC supports running `if` with a
-							// scoreboard comparison; we use `_.if` on `tempOffset`.
+							const chunkValue = buildTextJson(
+								spec.chunks[ci].content,
+								spec.declarations,
+								spec.type,
+							)
 							scoreboard.players.set(this.tempLimit, ci)
 							scoreboard.players.operation(this.tempLimit, '=', this.tempOffset)
-							_.if(_.not(this.tempLimit.equals(ci)), () => {
-								execute.as(selectors).run.data.modify
-									.entity('@s', 'text_opacity')
-									.set.value(NBT.int(0))
-								execute.as(selectors).run.data.modify
-									.entity('@s', 'view_range')
-									.set.value(NBT.float(0.0))
-							})
 							_.if(this.tempLimit.equals(ci), () => {
-								execute.as(selectors).run.data.modify
-									.entity('@s', 'text_opacity')
-									.set.value(NBT.int(-1))
-								execute.as(selectors).run.data.modify
-									.entity('@s', 'view_range')
-									.set.value(NBT.float(1.0))
+								execute.as(entitySel).run.data.modify
+									.entity('@s', 'text')
+									.set.value(chunkValue as NBTObject)
 							})
 						}
 					}

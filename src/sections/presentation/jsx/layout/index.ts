@@ -12,8 +12,9 @@
 import { parseLength, pxToTextLineHeight } from '../length'
 import type { LabelClass } from 'sandstone'
 import type { NodeWithPath } from '../tree/walk'
-import type { VNode } from '../render'
+import type { VNode, StyledSegment } from '../render'
 import type { Styles } from '../style'
+import type { CssDeclarations } from '../less/types'
 import { computeElementLayout, type ElementLayout, type ImgResourceMap } from './element'
 import type { Precomputed } from './code-borders'
 import { blockCellH, blockGap, groupIntoBlocks, startingY, totalStackHeight, type Block } from './blocks'
@@ -24,7 +25,7 @@ export type CodePrecomputedMap = WeakMap<VNode, Precomputed>
 
 /** Spec captured during layout, consumed by the slide's scroll-tick. */
 export type ScrollSpec = {
-	/** Unique tag set on every chunk entity at summon time. */
+	/** Unique tag set on the (single) scroll entity at summon time. */
 	scrollTag: string
 	/** Entity's initial Y in world blocks (cellY - 1). */
 	startY: number
@@ -34,6 +35,12 @@ export type ScrollSpec = {
 	lineHeightBlocks: number
 	/** Number of viewport-sized chunks the scroll block was split into. */
 	chunkCount: number
+	/** Per-chunk bordered content. The tick picks `chunks[visibleIdx]`. */
+	chunks: { content: StyledSegment[] }[]
+	/** LESS declarations for the scroll element — drive `buildTextJson`. */
+	declarations: CssDeclarations
+	/** Element type ('code' for scrolling blocks today). */
+	type: string
 }
 
 export function summonVisibleElements(
@@ -213,6 +220,9 @@ function maybeRecordScroll(
 		scrollDistBlocks: el.scrollDistBlocks,
 		lineHeightBlocks: pxToTextLineHeight(el.scalePx),
 		chunkCount: el.chunkCount ?? 1,
+		chunks: el.chunks ?? [],
+		declarations: el.declarations,
+		type: el.type,
 	})
 }
 

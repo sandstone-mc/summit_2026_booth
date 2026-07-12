@@ -10,7 +10,7 @@
 //     text_display entity and the scroll-tick toggles which chunk
 //     is visible).
 
-import { charWidth, wrapCodeLinesAsArray, wrapCodeLinesAsTuples } from '../text-metrics'
+import { wrapCodeLinesAsArray, wrapCodeLinesAsTuples } from '../text-metrics'
 import type { StyledSegment } from '../render'
 
 export type Precomputed = {
@@ -132,19 +132,18 @@ export class CodeBorders {
 		// between the bars; plus the 2 `│`s themselves.
 		const maxRowChars = Math.max(10, Math.floor(lineWidthPx / DEFAULT_CHAR_PX) - 2)
 		const maxCodeChars = Math.max(10, maxRowChars - gutterChars - 5)
-		// Wrap cap: tighter than the padEnd target so the row fits
-		// comfortably even when narrow chars let the wrap go slightly
-		// over the bitmap-px budget.
-		const wrapCodeChars = Math.max(10, maxCodeChars - 8)
-		const codeCharW = charWidth('│', false, fontId)
-		const innerWidth = Math.max(50, wrapCodeChars * codeCharW)
+		// Wrap budget: char count per visual row. Treat every glyph as
+		// monospace — if a char ends up the wrong width that's a font
+		// bug, not something the wrap compensates for. We pack right up
+		// to `maxCodeChars` so no trailing slack is wasted.
+		const wrapCodeChars = Math.max(10, maxCodeChars)
 		const codeLines =
 			precomputed?.codeLines ??
-			wrapCodeLinesAsArray(content, innerWidth, bold, fontId)
+			wrapCodeLinesAsArray(content, wrapCodeChars, bold, fontId)
 		const sourceLineOfVisualRow: number[] | null =
 			precomputed?.sourceLineOfVisualRow ??
 			(lineNumbers
-				? wrapCodeLinesAsTuples(content, innerWidth, bold, fontId).map((t) => t.sourceLine)
+				? wrapCodeLinesAsTuples(content, wrapCodeChars, bold, fontId).map((t) => t.sourceLine)
 				: null)
 		const highlighted = precomputed?.highlighted ?? null
 		const longestInnerChars = maxCodeChars

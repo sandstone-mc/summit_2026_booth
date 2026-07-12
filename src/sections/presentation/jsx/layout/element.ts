@@ -67,12 +67,13 @@ type TextElementLayout = {
 	/** Number of viewport-sized chunks the scrolling block was split into. */
 	chunkCount?: number
 	/**
-	 * Per-chunk bordered content + tag, set when scrolling. The layout
-	 * pass treats the scroll block as a SINGLE entity (one cell, one X);
-	 * the summon pass fans out to N text_display entities at the same
-	 * XZ, each tagged with `chunk.tag`.
+	 * Per-chunk bordered content, set when scrolling. The layout pass
+	 * treats the scroll block as a SINGLE entity (one cell, one X);
+	 * the summon pass creates ONE text_display at that XZ with chunk 0
+	 * baked in. The scroll-tick swaps the entity's `text` field for
+	 * chunks 1..N-1 via `data modify entity @s text set value [...]`.
 	 */
-	chunks?: { content: StyledSegment[]; tag: string }[]
+	chunks?: { content: StyledSegment[] }[]
 	imgSrc?: undefined
 	imgItemModel?: undefined
 	imgAspect?: undefined
@@ -334,12 +335,11 @@ function computeTextLayout(
 	const chunkCount = Math.max(1, totalCodeRows - viewportCodeRows + 1)
 	const scrollTag = `code_scroll_${nextScrollId++}`
 
-	const chunks: { content: StyledSegment[]; tag: string }[] = []
+	const chunks: { content: StyledSegment[] }[] = []
 	for (let i = 0; i < chunkCount; i++) {
 		const start = i
 		chunks.push({
 			content: codeBorders.serializeWindow(rows, start, viewportCodeRows),
-			tag: `${scrollTag}_c${i}`,
 		})
 	}
 
