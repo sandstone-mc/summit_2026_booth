@@ -1,1 +1,0 @@
-execute as @e[tag=sandstone_summit_booth.npc.display, distance=0..2, type=minecraft:text_display] run data merge entity @s {text:[{text:"Don't tell the others, but I think that Smithie i"}]}

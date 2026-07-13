@@ -1,0 +1,3 @@
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 1.. if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches ..0 run function sandstone_summit_booth:sections/npcs/dialogue/credits/render/switch/case_3/if
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 0 run function sandstone_summit_booth:sections/npcs/dialogue/credits/render/switch/case_3/if2
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 40 run function sandstone_summit_booth:sections/npcs/dialogue/credits/render/switch/case_3/if3

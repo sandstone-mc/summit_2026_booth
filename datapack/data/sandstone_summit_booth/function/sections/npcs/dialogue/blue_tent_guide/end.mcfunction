@@ -1,4 +1,5 @@
 scoreboard players reset @s sandstone_summit_booth.npc.dialogue.line
+tag @s remove sandstone_summit_booth.npc.dialogue.revealing
 execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/blue_tent_guide/end/execute_at
 tag @a[tag=sandstone_summit_booth.npc.blue_tent_guide.interactor] remove sandstone_summit_booth.npc.blue_tent_guide.interactor
 tag @a[tag=sandstone_summit_booth.npc.red_tent_sandstone.interactor] remove sandstone_summit_booth.npc.red_tent_sandstone.interactor

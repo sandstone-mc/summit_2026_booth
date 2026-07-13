@@ -1,0 +1,2 @@
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 1.. if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches ..33 run function sandstone_summit_booth:sections/npcs/dialogue/red_tent_sandstone/render/switch/case_4/if
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 33 run tag @s remove sandstone_summit_booth.npc.dialogue.revealing

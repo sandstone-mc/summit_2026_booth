@@ -1,4 +1,1 @@
-tag @a[tag=sandstone_summit_booth.npc.blue_tent_guide.interactor] remove sandstone_summit_booth.npc.blue_tent_guide.interactor
-tag @s add sandstone_summit_booth.npc.blue_tent_guide.interactor
-advancement revoke @s only sandstone_summit_booth:npcs/interact/blue_tent_guide
-execute as @e[tag=sandstone_summit_booth.npc.blue_tent_guide, type=minecraft:mannequin] run function sandstone_summit_booth:sections/npcs/tick/execute_as/execute_as/if
+execute if score @s sandstone_summit_booth.npc.dialogue.line matches 0.. run function sandstone_summit_booth:sections/npcs/tick/execute_as/if

@@ -1,0 +1,1 @@
+$return run function sandstone_summit_booth:sections/npcs/dialogue/blue_tent_guide/render/switch/case_$(env_0)

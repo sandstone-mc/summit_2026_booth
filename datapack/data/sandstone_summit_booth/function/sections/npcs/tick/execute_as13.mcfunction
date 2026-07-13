@@ -1,4 +1,1 @@
-tag @a[tag=sandstone_summit_booth.npc.casino_crowd_1.interactor] remove sandstone_summit_booth.npc.casino_crowd_1.interactor
-tag @s add sandstone_summit_booth.npc.casino_crowd_1.interactor
-advancement revoke @s only sandstone_summit_booth:npcs/interact/casino_crowd_1
-execute as @e[tag=sandstone_summit_booth.npc.casino_crowd_1, type=minecraft:mannequin] run function sandstone_summit_booth:sections/npcs/tick/execute_as13/execute_as/if
+execute if score @s sandstone_summit_booth.npc.dialogue.line matches 0.. run function sandstone_summit_booth:sections/npcs/tick/execute_as13/if

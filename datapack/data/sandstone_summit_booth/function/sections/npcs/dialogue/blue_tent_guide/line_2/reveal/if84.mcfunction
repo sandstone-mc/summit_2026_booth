@@ -1,1 +1,0 @@
-execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/blue_tent_guide/line_2/reveal/if84/execute_at

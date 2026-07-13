@@ -1,1 +1,0 @@
-execute at @s run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_1/line_0/variant_1/if14/execute_at

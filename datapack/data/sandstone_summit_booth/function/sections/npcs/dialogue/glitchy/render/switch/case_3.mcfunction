@@ -1,0 +1,2 @@
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 1.. if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches ..7 run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/render/switch/case_3/if
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 7 run tag @s remove sandstone_summit_booth.npc.dialogue.revealing

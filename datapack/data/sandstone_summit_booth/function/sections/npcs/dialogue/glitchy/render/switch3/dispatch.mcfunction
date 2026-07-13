@@ -1,0 +1,1 @@
+$return run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/render/switch3/case_$(env_0)

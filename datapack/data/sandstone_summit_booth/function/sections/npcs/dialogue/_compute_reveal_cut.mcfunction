@@ -1,0 +1,1 @@
+$data modify storage sandstone_summit_booth:npcs_reveal cut set string storage sandstone_summit_booth:npcs_reveal full 0 $(end)
