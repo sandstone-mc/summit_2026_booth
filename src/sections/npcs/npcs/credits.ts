@@ -7,7 +7,6 @@ interface Contributor {
     name: string
     role: string
     url?: string
-    // One of the `summit_icons.*` translation keys
     icon?: string
 }
 
@@ -54,6 +53,7 @@ const creditsDialogue = DialogueTree('credits', {
             lines: [
                 { text: "This whole thing didn't build itself, you know." },
                 { text: 'A bunch of people poured lots time into making this booth happen.' },
+                { text: 'Click me again and I\'ll tell you about them.' },
             ],
             next: 'credits'
         },

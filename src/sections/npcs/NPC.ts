@@ -1,6 +1,5 @@
-import { _, abs, Advancement, advancement, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon } from 'sandstone'
+import { _, abs, Advancement, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
-import { NAMESPACE } from '@shared'
 import type { DialogueTree } from './DialogueTree'
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth' as `${any}${string}`
@@ -11,6 +10,20 @@ export const NpcDisplayLabel = Label('npc.display')
 // No score = no active dialogue
 // 0+ = current line
 export const DialogueLineIndex = Objective.create('npc.dialogue.line')
+
+// typewriter reveal state, driven by the tick loop below
+
+// characters revealed so far in the active line
+export const RevealCount = Objective.create('npc.dialogue.reveal_count')
+
+// ticks left before the next character reveals
+export const RevealDelay = Objective.create('npc.dialogue.reveal_delay')
+
+// ticks per character for the active line; reset to 1 during the post-reveal auto-hold countdown
+export const RevealSpeed = Objective.create('npc.dialogue.reveal_speed')
+
+// gates whether the tick loop should keep stepping this NPC's reveal
+export const RevealingLabel = Label('npc.dialogue.revealing')
 
 // blocks above the mannequin head the display sits at
 const HEAD_HEIGHT = 0.2
@@ -124,6 +137,10 @@ MCFunction('sections/npcs/spawn', () => {
         }
 
         if (npc.dialogue) {
+            const dialogue = npc.dialogue
+            const npcSelector = Selector('@e', { tag: npc.instanceTag, type: 'minecraft:mannequin' })
+
+            // invisible hitbox that catches right-clicks on the NPC
             summon('minecraft:interaction', abs(x, y, z), {
                 Tags: [npc.instanceTag, BOOTH_ENTITY_TAG],
                 width: NBT.float(0.8),
@@ -131,7 +148,8 @@ MCFunction('sections/npcs/spawn', () => {
                 response: true,
             })
 
-            Advancement(`npcs/interact/${npc.id}`, {
+            // click detection lives entirely in the reward function
+            const interactAdvancement = Advancement(`npcs/interact/${npc.id}`, {
                 criteria: {
                     click: {
                         trigger: 'minecraft:player_interacted_with_entity',
@@ -139,6 +157,25 @@ MCFunction('sections/npcs/spawn', () => {
                             entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${npc.instanceTag}"]}` },
                         },
                     },
+                },
+                rewards: {
+                    // runs "as and at" the clicking player
+                    function: MCFunction(`sections/npcs/interact_reward/${npc.id}`, () => {
+                        // track which player is talking to this NPC DialogueTree's
+                        // runAsPlayer/runAsMyNpc helpers switch context using this tag
+                        raw(`tag @a[tag=${npc.interactorTag}] remove ${npc.interactorTag}`)
+                        raw(`tag @s add ${npc.interactorTag}`)
+                        // revoke so this reward can fire again on the next click
+                        interactAdvancement.revoke('@s')
+
+                        execute.as(npcSelector).run(() => {
+                            _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
+                                dialogue.advance()
+                            }).else(() => {
+                                dialogue.start()
+                            })
+                        })
+                    }),
                 },
             })
         }
@@ -152,28 +189,23 @@ MCFunction('sections/npcs/tick', () => {
         if (npc.dialogue) {
             const dialogue = npc.dialogue
 
-            execute.as(Selector('@a', {
-                advancements: { [`${NAMESPACE}:npcs/interact/${npc.id}`]: true }
-            })).run(() => {
-                // @s is the clicking player here
-                raw(`tag @a[tag=${npc.interactorTag}] remove ${npc.interactorTag}`)
-                raw(`tag @s add ${npc.interactorTag}`)
-                advancement.revoke('@s').only(`${NAMESPACE}:npcs/interact/${npc.id}`)
-
-                execute.as(npcSelector).run(() => {
-                    _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
-                        dialogue.advance()
-                    }).else(() => {
-                        dialogue.start()
-                    })
-                })
-            })
-
             // cancel the dialogue if nobody is around
             execute.as(npcSelector).at('@s').run(() => {
                 _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
                     execute.unless.entity(Selector('@p', { distance: [0, 5] })).run(() => {
                         dialogue.end()
+                    })
+                })
+            })
+
+            // typewriter reveal driver: step RevealCount once every RevealSpeed ticks
+            execute.as(npcSelector).run(() => {
+                _.if(_.and(DialogueLineIndex('@s').greaterThanOrEqualTo(0), RevealingLabel('@s')), () => {
+                    RevealDelay('@s').remove(1)
+                    _.if(RevealDelay('@s').lessThanOrEqualTo(0), () => {
+                        RevealCount('@s').add(1)
+                        RevealDelay('@s').set(RevealSpeed('@s'))
+                        dialogue.render()
                     })
                 })
             })

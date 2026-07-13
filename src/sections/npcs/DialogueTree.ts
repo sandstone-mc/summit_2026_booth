@@ -1,6 +1,7 @@
-import { _, data, execute, MCFunction, type MCFunctionClass, Objective, raw, Selector, sleep, type Condition } from 'sandstone'
+import { _, data, Data, execute, functionCmd, MCFunction, type MCFunctionClass, Objective, raw, Selector, type Condition } from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
-import { DialogueLineIndex, NpcDisplayLabel, registry } from './NPC'
+import { NAMESPACE } from '@shared'
+import { DialogueLineIndex, NpcDisplayLabel, registry, RevealCount, RevealDelay, RevealSpeed, RevealingLabel } from './NPC'
 
 // ticks per revealed character
 const DEFAULT_SPEED = 1
@@ -10,6 +11,20 @@ const DEFAULT_AUTO_DELAY = 40
 
 const VariantPickObjective = Objective.create('npc.dialogue.variant')
 const VariantPick = VariantPickObjective('@s')
+
+// scratch score + storage shared by every NPC/line/variant, used to cut a
+// runtime-length substring out of the currently-revealing text run
+const RevealCutObjective = Objective.create('npc.dialogue.reveal_cut')
+const REVEAL_STORAGE = `${NAMESPACE}:npcs_reveal`
+// active run's full (un-cut) text, written fresh each reveal step
+const revealFull = Data('storage', REVEAL_STORAGE, 'full')
+// [0, end) slice of `full`, filled in by _computeRevealCut
+const revealCut = Data('storage', REVEAL_STORAGE, 'cut')
+const revealRuns = Data('storage', REVEAL_STORAGE, 'runs')
+
+const _computeRevealCut = MCFunction('sections/npcs/dialogue/_compute_reveal_cut', () => {
+    raw(`$data modify storage ${REVEAL_STORAGE} cut set string storage ${REVEAL_STORAGE} full 0 $(end)`)
+}, { lazy: true })
 
 export interface DialogueLine {
     // Static text. Ignored if `variants` is set
@@ -21,7 +36,7 @@ export interface DialogueLine {
     // Skip this line (falls through to whatever comes next) if this evaluates false
     condition?: Condition
 
-    // Ticks per revealed character for this line. Defaults to 2
+    // Ticks per revealed character for this line. Defaults to 1
     speed?: number
 
     // Runs as the interactor right when this line starts appearing
@@ -58,14 +73,22 @@ export interface DialogueTree {
 
     // Run as the NPC to end the dialogue early
     end: MCFunctionClass
+
+    // Run as the NPC to (re-)render the current line at its current reveal count
+    render: MCFunctionClass
+}
+
+// runs callback as/at the NPC's text display entity
+function withDisplay(callback: () => void) {
+    execute.at('@s').run(() => {
+        execute.as(Selector('@e', { type: 'minecraft:text_display', tag: NpcDisplayLabel, distance: [0, 2] })).run(callback)
+    })
 }
 
 // merges text onto the NPC text display
 function mergeDisplayText(text: string | JSONTextComponent[]) {
-    execute.at('@s').run(() => {
-        execute.as(Selector('@e', { type: 'minecraft:text_display', tag: NpcDisplayLabel, distance: [0, 2] })).run(() => {
-            data.merge.entity('@s', { text })
-        })
+    withDisplay(() => {
+        data.merge.entity('@s', { text })
     })
 }
 
@@ -79,20 +102,21 @@ function plainLength(runs: TextRun[]): number {
     return runs.reduce((sum, run) => sum + run.text.length, 0)
 }
 
-function revealedPrefix(runs: TextRun[], n: number): TextRun[] {
-    const result: TextRun[] = []
-    let remaining = n
-    for (const run of runs) {
-        if (remaining <= 0) break
-        if (run.text.length <= remaining) {
-            result.push(run)
-            remaining -= run.text.length
-        } else {
-            result.push({ ...run, text: run.text.substring(0, remaining) })
-            remaining = 0
-        }
-    }
-    return result
+// character offset each run starts at, so render() can tell which run a
+// given RevealCount falls into
+interface RunBound {
+    run: TextRun
+    offset: number
+    length: number
+}
+
+function runBoundaries(runs: TextRun[]): RunBound[] {
+    let offset = 0
+    return runs.map((run) => {
+        const bound: RunBound = { run, offset, length: run.text.length }
+        offset += run.text.length
+        return bound
+    })
 }
 
 interface FlatLine {
@@ -143,6 +167,7 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
 
     const end = MCFunction(`sections/npcs/dialogue/${id}/end`, () => {
         DialogueLineIndex('@s').reset()
+        RevealingLabel('@s').remove()
         mergeDisplayText('')
         for (const npc of registry) {
             raw(`tag @a[tag=${npc.interactorTag}] remove ${npc.interactorTag}`)
@@ -169,52 +194,95 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
         _.switch(DialogueLineIndex('@s'), flat.map((f) => ['case', f.globalIndex, () => nextFns[f.globalIndex]()] as const))
     })
 
-    for (const f of flat) {
-        const { line, globalIndex } = f
-        const speed = line.speed ?? DEFAULT_SPEED
-        const advanceMode = f.node.advance ?? 'click'
-        const autoDelay = f.node.autoDelay ?? DEFAULT_AUTO_DELAY
+    // (re-)renders the active line/variant at the current RevealCount
+    const render = MCFunction(`sections/npcs/dialogue/${id}/render`, () => {
+        _.switch(DialogueLineIndex('@s'), flat.map((f) => ['case', f.globalIndex, () => {
+            const { line, globalIndex } = f
+            const advanceMode = f.node.advance ?? 'click'
+            const autoDelay = f.node.autoDelay ?? DEFAULT_AUTO_DELAY
 
-        function buildRevealChain(pathSuffix: string, runs: TextRun[]): MCFunctionClass {
-            const length = plainLength(runs)
-            return MCFunction(`sections/npcs/dialogue/${id}/line_${globalIndex}/${pathSuffix}`, async () => {
-                DialogueLineIndex('@s').set(globalIndex)
-                mergeDisplayText('')
-                if (line.onShow) {
-                    runAsPlayer(line.onShow)
-                }
-                for (let n = 1; n <= length; n++) {
-                    sleep(`${speed}t`)
-                    _.if(DialogueLineIndex('@s').equalTo(globalIndex), () => {
-                        mergeDisplayText(revealedPrefix(runs, n))
+            function renderRuns(runs: TextRun[]) {
+                const bounds = runBoundaries(runs)
+                const total = plainLength(runs)
+
+                // find which run RevealCount currently falls into, cut its text down to
+                // size, and push the whole array to the display (see revealRuns above)
+                bounds.forEach(({ run, offset, length }, i) => {
+                    _.if(_.and(RevealCount('@s').greaterThan(offset), RevealCount('@s').lessThanOrEqualTo(offset + length)), () => {
+                        // cut = RevealCount - offset, computed via scratch score since offset is compile-time
+                        RevealCutObjective('@s').set(RevealCount('@s'))
+                        if (offset > 0) {
+                            RevealCutObjective('@s').remove(offset)
+                        }
+                        revealFull.set(run.text)
+                        execute.store.result.storage(REVEAL_STORAGE, 'end', 'int', 1).run.scoreboard.players.get('@s', RevealCutObjective.name)
+                        functionCmd(_computeRevealCut, 'with', 'storage', REVEAL_STORAGE)
+                        // prior runs shown in full, active run's text left blank until patched below
+                        revealRuns.set([...bounds.slice(0, i).map((b) => b.run), { ...run, text: '' }])
+                        Data('storage', REVEAL_STORAGE, `runs[${i}].text`).set(revealCut)
+                        withDisplay(() => {
+                            Data('entity', '@s', 'text').set(revealRuns)
+                        })
                     })
-                }
-                _.if(DialogueLineIndex('@s').equalTo(globalIndex), () => {
+                })
+
+                // fully revealed: fire onComplete, then either wait for a click or start
+                // the auto-hold countdown
+                _.if(RevealCount('@s').equalTo(total), () => {
                     if (line.onComplete) {
                         runAsPlayer(line.onComplete)
                     }
+                    if (advanceMode === 'auto') {
+                        RevealSpeed('@s').set(1)
+                    } else {
+                        RevealingLabel('@s').remove()
+                    }
                 })
                 if (advanceMode === 'auto') {
-                    sleep(`${autoDelay}t`)
-                    _.if(DialogueLineIndex('@s').equalTo(globalIndex), () => {
+                    _.if(RevealCount('@s').equalTo(total + autoDelay), () => {
+                        RevealingLabel('@s').remove()
                         nextFns[globalIndex]()
                     })
                 }
-            }, { lazy: true, asyncContext: true })
+            }
+
+            if (line.variants && line.variants.length > 0) {
+                _.switch(VariantPick, line.variants.map((variant, vi) => ['case', vi, () => renderRuns(normalizeRuns(variant))] as const))
+            } else {
+                renderRuns(normalizeRuns(line.text ?? ''))
+            }
+        }] as const))
+    })
+
+    for (const f of flat) {
+        const { line, globalIndex } = f
+        const speed = line.speed ?? DEFAULT_SPEED
+
+        function setupReveal() {
+            DialogueLineIndex('@s').set(globalIndex)
+            RevealCount('@s').set(0)
+            RevealSpeed('@s').set(speed)
+            RevealDelay('@s').set(speed)
+            RevealingLabel('@s').add()
+            mergeDisplayText('')
+            if (line.onShow) {
+                runAsPlayer(line.onShow)
+            }
+            // renders immediately so zero-length lines (onComplete-only) fire without waiting for a tick
+            render()
         }
 
         let revealFn: () => void
         if (line.variants && line.variants.length > 0) {
-            const variantChains = line.variants.map((variant, vi) => buildRevealChain(`variant_${vi}`, normalizeRuns(variant)))
+            // pick a variant into VariantPick; render() reads it back via the switch above
             const dispatch = MCFunction(`sections/npcs/dialogue/${id}/line_${globalIndex}/reveal`, () => {
                 execute.store.result.score(VariantPick.target, VariantPick.objective)
-                    .run.random.value([0, variantChains.length - 1], 'dialogue_variant')
-                _.switch(VariantPick, variantChains.map((fn, vi) => ['case', vi, () => fn()] as const))
+                    .run.random.value([0, line.variants!.length - 1], 'dialogue_variant')
+                setupReveal()
             }, { lazy: true })
             revealFn = () => dispatch()
         } else {
-            const chain = buildRevealChain('reveal', normalizeRuns(line.text ?? ''))
-            revealFn = () => chain()
+            revealFn = () => setupReveal()
         }
 
         const show = line.condition
@@ -238,5 +306,5 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
         showFns[nodeFirstIndex[startNodeId]]()
     })
 
-    return { id, start, advance, end }
+    return { id, start, advance, end, render }
 }
