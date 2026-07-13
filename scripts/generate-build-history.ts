@@ -136,7 +136,7 @@ async function main() {
 			// Per-iteration preamble
 			run(['rm', '-rf', 'node_modules'])
 			run(['bun', 'install'])
-			run(['rm', '-rf', join(PREV, 'datapack'), join(PREV, 'resourcepack')])
+			run(['rm', '-rf', join(PREV, 'output', 'datapack'), join(PREV, 'output', 'resourcepack')])
 
 			// Checkout source commit in parent repo
 			run(['git', 'checkout', hash])
