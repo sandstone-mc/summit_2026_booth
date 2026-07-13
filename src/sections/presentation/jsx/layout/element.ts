@@ -437,16 +437,6 @@ export function finalizeScrollCodeLayout(el: ElementLayout): void {
 	// Subtracted from cellH: default-font descender + 2 line heights
 	// (top + bottom border rows of this chunk).
 	const codeAreaBlocks = Math.max(0, cellH - textDescender - 2 * lineHeightBlocks)
-	if (process.env.DEBUG_DESCENDER === '1') {
-		console.warn(
-			`[descender-scroll] cellH=${cellH.toFixed(4)} ` +
-				`descender=${textDescender.toFixed(4)} ` +
-				`borderRows=${(2 * lineHeightBlocks).toFixed(4)} ` +
-				`codeArea=${codeAreaBlocks.toFixed(4)} ` +
-				`viewportRows=${Math.max(1, Math.floor(codeAreaBlocks / lineHeightBlocks))} ` +
-				`lineHeightBlocks=${lineHeightBlocks.toFixed(4)}`,
-		)
-	}
 	const viewportCodeRows = Math.max(1, Math.floor(codeAreaBlocks / lineHeightBlocks))
 	const totalCodeRows = rows.codeRows.length
 	const chunkCount = Math.max(1, totalCodeRows - viewportCodeRows + 1)

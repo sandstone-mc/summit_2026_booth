@@ -65,12 +65,6 @@ export function getTextDescender(fontId: string, scalePx: number): number {
 	// `geo.scale(0.4)` × `pos.multiplyScalar(1/16)` = `0.025` blocks/px
 	// at MC scale=1, scaled by `pxToTextScale(scalePx)` for our scale).
 	const blocks = (descenderPx * pxToTextScale(scalePx)) / 40
-	if (process.env.DEBUG_DESCENDER === '1') {
-		console.warn(
-			`[descender] fontId=${fontId} scalePx=${scalePx} ` +
-				`measuredDescenderPx=${descenderPx} cellHeightPx=${m.cellHeight} ` +
-				`pxToTextScale=${pxToTextScale(scalePx)} → ${blocks.toFixed(4)} blocks`,
-		)
-	}
+
 	return blocks
 }

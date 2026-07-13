@@ -49,13 +49,6 @@ export function blockGap(prev: Block, next: Block, sceneH: number): number {
 		prevStack === nextStack
 			? parseLength(nextStack['row-gap'] ?? '', sceneH)?.meters ?? 0
 			: 0
-	if (process.env.DEBUG_DESCENDER === '1' && textDescender > 0) {
-		console.warn(
-			`[descender-gap] ${prevEl.kind === 'text' ? prevEl.type : '-'}→${nextEl.kind} ` +
-				`textDescender=${textDescender.toFixed(4)} rowGap=${rowGap.toFixed(4)} ` +
-				`total=${(rowGap + textDescender).toFixed(4)} blocks`,
-		)
-	}
 	return rowGap + textDescender
 }
 

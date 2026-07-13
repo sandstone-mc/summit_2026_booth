@@ -124,17 +124,6 @@ function runLayout(
 		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed),
 	)
 
-	if (process.env.DEBUG_DESCENDER === '1') {
-		for (const el of elements) {
-			if (el.kind !== 'text') continue
-			const d = getTextDescender(el.fontId, el.scalePx)
-			console.warn(
-				`[descender-el] type=${el.type} fontId=${el.fontId} ` +
-					`scalePx=${el.scalePx} → ${d.toFixed(4)} blocks (cellH=${el.cellH.toFixed(3)})`,
-			)
-		}
-	}
-
 	// Scrolling `<code>` blocks start with `cellH = 0` placeholder; the
 	// layout engine sizes them to fill remaining slide space after other
 	// elements are placed. Measure the non-scroll stack first by simulating
@@ -179,17 +168,7 @@ function runLayout(
 					: el.kind === 'image'
 						? cellY + el.cellH / 2
 						: cellY
-			// Layout trace — shows each element's effective sizing so we can
-			// iterate on pxToTextLineHeight and other formulas without
-			// rebuilding every time. Set DEBUG_LAYOUT=1 to enable.
-			if (process.env.DEBUG_LAYOUT === '1') {
-				console.warn(
-					`[layout] kind=${el.kind} type=${el.kind === 'text' ? el.type : '-'} ` +
-						`scalePx=${el.kind === 'text' ? el.scalePx : '-'} ` +
-						`cellH=${el.cellH.toFixed(3)} marginTop=${el.marginTop.toFixed(3)} marginBottom=${el.marginBottom.toFixed(3)} ` +
-						`cellY=${cellY.toFixed(3)} entityY=${entityY.toFixed(3)} accY=${accY.toFixed(3)}`,
-				)
-			}
+
 			const entityX = origin[0] + sceneW / 2
 			onElement(el, entityX, entityY, z)
 			placements.push({ el, x: entityX, y: entityY, z })
