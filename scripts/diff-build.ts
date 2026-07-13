@@ -28,6 +28,11 @@ const OUTPUT_DIR = join(ROOT, '.sandstone/output')
 const PREV = join(ROOT, '.previous-builds')
 const TEMP_DIR = join(ROOT, '.temp')
 
+// Git commands targeting `.previous-builds/` must not walk up to the
+// parent repo if `.previous-builds/.git/` is ever missing. Setting the
+// ceiling to the project root stops the lookup at this boundary.
+const GIT_ENV = { ...process.env, GIT_CEILING_DIRECTORIES: ROOT }
+
 interface Options {
 	filter: string | null
 	round: number
@@ -74,16 +79,12 @@ async function resolveTarget(arg: string | null): Promise<string> {
 
 	if (arg === null) return capture(['git', '-C', PREV, 'rev-parse', 'HEAD'])
 
-	// Try hash/prefix first (commit-ish: HEAD~1, b48a8eb, full sha, refs/...)
-	if (HASH_LIKE.test(arg) || /^[~^]/.test(arg) || arg.includes('..')) {
-		const tryParse = spawnSync(['git', '-C', PREV, 'rev-parse', '--verify', `${arg}^{commit}`])
-		if (tryParse.success) return tryParse.stdout.toString().trim()
-		// Fall through to substring search if hash-like but didn't resolve
-		if (!HASH_LIKE.test(arg)) {
-			console.error(`[diff-build] Bad commit-ish: ${arg}`)
-			process.exit(1)
-		}
-	}
+	// Try commit-ish resolution first (HEAD, HEAD~1, main, full sha, refs/...).
+	// For source-commit hashes (which only exist in the parent repo), this
+	// fails with the ceiling env, and we fall through to substring search
+	// where the source hash is embedded in the inner commit's message.
+	const tryParse = spawnSync(['git', '-C', PREV, 'rev-parse', '--verify', `${arg}^{commit}`], { env: GIT_ENV })
+	if (tryParse.success) return tryParse.stdout.toString().trim()
 
 	// Substring search across all commit messages
 	const needle = arg.toLowerCase()
@@ -138,8 +139,10 @@ function stableKey(line: string): string {
 
 // ---------- helpers ----------
 
+// All `git` commands in this script target `.previous-builds/`. The ceiling
+// env stops discovery from walking up to the parent repo.
 function capture(cmd: string[]): string {
-	const proc = spawnSync(cmd)
+	const proc = spawnSync(cmd, { env: GIT_ENV })
 	if (!proc.success) {
 		console.error(`[diff-build] FAILED: ${cmd.join(' ')}\n${proc.stderr.toString()}`)
 		process.exit(proc.exitCode ?? 1)
@@ -170,7 +173,7 @@ async function walk(dir: string): Promise<Map<string, string>> {
 
 async function extractBuild(hash: string, dest: string): Promise<void> {
 	// git -C <PREV> archive <hash> | tar -x -C <dest>
-	const sh = spawnSync(['sh', '-c', `git -C '${PREV}' archive ${hash} | tar -x -C '${dest}'`])
+	const sh = spawnSync(['sh', '-c', `git -C '${PREV}' archive ${hash} | tar -x -C '${dest}'`], { env: GIT_ENV })
 	if (!sh.success) {
 		console.error(`[diff-build] git archive|tar failed: ${sh.stderr.toString()}`)
 		process.exit(1)
@@ -340,7 +343,7 @@ async function main() {
 	const { target, opts } = parseArgs(process.argv.slice(2))
 
 	// Verify .previous-builds is a git repo
-	const isRepo = spawnSync(['git', '-C', PREV, 'rev-parse', '--git-dir'])
+	const isRepo = spawnSync(['git', '-C', PREV, 'rev-parse', '--git-dir'], { env: GIT_ENV })
 	if (!isRepo.success) {
 		console.error(`[diff-build] ${relative(ROOT, PREV)}/ is not a git repo. Run \`git init\` inside it and \`bun dev:history:generate\`.`)
 		process.exit(1)

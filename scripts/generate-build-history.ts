@@ -28,6 +28,11 @@ const SINCE = 'b48a8eb0' // ✨️ Add output diff tracking
 
 // ---------- helpers ----------
 
+// Env for git commands targeting .previous-builds/. The ceiling stops git
+// from walking up to the parent repo if .previous-builds/.git/ ever goes
+// missing (would otherwise silently report parent-repo state).
+const PREV_GIT_ENV = { ...process.env, GIT_CEILING_DIRECTORIES: ROOT }
+
 function run(cmd: string[], opts: { cwd?: string } = {}): void {
 	const proc = spawnSync(cmd, {
 		cwd: opts.cwd ?? ROOT,
@@ -56,6 +61,35 @@ function tryCapture(cmd: string[], opts: { cwd?: string } = {}): string | null {
 	return proc.success ? proc.stdout.toString().trim() : null
 }
 
+// Same as capture/run but targeting .previous-builds/ with the ceiling env.
+function prevCapture(cmd: string[]): string {
+	const proc = spawnSync(cmd, { cwd: PREV, env: PREV_GIT_ENV })
+	if (!proc.success) {
+		console.error(`[history] FAILED: ${cmd.join(' ')}\n${proc.stderr.toString()}`)
+		process.exit(proc.exitCode ?? 1)
+	}
+	return proc.stdout.toString().trim()
+}
+
+function prevTryCapture(cmd: string[]): string | null {
+	const proc = spawnSync(cmd, { cwd: PREV, env: PREV_GIT_ENV })
+	return proc.success ? proc.stdout.toString().trim() : null
+}
+
+function prevRun(cmd: string[]): void {
+	const proc = spawnSync(cmd, {
+		cwd: PREV,
+		env: PREV_GIT_ENV,
+		stdin: 'inherit',
+		stdout: 'inherit',
+		stderr: 'inherit',
+	})
+	if (!proc.success) {
+		console.error(`[history] FAILED: ${cmd.join(' ')}`)
+		process.exit(proc.exitCode ?? 1)
+	}
+}
+
 function step(label: string) {
 	console.log(`\n[history] === ${label} ===`)
 }
@@ -64,7 +98,7 @@ function step(label: string) {
 
 async function main() {
 	// Verify .previous-builds is a git repo
-	const isRepo = tryCapture(['git', 'rev-parse', '--git-dir'], { cwd: PREV })
+	const isRepo = prevTryCapture(['git', 'rev-parse', '--git-dir'])
 	if (isRepo === null) {
 		console.error(`[history] ${relative(ROOT, PREV)}/ is not a git repo. Run \`git init\` inside it first.`)
 		process.exit(1)
@@ -81,7 +115,7 @@ async function main() {
 	// Skip already-processed source commits (idempotency for re-runs).
 	// Each inner commit's message contains `Source commit: <hash>`.
 	const processed = new Set<string>()
-	const prevLog = capture(['git', 'log', '--format=%B', '-z'], { cwd: PREV })
+	const prevLog = prevCapture(['git', 'log', '--format=%B', '-z'])
 	for (const block of prevLog.split('\0')) {
 		const m = block.match(/Source commit: ([a-f0-9]+)/)
 		if (m) processed.add(m[1])
@@ -149,27 +183,14 @@ async function main() {
 
 			// Commit inside .previous-builds
 			const message = `Build ${hash.slice(0, 7)}: ${subject}\n\nSource commit: ${hash}\nSource author: ${author}\nSource date: ${date}`
-			const add = spawnSync(['git', 'add', '-A'], { cwd: PREV, stdout: 'inherit', stderr: 'inherit' })
-			if (!add.success) {
-				console.error(`[history] git add failed for ${hash}`)
-				process.exit(add.exitCode ?? 1)
-			}
-			const commit = spawnSync(['git', 'commit', '--allow-empty', '-m', message], {
-				cwd: PREV,
-				stdin: 'inherit',
-				stdout: 'inherit',
-				stderr: 'inherit',
-			})
-			if (!commit.success) {
-				console.error(`[history] Commit failed for ${hash}`)
-				process.exit(commit.exitCode ?? 1)
-			}
+			prevRun(['git', 'add', '-A'])
+			prevRun(['git', 'commit', '--allow-empty', '-m', message])
 		}
 	} finally {
 		restore()
 	}
 
-	const finalCount = capture(['git', 'rev-list', '--count', 'HEAD'], { cwd: PREV })
+	const finalCount = prevCapture(['git', 'rev-list', '--count', 'HEAD'])
 	console.log(`\n[history] Done. ${finalCount} commit${finalCount === '1' ? '' : 's'} in ${relative(ROOT, PREV)}/`)
 }
 
