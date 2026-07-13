@@ -1,0 +1,16 @@
+{
+  "criteria": {
+    "click": {
+      "trigger": "minecraft:player_interacted_with_entity",
+      "conditions": {
+        "entity": {
+          "entity_type": "minecraft:interaction",
+          "nbt": "{Tags:[\"sandstone_summit_booth.npc.casino_crowd_2\"]}"
+        }
+      }
+    }
+  },
+  "rewards": {
+    "function": "sandstone_summit_booth:sections/npcs/interact_reward/casino_crowd_2"
+  }
+}

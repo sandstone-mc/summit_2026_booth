@@ -1,0 +1,2 @@
+execute if entity @a[tag=sandstone_summit_booth.npc.casino_crowd_1.interactor, limit=1] run rotate @s facing entity @a[tag=sandstone_summit_booth.npc.casino_crowd_1.interactor,limit=1] feet
+execute unless entity @a[tag=sandstone_summit_booth.npc.casino_crowd_1.interactor, limit=1] run rotate @s 210 0

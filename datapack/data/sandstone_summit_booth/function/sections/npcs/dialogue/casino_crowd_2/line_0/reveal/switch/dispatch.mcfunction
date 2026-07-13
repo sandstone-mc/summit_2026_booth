@@ -1,0 +1,1 @@
+$return run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_2/line_0/reveal/switch/case_$(env_0)

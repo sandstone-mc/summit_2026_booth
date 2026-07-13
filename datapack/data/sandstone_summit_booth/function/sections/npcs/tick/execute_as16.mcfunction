@@ -1,0 +1,2 @@
+execute if entity @a[tag=sandstone_summit_booth.npc.glitchy.interactor, limit=1] run rotate @s facing entity @a[tag=sandstone_summit_booth.npc.glitchy.interactor,limit=1] feet
+execute unless entity @a[tag=sandstone_summit_booth.npc.glitchy.interactor, limit=1] run rotate @s 0 0

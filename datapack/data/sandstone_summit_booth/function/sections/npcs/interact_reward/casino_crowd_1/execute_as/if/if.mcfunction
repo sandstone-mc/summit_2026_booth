@@ -1,0 +1,2 @@
+execute if score @s sandstone_summit_booth.npc.dialogue.line matches 0.. run return run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_1/advance
+return run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_1/start_impl

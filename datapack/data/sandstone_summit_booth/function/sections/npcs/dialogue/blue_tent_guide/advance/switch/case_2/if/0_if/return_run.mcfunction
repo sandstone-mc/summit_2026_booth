@@ -1,0 +1,2 @@
+scoreboard players operation @s sandstone_summit_booth.npc.dialogue.reveal_count = @s sandstone_summit_booth.npc.dialogue.reveal_total
+return run function sandstone_summit_booth:sections/npcs/dialogue/blue_tent_guide/render

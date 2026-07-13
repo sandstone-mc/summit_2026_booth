@@ -1,0 +1,1 @@
+execute unless score @s sandstone_summit_booth.npc.interact_cooldown matches 1.. run function sandstone_summit_booth:sections/npcs/interact_reward/blue_tent_guide/execute_as/if

@@ -1,1 +1,1 @@
-return run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show
+function sandstone_summit_booth:sections/npcs/dialogue/glitchy/advance/switch/case_3/if

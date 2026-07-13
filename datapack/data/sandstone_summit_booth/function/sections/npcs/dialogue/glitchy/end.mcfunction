@@ -6,3 +6,5 @@ tag @a[tag=sandstone_summit_booth.npc.red_tent_sandstone.interactor] remove sand
 tag @a[tag=sandstone_summit_booth.npc.credits.interactor] remove sandstone_summit_booth.npc.credits.interactor
 tag @a[tag=sandstone_summit_booth.npc.glitchy.interactor] remove sandstone_summit_booth.npc.glitchy.interactor
 tag @a[tag=sandstone_summit_booth.npc.casino_crowd_1.interactor] remove sandstone_summit_booth.npc.casino_crowd_1.interactor
+tag @a[tag=sandstone_summit_booth.npc.casino_crowd_2.interactor] remove sandstone_summit_booth.npc.casino_crowd_2.interactor
+tag @a[tag=sandstone_summit_booth.npc.casino_crowd_3.interactor] remove sandstone_summit_booth.npc.casino_crowd_3.interactor

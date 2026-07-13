@@ -3,4 +3,6 @@ execute if entity @s[tag=sandstone_summit_booth.npc.red_tent_sandstone] run func
 execute if entity @s[tag=sandstone_summit_booth.npc.credits] run function sandstone_summit_booth:sections/npcs/dialogue/credits/render/switch/case_3/if2/execute_if3
 execute if entity @s[tag=sandstone_summit_booth.npc.glitchy] run function sandstone_summit_booth:sections/npcs/dialogue/credits/render/switch/case_3/if2/execute_if4
 execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_1] run function sandstone_summit_booth:sections/npcs/dialogue/credits/render/switch/case_3/if2/execute_if5
+execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_2] run function sandstone_summit_booth:sections/npcs/dialogue/credits/render/switch/case_3/if2/execute_if6
+execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_3] run function sandstone_summit_booth:sections/npcs/dialogue/credits/render/switch/case_3/if2/execute_if7
 scoreboard players set @s sandstone_summit_booth.npc.dialogue.reveal_speed 1

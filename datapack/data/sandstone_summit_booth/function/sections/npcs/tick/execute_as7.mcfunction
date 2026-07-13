@@ -1,1 +1,1 @@
-execute if score @s sandstone_summit_booth.npc.dialogue.line matches 0.. run function sandstone_summit_booth:sections/npcs/tick/execute_as7/if
+execute if score @s sandstone_summit_booth.npc.dialogue.line matches 0.. if entity @s[tag=sandstone_summit_booth.npc.dialogue.revealing] run function sandstone_summit_booth:sections/npcs/tick/execute_as7/if

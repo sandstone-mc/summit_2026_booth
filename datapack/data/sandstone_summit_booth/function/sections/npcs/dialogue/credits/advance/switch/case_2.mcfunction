@@ -1,1 +1,1 @@
-return run function sandstone_summit_booth:sections/npcs/dialogue/credits/line_3/show
+function sandstone_summit_booth:sections/npcs/dialogue/credits/advance/switch/case_2/if

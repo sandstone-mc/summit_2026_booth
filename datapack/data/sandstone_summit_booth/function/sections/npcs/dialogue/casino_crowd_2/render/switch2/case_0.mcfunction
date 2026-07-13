@@ -1,0 +1,2 @@
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 1.. if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches ..70 run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_2/render/switch2/case_0/if
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count matches 70 run tag @s remove sandstone_summit_booth.npc.dialogue.revealing

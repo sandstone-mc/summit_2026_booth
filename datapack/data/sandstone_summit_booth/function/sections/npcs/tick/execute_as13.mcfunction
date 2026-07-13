@@ -1,1 +1,1 @@
-execute if score @s sandstone_summit_booth.npc.dialogue.line matches 0.. run function sandstone_summit_booth:sections/npcs/tick/execute_as13/if
+execute if score @s sandstone_summit_booth.npc.interact_cooldown matches 1.. run scoreboard players remove @s sandstone_summit_booth.npc.interact_cooldown 1

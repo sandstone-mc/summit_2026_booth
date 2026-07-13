@@ -1,0 +1,2 @@
+execute if score @s sandstone_summit_booth.npc.dialogue.reveal_count < @s sandstone_summit_booth.npc.dialogue.reveal_total run return run function sandstone_summit_booth:sections/npcs/dialogue/credits/advance/switch/case_1/if/0_if/return_run
+return run function sandstone_summit_booth:sections/npcs/dialogue/credits/line_2/show

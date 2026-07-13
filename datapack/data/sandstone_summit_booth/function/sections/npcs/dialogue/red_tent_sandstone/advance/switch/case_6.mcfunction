@@ -1,1 +1,1 @@
-return run function sandstone_summit_booth:sections/npcs/dialogue/red_tent_sandstone/end
+function sandstone_summit_booth:sections/npcs/dialogue/red_tent_sandstone/advance/switch/case_6/if

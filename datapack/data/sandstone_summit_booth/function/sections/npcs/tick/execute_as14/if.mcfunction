@@ -1,2 +1,1 @@
-scoreboard players remove @s sandstone_summit_booth.npc.dialogue.reveal_delay 1
-execute if score @s sandstone_summit_booth.npc.dialogue.reveal_delay matches ..0 run function sandstone_summit_booth:sections/npcs/tick/execute_as14/if/if
+execute unless entity @p[distance=0..5] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/end

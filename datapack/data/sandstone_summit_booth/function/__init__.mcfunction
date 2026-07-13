@@ -47,6 +47,8 @@ scoreboard objectives add sandstone_summit_booth.npc.dialogue.line dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_count dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_delay dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_speed dummy
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_total dummy
+scoreboard objectives add sandstone_summit_booth.npc.interact_cooldown dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.variant dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_cut dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.magic.spells.lightning.static_field.do_cast dummy

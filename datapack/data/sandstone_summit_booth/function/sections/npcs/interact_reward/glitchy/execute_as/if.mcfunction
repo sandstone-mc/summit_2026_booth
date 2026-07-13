@@ -1,2 +1,2 @@
-execute if score @s sandstone_summit_booth.npc.dialogue.line matches 0.. run return run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/advance
-return run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/start_impl
+scoreboard players set @s sandstone_summit_booth.npc.interact_cooldown 4
+function sandstone_summit_booth:sections/npcs/interact_reward/glitchy/execute_as/if/if

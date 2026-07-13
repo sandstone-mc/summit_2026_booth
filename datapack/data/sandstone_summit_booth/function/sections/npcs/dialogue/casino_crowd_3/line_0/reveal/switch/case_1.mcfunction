@@ -1,0 +1,1 @@
+scoreboard players set @s sandstone_summit_booth.npc.dialogue.reveal_total 44

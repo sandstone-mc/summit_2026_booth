@@ -3,3 +3,5 @@ execute if entity @s[tag=sandstone_summit_booth.npc.red_tent_sandstone] run func
 execute if entity @s[tag=sandstone_summit_booth.npc.credits] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if3
 execute if entity @s[tag=sandstone_summit_booth.npc.glitchy] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if4
 execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_1] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if5
+execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_2] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if6
+execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_3] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if7
