@@ -49,8 +49,8 @@ const secretDialogue = DialogueTree('glitchy', {
 
 CreateNPC('glitchy', {
     name: 'glitchy',
-    skin: PLACEHOLDER_SKIN,
+    skin: { texture: "sandstone_summit_booth:npcs/glitchy" },
     position: [-82, 104, 48],
-    lookAt: 'nearest',
+    lookAt: 'interactor',
     dialogue: secretDialogue,
 })

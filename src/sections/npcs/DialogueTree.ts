@@ -1,7 +1,7 @@
 import { _, data, Data, execute, functionCmd, MCFunction, type MCFunctionClass, Objective, raw, Selector, type Condition } from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { NAMESPACE } from '@shared'
-import { DialogueLineIndex, NpcDisplayLabel, registry, RevealCount, RevealDelay, RevealSpeed, RevealingLabel } from './NPC'
+import { DialogueLineIndex, NpcDisplayLabel, registry, RevealCount, RevealDelay, RevealingLabel, RevealSpeed, RevealTotal } from './NPC'
 
 // ticks per revealed character
 const DEFAULT_SPEED = 1
@@ -190,8 +190,16 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
         return () => end()
     })
 
+    // clicking a still-revealing line completes it instead of skipping to the next one
     const advance = MCFunction(`sections/npcs/dialogue/${id}/advance`, () => {
-        _.switch(DialogueLineIndex('@s'), flat.map((f) => ['case', f.globalIndex, () => nextFns[f.globalIndex]()] as const))
+        _.switch(DialogueLineIndex('@s'), flat.map((f) => ['case', f.globalIndex, () => {
+            _.if(RevealCount('@s').lessThan(RevealTotal('@s')), () => {
+                RevealCount('@s').set(RevealTotal('@s'))
+                render()
+            }).else(() => {
+                nextFns[f.globalIndex]()
+            })
+        }] as const))
     })
 
     // (re-)renders the active line/variant at the current RevealCount
@@ -265,6 +273,13 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
             RevealDelay('@s').set(speed)
             RevealingLabel('@s').add()
             mergeDisplayText('')
+            if (line.variants && line.variants.length > 0) {
+                _.switch(VariantPick, line.variants.map((variant, vi) => ['case', vi, () => {
+                    RevealTotal('@s').set(plainLength(normalizeRuns(variant)))
+                }] as const))
+            } else {
+                RevealTotal('@s').set(plainLength(normalizeRuns(line.text ?? '')))
+            }
             if (line.onShow) {
                 runAsPlayer(line.onShow)
             }

@@ -18,10 +18,45 @@ const presentationWatcherDialogue = DialogueTree('casino_crowd_1', {
     }],
 })
 
-const CROWD: (Omit<NPCOptions, 'skin' | 'name'> & { id: string })[] = [
-    { id: 'casino_crowd_1', position: [-85, 84.5, 55], rotation: [210, 0], pose: 'sitting', dialogue: presentationWatcherDialogue },
+const merchFiendDialogue = DialogueTree('casino_crowd_2', {
+    nodes: [{
+        id: 'main',
+        advance: 'click',
+        lines: [
+            {
+                variants: [
+                    "If I'm being completely honest with you... I'm just here for the merch",
+                    "I don't understand any of what is going on here, this whole island confuses me",
+                    "I came to the Sandstone booth and all I got was this shirt.\n\nAnd I couldn't be happier",
+                    "There's a whole lot of words on that screen, give me another balloon!",
+                    "I can't find this last sticker!"
+                ],
+            },
+        ],
+    }],
+})
+
+const gamblerDialogue = DialogueTree('casino_crowd_3', {
+    nodes: [{
+        id: 'main',
+        advance: 'click',
+        lines: [
+            {
+                variants: [
+                    "All in on red!",
+                    "I keep betting but this wheel never spins..."
+                ],
+            },
+        ],
+    }],
+})
+
+const CROWD: (Omit<NPCOptions, 'name'> & { id: string })[] = [
+    { id: 'casino_crowd_1', position: [-85, 84.5, 55], rotation: [210, 0], pose: 'sitting', dialogue: presentationWatcherDialogue, lookAt: 'interactor', skin: PLACEHOLDER_SKIN },
+    { id: 'casino_crowd_2', position: [-55, 85, 62], rotation: [90, 0], pose: 'standing', dialogue: merchFiendDialogue, lookAt: 'interactor', skin: { texture: "sandstone_summit_booth:npcs/merch" } },
+    { id: 'casino_crowd_3', position: [-74, 74, 53], rotation: [180, 0], pose: 'crouching', dialogue: gamblerDialogue, lookAt: 'none', mainHand: 'minecraft:diamond', skin: PLACEHOLDER_SKIN },
 ]
 
 for (const { id, ...options } of CROWD) {
-    CreateNPC(id, { ...options, name: 'Casino Patron', skin: PLACEHOLDER_SKIN })
+    CreateNPC(id, { ...options, name: 'Casino Patron' })
 }

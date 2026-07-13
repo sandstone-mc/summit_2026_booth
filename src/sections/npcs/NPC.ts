@@ -22,21 +22,39 @@ export const RevealDelay = Objective.create('npc.dialogue.reveal_delay')
 // ticks per character for the active line; reset to 1 during the post-reveal auto-hold countdown
 export const RevealSpeed = Objective.create('npc.dialogue.reveal_speed')
 
+// total character count of the active line/variant
+export const RevealTotal = Objective.create('npc.dialogue.reveal_total')
+
 // gates whether the tick loop should keep stepping this NPC's reveal
 export const RevealingLabel = Label('npc.dialogue.revealing')
+
+// ticks to ignore new clicks after processing one
+const INTERACT_COOLDOWN_TICKS = 4
+const InteractCooldown = Objective.create('npc.interact_cooldown')
 
 // blocks above the mannequin head the display sits at
 const HEAD_HEIGHT = 0.2
 
-// Pick NPC skin using either username of a player or specific texture
+// Pick NPC skin via a player profile lookup, a signed skin property, and/or
+// direct resource-pack texture overrides
 export interface NPCSkin {
+    // Resolves a player's profile (skin/cape/elytra) from Mojang's servers by username
     username?: string
 
+    // Signed skin texture property (base64 texture JSON + signature), overriding username
+    properties?: { value: string; signature?: string }
+
+    // Namespaced texture resource locations, overriding whatever username/properties resolved
     texture?: string
-    signature?: string
+    cape?: string
+    elytra?: string
+
+    model?: 'wide' | 'slim'
 }
 
-export type LookAtMode = 'nearest' | 'none'
+// 'interactor' faces whoever's currently talking to this NPC, and looks back
+// to the spawn rotation once nobody is (only meaningful with `dialogue` set)
+export type LookAtMode = 'nearest' | 'interactor' | 'none'
 
 // 'sitting' is faked by mounting the mannequin on an invisible zero-height interaction seat
 export type NPCPose = 'standing' | 'crouching' | 'sleeping' | 'sitting'
@@ -66,12 +84,14 @@ export interface RegisteredNPC extends NPCOptions {
 export const registry: RegisteredNPC[] = []
 
 function profileFor(skin: NPCSkin) {
-    if (skin.texture) {
-        return {
-            properties: [{ name: 'textures', value: skin.texture, ...(skin.signature ? { signature: skin.signature } : {}) }],
-        }
+    return {
+        ...(skin.username ? { name: skin.username } : {}),
+        ...(skin.properties ? { properties: [{ name: 'textures', value: skin.properties.value, ...(skin.properties.signature ? { signature: skin.properties.signature } : {}) }] } : {}),
+        ...(skin.texture ? { texture: skin.texture as any } : {}),
+        ...(skin.cape ? { cape: skin.cape as any } : {}),
+        ...(skin.elytra ? { elytra: skin.elytra as any } : {}),
+        ...(skin.model ? { model: skin.model } : {}),
     }
-    return { name: skin.username }
 }
 
 export function CreateNPC(id: string, options: NPCOptions) {
@@ -165,14 +185,16 @@ MCFunction('sections/npcs/spawn', () => {
                         // runAsPlayer/runAsMyNpc helpers switch context using this tag
                         raw(`tag @a[tag=${npc.interactorTag}] remove ${npc.interactorTag}`)
                         raw(`tag @s add ${npc.interactorTag}`)
-                        // revoke so this reward can fire again on the next click
                         interactAdvancement.revoke('@s')
 
                         execute.as(npcSelector).run(() => {
-                            _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
-                                dialogue.advance()
-                            }).else(() => {
-                                dialogue.start()
+                            _.if(_.not(InteractCooldown('@s').greaterThan(0)), () => {
+                                InteractCooldown('@s').set(INTERACT_COOLDOWN_TICKS)
+                                _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
+                                    dialogue.advance()
+                                }).else(() => {
+                                    dialogue.start()
+                                })
                             })
                         })
                     }),
@@ -188,6 +210,13 @@ MCFunction('sections/npcs/tick', () => {
 
         if (npc.dialogue) {
             const dialogue = npc.dialogue
+
+            // count down the click debounce
+            execute.as(npcSelector).run(() => {
+                _.if(InteractCooldown('@s').greaterThan(0), () => {
+                    InteractCooldown('@s').remove(1)
+                })
+            })
 
             // cancel the dialogue if nobody is around
             execute.as(npcSelector).at('@s').run(() => {
@@ -211,9 +240,23 @@ MCFunction('sections/npcs/tick', () => {
             })
         }
 
+        // decorative NPCs: keep facing whoever's closest
         if (npc.lookAt === 'nearest') {
             execute.as(npcSelector).at('@s').run(() => {
                 raw('rotate @s facing entity @p feet')
+            })
+        }
+
+        // face the interactor while talking; look back to the spawn rotation once they leave
+        if (npc.lookAt === 'interactor') {
+            const [yaw, pitch] = npc.rotation ?? [0, 0]
+            execute.as(npcSelector).at('@s').run(() => {
+                execute.if.entity(Selector('@a', { tag: npc.interactorTag, limit: 1 })).run(() => {
+                    raw(`rotate @s facing entity @a[tag=${npc.interactorTag},limit=1] feet`)
+                })
+                execute.unless.entity(Selector('@a', { tag: npc.interactorTag, limit: 1 })).run(() => {
+                    raw(`rotate @s ${yaw} ${pitch}`)
+                })
             })
         }
     }
