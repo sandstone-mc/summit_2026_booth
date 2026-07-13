@@ -85,6 +85,6 @@ export function shouldCenterStack(blocks: Block[]): boolean {
 // bottom by default; slide-level centering (see `shouldCenterStack`) lifts
 // the stack so its midpoint aligns with the slide's vertical midpoint.
 export function startingY(sceneH: number, totalH: number, blocks: Block[]): number {
-	if (shouldCenterStack(blocks)) return (sceneH + totalH + 1) / 2
+	if (shouldCenterStack(blocks)) return (sceneH + totalH) / 2
 	return sceneH
 }
