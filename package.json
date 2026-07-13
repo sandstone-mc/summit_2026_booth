@@ -9,6 +9,7 @@
     "dev:build": "sand build && bun run scripts/minify-resourcepack.ts",
     "dev:build:force": "FORCE_RENDER=1 bun dev:build",
     "dev:diff:check": "bun run scripts/diff-build.ts",
+    "dev:diff:snapshot": "bun run scripts/diff-build.ts snapshot",
     "dev:history:generate": "bun run scripts/generate-build-history.ts",
     "dev:deploy": "bun run scripts/deploy.ts",
     "fetch:parsers": "bun run scripts/fetch-syntax-parsers.ts",

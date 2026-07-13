@@ -6,16 +6,23 @@
  *   bun scripts/diff-build.ts                          # HEAD vs current (pending changes)
  *   bun scripts/diff-build.ts <commit-ish|hash|substr> # that commit vs current
  *   bun scripts/diff-build.ts <arg1> <arg2>            # commit1 vs commit2
+ *   bun scripts/diff-build.ts snapshot <name>          # save current build as branch <name>
  *
- * Each arg resolves in this order (first match wins):
- *   1. `git rev-parse --verify <arg>` (HEAD, HEAD~1, main, full SHA, refs/...)
- *   2. Hash/prefix matching `[0-9a-f]{4,40}` in `.previous-builds/`
- *   3. Case-insensitive substring of any inner commit's message body
+ * Each diff-arg resolves in this order (first match wins):
+ *   1. `@<name>` (or single-quoted `'@"<name>"'` for names with spaces)
+ *      → snapshot branch `refs/heads/<name>`
+ *   2. `git rev-parse --verify`  → HEAD, HEAD~1, main, full SHA, refs/...
+ *   3. Hash/prefix `[0-9a-f]{4,40}` in `.previous-builds/`
+ *   4. Case-insensitive substring of any inner commit's message body
  *      (errors if zero or >1 matches)
  *
  * Quote substrings containing spaces in the shell, e.g.
  *   bun dev:diff:check "scrolling code" "fix regression"
  * Without quotes the shell splits them into separate args.
+ *
+ * Snapshots: `bun dev:diff:snapshot <name>` copies `.sandstone/output/`
+ * into `.previous-builds/`, commits it, and force-creates/moves branch
+ * `<name>`. Idempotent — running again updates the branch.
  *
  * Flags:
  *   --filter=<glob>        only diff files matching this substring (e.g. "presentation/mount")
@@ -93,6 +100,27 @@ async function resolveTarget(arg: string | null): Promise<string> {
 	}
 
 	if (arg === null) return capture(['git', '-C', PREV, 'rev-parse', 'HEAD'])
+
+	// Snapshot reference: @<name> or @"<name>" → resolve refs/heads/<name>.
+	// The shell strips quotes from @"..." so both forms arrive as strings
+	// starting with @. The quoted form is needed for names containing
+	// spaces (which must be single-quoted in the shell so they stay as
+	// one arg): `bun dev:diff:check '@"name with spaces"'`.
+	if (arg.startsWith('@') && arg.length >= 2) {
+		const name = arg.startsWith('@"') && arg.endsWith('"') ? arg.slice(2, -1) : arg.slice(1)
+		if (!name) {
+			console.error(`[diff-build] Empty snapshot name in ${arg}`)
+			process.exit(1)
+		}
+		validateSnapshotName(name)
+		const tryParse = spawnSync(['git', '-C', PREV, 'rev-parse', '--verify', `refs/heads/${name}^{commit}`], { env: GIT_ENV })
+		if (!tryParse.success) {
+			console.error(`[diff-build] No snapshot branch '${name}' exists in ${relative(ROOT, PREV)}/`)
+			console.error(`[diff-build] List: \`git -C ${relative(ROOT, PREV)} branch\``)
+			process.exit(1)
+		}
+		return tryParse.stdout.toString().trim()
+	}
 
 	// Try commit-ish resolution first (HEAD, HEAD~1, main, full sha, refs/...).
 	// For source-commit hashes (which only exist in the parent repo), this
@@ -352,6 +380,72 @@ function printReport(label: string, report: DiffReport, opts: Options): void {
 	console.log()
 }
 
+// ---------- snapshot ----------
+
+function validateSnapshotName(name: string): void {
+	if (!/^[a-zA-Z0-9_\-./]+$/.test(name)) {
+		console.error(`[diff-build] Invalid snapshot name: ${name} (allowed: a-z 0-9 _ - . /)`)
+		process.exit(1)
+	}
+	if (name.includes('..') || name.startsWith('/') || name.endsWith('/')) {
+		console.error(`[diff-build] Snapshot name cannot contain '..' or start/end with '/'`)
+		process.exit(1)
+	}
+}
+
+async function runSnapshot(name: string): Promise<void> {
+	validateSnapshotName(name)
+
+	const isRepo = spawnSync(['git', '-C', PREV, 'rev-parse', '--git-dir'], { env: GIT_ENV })
+	if (!isRepo.success) {
+		console.error(`[diff-build] ${relative(ROOT, PREV)}/ is not a git repo. Run \`git init\` inside it and \`bun dev:history:generate\`.`)
+		process.exit(1)
+	}
+
+	// Need at least one commit (HEAD exists) so the new branch has somewhere to point.
+	const headExists = capture(['git', '-C', PREV, 'rev-parse', '--verify', 'HEAD'])
+	if (!headExists) {
+		console.error(`[diff-build] ${relative(ROOT, PREV)}/ has no commits yet. Run \`bun dev:history:generate\` first.`)
+		process.exit(1)
+	}
+
+	if (!(await exists(OUTPUT_DIR))) {
+		console.error(`[diff-build] ${OUTPUT_DIR} does not exist. Run \`bun dev:build\` first.`)
+		process.exit(1)
+	}
+
+	// Copy current build into .previous-builds/ (same convention as generator).
+	await Bun.$`mkdir -p ${TEMP_DIR}`.quiet()
+	const cp = spawnSync(['sh', '-c', `rm -rf '${PREV}/output' && cp -r '${OUTPUT_DIR}/' '${PREV}/'`], { env: GIT_ENV })
+	if (!cp.success) {
+		console.error(`[diff-build] cp failed: ${cp.stderr.toString()}`)
+		process.exit(1)
+	}
+
+		// Build the snapshot commit WITHOUT advancing HEAD. Use git plumbing:
+	//   1. `add -A` stages the new files in the index
+	//   2. `write-tree` materializes the staged tree
+	//   3. `commit-tree` creates a commit pointing at that tree + parent HEAD
+	//      (returns the new commit's SHA without touching any branch)
+	//   4. `update-ref refs/heads/<name>` moves (or creates) the snapshot
+	//      branch directly to the new commit.
+	// This way HEAD stays on `main` (or wherever it was) and the snapshot
+	// commit lives only on its dedicated branch.
+	const message = `Snapshot: ${name}`
+	const add = spawnSync(['git', '-C', PREV, 'add', '-A'], { env: GIT_ENV, stdout: 'inherit', stderr: 'inherit' })
+	if (!add.success) process.exit(add.exitCode ?? 1)
+	const tree = capture(['git', '-C', PREV, 'write-tree'])
+	const newHash = capture(['git', '-C', PREV, 'commit-tree', tree, '-p', 'HEAD', '-m', message])
+	const updateRef = spawnSync(['git', '-C', PREV, 'update-ref', `refs/heads/${name}`, newHash], { env: GIT_ENV })
+	if (!updateRef.success) {
+		console.error(`[diff-build] Failed to create branch ${name}`)
+		process.exit(updateRef.exitCode ?? 1)
+	}
+
+	console.log(`[diff-build] Snapshot '${name}' saved at ${newHash.slice(0, 7)} (branch refs/heads/${name})`)
+	console.log(`[diff-build] Compare later with: bun dev:diff:check @"${name}"`)
+}
+
 // ---------- main ----------
 
 interface Side {
@@ -381,7 +475,18 @@ async function buildDirFor(side: Side, tempDirs: string[]): Promise<string> {
 }
 
 async function main() {
-	const { positional, opts } = parseArgs(process.argv.slice(2))
+	const argv = process.argv.slice(2)
+	if (argv[0] === 'snapshot') {
+		const name = argv[1]
+		if (!name) {
+			console.error(`[diff-build] snapshot requires a name: bun dev:diff:snapshot <name>`)
+			process.exit(1)
+		}
+		await runSnapshot(name)
+		return
+	}
+
+	const { positional, opts } = parseArgs(argv)
 
 	// Verify .previous-builds is a git repo
 	const isRepo = spawnSync(['git', '-C', PREV, 'rev-parse', '--git-dir'], { env: GIT_ENV })
