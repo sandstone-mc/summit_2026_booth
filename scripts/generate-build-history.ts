@@ -78,10 +78,27 @@ async function main() {
 		process.exit(1)
 	}
 
-	// Snapshot parent repo state for restore
+	// Skip already-processed source commits (idempotency for re-runs).
+	// Each inner commit's message contains `Source commit: <hash>`.
+	const processed = new Set<string>()
+	const prevLog = capture(['git', 'log', '--format=%B', '-z'], { cwd: PREV })
+	for (const block of prevLog.split('\0')) {
+		const m = block.match(/Source commit: ([a-f0-9]+)/)
+		if (m) processed.add(m[1])
+	}
+	const pending = commits.filter(h => !processed.has(h))
+	if (!pending.length) {
+		console.log(`[history] All ${commits.length} commits already processed. Nothing to do.`)
+		return
+	}
+	if (processed.size) console.log(`[history] Skipping ${processed.size} already-processed commit${processed.size === 1 ? '' : 's'}`)
+
+	// Snapshot parent repo state for restore. Strip refs/heads/ so
+	// `git checkout <name>` re-attaches HEAD instead of staying detached.
 	const originalHead = capture(['git', 'rev-parse', 'HEAD'])
 	const branchRef = tryCapture(['git', 'symbolic-ref', '--quiet', 'HEAD']) // "refs/heads/<name>" or null
-	const restoreTarget = branchRef ?? originalHead
+	const branchName = branchRef?.replace(/^refs\/heads\//, '') ?? null
+	const restoreTarget = branchName ?? originalHead
 
 	const dirty = capture(['git', 'status', '--porcelain'])
 	if (dirty) {
@@ -89,7 +106,7 @@ async function main() {
 		process.exit(1)
 	}
 
-	console.log(`[history] Replaying ${commits.length} commits (${commits[0].slice(0, 7)}..${commits.at(-1)!.slice(0, 7)})`)
+	console.log(`[history] Replaying ${pending.length} commits (${pending[0].slice(0, 7)}..${pending.at(-1)!.slice(0, 7)})`)
 	console.log(`[history] Parent HEAD will be restored to: ${restoreTarget}`)
 
 	let restored = false
@@ -108,13 +125,13 @@ async function main() {
 	process.on('SIGTERM', () => { restore(); process.exit(143) })
 
 	try {
-		for (let i = 0; i < commits.length; i++) {
-			const hash = commits[i]
+		for (let i = 0; i < pending.length; i++) {
+			const hash = pending[i]
 			const subject = capture(['git', 'log', '-1', '--format=%s', hash])
 			const date = capture(['git', 'log', '-1', '--format=%ci', hash])
 			const author = capture(['git', 'log', '-1', '--format=%an <%ae>', hash])
 
-			step(`[${i + 1}/${commits.length}] ${hash.slice(0, 7)} — ${subject}`)
+			step(`[${i + 1}/${pending.length}] ${hash.slice(0, 7)} — ${subject}`)
 
 			// Per-iteration preamble
 			run(['rm', '-rf', 'node_modules'])
