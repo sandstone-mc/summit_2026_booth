@@ -19,13 +19,7 @@ import { computeElementLayout, finalizeScrollCodeLayout, type ElementLayout, typ
 import type { Precomputed } from './code-borders'
 import { blockCellH, blockGap, groupIntoBlocks, startingY, totalStackHeight, type Block } from './blocks'
 import { summonElement } from './summon-entity'
-import { Z_VISUAL_OFFSET } from './constants'
-
-// TODO: This is basically a no-op, figure out how to actually calculate this
-function descenderBlocks(el: ElementLayout): number {
-	if (el.kind !== 'text') return 0
-	return 0
-}
+import { Z_VISUAL_OFFSET, getTextDescender } from './constants'
 
 export type CodePrecomputedMap = WeakMap<VNode, Precomputed>
 
@@ -130,6 +124,17 @@ function runLayout(
 		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed),
 	)
 
+	if (process.env.DEBUG_DESCENDER === '1') {
+		for (const el of elements) {
+			if (el.kind !== 'text') continue
+			const d = getTextDescender(el.fontId, el.scalePx)
+			console.warn(
+				`[descender-el] type=${el.type} fontId=${el.fontId} ` +
+					`scalePx=${el.scalePx} → ${d.toFixed(4)} blocks (cellH=${el.cellH.toFixed(3)})`,
+			)
+		}
+	}
+
 	// Scrolling `<code>` blocks start with `cellH = 0` placeholder; the
 	// layout engine sizes them to fill remaining slide space after other
 	// elements are placed. Measure the non-scroll stack first by simulating
@@ -166,15 +171,14 @@ function runLayout(
 			const cellY = origin[1] + accY - el.marginTop - el.cellH
 			// Entity Y depends on element kind:
 			//   scroll `<code>`:  cellY (bottom border flush with slide bottom)
-			//   prose/h/code:     cellY - descenderBlocks(el, cellY, origin[1])
-			//                     (drop by cellH clamped to keep entity inside slide)
+			//   prose/h/code:     cellY (bottom-center anchor; glyph grows up)
 			//   image:            cellY + cellH / 2 (image is centered in cell)
 			const entityY =
 				el.kind === 'text' && typeof el.scrollTag === 'string'
 					? cellY
 					: el.kind === 'image'
 						? cellY + el.cellH / 2
-						: cellY - descenderBlocks(el)
+						: cellY
 			// Layout trace — shows each element's effective sizing so we can
 			// iterate on pxToTextLineHeight and other formulas without
 			// rebuilding every time. Set DEBUG_LAYOUT=1 to enable.
@@ -277,14 +281,12 @@ function placeRowBlocks(
 		const childCenterX = accX + child.cellW / 2
 		// Entity Y depends on element kind — mirrors the non-row placement
 		// (scroll/prose/image each have their own anchor convention).
-		// Prose/h/code drop by cellH, clamped to the slide bottom so the
-		// entity never sits below the slide.
 		const entityY =
 			child.kind === 'text' && typeof child.scrollTag === 'string'
 				? subCellY
 				: child.kind === 'image'
 					? subCellY + child.cellH / 2
-					: subCellY - descenderBlocks(child)
+					: subCellY
 		onElement(child, childCenterX, entityY, z)
 		placements.push({ el: child, x: childCenterX, y: entityY, z })
 		maybeRecordScroll(child, entityY, scrollSpecs)
@@ -336,7 +338,7 @@ function maybeRecordScroll(
 		scrollTag: el.scrollTag,
 		startY,
 		scrollDistBlocks: el.scrollDistBlocks,
-		lineHeightBlocks: pxToTextLineHeight(el.scalePx),
+		lineHeightBlocks: pxToTextLineHeight(el.scalePx, el.fontId),
 		chunkCount: el.chunkCount ?? 1,
 		chunks: el.chunks ?? [],
 		declarations: el.declarations,

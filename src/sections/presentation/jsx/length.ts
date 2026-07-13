@@ -14,6 +14,9 @@
 // Returns both px (raw user value) and meters (MC coord). px is preserved
 // for things like text_display's `line_width`, which is in pixels.
 
+import { fontMetrics } from './text-metrics'
+import { DEFAULT_FONT_ID } from './text-metrics/font-loader'
+
 export type Unit = 'px' | 'vh' | 'vw' | '%' | 'fit-content'
 
 export type Length = { value: number; unit: Unit; px: number; meters: number }
@@ -54,8 +57,24 @@ export function pxToTextScale(px: number): number {
 	return px / 4
 }
 
-// Cell height in blocks for single-line text of given font-size px.
-// 16 actual px → 1 block, 32 actual px → 2 blocks, etc.
-export function pxToTextLineHeight(px: number): number {
-	return px / 16
+// Line spacing in blocks for single-line text of given font-size px.
+//
+// Derived from font metrics — no magic numbers. Line spacing in bitmap
+// pixels = cellHeight + measuredDescenderPx (worst-case descent depth),
+// matching animated-java's `cursor.y -= 10` hardcode for default font
+// (cellHeight=8, measuredDescenderPx=2 → 10 px line spacing).
+//
+// At entity scale `pxToTextScale(N) = N/4`, 1 bitmap px renders as
+// `(N/4) × 0.25 / 8 = N/128` blocks (8 px cellHeight = 0.25 blocks
+// at scale=1 per the comment above). So:
+//
+//   pxToTextLineHeight(px, fontId)
+//     = (cellHeight + measuredDescenderPx) × pxToTextScale(px) / 32
+//     = (cellHeight + measuredDescenderPx) × px / 128
+//
+// `fontMetrics()` throws pre-load; callers run after `loadFontMetrics()`.
+export function pxToTextLineHeight(px: number, fontId: string = DEFAULT_FONT_ID): number {
+	const m = fontMetrics(fontId)
+	const lineSpacingPx = m.cellHeight + m.measuredDescenderPx
+	return (lineSpacingPx * pxToTextScale(px)) / 32
 }

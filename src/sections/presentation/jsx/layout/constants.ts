@@ -1,5 +1,8 @@
 // Layout-wide magic numbers + defaults shared across the layout module.
 
+import { pxToTextScale } from '../length'
+import { fontMetrics } from '../text-metrics'
+
 // text_display's visible face sits ~0.5 blocks in front of the entity's
 // NBT z. Push the NBT z back so the visual offset becomes 1/64 blocks.
 export const Z_VISUAL_OFFSET = 0.015625
@@ -40,19 +43,34 @@ export const GRAMMARS: Record<string, Grammar> = {
 	},
 }
 
-// Vertical gap (in world blocks) reserved for a text element's descender
-// tail in two contexts:
-//   - `blockGap(prev, next, sceneH)` adds this between a text element and
-//     a following non-text element.
+// Vertical gap (in world blocks) reserved at the bottom of a text
+// element's cell to make room for descender-bearing characters (g, p,
+// q, y, etc.) so they don't visually bleed into the next cell.
+//
+// Used in two places:
+//   - `blockGap(prev, next, sceneH)` adds this between a text element
+//     and a following non-text element.
 //   - `finalizeScrollCodeLayout(el)` subtracts this from the scroll
-//     block's cellH before splitting into viewport chunks, so the bottom
-//     border isn't clipped.
-let _TEXT_DESCENDER: number | null = null
-
-// TODO: This is currently useless, we still need to accurately calculate this, nothing is doing it yet
-export function getTextDescender(): number {
-	if (_TEXT_DESCENDER === null) {
-		_TEXT_DESCENDER = 0
+//     block's cellH before splitting into viewport chunks, so the
+//     bottom border isn't clipped.
+//
+// `fontMetrics(fontId)` throws pre-load; callers run after
+// `loadFontMetrics()` so the per-call resolution is safe.
+export function getTextDescender(fontId: string, scalePx: number): number {
+	const m = fontMetrics(fontId)
+	const descenderPx = m.measuredDescenderPx
+	// Convert worst-case descender depth from bitmap pixels to MC blocks
+	// at the element's rendering scale. 1 bitmap pixel = `pxToTextScale`
+	// × `1/40` blocks (validated against animated-java's preview math:
+	// `geo.scale(0.4)` × `pos.multiplyScalar(1/16)` = `0.025` blocks/px
+	// at MC scale=1, scaled by `pxToTextScale(scalePx)` for our scale).
+	const blocks = (descenderPx * pxToTextScale(scalePx)) / 40
+	if (process.env.DEBUG_DESCENDER === '1') {
+		console.warn(
+			`[descender] fontId=${fontId} scalePx=${scalePx} ` +
+				`measuredDescenderPx=${descenderPx} cellHeightPx=${m.cellHeight} ` +
+				`pxToTextScale=${pxToTextScale(scalePx)} → ${blocks.toFixed(4)} blocks`,
+		)
 	}
-	return _TEXT_DESCENDER
+	return blocks
 }

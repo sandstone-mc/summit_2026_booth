@@ -41,13 +41,21 @@ export function blockCellH(b: Block): number {
 export function blockGap(prev: Block, next: Block, sceneH: number): number {
 	const prevEl = prev.kind === 'element' ? prev.el : prev.children[prev.children.length - 1]
 	const nextEl = next.kind === 'element' ? next.el : next.children[0]
-	const textDescender = prevEl.kind === 'text' && nextEl.kind !== 'text' ? getTextDescender() : 0
+	const textDescender =
+		prevEl.kind === 'text' && nextEl.kind !== 'text' ? getTextDescender(prevEl.fontId, prevEl.scalePx) : 0
 	const prevStack = prev.kind === 'element' ? prev.el.parentStack : prev.parentStack
 	const nextStack = next.kind === 'element' ? next.el.parentStack : next.parentStack
 	const rowGap =
 		prevStack === nextStack
 			? parseLength(nextStack['row-gap'] ?? '', sceneH)?.meters ?? 0
 			: 0
+	if (process.env.DEBUG_DESCENDER === '1' && textDescender > 0) {
+		console.warn(
+			`[descender-gap] ${prevEl.kind === 'text' ? prevEl.type : '-'}→${nextEl.kind} ` +
+				`textDescender=${textDescender.toFixed(4)} rowGap=${rowGap.toFixed(4)} ` +
+				`total=${(rowGap + textDescender).toFixed(4)} blocks`,
+		)
+	}
 	return rowGap + textDescender
 }
 

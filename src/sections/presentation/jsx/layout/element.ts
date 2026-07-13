@@ -288,7 +288,7 @@ function computeTextLayout(
 
 	if (type !== 'code') {
 		const lines = wrapLines(content, wrapWidthPx, isBold, fontId)
-		const lineHeightBlocks = pxToTextLineHeight(scalePx)
+		const lineHeightBlocks = pxToTextLineHeight(scalePx, fontId)
 		// `width: fit-content` (prose): resolve to the longest visual
 		// line's char count × MC's default-font char width (~7 px per char
 		// in default scale, conservative vs the literal 6 px to absorb
@@ -348,7 +348,7 @@ function computeTextLayout(
 
 	// `lines` (visual row count) = top border + codeRows + bottom border.
 	const lines = rows.codeRows.length + 2
-	const lineHeightBlocks = pxToTextLineHeight(scalePx)
+	const lineHeightBlocks = pxToTextLineHeight(scalePx, fontId)
 
 	// Non-scroll path: cellH is the bordered content height; serialize
 	// the full window once and return.
@@ -421,11 +421,10 @@ function computeTextLayout(
 /**
  * Build chunks for a scrolling `<code>` element once the layout engine
  * has set its `cellH`. Reserves 2 lines inside the chunk for its own
- * top + bottom border, plus 1 block of `TEXT_DESCENDER` slack below
- * the cell (the text_display entity sits 1 block under the cell
- * bottom and renders upward — without this slack the bottom border
- * spills off-screen). The rest becomes `viewportCodeRows` of code.
- * Mutates the element in place. No-op for non-scroll or non-text.
+ * top + bottom border, plus font-derived descender slack below the
+ * cell (without this, descender-bearing characters spill off-screen
+ * on the chunk's first line). The rest becomes `viewportCodeRows` of
+ * code. Mutates the element in place. No-op for non-scroll or non-text.
  */
 export function finalizeScrollCodeLayout(el: ElementLayout): void {
 	if (el.kind !== 'text' || !el.scrolling) return
@@ -434,9 +433,20 @@ export function finalizeScrollCodeLayout(el: ElementLayout): void {
 	if (!rows || lineHeightBlocks <= 0) return
 
 	const cellH = el.cellH
+	const textDescender = getTextDescender(el.fontId, el.scalePx)
 	// Subtracted from cellH: default-font descender + 2 line heights
 	// (top + bottom border rows of this chunk).
-	const codeAreaBlocks = Math.max(0, cellH - getTextDescender() - 2 * lineHeightBlocks)
+	const codeAreaBlocks = Math.max(0, cellH - textDescender - 2 * lineHeightBlocks)
+	if (process.env.DEBUG_DESCENDER === '1') {
+		console.warn(
+			`[descender-scroll] cellH=${cellH.toFixed(4)} ` +
+				`descender=${textDescender.toFixed(4)} ` +
+				`borderRows=${(2 * lineHeightBlocks).toFixed(4)} ` +
+				`codeArea=${codeAreaBlocks.toFixed(4)} ` +
+				`viewportRows=${Math.max(1, Math.floor(codeAreaBlocks / lineHeightBlocks))} ` +
+				`lineHeightBlocks=${lineHeightBlocks.toFixed(4)}`,
+		)
+	}
 	const viewportCodeRows = Math.max(1, Math.floor(codeAreaBlocks / lineHeightBlocks))
 	const totalCodeRows = rows.codeRows.length
 	const chunkCount = Math.max(1, totalCodeRows - viewportCodeRows + 1)

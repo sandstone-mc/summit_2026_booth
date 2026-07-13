@@ -134,7 +134,7 @@ export function diagnosePlacements(
  *     count visual rows
  */
 function estimateTextHeightBlocks(el: TextElementLayout): number {
-	const lineHeightBlocks = pxToTextLineHeight(el.scalePx)
+	const lineHeightBlocks = pxToTextLineHeight(el.scalePx, el.fontId)
 	if (lineHeightBlocks <= 0) return 0
 
 	if (el.kind === 'text' && el.type === 'code') {
