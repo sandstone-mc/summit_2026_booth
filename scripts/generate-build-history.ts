@@ -137,7 +137,7 @@ async function main() {
 				console.error(`[history] git add failed for ${hash}`)
 				process.exit(add.exitCode ?? 1)
 			}
-			const commit = spawnSync(['git', 'commit', '-m', message], {
+			const commit = spawnSync(['git', 'commit', '--allow-empty', '-m', message], {
 				cwd: PREV,
 				stdin: 'inherit',
 				stdout: 'inherit',
