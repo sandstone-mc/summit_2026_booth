@@ -4,11 +4,6 @@
 // NBT z. Push the NBT z back so the visual offset becomes 1/64 blocks.
 export const Z_VISUAL_OFFSET = 0.015625
 
-// Always-add block of vertical gap between a text element and a following
-// non-text element. text_display's glyphs extend upward from the entity
-// anchor at cell-bottom-1, so its tail sits outside the cell.
-export const TEXT_DESCENDER = 1
-
 // Default scale (in font-pixel units) for each text element when LESS
 // doesn't specify `font-size`. Values sized for typical slide legibility.
 export function defaultFontPx(type: string): number {
@@ -43,4 +38,21 @@ export const GRAMMARS: Record<string, Grammar> = {
 		wasmPath: 'resources/jsx/parser/tree-sitter-typescript.wasm',
 		queryPath: 'resources/jsx/parser/typescript.highlights.scm',
 	},
+}
+
+// Vertical gap (in world blocks) reserved for a text element's descender
+// tail in two contexts:
+//   - `blockGap(prev, next, sceneH)` adds this between a text element and
+//     a following non-text element.
+//   - `finalizeScrollCodeLayout(el)` subtracts this from the scroll
+//     block's cellH before splitting into viewport chunks, so the bottom
+//     border isn't clipped.
+let _TEXT_DESCENDER: number | null = null
+
+// TODO: This is currently useless, we still need to accurately calculate this, nothing is doing it yet
+export function getTextDescender(): number {
+	if (_TEXT_DESCENDER === null) {
+		_TEXT_DESCENDER = 0
+	}
+	return _TEXT_DESCENDER
 }

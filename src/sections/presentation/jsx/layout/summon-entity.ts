@@ -23,17 +23,12 @@ function fmt(v: number): string {
 export function summonTextEntity(
 	el: Extract<ElementLayout, { kind: 'text' }>,
 	entityX: number,
-	cellY: number,
+	entityY: number,
 	z: number,
 	extraTags: (`${any}${string}` | LabelClass)[],
 	sceneTag: LabelClass,
 	initialOpacity: number | undefined,
 ): void {
-	const textY = cellY - 1
-	// Scrolling `<code>` blocks: ONE text_display per block. Initial `text`
-	// is chunk 0's bordered content so it renders correctly from tick 1.
-	// The scroll-tick swaps the entity's `text` field via
-	// `data modify entity @s text set value [...]` for chunks 1..N-1.
 	if (el.chunks && el.chunks.length > 0 && el.scrollTag) {
 		const tags: (`${any}${string}` | LabelClass)[] = [sceneTag, ...extraTags]
 		tags.push(el.scrollTag as `${any}${string}`)
@@ -59,16 +54,9 @@ export function summonTextEntity(
 		if (align) nbt.alignment = align
 		// Scroll entity starts visible — slide show/hide owns visibility.
 		nbt.text_opacity = NBT.int(-1)
-		// Anchor the entity AT `cellY` (cell top), not `cellY - 1`. The
-		// generic `textY = cellY - 1` below reserves a 1-block descender
-		// space below the cell — fine for normal text where the descender
-		// is empty glyph space, but scroll chunks ALWAYS have a non-empty
-		// last visual row (the bottom border) sitting at that descender
-		// position, so it would render 1 block below the slide edge when
-		// the cell is flush against the slide bottom.
 		summon(
 			'text_display',
-			`${fmt(entityX)} ${fmt(cellY)} ${fmt(z)}`,
+			`${fmt(entityX)} ${fmt(entityY)} ${fmt(z)}`,
 			nbt,
 		)
 		return
@@ -105,13 +93,13 @@ export function summonTextEntity(
 		nbt.text_opacity = NBT.int(Math.round((parseFloat(opacityStr) / 100) * 255) - 256)
 	}
 
-	summon('text_display', `${fmt(entityX)} ${fmt(textY)} ${fmt(z)}`, nbt)
+	summon('text_display', `${fmt(entityX)} ${fmt(entityY)} ${fmt(z)}`, nbt)
 }
 
 export function summonImageEntity(
 	el: Extract<ElementLayout, { kind: 'image' }>,
 	entityX: number,
-	cellY: number,
+	entityY: number,
 	z: number,
 	extraTags: (`${any}${string}` | LabelClass)[],
 	sceneTag: LabelClass,
@@ -119,7 +107,8 @@ export function summonImageEntity(
 ): void {
 	// `paper` is a no-op shape; `minecraft:item_model` overrides it fully.
 	// `item_display: 'fixed'` makes the model 2D regardless of viewer angle.
-	const imgCenterY = cellY + el.cellH / 2
+	// `entityY` is the vertical center of the image cell — the layout
+	// computed it (cellY + cellH/2) before calling here.
 	const imgNbt: SymbolEntity['item_display'] = {
 		Tags: [sceneTag, ...extraTags],
 		item: {
@@ -142,36 +131,31 @@ export function summonImageEntity(
 		brightness: FULL_BRIGHTNESS,
 	}
 	if (initialOpacity === 0) imgNbt.view_range = NBT.float(0.0)
-	summon('minecraft:item_display', `${fmt(entityX)} ${fmt(imgCenterY)} ${fmt(z)}`, imgNbt)
+	summon('minecraft:item_display', `${fmt(entityX)} ${fmt(entityY)} ${fmt(z)}`, imgNbt)
 }
 
 // Internal helper — dispatches to text vs image entity summoner.
 export function summonElement(
 	el: ElementLayout,
 	entityX: number,
-	cellY: number,
+	entityY: number,
 	z: number,
 	extraTags: (`${any}${string}` | LabelClass)[],
 	sceneTag: LabelClass,
 	initialOpacity: number | undefined,
 ): void {
 	if (el.kind === 'text') {
-		// Tag every text entity with `kind.text` so showSlide/hideSlide
-		// can target text_display entities (text_opacity) while leaving
-		// item_display images alone. Scrolling `<code>` blocks are a
-		// single entity that carries this tag too — the slide show owns
-		// its visibility; the scroll-tick only swaps its `text` field.
 		summonTextEntity(
 			el,
 			entityX,
-			cellY,
+			entityY,
 			z,
 			[...extraTags, KIND_TEXT_TAG],
 			sceneTag,
 			initialOpacity,
 		)
 	} else {
-		summonImageEntity(el, entityX, cellY, z, extraTags, sceneTag, initialOpacity)
+		summonImageEntity(el, entityX, entityY, z, extraTags, sceneTag, initialOpacity)
 	}
 }
 

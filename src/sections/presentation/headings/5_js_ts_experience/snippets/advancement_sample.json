@@ -1,0 +1,28 @@
+{
+    "criteria": {
+        "jump": {
+            "trigger": "tick",
+            "conditions": {
+                "player": {
+                    "type_specific/player": {
+                        "input": {
+                            "jump": true
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "display": {
+        "icon": "wind_charge",
+        "title": "Jump for Joy!",
+        "description": "You jumped! Good Job.",
+        "hidden": true
+    },
+    "rewards": {
+        "function": "sandstone_summit_booth:sample/my_func",
+        "recipes": [
+            "sandstone_summit_booth:sample/my_recipe"
+        ]
+    }
+}

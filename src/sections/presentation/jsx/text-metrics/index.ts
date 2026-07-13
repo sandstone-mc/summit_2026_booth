@@ -2,9 +2,9 @@
 //
 // Wraps the singleton `FontLoader` so consumers don't need to manage
 // loader instances themselves. `loadFontMetrics` must be awaited
-// before any `charWidth` / `wrapLines` call for that font.
+// before any `charWidth` / `wrapLines` / `fontMetrics` call for that font.
 
-import { FontLoader, DEFAULT_FONT_ID } from './font-loader'
+import { FontLoader, DEFAULT_FONT_ID, type FontMetrics } from './font-loader'
 import { TextWrap } from './wrap'
 
 export { DEFAULT_FONT_ID } from './font-loader'
@@ -24,6 +24,10 @@ export function textWidth(text: string, bold: boolean, fontId: string = DEFAULT_
 	return loader.textWidth(text, bold, fontId)
 }
 
+export function fontMetrics(fontId: string = DEFAULT_FONT_ID): FontMetrics {
+	return loader.fontMetrics(fontId)
+}
+
 export function wrapToLines(
 	text: string,
 	lineWidth: number,
@@ -40,15 +44,6 @@ export function wrapLines(
 	fontId: string = DEFAULT_FONT_ID,
 ): number {
 	return wrap.wrapLines(text, lineWidth, bold, fontId)
-}
-
-export function wrapCodeLines(
-	text: string,
-	lineWidth: number,
-	bold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
-): number {
-	return wrap.wrapCodeLines(text, lineWidth, bold, fontId)
 }
 
 export function wrapCodeLinesAsArray(

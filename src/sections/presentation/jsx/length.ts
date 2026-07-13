@@ -1,10 +1,12 @@
 // Parse CSS-like length values for the MC coordinate system (1 block = 1 m).
 //
 // Units:
-//   px  →  1/16 of a block (= 1/16 m). Default unit if omitted.
-//   vh  →  1/100 of the scene's height. Use for vertical-axis values.
-//   vw  →  1/100 of the scene's width. Use for horizontal-axis values.
-//   %   →  1/100 of the supplied axis dimension (caller picks which).
+//   px            →  1/16 of a block (= 1/16 m). Default unit if omitted.
+//   vh            →  1/100 of the scene's height.
+//   vw            →  1/100 of the scene's width.
+//   %             →  1/100 of the supplied axis dimension (caller picks which).
+//   fit-content   →  length of the element's content (resolved by caller;
+//                   returned with meters=0 as a marker).
 //
 // `axisSize` is the relevant dimension in meters — pass `bounds[0]` for
 // width-axis values, `bounds[1]` for height-axis values.
@@ -12,13 +14,18 @@
 // Returns both px (raw user value) and meters (MC coord). px is preserved
 // for things like text_display's `line_width`, which is in pixels.
 
-export type Unit = 'px' | 'vh' | 'vw' | '%'
+export type Unit = 'px' | 'vh' | 'vw' | '%' | 'fit-content'
 
 export type Length = { value: number; unit: Unit; px: number; meters: number }
 
 export function parseLength(raw: string, axisSize: number): Length | undefined {
 	if (typeof raw !== 'string') return undefined
-	const m = raw.trim().match(/^(-?\d*\.?\d+)\s*(px|vh|vw|%)?$/i)
+	const trimmed = raw.trim()
+	if (trimmed === 'fit-content') {
+		// Caller resolves actual size based on element content.
+		return { value: 0, unit: 'fit-content', px: 0, meters: 0 }
+	}
+	const m = trimmed.match(/^(-?\d*\.?\d+)\s*(px|vh|vw|%)?$/i)
 	if (!m) return undefined
 	const num = parseFloat(m[1])
 	const unit = (m[2]?.toLowerCase() ?? 'px') as Unit

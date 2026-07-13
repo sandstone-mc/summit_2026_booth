@@ -1,0 +1,15 @@
+{
+    "type": "crafting_shaped",
+    "pattern": [
+        "F-F",
+        "F-F",
+        "-D-"
+    ],
+    "key": {
+        "F": "feather",
+        "-": "air",
+        "D": "diamond"
+    },
+    "result": "wind_charge",
+    "show_notification": true
+}

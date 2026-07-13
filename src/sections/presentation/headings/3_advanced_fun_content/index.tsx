@@ -15,8 +15,10 @@ export const slides = [
 		<p>Longer answer: After the presentation go down to our bottom floor and check out their games!</p>
 
 		<div id="img-grid">
-			<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/rhythm.png" height="30vh" />
+			<p>t</p>
 			<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/arcane.png" height="30vh" />
+			<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/arcane.png" height="30vh" />
+			<p>t</p>
 		</div>
 	</>),
 	(<>
@@ -51,4 +53,11 @@ export const slides = [
 			/> */}
 		</div>
 	</>),
+	(<>
+		<div id="img-grid">
+			<p>asd</p>
+			<p>asd</p>
+			<p>asd</p>
+		</div>
+	</>)
 ]

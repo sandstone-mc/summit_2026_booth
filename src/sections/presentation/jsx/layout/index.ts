@@ -21,6 +21,12 @@ import { blockCellH, blockGap, groupIntoBlocks, startingY, totalStackHeight, typ
 import { summonElement } from './summon-entity'
 import { Z_VISUAL_OFFSET } from './constants'
 
+// TODO: This is basically a no-op, figure out how to actually calculate this
+function descenderBlocks(el: ElementLayout): number {
+	if (el.kind !== 'text') return 0
+	return 0
+}
+
 export type CodePrecomputedMap = WeakMap<VNode, Precomputed>
 
 /** Spec captured during layout, consumed by the slide's scroll-tick. */
@@ -148,8 +154,7 @@ function runLayout(
 
 	const blocks = groupIntoBlocks(elements)
 	const totalH = totalStackHeight(blocks, sceneH)
-	const stackDecs = elements[0]?.parentStack ?? {}
-	let accY = startingY(sceneH, totalH, stackDecs)
+	let accY = startingY(sceneH, totalH, blocks)
 	const z = origin[2] + Z_VISUAL_OFFSET
 
 	const placements: Placement[] = []
@@ -161,16 +166,28 @@ function runLayout(
 			const cellY = origin[1] + accY - el.marginTop - el.cellH
 			// Entity Y depends on element kind:
 			//   scroll `<code>`:  cellY (bottom border flush with slide bottom)
-			//   prose/h/code:     cellY - 1 (descender slot)
+			//   prose/h/code:     cellY - descenderBlocks(el, cellY, origin[1])
+			//                     (drop by cellH clamped to keep entity inside slide)
 			//   image:            cellY + cellH / 2 (image is centered in cell)
 			const entityY =
 				el.kind === 'text' && typeof el.scrollTag === 'string'
 					? cellY
 					: el.kind === 'image'
 						? cellY + el.cellH / 2
-						: cellY - 1
+						: cellY - descenderBlocks(el)
+			// Layout trace — shows each element's effective sizing so we can
+			// iterate on pxToTextLineHeight and other formulas without
+			// rebuilding every time. Set DEBUG_LAYOUT=1 to enable.
+			if (process.env.DEBUG_LAYOUT === '1') {
+				console.warn(
+					`[layout] kind=${el.kind} type=${el.kind === 'text' ? el.type : '-'} ` +
+						`scalePx=${el.kind === 'text' ? el.scalePx : '-'} ` +
+						`cellH=${el.cellH.toFixed(3)} marginTop=${el.marginTop.toFixed(3)} marginBottom=${el.marginBottom.toFixed(3)} ` +
+						`cellY=${cellY.toFixed(3)} entityY=${entityY.toFixed(3)} accY=${accY.toFixed(3)}`,
+				)
+			}
 			const entityX = origin[0] + sceneW / 2
-			onElement(el, entityX, cellY, z)
+			onElement(el, entityX, entityY, z)
 			placements.push({ el, x: entityX, y: entityY, z })
 			maybeRecordScroll(el, entityY, scrollSpecs)
 			accY -= el.marginTop + el.cellH
@@ -260,13 +277,15 @@ function placeRowBlocks(
 		const childCenterX = accX + child.cellW / 2
 		// Entity Y depends on element kind — mirrors the non-row placement
 		// (scroll/prose/image each have their own anchor convention).
+		// Prose/h/code drop by cellH, clamped to the slide bottom so the
+		// entity never sits below the slide.
 		const entityY =
 			child.kind === 'text' && typeof child.scrollTag === 'string'
 				? subCellY
 				: child.kind === 'image'
 					? subCellY + child.cellH / 2
-					: subCellY - 1
-		onElement(child, childCenterX, subCellY, z)
+					: subCellY - descenderBlocks(child)
+		onElement(child, childCenterX, entityY, z)
 		placements.push({ el: child, x: childCenterX, y: entityY, z })
 		maybeRecordScroll(child, entityY, scrollSpecs)
 		accX += child.cellW + columnGap

@@ -50,17 +50,36 @@ export class SelectorMatcher {
 		return out
 	}
 
-	// Subset match: every id/class the selector constrains must be
-	// present on the segment; segment may carry extras. `>` and `+`
-	// are immediate-next; descendant (` ` or ``) accepts any later.
 	selectorMatchesPath(sel: string, segments: Compound[]): boolean {
 		if (segments.length === 0) return false
 		const parsed = this.parseSelectorFull(sel)
 		if (parsed.compounds.length === 0) return false
-		for (let start = 0; start < segments.length; start++) {
+		const targetIdx = segments.length - 1
+		const lastIdx = parsed.compounds.length - 1
+		if (!this.compoundMatches(parsed.compounds[lastIdx].compound, segments[targetIdx])) return false
+		return this.matchAncestors(parsed.compounds, lastIdx - 1, segments, targetIdx - 1)
+	}
+
+	private matchAncestors(
+		compounds: Parsed['compounds'],
+		compoundIdx: number,
+		segments: Compound[],
+		segIdx: number,
+	): boolean {
+		if (compoundIdx < 0) return true
+		const comb = compounds[compoundIdx + 1].combinatorBefore
+		const c = compounds[compoundIdx].compound
+		if (comb === '>' || comb === '+') {
+			if (segIdx < 0) return false
+			if (!this.compoundMatches(c, segments[segIdx])) return false
+			return this.matchAncestors(compounds, compoundIdx - 1, segments, segIdx - 1)
+		}
+		// Descendant: walk up the ancestor chain, accepting any segment
+		// that matches the next selector compound.
+		for (let i = segIdx; i >= 0; i--) {
 			if (
-				this.compoundMatches(parsed.compounds[0].compound, segments[start]) &&
-				this.matchRest(parsed.compounds, 1, segments, start + 1)
+				this.compoundMatches(c, segments[i]) &&
+				this.matchAncestors(compounds, compoundIdx - 1, segments, i - 1)
 			) {
 				return true
 			}
@@ -75,23 +94,6 @@ export class SelectorMatcher {
 		if (c.classes.length > seg.classes.length) return false
 		for (const cls of c.classes) if (!seg.classes.includes(cls)) return false
 		return true
-	}
-
-	private matchRest(compounds: Parsed['compounds'], idx: number, segments: Compound[], segStart: number): boolean {
-		if (idx >= compounds.length) return true
-		const comb = compounds[idx].combinatorBefore
-		const c = compounds[idx].compound
-		if (comb === '>' || comb === '+') {
-			if (segStart >= segments.length) return false
-			if (!this.compoundMatches(c, segments[segStart])) return false
-			return this.matchRest(compounds, idx + 1, segments, segStart + 1)
-		}
-		for (let i = segStart; i < segments.length; i++) {
-			if (this.compoundMatches(c, segments[i]) && this.matchRest(compounds, idx + 1, segments, i + 1)) {
-				return true
-			}
-		}
-		return false
 	}
 }
 

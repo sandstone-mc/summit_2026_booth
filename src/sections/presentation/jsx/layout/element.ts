@@ -2,7 +2,7 @@
 // everything the summon pass needs (cell size, scale, margins, content).
 
 import { parseLength, pxToTextScale, pxToTextLineHeight } from '../length'
-import { charWidth, wrapLines, wrapCodeLines } from '../text-metrics'
+import { wrapLines } from '../text-metrics'
 import { DEFAULT_FONT_ID } from '../text-metrics/font-loader'
 import type { CssDeclarations } from '../less/types'
 import type { VNode, StyledSegment } from '../render'
@@ -14,7 +14,7 @@ import {
 	DEFAULT_CODE_BORDER_COLOR,
 	DEFAULT_CODE_LANG_COLOR,
 	DEFAULT_IMG_HEIGHT,
-	TEXT_DESCENDER,
+	getTextDescender,
 	defaultFontPx,
 } from './constants'
 import { parseMarginBox } from './margin'
@@ -54,6 +54,8 @@ type TextElementLayout = {
 	cellW: number
 	marginTop: number
 	marginBottom: number
+	/** Resolved font id (`declarations.font ?? <code>-default rule`). */
+	fontId: string
 	/** True when this `<code>` should auto-scroll its content. */
 	scrolling?: boolean
 	/** Number of source (pre-wrap) lines — drives the gutter width and scroll distance. */
@@ -220,6 +222,16 @@ function computeImgLayout(
 	}
 }
 
+// Find the longest line (by char count) in a text source. Used for
+// `width: fit-content` resolution on prose elements.
+function longestLineCharCount(content: string): number {
+	let best = 0
+	for (const line of content.split('\n')) {
+		if (line.length > best) best = line.length
+	}
+	return best
+}
+
 function computeTextLayout(
 	node: VNode,
 	path: string[],
@@ -277,7 +289,25 @@ function computeTextLayout(
 	if (type !== 'code') {
 		const lines = wrapLines(content, wrapWidthPx, isBold, fontId)
 		const lineHeightBlocks = pxToTextLineHeight(scalePx)
+		// `width: fit-content` (prose): resolve to the longest visual
+		// line's char count × MC's default-font char width (~7 px per char
+		// in default scale, conservative vs the literal 6 px to absorb
+		// wider glyphs like 'd', 'm', 'w'). Cap at slide width.
+		if (width?.unit === 'fit-content') {
+			const longestChars = longestLineCharCount(content)
+			const charWidthBlocks = (7 / 16) * textScale
+			const naturalWidthBlocks = Math.min(sceneW, longestChars * charWidthBlocks)
+			width = {
+				value: naturalWidthBlocks * 16,
+				unit: 'px',
+				px: naturalWidthBlocks * 16,
+				meters: naturalWidthBlocks,
+			}
+		}
 		const cellH = heightLen?.meters ?? lineHeightBlocks * lines
+		// cellW respects explicit LESS width (incl. `fit-content`,
+		// resolved just above) — the default is the slide width.
+		const cellW = width?.meters ?? sceneW
 		return {
 			kind: 'text',
 			node,
@@ -291,9 +321,10 @@ function computeTextLayout(
 			textScale,
 			widthCompensation,
 			cellH,
-			cellW: sceneW,
+			cellW,
 			marginTop,
 			marginBottom,
+			fontId,
 		}
 	}
 
@@ -338,9 +369,10 @@ function computeTextLayout(
 			textScale,
 			widthCompensation,
 			cellH,
-			cellW: sceneW,
+			cellW: width?.meters ?? sceneW,
 			marginTop,
 			marginBottom,
+			fontId,
 		}
 	}
 
@@ -370,9 +402,10 @@ function computeTextLayout(
 		textScale,
 		widthCompensation,
 		cellH: placeholderCellH,
-		cellW: sceneW,
+		cellW: width?.meters ?? sceneW,
 		marginTop,
 		marginBottom,
+		fontId,
 		scrolling: true,
 		sourceLineCount,
 		scrollTag,
@@ -401,9 +434,9 @@ export function finalizeScrollCodeLayout(el: ElementLayout): void {
 	if (!rows || lineHeightBlocks <= 0) return
 
 	const cellH = el.cellH
-	// Subtracted from cellH: 1 block for the descender + 2 line heights
+	// Subtracted from cellH: default-font descender + 2 line heights
 	// (top + bottom border rows of this chunk).
-	const codeAreaBlocks = Math.max(0, cellH - TEXT_DESCENDER - 2 * lineHeightBlocks)
+	const codeAreaBlocks = Math.max(0, cellH - getTextDescender() - 2 * lineHeightBlocks)
 	const viewportCodeRows = Math.max(1, Math.floor(codeAreaBlocks / lineHeightBlocks))
 	const totalCodeRows = rows.codeRows.length
 	const chunkCount = Math.max(1, totalCodeRows - viewportCodeRows + 1)

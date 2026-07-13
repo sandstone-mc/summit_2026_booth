@@ -4,7 +4,7 @@
 
 import { parseLength } from '../length'
 import type { CssDeclarations } from '../less/types'
-import { TEXT_DESCENDER } from './constants'
+import { getTextDescender } from './constants'
 import type { ElementLayout } from './element'
 
 export type Block =
@@ -37,11 +37,11 @@ export function blockCellH(b: Block): number {
 }
 
 // Gap between two adjacent blocks: parent's `row-gap` (only when both
-// share the same parent) + 1-block text descender buffer.
+// share the same parent) + default-font descender buffer.
 export function blockGap(prev: Block, next: Block, sceneH: number): number {
 	const prevEl = prev.kind === 'element' ? prev.el : prev.children[prev.children.length - 1]
 	const nextEl = next.kind === 'element' ? next.el : next.children[0]
-	const textDescender = prevEl.kind === 'text' && nextEl.kind !== 'text' ? TEXT_DESCENDER : 0
+	const textDescender = prevEl.kind === 'text' && nextEl.kind !== 'text' ? getTextDescender() : 0
 	const prevStack = prev.kind === 'element' ? prev.el.parentStack : prev.parentStack
 	const nextStack = next.kind === 'element' ? next.el.parentStack : next.parentStack
 	const rowGap =
@@ -59,8 +59,31 @@ export function totalStackHeight(blocks: Block[], sceneH: number): number {
 	)
 }
 
-// Starting Y position: sceneH (bottom of scene) for default top-down
-// stacking; centered for `align-items: center`.
-export function startingY(sceneH: number, totalH: number, stackDecs: CssDeclarations): number {
-	return stackDecs['align-items'] === 'center' ? (sceneH + totalH + 1) / 2 : sceneH
+// Should the slide's stack of blocks be vertically centered, rather than
+// top-down from the slide's bottom edge?
+//
+// Convention in this codebase: a `<div>` wrapper with `align-items: center`
+// (and no `grid-auto-flow: row`) acts as a "center this content in the
+// slide" wrapper — the user overloads the CSS `align-items` property
+// because there's no other way to express slide-level centering. See
+// `#text-grid` in `styles.less` for the canonical use.
+//
+// Row containers (`grid-auto-flow: row`) size themselves via their own
+// `height` rule (e.g. `#img-grid { height: 100% }`) and never trigger
+// slide-level centering — the row fills the available space and the
+// caller is responsible for its internal positioning.
+export function shouldCenterStack(blocks: Block[]): boolean {
+	if (blocks.length === 0) return false
+	const first = blocks[0]
+	if (first.kind !== 'element') return false
+	const stack = first.el.parentStack
+	return stack['align-items'] === 'center' && stack['grid-auto-flow'] !== 'row'
+}
+
+// Starting Y position for the slide's content stack. Always the slide
+// bottom by default; slide-level centering (see `shouldCenterStack`) lifts
+// the stack so its midpoint aligns with the slide's vertical midpoint.
+export function startingY(sceneH: number, totalH: number, blocks: Block[]): number {
+	if (shouldCenterStack(blocks)) return (sceneH + totalH + 1) / 2
+	return sceneH
 }
