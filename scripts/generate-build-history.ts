@@ -127,11 +127,16 @@ async function main() {
 			// Build (FORCE_RENDER already set in run() env)
 			run(['bun', 'run', 'dev:build'])
 
-			// Copy fresh build output into .previous-builds
+			// Copy fresh build output into .previous-builds (`.` on src copies contents, not the dir itself)
 			run(['cp', '-r', join('.sandstone', 'output', '.'), PREV])
 
 			// Commit inside .previous-builds
 			const message = `Build ${hash.slice(0, 7)}: ${subject}\n\nSource commit: ${hash}\nSource author: ${author}\nSource date: ${date}`
+			const add = spawnSync(['git', 'add', '-A'], { cwd: PREV, stdout: 'inherit', stderr: 'inherit' })
+			if (!add.success) {
+				console.error(`[history] git add failed for ${hash}`)
+				process.exit(add.exitCode ?? 1)
+			}
 			const commit = spawnSync(['git', 'commit', '-m', message], {
 				cwd: PREV,
 				stdin: 'inherit',
