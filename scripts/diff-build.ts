@@ -1,12 +1,21 @@
 #!/usr/bin/env bun
 /**
- * Diff current build (`.sandstone/output/`) against a previously-stored
- * build from the `.previous-builds/` git repo.
+ * Diff `.sandstone/output/` against builds stored in `.previous-builds/`'s git history.
  *
  * Usage:
- *   bun scripts/diff-build.ts                          # against .previous-builds HEAD (pending changes)
- *   bun scripts/diff-build.ts <commit-ish>             # against a hash/prefix, or HEAD~1, etc.
- *   bun scripts/diff-build.ts <substring>              # substring of any commit's message body
+ *   bun scripts/diff-build.ts                          # HEAD vs current (pending changes)
+ *   bun scripts/diff-build.ts <commit-ish|hash|substr> # that commit vs current
+ *   bun scripts/diff-build.ts <arg1> <arg2>            # commit1 vs commit2
+ *
+ * Each arg resolves in this order (first match wins):
+ *   1. `git rev-parse --verify <arg>` (HEAD, HEAD~1, main, full SHA, refs/...)
+ *   2. Hash/prefix matching `[0-9a-f]{4,40}` in `.previous-builds/`
+ *   3. Case-insensitive substring of any inner commit's message body
+ *      (errors if zero or >1 matches)
+ *
+ * Quote substrings containing spaces in the shell, e.g.
+ *   bun dev:diff:check "scrolling code" "fix regression"
+ * Without quotes the shell splits them into separate args.
  *
  * Flags:
  *   --filter=<glob>        only diff files matching this substring (e.g. "presentation/mount")
@@ -41,7 +50,8 @@ interface Options {
 }
 
 interface ParsedArgs {
-	target: string | null // commit hash to compare against, null = HEAD
+	// 0 args: compare HEAD vs current. 1 arg: compare that vs current. 2 args: compare two commits.
+	positional: string[]
 	opts: Options
 }
 
@@ -64,7 +74,12 @@ function parseArgs(argv: string[]): ParsedArgs {
 		else if (a === '--raw') opts.raw = true
 		else positional.push(a)
 	}
-	return { target: positional[0] ?? null, opts }
+	if (positional.length > 2) {
+		console.error(`[diff-build] Too many positional args (max 2). Got: ${positional.join(' ')}`)
+		console.error(`[diff-build] Tip: quote substrings containing spaces, e.g. \`bun dev:diff:check "fix regression" "scrolling code"\`.`)
+		process.exit(1)
+	}
+	return { positional, opts }
 }
 
 // ---------- commit resolution ----------
@@ -339,8 +354,34 @@ function printReport(label: string, report: DiffReport, opts: Options): void {
 
 // ---------- main ----------
 
+interface Side {
+	kind: 'current' | 'commit'
+	hash: string | null // null when kind === 'current'
+	subject: string
+}
+
+async function resolveSide(arg: string): Promise<Side> {
+	const hash = await resolveTarget(arg)
+	const subject = capture(['git', '-C', PREV, 'log', '-1', '--format=%s', hash])
+	return { kind: 'commit', hash, subject }
+}
+
+function labelFor(side: Side): string {
+	if (side.kind === 'current') return 'current'
+	return `'${side.hash!.slice(0, 7)}' (${side.subject})`
+}
+
+async function buildDirFor(side: Side, tempDirs: string[]): Promise<string> {
+	if (side.kind === 'current') return OUTPUT_DIR
+	const short = side.hash!.slice(0, 7)
+	const dir = await mkdtemp(join(TEMP_DIR, `diff-build-${short}-`))
+	tempDirs.push(dir)
+	await extractBuild(side.hash!, dir)
+	return join(dir, 'output')
+}
+
 async function main() {
-	const { target, opts } = parseArgs(process.argv.slice(2))
+	const { positional, opts } = parseArgs(process.argv.slice(2))
 
 	// Verify .previous-builds is a git repo
 	const isRepo = spawnSync(['git', '-C', PREV, 'rev-parse', '--git-dir'], { env: GIT_ENV })
@@ -354,22 +395,31 @@ async function main() {
 		process.exit(1)
 	}
 
-	const hash = await resolveTarget(target)
-	const shortHash = hash.slice(0, 7)
-	const subject = capture(['git', '-C', PREV, 'log', '-1', '--format=%s', hash])
-
-	// Extract target build to a temp dir under .temp/ (gitignored).
-	// Inner repo layout is `.previous-builds/output/{datapack,resourcepack}`
-	// so the temp extraction has the build at `<tmpDir>/output/`.
 	await Bun.$`mkdir -p ${TEMP_DIR}`.quiet()
-	const tmpDir = await mkdtemp(join(TEMP_DIR, `diff-build-${shortHash}-`))
+
+	// Resolve the two sides. 0 args → HEAD vs current; 1 arg → arg vs current;
+	// 2 args → arg1 vs arg2. Quote substrings containing spaces in the shell
+	// (e.g. `bun dev:diff:check "scrolling code" "fix regression"`).
+	const [leftArg, rightArg] =
+		positional.length === 0 ? [null, ''] :
+		positional.length === 1 ? [positional[0], ''] :
+		[positional[0], positional[1]]
+
+	const left: Side = leftArg === null
+		? { kind: 'commit', hash: capture(['git', '-C', PREV, 'rev-parse', 'HEAD']), subject: capture(['git', '-C', PREV, 'log', '-1', '--format=%s', 'HEAD']) }
+		: await resolveSide(leftArg)
+	const right: Side = rightArg === ''
+		? { kind: 'current', hash: null, subject: 'current' }
+		: await resolveSide(rightArg)
+
+	const tempDirs: string[] = []
 	try {
-		await extractBuild(hash, tmpDir)
-		const targetDir = join(tmpDir, 'output')
-		const report = await computeDiff(targetDir, OUTPUT_DIR, opts.round, opts.filter)
-		printReport(`'${shortHash}' (${subject}) → current`, report, opts)
+		const leftDir = await buildDirFor(left, tempDirs)
+		const rightDir = await buildDirFor(right, tempDirs)
+		const report = await computeDiff(leftDir, rightDir, opts.round, opts.filter)
+		printReport(`${labelFor(left)} → ${labelFor(right)}`, report, opts)
 	} finally {
-		await rm(tmpDir, { recursive: true, force: true })
+		await Promise.all(tempDirs.map(d => rm(d, { recursive: true, force: true })))
 	}
 }
 
