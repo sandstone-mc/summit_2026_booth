@@ -1,88 +1,116 @@
 #!/usr/bin/env bun
 /**
- * Compact diff reporter for `.sandstone/output/` against saved snapshots.
+ * Diff current build (`.sandstone/output/`) against a previously-stored
+ * build from the `.previous-builds/` git repo.
  *
  * Usage:
- *   bun scripts/diff-build.ts snapshot [name]          # save current build as snapshot (default: "default")
- *   bun scripts/diff-build.ts check [name]             # diff current build vs named snapshot (default: "default")
- *   bun scripts/diff-build.ts all [name]               # snapshot → build → check
- *   bun scripts/diff-build.ts diff <from> <to>         # diff two named snapshots (no current build needed)
- *   bun scripts/diff-build.ts list                     # list all snapshots with size + mtime
- *   bun scripts/diff-build.ts delete <name>            # remove a snapshot
+ *   bun scripts/diff-build.ts                          # against .previous-builds HEAD (pending changes)
+ *   bun scripts/diff-build.ts <commit-ish>             # against a hash/prefix, or HEAD~1, etc.
+ *   bun scripts/diff-build.ts <substring>              # substring of any commit's message body
  *
- * Flags (for `check` / `all` / `diff`):
+ * Flags:
  *   --filter=<glob>        only diff files matching this substring (e.g. "presentation/mount")
- *   --round=<n>            round floats to N decimals to suppress FP noise (default: 4, 0 disables)
+ *   --round=<n>            round floats to N decimals (default: 4, 0 disables)
  *   --full                 also print raw unified diff per changed file
  *   --raw                  print raw `diff -ru` output, no formatting
  *
- * Output format (default, compact):
- *   DIFF: N of M files changed
- *     <relative-path>  (K hunks)
- *       @@ -oldStart +newStart @@
- *         DEL L- <stable-key>
- *         ADD L## <stable-key>
- *
  * "Stable key" = the Tags[] field if present, else the first word of the line.
  * Compact summary costs ~150 tokens for the whole repo.
- *
- * Snapshots are stored as `.previous-builds/<name>/` — one full copy of `.sandstone/output/`.
- * Snapshots with `--note=<text>` write a `.note` file inside for documentation.
  */
 
 import { spawnSync } from 'bun'
 import { Glob } from 'bun'
 import { join, relative } from 'path'
+import { mkdtemp, rm } from 'fs/promises'
 
 const ROOT = join(import.meta.dirname, '..')
 const OUTPUT_DIR = join(ROOT, '.sandstone/output')
-const SNAPSHOTS_DIR = join(ROOT, '.previous-builds')
-
-type Mode = 'snapshot' | 'check' | 'all' | 'diff' | 'list' | 'delete'
+const PREV = join(ROOT, '.previous-builds')
+const TEMP_DIR = join(ROOT, '.temp')
 
 interface Options {
 	filter: string | null
 	round: number
 	full: boolean
 	raw: boolean
-	note: string | null
 }
 
 interface ParsedArgs {
-	mode: Mode
-	name: string | null
-	name2: string | null
+	target: string | null // commit hash to compare against, null = HEAD
 	opts: Options
 }
 
+// ---------- arg parsing ----------
+
+const HASH_LIKE = /^[0-9a-f]{4,40}$/i
+
 function parseArgs(argv: string[]): ParsedArgs {
-	const args = [...argv]
-	const mode = (args.shift() ?? 'check') as Mode
-
-	// First positional = primary snapshot name, second = secondary (for `diff`)
-	const positional = args.filter(a => !a.startsWith('--'))
-	const name = positional[0] ?? null
-	const name2 = positional[1] ?? null
-
-	const get = (flag: string): string | null => {
-		const i = args.findIndex(a => a.startsWith(flag))
-		if (i === -1) return null
-		const a = args[i]
-		const eq = a.indexOf('=')
-		return eq === -1 ? null : a.slice(eq + 1)
-	}
-
 	const opts: Options = {
-		filter: get('--filter'),
-		round: Number(get('--round') ?? '4'),
-		full: args.includes('--full'),
-		raw: args.includes('--raw'),
-		note: get('--note'),
+		filter: null,
+		round: 4,
+		full: false,
+		raw: false,
 	}
-	return { mode, name, name2, opts }
+	const positional: string[] = []
+	for (const a of argv) {
+		if (a.startsWith('--filter=')) opts.filter = a.slice('--filter='.length)
+		else if (a.startsWith('--round=')) opts.round = Number(a.slice('--round='.length))
+		else if (a === '--full') opts.full = true
+		else if (a === '--raw') opts.raw = true
+		else positional.push(a)
+	}
+	return { target: positional[0] ?? null, opts }
 }
 
-// ---------- float normalization (suppress FP noise) ----------
+// ---------- commit resolution ----------
+
+async function resolveTarget(arg: string | null): Promise<string> {
+	// Verify .previous-builds is a git repo with commits
+	const revCount = capture(['git', '-C', PREV, 'rev-list', '--count', 'HEAD'])
+	if (revCount === '0') {
+		console.error(`[diff-build] ${relative(ROOT, PREV)}/ has no commits. Run \`bun dev:history:generate\` first.`)
+		process.exit(1)
+	}
+
+	if (arg === null) return capture(['git', '-C', PREV, 'rev-parse', 'HEAD'])
+
+	// Try hash/prefix first (commit-ish: HEAD~1, b48a8eb, full sha, refs/...)
+	if (HASH_LIKE.test(arg) || /^[~^]/.test(arg) || arg.includes('..')) {
+		const tryParse = spawnSync(['git', '-C', PREV, 'rev-parse', '--verify', `${arg}^{commit}`])
+		if (tryParse.success) return tryParse.stdout.toString().trim()
+		// Fall through to substring search if hash-like but didn't resolve
+		if (!HASH_LIKE.test(arg)) {
+			console.error(`[diff-build] Bad commit-ish: ${arg}`)
+			process.exit(1)
+		}
+	}
+
+	// Substring search across all commit messages
+	const needle = arg.toLowerCase()
+	const log = capture(['git', '-C', PREV, 'log', '--format=%H %B', '-z'])
+	const matches: { hash: string; subject: string }[] = []
+	for (const block of log.split('\0')) {
+		if (!block) continue
+		const [hash, ...rest] = block.split(' ')
+		const body = rest.join(' ')
+		if (body.toLowerCase().includes(needle)) {
+			matches.push({ hash, subject: body.split('\n')[0] })
+		}
+	}
+	if (matches.length === 0) {
+		console.error(`[diff-build] No commit found matching "${arg}"`)
+		console.error(`[diff-build] Hint: use a hash/prefix (e.g. b48a8eb) or a substring of the message.`)
+		process.exit(1)
+	}
+	if (matches.length > 1) {
+		console.error(`[diff-build] "${arg}" matches ${matches.length} commits — be more specific:`)
+		for (const m of matches) console.error(`  ${m.hash.slice(0, 7)}  ${m.subject}`)
+		process.exit(1)
+	}
+	return matches[0].hash
+}
+
+// ---------- float normalization ----------
 
 function normalizeFloats(text: string, decimals: number): string {
 	if (decimals <= 0) return text
@@ -93,7 +121,7 @@ function normalizeFloats(text: string, decimals: number): string {
 	})
 }
 
-// ---------- stable key (for compact per-line reporting) ----------
+// ---------- stable key ----------
 
 function stableKey(line: string): string {
 	const tags = line.match(/Tags:\[([^\]]*)\]/)
@@ -108,7 +136,16 @@ function stableKey(line: string): string {
 	return first.length > 40 ? first.slice(0, 40) + '…' : first
 }
 
-// ---------- fs helpers ----------
+// ---------- helpers ----------
+
+function capture(cmd: string[]): string {
+	const proc = spawnSync(cmd)
+	if (!proc.success) {
+		console.error(`[diff-build] FAILED: ${cmd.join(' ')}\n${proc.stderr.toString()}`)
+		process.exit(proc.exitCode ?? 1)
+	}
+	return proc.stdout.toString().trim()
+}
 
 async function exists(path: string): Promise<boolean> {
 	try {
@@ -118,54 +155,6 @@ async function exists(path: string): Promise<boolean> {
 		return false
 	}
 }
-
-function validateName(name: string): void {
-	if (!/^[a-zA-Z0-9_\-./]+$/.test(name)) {
-		console.error(`[diff-build] Invalid snapshot name: ${name} (allowed: a-z 0-9 _ - . /)`)
-		process.exit(1)
-	}
-	if (name.includes('..')) {
-		console.error(`[diff-build] Snapshot name cannot contain '..'`)
-		process.exit(1)
-	}
-}
-
-async function snapshotDir(name: string): Promise<string> {
-	validateName(name)
-	const dir = join(SNAPSHOTS_DIR, name)
-	await Bun.$`mkdir -p ${SNAPSHOTS_DIR}`.quiet()
-	return dir
-}
-
-// ---------- snapshot ----------
-
-async function snapshot(name: string, opts: Options): Promise<void> {
-	if (!(await exists(OUTPUT_DIR))) {
-		console.error(`[diff-build] ${OUTPUT_DIR} does not exist. Run \`bun dev:build\` first.`)
-		process.exit(1)
-	}
-	const dir = await snapshotDir(name)
-	spawnSync(['rm', '-rf', dir])
-	const cp = spawnSync(['cp', '-r', OUTPUT_DIR, dir])
-	if (!cp.success) {
-		console.error(`[diff-build] cp failed: ${cp.stderr.toString()}`)
-		process.exit(1)
-	}
-	if (opts.note) {
-		await Bun.write(join(dir, '.note'), opts.note)
-	}
-	const fileCount = await countFiles(dir)
-	console.log(`[diff-build] Snapshot '${name}' saved (${fileCount} files) → ${relative(ROOT, dir)}`)
-}
-
-async function countFiles(dir: string): Promise<number> {
-	let n = 0
-	const glob = new Glob('**/*')
-	for await (const _ of glob.scan({ cwd: dir, onlyFiles: true })) n++
-	return n
-}
-
-// ---------- file walking ----------
 
 async function walk(dir: string): Promise<Map<string, string>> {
 	const out = new Map<string, string>()
@@ -177,7 +166,18 @@ async function walk(dir: string): Promise<Map<string, string>> {
 	return out
 }
 
-// ---------- diff hunk parsing ----------
+// ---------- extraction ----------
+
+async function extractBuild(hash: string, dest: string): Promise<void> {
+	// git -C <PREV> archive <hash> | tar -x -C <dest>
+	const sh = spawnSync(['sh', '-c', `git -C '${PREV}' archive ${hash} | tar -x -C '${dest}'`])
+	if (!sh.success) {
+		console.error(`[diff-build] git archive|tar failed: ${sh.stderr.toString()}`)
+		process.exit(1)
+	}
+}
+
+// ---------- diff hunks ----------
 
 interface Change {
 	oldLine?: string
@@ -219,18 +219,12 @@ function parseDiff(diffOut: string): Hunk[] {
 	return hunks
 }
 
-// ---------- comparison ----------
-
-async function fileChanged(
-	baselinePath: string,
-	currentPath: string,
-	round: number,
-): Promise<boolean> {
-	const a = Bun.file(baselinePath)
-	const b = Bun.file(currentPath)
-	if (a.size !== b.size) return true
-	const aText = await a.text()
-	const bText = await b.text()
+async function fileChanged(a: string, b: string, round: number): Promise<boolean> {
+	const fa = Bun.file(a)
+	const fb = Bun.file(b)
+	if (fa.size !== fb.size) return true
+	const aText = await fa.text()
+	const bText = await fb.text()
 	const aNorm = round > 0 ? normalizeFloats(aText, round) : aText
 	const bNorm = round > 0 ? normalizeFloats(bText, round) : bText
 	return aNorm !== bNorm
@@ -287,11 +281,11 @@ async function computeDiff(
 	return { added, removed, changed, total: allPaths.size }
 }
 
-// ---------- output formatting ----------
+// ---------- output ----------
 
 function printReport(label: string, report: DiffReport, opts: Options): void {
 	if (opts.raw) {
-		const proc = spawnSync(['diff', '-ruN', label.includes('→') ? label.split(' → ')[0] : label, label.includes('→') ? label.split(' → ')[1] : label])
+		const proc = spawnSync(['diff', '-ruN', ...label.split(' → ')])
 		process.stdout.write(proc.stdout)
 		process.stdout.write(proc.stderr)
 		return
@@ -340,110 +334,39 @@ function printReport(label: string, report: DiffReport, opts: Options): void {
 	console.log()
 }
 
-// ---------- list ----------
-
-async function listSnapshots(): Promise<void> {
-	if (!(await exists(SNAPSHOTS_DIR))) {
-		console.log('[diff-build] No snapshots yet.')
-		return
-	}
-	const dirs: { name: string; mtime: number; size: number; note: string | null }[] = []
-	for await (const entry of new Bun.Glob('*').scan({ cwd: SNAPSHOTS_DIR, onlyFiles: false })) {
-		const full = join(SNAPSHOTS_DIR, entry)
-		const stat = await Bun.file(full).stat()
-		if (!stat.isDirectory()) continue
-		const notePath = join(full, '.note')
-		let note: string | null = null
-		try {
-			note = (await Bun.file(notePath).text()).trim() || null
-		} catch {}
-		dirs.push({ name: entry, mtime: stat.mtime.getTime(), size: stat.size, note })
-	}
-	dirs.sort((a, b) => b.mtime - a.mtime)
-
-	console.log(`\nSnapshots in ${relative(ROOT, SNAPSHOTS_DIR)}/:`)
-	for (const d of dirs) {
-		const when = new Date(d.mtime).toISOString().replace('T', ' ').slice(0, 19)
-		const noteStr = d.note ? `  — ${d.note}` : ''
-		console.log(`  ${d.name.padEnd(20)} ${when}${noteStr}`)
-	}
-	console.log()
-}
-
-// ---------- delete ----------
-
-async function deleteSnapshot(name: string): Promise<void> {
-	const dir = await snapshotDir(name)
-	if (!(await exists(dir))) {
-		console.error(`[diff-build] Snapshot '${name}' does not exist`)
-		process.exit(1)
-	}
-	spawnSync(['rm', '-rf', dir])
-	console.log(`[diff-build] Deleted snapshot '${name}'`)
-}
-
-// ---------- entry point ----------
+// ---------- main ----------
 
 async function main() {
-	const { mode, name, name2, opts } = parseArgs(process.argv.slice(2))
+	const { target, opts } = parseArgs(process.argv.slice(2))
 
-	if (mode === 'snapshot') {
-		await snapshot(name ?? 'default', opts)
-	} else if (mode === 'check') {
-		const snapName = name ?? 'default'
-		const dir = await snapshotDir(snapName)
-		if (!(await exists(dir))) {
-			console.error(
-				`[diff-build] No snapshot '${snapName}' at ${relative(ROOT, dir)}. ` +
-					`Run \`bun scripts/diff-build.ts snapshot${snapName === 'default' ? '' : ' ' + snapName}\` first.`,
-			)
-			process.exit(1)
-		}
-		const report = await computeDiff(dir, OUTPUT_DIR, opts.round, opts.filter)
-		printReport(`'${snapName}' → current`, report, opts)
-	} else if (mode === 'all') {
-		const snapName = name ?? 'default'
-		await snapshot(snapName, opts)
-		const build = spawnSync(['bun', 'run', 'dev:build'], {
-			stdin: 'inherit',
-			stdout: 'inherit',
-			stderr: 'inherit',
-		})
-		if (!build.success) {
-			console.error('[diff-build] Build failed')
-			process.exit(build.exitCode ?? 1)
-		}
-		const dir = await snapshotDir(snapName)
-		const report = await computeDiff(dir, OUTPUT_DIR, opts.round, opts.filter)
-		printReport(`'${snapName}' → current`, report, opts)
-	} else if (mode === 'diff') {
-		if (!name || !name2) {
-			console.error('[diff-build] `diff` requires two names: diff <from> <to>')
-			process.exit(1)
-		}
-		const fromDir = await snapshotDir(name)
-		const toDir = await snapshotDir(name2)
-		if (!(await exists(fromDir))) {
-			console.error(`[diff-build] Snapshot '${name}' does not exist`)
-			process.exit(1)
-		}
-		if (!(await exists(toDir))) {
-			console.error(`[diff-build] Snapshot '${name2}' does not exist`)
-			process.exit(1)
-		}
-		const report = await computeDiff(fromDir, toDir, opts.round, opts.filter)
-		printReport(`'${name}' → '${name2}'`, report, opts)
-	} else if (mode === 'list') {
-		await listSnapshots()
-	} else if (mode === 'delete') {
-		if (!name) {
-			console.error('[diff-build] `delete` requires a name')
-			process.exit(1)
-		}
-		await deleteSnapshot(name)
-	} else {
-		console.error(`[diff-build] Unknown mode: ${mode}. Use snapshot|check|all|diff|list|delete.`)
+	// Verify .previous-builds is a git repo
+	const isRepo = spawnSync(['git', '-C', PREV, 'rev-parse', '--git-dir'])
+	if (!isRepo.success) {
+		console.error(`[diff-build] ${relative(ROOT, PREV)}/ is not a git repo. Run \`git init\` inside it and \`bun dev:history:generate\`.`)
 		process.exit(1)
+	}
+
+	if (!(await exists(OUTPUT_DIR))) {
+		console.error(`[diff-build] ${OUTPUT_DIR} does not exist. Run \`bun dev:build\` first.`)
+		process.exit(1)
+	}
+
+	const hash = await resolveTarget(target)
+	const shortHash = hash.slice(0, 7)
+	const subject = capture(['git', '-C', PREV, 'log', '-1', '--format=%s', hash])
+
+	// Extract target build to a temp dir under .temp/ (gitignored).
+	// Inner repo layout is `.previous-builds/output/{datapack,resourcepack}`
+	// so the temp extraction has the build at `<tmpDir>/output/`.
+	await Bun.$`mkdir -p ${TEMP_DIR}`.quiet()
+	const tmpDir = await mkdtemp(join(TEMP_DIR, `diff-build-${shortHash}-`))
+	try {
+		await extractBuild(hash, tmpDir)
+		const targetDir = join(tmpDir, 'output')
+		const report = await computeDiff(targetDir, OUTPUT_DIR, opts.round, opts.filter)
+		printReport(`'${shortHash}' (${subject}) → current`, report, opts)
+	} finally {
+		await rm(tmpDir, { recursive: true, force: true })
 	}
 }
 
