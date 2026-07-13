@@ -448,6 +448,28 @@ async function runSnapshot(name: string): Promise<void> {
 
 // ---------- main ----------
 
+// If the user has `git checkout`'d a snapshot branch in .previous-builds/ to
+// inspect it, return to main before we do any work. Without this, a snapshot
+// or check run might write into the user's checkout (clobbering their working
+// tree) or even get confused about which branch is "current". Idempotent.
+async function returnPrevToMain(): Promise<void> {
+	const branchRef = spawnSync(['git', '-C', PREV, 'symbolic-ref', '--quiet', 'HEAD'], { env: GIT_ENV })
+	if (!branchRef.success) return // detached HEAD — nothing to do
+	const branch = branchRef.stdout.toString().trim().replace(/^refs\/heads\//, '')
+	if (branch === 'main') return
+	console.log(`[diff-build] Restoring ${relative(ROOT, PREV)} from '${branch}' to 'main'...`)
+	const r = spawnSync(['git', '-C', PREV, 'checkout', 'main'], {
+		env: GIT_ENV,
+		stdout: 'inherit',
+		stderr: 'inherit',
+	})
+	if (!r.success) {
+		console.error(`[diff-build] Failed to restore ${relative(ROOT, PREV)} to main`)
+		console.log(r.stderr)
+		process.exit(1)
+	}
+}
+
 interface Side {
 	kind: 'current' | 'commit'
 	hash: string | null // null when kind === 'current'
@@ -476,6 +498,12 @@ async function buildDirFor(side: Side, tempDirs: string[]): Promise<string> {
 
 async function main() {
 	const argv = process.argv.slice(2)
+
+	// If the user has `git checkout`'d a snapshot branch in .previous-builds/
+	// to inspect it, return to main before we run — otherwise our snapshot
+	// write-back (or the user's continued editing) would touch their snapshot.
+	await returnPrevToMain()
+
 	if (argv[0] === 'snapshot') {
 		const name = argv[1]
 		if (!name) {

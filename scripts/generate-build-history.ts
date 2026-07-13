@@ -96,6 +96,26 @@ function step(label: string) {
 
 // ---------- main ----------
 
+// If the user has `git checkout`'d a snapshot branch in .previous-builds/ to
+// inspect it, return to main before any work. Idempotent.
+async function returnPrevToMain(): Promise<void> {
+	const branchRef = spawnSync(['git', '-C', PREV, 'symbolic-ref', '--quiet', 'HEAD'], { env: PREV_GIT_ENV })
+	if (!branchRef.success) return // detached HEAD — nothing to do
+	const branch = branchRef.stdout.toString().trim().replace(/^refs\/heads\//, '')
+	if (branch === 'main') return
+	console.log(`[history] Restoring ${relative(ROOT, PREV)} from '${branch}' to 'main'...`)
+	const r = spawnSync(['git', '-C', PREV, 'checkout', 'main'], {
+		env: PREV_GIT_ENV,
+		stdout: 'inherit',
+		stderr: 'inherit',
+	})
+	if (!r.success) {
+		console.error(`[history] Failed to restore ${relative(ROOT, PREV)} to main`)
+		console.log(r.stderr)
+		process.exit(1)
+	}
+}
+
 async function main() {
 	// Verify .previous-builds is a git repo
 	const isRepo = prevTryCapture(['git', 'rev-parse', '--git-dir'])
@@ -103,6 +123,11 @@ async function main() {
 		console.error(`[history] ${relative(ROOT, PREV)}/ is not a git repo. Run \`git init\` inside it first.`)
 		process.exit(1)
 	}
+
+	// If the user has `git checkout`'d a snapshot branch in .previous-builds/
+	// to inspect it, return to main before we run — otherwise our cp/commit
+	// operations could touch their snapshot.
+	await returnPrevToMain()
 
 	// Collect commits since SINCE (inclusive), oldest-first
 	const raw = capture(['git', 'rev-list', `${SINCE}^..HEAD`, '--reverse'])
