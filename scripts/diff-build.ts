@@ -29,6 +29,15 @@
  *   --round=<n>            round floats to N decimals (default: 4, 0 disables)
  *   --full                 also print raw unified diff per changed file
  *   --raw                  print raw `diff -ru` output, no formatting
+ *   --script=<path>        replace the default reporter with a custom
+ *                          bun script invoked as
+ *                            bun <path> <leftDir> <rightDir>
+ *                          (left/right are the resolved build dirs)
+ *                          and the DiffReport piped in as JSON on stdin.
+ *                          Report shape:
+ *                            { added: string[], removed: string[],
+ *                              changed: ChangedFile[], total: number }
+ *                          where ChangedFile = { path, hunks, raw }.
  *
  * "Stable key" = the Tags[] field if present, else the first word of the line.
  * Compact summary costs ~150 tokens for the whole repo.
@@ -54,6 +63,7 @@ interface Options {
 	round: number
 	full: boolean
 	raw: boolean
+	script: string | null // path to a custom script that replaces the default reporter
 }
 
 interface ParsedArgs {
@@ -72,11 +82,15 @@ function parseArgs(argv: string[]): ParsedArgs {
 		round: 4,
 		full: false,
 		raw: false,
+		script: null,
 	}
 	const positional: string[] = []
-	for (const a of argv) {
+	for (let i = 0; i < argv.length; i++) {
+		const a = argv[i]
 		if (a.startsWith('--filter=')) opts.filter = a.slice('--filter='.length)
 		else if (a.startsWith('--round=')) opts.round = Number(a.slice('--round='.length))
+		else if (a.startsWith('--script=')) opts.script = a.slice('--script='.length)
+		else if (a === '--script') { opts.script = argv[++i]; continue }
 		else if (a === '--full') opts.full = true
 		else if (a === '--raw') opts.raw = true
 		else positional.push(a)
@@ -550,7 +564,22 @@ async function main() {
 		const leftDir = await buildDirFor(left, tempDirs)
 		const rightDir = await buildDirFor(right, tempDirs)
 		const report = await computeDiff(leftDir, rightDir, opts.round, opts.filter)
-		printReport(`${labelFor(left)} → ${labelFor(right)}`, report, opts)
+		if (opts.script) {
+			// Custom reporter receives the build dirs as positional args and
+			// the DiffReport as JSON on stdin. The DiffReport shape is:
+			//   { added: string[], removed: string[], changed: ChangedFile[],
+			//     total: number }
+			//   ChangedFile = { path: string, hunks: Hunk[], raw: string }
+			const scriptPath = opts.script.startsWith('/') ? opts.script : join(ROOT, opts.script)
+			const r = spawnSync(['bun', scriptPath, leftDir, rightDir], {
+				stdin: Buffer.from(JSON.stringify(report)),
+				stdout: 'inherit',
+				stderr: 'inherit',
+			})
+			if (!r.success) process.exit(r.exitCode ?? 1)
+		} else {
+			printReport(`${labelFor(left)} → ${labelFor(right)}`, report, opts)
+		}
 	} finally {
 		await Promise.all(tempDirs.map(d => rm(d, { recursive: true, force: true })))
 	}
