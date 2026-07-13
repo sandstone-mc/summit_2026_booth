@@ -9,13 +9,11 @@
  */
 
 export const slides = [
-	(
-		<>
-			<h1>How do I learn more and try it?</h1>
-			<p>Read the docs at sandstone.dev — most examples are runnable in-browser</p>
-			<p>Try the live interactive code snippets on the docs</p>
-			<p>Join the JMCS Discord or MCC Discord for help</p>
-			<p>QR codes + chat links at the booth for sandstone.dev and our github</p>
-		</>
-	),
+	(<>
+		<h1>How do I learn more and try it?</h1>
+		<p>Read the docs at sandstone.dev — most examples are runnable in-browser</p>
+		<p>Try the live interactive code snippets on the docs</p>
+		<p>Join the JMCS Discord or MCC Discord for help</p>
+		<p>QR codes + chat links at the booth for sandstone.dev and our github</p>
+	</>),
 ]

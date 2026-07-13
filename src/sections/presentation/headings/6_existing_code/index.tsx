@@ -7,13 +7,11 @@
  */
 
 export const slides = [
-	(
-		<>
-			<h1>What about my existing code?</h1>
-			<p>Drop existing files into resources/ — they ship untouched</p>
-			<p>New TypeScript files live alongside, generated into the same datapack</p>
-			<p>Mix and match: convert what helps, leave the rest as-is</p>
-			<p>No forced rewrite — adopt Sandstone at your own pace</p>
-		</>
-	),
+	(<>
+		<h1>What about my existing code?</h1>
+		<p>Drop existing files into resources/ — they ship untouched</p>
+		<p>New TypeScript files live alongside, generated into the same datapack</p>
+		<p>Mix and match: convert what helps, leave the rest as-is</p>
+		<p>No forced rewrite — adopt Sandstone at your own pace</p>
+	</>),
 ]

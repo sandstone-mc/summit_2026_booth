@@ -12,20 +12,16 @@
  */
 
 export const slides = [
-	(
-		<>
-			<h1>What can Sandstone's features do for me?</h1>
-			<p>Objectives + Advancements combine for clean cooldown systems</p>
-			<p>Loop, branch, and schedule — flow control reads like normal code</p>
-			<p>Macros fill in $(variables) at runtime, not at compile time</p>
-		</>
-	),
-	(
-		<>
-			<h1>asyncContext keeps your context across sleep</h1>
-			<p>Normally a scheduled function loses @s and position</p>
-			<p>asyncContext: true tags the entity, stores the timer, and resumes as/where it left off</p>
-			<p>Each sleep gets its own label so multiple entities can wait independently</p>
-		</>
-	),
+	(<>
+		<h1>What can Sandstone's features do for me?</h1>
+		<p>Objectives + Advancements combine for clean cooldown systems</p>
+		<p>Loop, branch, and schedule — flow control reads like normal code</p>
+		<p>Macros fill in $(variables) at runtime, not at compile time</p>
+	</>),
+	(<>
+		<h1>asyncContext keeps your context across sleep</h1>
+		<p>Normally a scheduled function loses @s and position</p>
+		<p>asyncContext: true tags the entity, stores the timer, and resumes as/where it left off</p>
+		<p>Each sleep gets its own label so multiple entities can wait independently</p>
+	</>),
 ]
