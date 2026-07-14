@@ -149,8 +149,13 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
         throw new Error(`DialogueTree "${id}": start node "${startNodeId}" does not exist`)
     }
 
+    // NPCs this tree is actually attached to via CreateNPC
+    function owners() {
+        return registry.filter((npc) => npc.dialogue?.id === id)
+    }
+
     function runAsPlayer(callback: () => void) {
-        for (const npc of registry) {
+        for (const npc of owners()) {
             execute.if.entity(Selector('@s', { tag: npc.instanceTag })).run(() => {
                 execute.as(Selector('@a', { tag: npc.interactorTag, limit: 1 })).run(callback)
             })
@@ -158,7 +163,7 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
     }
 
     function runAsMyNpc(callback: () => void) {
-        for (const npc of registry) {
+        for (const npc of owners()) {
             execute.if.entity(Selector('@s', { tag: npc.interactorTag })).run(() => {
                 execute.as(Selector('@e', { tag: npc.instanceTag, type: 'minecraft:mannequin' })).run(callback)
             })

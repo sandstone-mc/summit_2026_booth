@@ -247,8 +247,18 @@ export const wallModelNames = new Map<string, string>()
 
 const obstacles = getAllObstacles()
 
-const allBorderFlags = new Set<number>()
+
+// many of the obstacles have identical grids, so this prevents generating duplicate item models and only generates them per unique grid
+const gridKey = (obstacle: Obstacle) => JSON.stringify(obstacle.grid)
+const uniqueObstacleByGrid = new Map<string, Obstacle>()
 for (const obstacle of obstacles) {
+	const key = gridKey(obstacle)
+	if (!uniqueObstacleByGrid.has(key)) uniqueObstacleByGrid.set(key, obstacle)
+}
+const canonicalObstacles = [...uniqueObstacleByGrid.values()]
+
+const allBorderFlags = new Set<number>()
+for (const obstacle of canonicalObstacles) {
 	for (let y = 0; y < pattern.height; y++) {
 		for (let x = 0; x < pattern.width; x++) {
 			const cell = obstacle.grid[y]?.[x]
@@ -273,10 +283,9 @@ for (const flags of allBorderFlags) {
 
 const ns = NAMESPACE
 
-for (const obstacle of obstacles) {
+for (const obstacle of canonicalObstacles) {
 	const name = modelName(obstacle)
 	const genName = `generated/${name}`
-	wallModelNames.set(obstacle.name, `${ns}:${genName}`)
 
 	Model('item', genName, obstacleToModel(obstacle))
 	ItemModelDefinition(genName, {
@@ -288,4 +297,11 @@ for (const obstacle of obstacles) {
 	})
 }
 
-console.log(`[wall-models] Generated ${obstacles.length} wall models, ${allBorderFlags.size} border textures`)
+for (const obstacle of obstacles) {
+	const canonical = uniqueObstacleByGrid.get(gridKey(obstacle))!
+	wallModelNames.set(obstacle.name, `${ns}:generated/${modelName(canonical)}`)
+}
+
+console.log(
+	`[wall-models] Generated ${canonicalObstacles.length} wall models for ${obstacles.length} obstacles (${obstacles.length - canonicalObstacles.length} deduped), ${allBorderFlags.size} border textures`,
+)
