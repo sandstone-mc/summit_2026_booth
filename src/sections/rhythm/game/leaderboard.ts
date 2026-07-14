@@ -1,5 +1,4 @@
 import {
-	data,
 	Variable,
 	_,
 	advancement,
@@ -34,7 +33,7 @@ import {
 	scrollFrameCount,
 	mergeDisplayText,
 } from '@rhythm/hologram'
-import { NAMESPACE, ticking } from '@shared'
+import { NAMESPACE } from '@shared'
 
 const bestScores: ReturnType<typeof Objective.create>[] = []
 const deathlessScores: ReturnType<typeof Objective.create>[] = []
@@ -250,39 +249,6 @@ const lbScrollLoop = MCFunction(
 	{ lazy: true },
 )
 
-Advancement('ui_lb_song', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_SONG_INT}"]}` },
-			},
-		},
-	},
-})
-
-Advancement('ui_lb_cat', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_CAT_INT}"]}` },
-			},
-		},
-	},
-})
-
-Advancement('ui_lb_my', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LB_MY_INT}"]}` },
-			},
-		},
-	},
-})
-
 const onSongCycle = MCFunction(
 	'sections/rhythm/leaderboard/on_song',
 	() => {
@@ -294,6 +260,7 @@ const onSongCycle = MCFunction(
 			updateDisplay()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_song`)
 	},
 	{ lazy: true },
 )
@@ -309,6 +276,7 @@ const onSongCycleBack = MCFunction(
 			updateDisplay()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_song_back`)
 	},
 	{ lazy: true },
 )
@@ -325,6 +293,7 @@ const onCatToggle = MCFunction(
 			updateDisplay()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_cat`)
 	},
 	{ lazy: true },
 )
@@ -357,9 +326,49 @@ const onMyScore = MCFunction(
 		)
 		mergeDisplayText(youLineSel, YOU_TEXT)
 		execute.at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_my`)
 	},
 	{ lazy: true },
 )
+
+/*
+ * same reward-driven pattern as settings.ts: right-click via player_interacted_with_entity,
+ * left-click via player_hurt_entity. Attacking an interaction entity fires player_hurt_entity
+ * even though it has no health - see https://minecraft.wiki/w/Interaction#Advancement_triggers.
+ * No per-tick polling needed - the reward runs as/at the clicking player and revokes itself.
+ */
+function clickEntity(buttonTag: Tags) {
+	return { entity_type: 'minecraft:interaction' as const, nbt: `{Tags:["${buttonTag}"]}` }
+}
+
+Advancement('ui_lb_song', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_LB_SONG_INT) } },
+	},
+	rewards: { function: onSongCycle },
+})
+
+Advancement('ui_lb_song_back', {
+	criteria: {
+		hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_LB_SONG_INT) } },
+	},
+	rewards: { function: onSongCycleBack },
+})
+
+// cat toggle doesn't distinguish click direction - either click fires the same reward
+Advancement('ui_lb_cat', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_LB_CAT_INT) } },
+	},
+	rewards: { function: onCatToggle },
+})
+
+Advancement('ui_lb_my', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_LB_MY_INT) } },
+	},
+	rewards: { function: onMyScore },
+})
 
 export const saveLeaderboard = MCFunction(
 	'sections/rhythm/leaderboard/save',
@@ -408,42 +417,6 @@ export const saveLeaderboard = MCFunction(
 	{ lazy: true },
 )
 
-// left click steps backwards / toggles: the interaction records the attack in nbt
-function onAttack(buttonTag: Tags, handler: () => void) {
-	execute
-		.as(Selector('@e', { type: 'minecraft:interaction', tag: buttonTag }))
-		.at('@s')
-		.if.data.entity('@s', 'attack')
-		.run(() => {
-			data.remove.entity('@s', 'attack')
-			execute.as('@p').run(() => {
-				handler()
-			})
-		})
-}
-
-export const leaderboardTick = MCFunction(
-	'sections/rhythm/leaderboard/tick',
-	() => {
-		onAttack(Tags.UI_LB_SONG_INT, () => onSongCycleBack())
-		onAttack(Tags.UI_LB_CAT_INT, () => onCatToggle())
-
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_song`]: true } })).run(() => {
-			onSongCycle()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_song`)
-		})
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_cat`]: true } })).run(() => {
-			onCatToggle()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_cat`)
-		})
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lb_my`]: true } })).run(() => {
-			onMyScore()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_my`)
-		})
-	},
-	{ lazy: true },
-)
-
 MCFunction(
 	'sections/rhythm/leaderboard/init',
 	() => {
@@ -451,13 +424,9 @@ MCFunction(
 		leaderboardCategoryView.set(0)
 		scrollPos.set(0)
 
-		for (const adv of ['ui_lb_song', 'ui_lb_cat', 'ui_lb_my']) {
+		for (const adv of ['ui_lb_song', 'ui_lb_song_back', 'ui_lb_cat', 'ui_lb_my']) {
 			advancement.revoke('@a').only(`${NAMESPACE}:${adv}`)
 		}
-		execute.as(Selector('@e', { type: 'minecraft:interaction', tag: Tags.UI_LEADERBOARD })).run(() => {
-			data.remove.entity('@s', 'attack')
-			data.remove.entity('@s', 'interaction')
-		})
 
 		updateDisplay()
 	},

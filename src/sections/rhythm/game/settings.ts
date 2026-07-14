@@ -4,7 +4,6 @@ import {
 	type Score,
 	Variable,
 	Advancement,
-	data,
 	execute,
 	MCFunction,
 	type MCFunctionClass,
@@ -32,7 +31,7 @@ import {
 	scrollFrameCount,
 	mergeDisplayText,
 } from '@rhythm/hologram'
-import { NAMESPACE, ticking } from '@shared'
+import { NAMESPACE } from '@shared'
 
 export const livesSetting = Variable(gameplay.lives.default)
 
@@ -244,72 +243,6 @@ const scrollLoop = MCFunction(
 	{ lazy: true },
 )
 
-Advancement('ui_song_cycle', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_SONG_INT}"]}` },
-			},
-		},
-	},
-})
-
-Advancement('ui_lives_cycle', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_LIVES_INT}"]}` },
-			},
-		},
-	},
-})
-
-Advancement('ui_map_cycle', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_MAP_INT}"]}` },
-			},
-		},
-	},
-})
-
-Advancement('ui_calibrate', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_CAL_INT}"]}` },
-			},
-		},
-	},
-})
-
-Advancement('ui_interp_cycle', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_INTERP_INT}"]}` },
-			},
-		},
-	},
-})
-
-Advancement('ui_start_game', {
-	criteria: {
-		click: {
-			trigger: 'minecraft:player_interacted_with_entity',
-			conditions: {
-				entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${Tags.UI_START_INT}"]}` },
-			},
-		},
-	},
-})
-
 const onSongCycle = MCFunction(
 	'sections/rhythm/settings/on_song',
 	() => {
@@ -322,6 +255,7 @@ const onSongCycle = MCFunction(
 			updateSongLine()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_song_cycle`)
 	},
 	{ lazy: true },
 )
@@ -337,6 +271,7 @@ const onLivesCycle = MCFunction(
 			updateLivesLine()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_lives_cycle`)
 	},
 	{ lazy: true },
 )
@@ -355,6 +290,7 @@ const onMapCycle = MCFunction(
 			updateMapLine()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_map_cycle`)
 	},
 	{ lazy: true },
 )
@@ -371,6 +307,7 @@ const onInterpCycle = MCFunction(
 			updateInterpLine()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_interp_cycle`)
 	},
 	{ lazy: true },
 )
@@ -387,6 +324,7 @@ const onStartGame = MCFunction(
 			updateSettingsPanel()
 		})
 		execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_start_game`)
 	},
 	{ lazy: true },
 )
@@ -403,6 +341,7 @@ const onSongCycleBack = MCFunction(
 			updateSongLine()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_song_cycle_back`)
 	},
 	{ lazy: true },
 )
@@ -418,6 +357,7 @@ const onLivesCycleBack = MCFunction(
 			updateLivesLine()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_lives_cycle_back`)
 	},
 	{ lazy: true },
 )
@@ -436,78 +376,95 @@ const onMapCycleBack = MCFunction(
 			updateMapLine()
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_map_cycle_back`)
 	},
 	{ lazy: true },
 )
 
-// left click on a cycle button steps backwards: the interaction records the attack in nbt
-function onAttack(buttonTag: Tags, handler: () => void) {
-	execute
-		.as(Selector('@e', { type: 'minecraft:interaction', tag: buttonTag }))
-		.at('@s')
-		.if.data.entity('@s', 'attack')
-		.run(() => {
-			data.remove.entity('@s', 'attack')
-			execute.as('@p').run(() => {
-				handler()
-			})
-		})
+// every button is reward-triggered
+function clickEntity(buttonTag: Tags) {
+	return { entity_type: 'minecraft:interaction' as const, nbt: `{Tags:["${buttonTag}"]}` }
 }
 
-export const settingsTick = MCFunction(
-	'sections/rhythm/settings/tick',
-	() => {
-		onAttack(Tags.UI_SONG_INT, () => onSongCycleBack())
-		onAttack(Tags.UI_LIVES_INT, () => onLivesCycleBack())
-		onAttack(Tags.UI_MAP_INT, () => onMapCycleBack())
-		onAttack(Tags.UI_INTERP_INT, () => onInterpCycle())
-		onAttack(Tags.UI_CAL_INT, () => startCalibration())
-		onAttack(Tags.UI_START_INT, () => onStartGame())
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_song_cycle`]: true } })).run(() => {
-			onSongCycle()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_song_cycle`)
-		})
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_lives_cycle`]: true } })).run(() => {
-			onLivesCycle()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_lives_cycle`)
-		})
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_map_cycle`]: true } })).run(() => {
-			onMapCycle()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_map_cycle`)
-		})
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_calibrate`]: true } })).run(() => {
-			startCalibration()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_calibrate`)
-		})
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_interp_cycle`]: true } })).run(() => {
-			onInterpCycle()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_interp_cycle`)
-		})
-		execute.as(Selector('@a', { advancements: { [`${NAMESPACE}:ui_start_game`]: true } })).run(() => {
-			onStartGame()
-			advancement.revoke('@s').only(`${NAMESPACE}:ui_start_game`)
-		})
+Advancement('ui_song_cycle', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_SONG_INT) } },
 	},
-	{ lazy: true },
-)
+	rewards: { function: onSongCycle },
+})
+
+Advancement('ui_song_cycle_back', {
+	criteria: {
+		hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_SONG_INT) } },
+	},
+	rewards: { function: onSongCycleBack },
+})
+
+Advancement('ui_lives_cycle', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_LIVES_INT) } },
+	},
+	rewards: { function: onLivesCycle },
+})
+
+Advancement('ui_lives_cycle_back', {
+	criteria: {
+		hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_LIVES_INT) } },
+	},
+	rewards: { function: onLivesCycleBack },
+})
+
+Advancement('ui_map_cycle', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_MAP_INT) } },
+	},
+	rewards: { function: onMapCycle },
+})
+
+Advancement('ui_map_cycle_back', {
+	criteria: {
+		hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_MAP_INT) } },
+	},
+	rewards: { function: onMapCycleBack },
+})
+
+Advancement('ui_calibrate', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_CAL_INT) } },
+	},
+	rewards: { function: startCalibration },
+})
+
+Advancement('ui_interp_cycle', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_INTERP_INT) } },
+	},
+	rewards: { function: onInterpCycle },
+})
+
+Advancement('ui_start_game', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_START_INT) } },
+	},
+	rewards: { function: onStartGame },
+})
 
 MCFunction(
 	'sections/rhythm/settings/init',
 	() => {
 		for (const adv of [
 			'ui_song_cycle',
+			'ui_song_cycle_back',
 			'ui_lives_cycle',
+			'ui_lives_cycle_back',
 			'ui_map_cycle',
+			'ui_map_cycle_back',
 			'ui_calibrate',
 			'ui_interp_cycle',
 			'ui_start_game',
 		]) {
 			advancement.revoke('@a').only(`${NAMESPACE}:${adv}`)
 		}
-		execute.as(Selector('@e', { type: 'minecraft:interaction', tag: Tags.UI_SETTINGS })).run(() => {
-			data.remove.entity('@s', 'attack')
-			data.remove.entity('@s', 'interaction')
-		})
 	},
 	{ runOnLoad: true },
 )

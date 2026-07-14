@@ -1,6 +1,7 @@
 import {
 	_,
 	abs,
+	advancement,
 	data,
 	execute,
 	kill,
@@ -17,6 +18,7 @@ import {
 import { gameplay } from '@rhythm/config'
 import { rgba } from '@rhythm/config/internal/colors'
 import { boothReturn } from '@rhythm/config/internal/derived'
+import { NAMESPACE } from '@shared'
 import { GameStatus, Tags, boothTags, status } from './state'
 import { updateSettingsPanel } from './settings'
 
@@ -220,6 +222,7 @@ export const startCalibration = MCFunction(
 			updateSettingsPanel()
 			metronomeBeat.schedule.function(`${intervalTicks}t`, 'replace')
 		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_calibrate`)
 	},
 	{ lazy: true },
 )
