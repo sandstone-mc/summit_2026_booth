@@ -22,7 +22,7 @@ const allSlides = headings.flatMap((h) => h.slides)
 
 // Against wall to the north
 const PRESENTATION_ORIGIN = [-83, 79, 42] as const
-const PRESENTATION_BOUNDS = [18, 12] as const
+const PRESENTATION_BOUNDS = [18, 11] as const
 
 // Wrap every slide with a shared <style> so the LESS rules apply to h1/p
 // wherever they appear in the slide trees.

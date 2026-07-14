@@ -129,21 +129,19 @@ function runLayout(
 	// elements are placed. Measure the non-scroll stack first by simulating
 	// `accY` advance (margins + gaps + row block heights included), divide
 	// the remaining space across scroll elements, then rebuild chunks.
-	{
-		const blocks0 = groupIntoBlocks(elements)
-		const nonScrollH = simulateStackAdvance(blocks0, sceneH)
-		const scrollEls = elements.filter(
-			(el) => el.kind === 'text' && typeof el.scrollTag === 'string',
-		)
-		// Each scroll element takes the full remaining space (equal split
-		// when more than one). Clamp to ≥ 2 blocks so the box stays
-		// non-degenerate if other elements overflow.
-		const remaining = Math.max(2, sceneH - nonScrollH)
-		const perScrollCellH = remaining / Math.max(1, scrollEls.length)
-		for (const el of scrollEls) {
-			el.cellH = perScrollCellH
-			finalizeScrollCodeLayout(el)
-		}
+	const blocks0 = groupIntoBlocks(elements)
+	const nonScrollH = simulateStackAdvance(blocks0, sceneH)
+	const scrollEls = elements.filter(
+		(el) => el.kind === 'text' && typeof el.scrollTag === 'string',
+	)
+	// Each scroll element takes the full remaining space (equal split
+	// when more than one). Clamp to ≥ 2 blocks so the box stays
+	// non-degenerate if other elements overflow.
+	const remaining = Math.max(2, sceneH - nonScrollH)
+	const perScrollCellH = remaining / Math.max(1, scrollEls.length)
+	for (const el of scrollEls) {
+		el.cellH = perScrollCellH
+		finalizeScrollCodeLayout(el)
 	}
 
 	const blocks = groupIntoBlocks(elements)
@@ -157,7 +155,7 @@ function runLayout(
 		const block = blocks[bi]
 		if (block.kind === 'element') {
 			const el = block.el
-			const cellY = origin[1] + accY - el.marginTop - el.cellH
+			const cellY = origin[1] + accY - el.marginTop - el.cellH + (sceneH % 2 === 0 ? 0 : 0.5)
 			// Entity Y depends on element kind:
 			//   scroll `<code>`:  cellY (bottom border flush with slide bottom)
 			//   prose/h/code:     cellY (bottom-center anchor; glyph grows up)
