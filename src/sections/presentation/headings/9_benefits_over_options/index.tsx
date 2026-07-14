@@ -8,6 +8,7 @@
  */
 
 export const slides = [
+	// slide[13]
 	(<>
 		<h1>How does Sandstone compare?</h1>
 		<p>Full auto-complete, even for NBT payload keys</p>

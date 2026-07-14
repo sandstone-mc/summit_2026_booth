@@ -8,6 +8,7 @@ const magicCode = 'placeholder'.repeat(100)
 // INFO: explorer path-start=3 means to omit the `.sandstone/output/datapack/` part of the path
 
 export const slides = [
+	// slide[3]
 	(<>
 		<h2 id="header">Can people make advanced, fun content with Sandstone?</h2>
 
@@ -21,6 +22,7 @@ export const slides = [
 			<p>t</p>
 		</div>
 	</>),
+	// slide[4]
 	(<>
 		<h3 id="header">Ori's Rhythm Game Example</h3>
 
@@ -37,6 +39,7 @@ export const slides = [
 			/> */}
 		</div>
 	</>),
+	// slide[5]
 	(<>
 		<h3 id="header">LilSpartan's Arcane Magic Example</h3>
 
@@ -53,6 +56,7 @@ export const slides = [
 			/> */}
 		</div>
 	</>),
+	// slide[6]
 	(<>
 		<div id="img-grid">
 			<p>asd</p>

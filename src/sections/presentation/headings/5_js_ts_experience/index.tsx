@@ -8,8 +8,9 @@ import recipeGen from './snippets/recipe_sample.json'
 import advancementGen from './snippets/advancement_sample.json'
 
 export const slides = [
+	// slide[8]
 	(<>
-		<h3>Do I need lots of TS / JS experience?</h3>
+		<h3 wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>
 		<p>Not really - Basic Sandstone syntax maps 1:1 to commands and JSON</p>
 		<p>Additonally, LLM-assisted coding works great as a learning aid</p>
 		<p>And if you already know JS you're basically 90% there; TypeScript is just a step beyond that</p>

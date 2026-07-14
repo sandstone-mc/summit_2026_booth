@@ -1,21 +1,9 @@
-/**
- * Slide: What is a pre-compiler?
- *
- * Notes (kept for reference, not parsed as content):
- * - Pre-compilers translate easy-to-write code to raw mcfunction files while
- *   adding features (variables, abstractions, organization).
- * - They help avoid the error-prone repetitive work of hand-writing a large
- *   mcfunction project.
- * - They layer features on top of vanilla so the compiled output stays
- *   compatible.
- * - They simplify project management by letting related resources live in
- *   one file.
- */
-
 export const slides = [
+	// slide[0]
 	(<><div id="text-grid">
 		<h1>What is a pre-compiler?</h1>
 	</div></>),
+	// slide[1]
 	(<><div id="text-grid">
 		<p>A tool that translates non-vanilla code into raw mcfunction & JSON files.</p>
 		<p>They usually allow you to organize your code exactly how you want to, without having to manually juggle hundreds of files.</p>

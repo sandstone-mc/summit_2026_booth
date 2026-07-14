@@ -1,4 +1,5 @@
 export const slides = [
+	// slide[7]
 	(<>
 		<h3>Is mcfunction difficult to work with?</h3>
 		<p>Hand-written, optimized datapack code in large projects get unwieldy fast; involving repetitive patterns copy-pasted across dozens of files.</p>

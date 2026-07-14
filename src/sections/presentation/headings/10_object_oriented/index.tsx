@@ -10,12 +10,14 @@
  */
 
 export const slides = [
+	// slide[14]
 	(<>
 		<h1>How can OOP help with my project?</h1>
 		<p>Wrap repeated patterns behind a single call</p>
 		<p>Type-safe interfaces make shared code easy to read and review</p>
 		<p>Compose small pieces instead of copy-pasting huge execute chains</p>
 	</>),
+	// slide[15]
 	(<>
 		<h1>Pattern: Hitbox + onHit</h1>
 		<p>Specify width, height, and a target type once</p>

@@ -9,6 +9,7 @@
  */
 
 export const slides = [
+	// slide[16]
 	(<>
 		<h1>How do I learn more and try it?</h1>
 		<p>Read the docs at sandstone.dev — most examples are runnable in-browser</p>
