@@ -4,7 +4,7 @@ scoreboard players operation #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 4
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll = #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll /= #limit sandstone_summit_booth.presentation.scroll
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 7
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 8
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll < #limit sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 0
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll > #limit sandstone_summit_booth.presentation.scroll
@@ -32,3 +32,6 @@ execute if score #limit sandstone_summit_booth.presentation.scroll matches 6 run
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 7
 scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
 execute if score #limit sandstone_summit_booth.presentation.scroll matches 7 run function sandstone_summit_booth:presentation/slides/scroll/5/if8
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 8
+scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
+execute if score #limit sandstone_summit_booth.presentation.scroll matches 8 run function sandstone_summit_booth:presentation/slides/scroll/5/if9
