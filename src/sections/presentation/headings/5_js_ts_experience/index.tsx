@@ -8,6 +8,7 @@ import recipeGen from './snippets/recipe_sample.json'
 import advancementGen from './snippets/advancement_sample.json'
 
 export const slides = [
+	// slide[8]
 	(<>
 		<h3 wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>
 		<p>Not really - Basic Sandstone syntax maps 1:1 to commands and JSON</p>

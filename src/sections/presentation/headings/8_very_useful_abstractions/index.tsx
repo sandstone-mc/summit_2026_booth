@@ -12,12 +12,14 @@
  */
 
 export const slides = [
+	// slide[11]
 	(<>
 		<h1>What can Sandstone's features do for me?</h1>
 		<p>Objectives + Advancements combine for clean cooldown systems</p>
 		<p>Loop, branch, and schedule — flow control reads like normal code</p>
 		<p>Macros fill in $(variables) at runtime, not at compile time</p>
 	</>),
+	// slide [12]
 	(<>
 		<h1 wrap-breaks={[1, 3, 5]}>asyncContext keeps your context across sleep</h1>
 		<p>Normally a scheduled function loses @s and position</p>
