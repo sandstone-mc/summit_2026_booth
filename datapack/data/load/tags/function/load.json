@@ -11,7 +11,6 @@
     "sandstone_summit_booth:sections/rhythm/leaderboard/init",
     "sandstone_summit_booth:sections/rhythm/reset",
     "sandstone_summit_booth:sections/rhythm/settings/init",
-    "sandstone_summit_booth:sections/main/showcase/spawn_button",
-    "sandstone_summit_booth:sections/npcs/spawn"
+    "sandstone_summit_booth:sections/main/showcase/spawn_button"
   ]
 }

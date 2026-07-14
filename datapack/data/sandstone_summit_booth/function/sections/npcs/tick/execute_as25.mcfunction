@@ -1,1 +1,0 @@
-execute if score @s sandstone_summit_booth.npc.interact_cooldown matches 1.. run scoreboard players remove @s sandstone_summit_booth.npc.interact_cooldown 1

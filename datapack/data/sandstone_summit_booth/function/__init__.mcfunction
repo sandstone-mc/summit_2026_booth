@@ -49,6 +49,7 @@ scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_delay dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_speed dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_total dummy
 scoreboard objectives add sandstone_summit_booth.npc.interact_cooldown dummy
+scoreboard objectives add sandstone_summit_booth.npc.tick_counter dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.variant dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_cut dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.magic.spells.lightning.static_field.do_cast dummy
@@ -110,3 +111,4 @@ scoreboard players set 30 __sandstone 30
 scoreboard players set 15 __sandstone 15
 scoreboard players set 10 __sandstone 10
 scoreboard players set 6 __sandstone 6
+scoreboard players set 5 __sandstone 5

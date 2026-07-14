@@ -1,1 +1,0 @@
-execute if score @s sandstone_summit_booth.npc.dialogue.line matches 0.. run function sandstone_summit_booth:sections/npcs/tick/execute_as22/if
