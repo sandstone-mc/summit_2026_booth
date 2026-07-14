@@ -1,0 +1,3 @@
+function sandstone_summit_booth:sections/main/showcase/ui/kill_button
+function sandstone_summit_booth:sections/main/showcase/ui/kill_settings
+function sandstone_summit_booth:sections/main/showcase/ui/kill_leaderboard

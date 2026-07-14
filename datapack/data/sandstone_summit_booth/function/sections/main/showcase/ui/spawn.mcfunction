@@ -1,0 +1,3 @@
+function sandstone_summit_booth:sections/main/showcase/ui/spawn_button
+function sandstone_summit_booth:sections/rhythm/settings/spawn
+function sandstone_summit_booth:sections/rhythm/leaderboard/spawn

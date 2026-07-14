@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
-    "sandstone_summit_booth:sections/magic/showcase/kill_all"
+    "sandstone_summit_booth:sections/magic/showcase/kill_all",
+    "sandstone_summit_booth:sections/main/showcase/ui/kill",
+    "sandstone_summit_booth:sections/npcs/kill"
   ]
 }

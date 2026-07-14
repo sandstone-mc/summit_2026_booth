@@ -1,10 +1,10 @@
-scoreboard players set anon_WnYlBycD_15 __sandstone 660
+scoreboard players set anon_WnYlBycD_23 __sandstone 660
 summon minecraft:block_display -71 67 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.new','ssb.rhythm.parkour'],block_state:{Name:'minecraft:yellow_stained_glass'},interpolation_duration:56i,transformation:{translation:[-0.5f,0f,-0.5f],left_rotation:[0f,0f,0f,1f],scale:[1f,1f,2f],right_rotation:[0f,0f,0f,1f]}}
 summon minecraft:happy_ghast -71 67 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new','ssb.rhythm.parkour','ssb.rhythm.pk.reward','ssb.rhythm.pk.fresh'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,attributes:[{id:'minecraft:scale',base:0.25d}],active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}
 scoreboard players set @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth 1500
-scoreboard players operation @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth += anon_WnYlBycD_39 __sandstone
+scoreboard players operation @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth += anon_WnYlBycD_6 __sandstone
 tag @e[tag=ssb.rhythm.pk.fresh] remove ssb.rhythm.pk.fresh
 summon minecraft:happy_ghast -71 67 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new','ssb.rhythm.parkour','ssb.rhythm.pk.reward','ssb.rhythm.pk.fresh','ssb.rhythm.pk.trigger'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,attributes:[{id:'minecraft:scale',base:0.25d}],active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}
 scoreboard players set @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth 2500
-scoreboard players operation @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth += anon_WnYlBycD_39 __sandstone
+scoreboard players operation @e[tag=ssb.rhythm.pk.fresh, limit=1, sort=nearest] sandstone_summit_booth.rhythm.wall.depth += anon_WnYlBycD_6 __sandstone
 tag @e[tag=ssb.rhythm.pk.fresh] remove ssb.rhythm.pk.fresh

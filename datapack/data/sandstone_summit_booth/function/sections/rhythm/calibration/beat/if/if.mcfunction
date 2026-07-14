@@ -1,2 +1,2 @@
-execute if score anon_WnYlBycD_45 __sandstone matches ..23 run return run function sandstone_summit_booth:sections/rhythm/calibration/beat/if/if/0_if/return_run
+execute if score anon_WnYlBycD_12 __sandstone matches ..23 run return run function sandstone_summit_booth:sections/rhythm/calibration/beat/if/if/0_if/return_run
 execute as @a[tag=ssb.rhythm.cal.player, limit=1] at @s run playsound minecraft:block.note_block.hat master @s ~ ~ ~ 0.6 1.4

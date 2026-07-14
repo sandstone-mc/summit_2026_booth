@@ -1,2 +1,1 @@
-execute store result storage __sandstone:variable anon_WnYlBycD_20.env_0 int 1 run scoreboard players get main.showcase.current_0_WnYlBycD __sandstone
-return run function sandstone_summit_booth:sections/main/showcase/cycle/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_20
+execute if score main.showcase.change_cooldown_0_WnYlBycD __sandstone matches ..0 run function sandstone_summit_booth:sections/main/showcase/cycle/if

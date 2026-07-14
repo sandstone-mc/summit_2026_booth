@@ -18,4 +18,5 @@ function sandstone_summit_booth:sections/magic/spells/arcane/shockwave/update
 function sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/update
 function sandstone_summit_booth:sections/magic/spells/nature/thorn_volley/update
 function sandstone_summit_booth:sections/magic/spells/nature/entangle/update
+function sandstone_summit_booth:sections/main/showcase/tick
 function sandstone_summit_booth:sections/npcs/tick

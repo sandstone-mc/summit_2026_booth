@@ -1,2 +1,2 @@
 execute if entity @e[scores={sandstone_summit_booth.rhythm.wall.age=42..42}, tag=ssb.rhythm.pk.trigger] run function sandstone_summit_booth:sections/rhythm/parkour/tick/if/if
-execute if score anon_WnYlBycD_16 __sandstone matches 0 as @a[tag=ssb.rhythm.player] at @s run function sandstone_summit_booth:sections/rhythm/parkour/tick/if/execute_if
+execute if score anon_WnYlBycD_24 __sandstone matches 0 as @a[tag=ssb.rhythm.player] at @s run function sandstone_summit_booth:sections/rhythm/parkour/tick/if/execute_if

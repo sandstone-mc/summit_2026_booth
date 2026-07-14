@@ -1,1 +1,1 @@
-execute if score anon_WnYlBycD_0 __sandstone matches 2 if score anon_WnYlBycD_13 __sandstone matches 1.. run function sandstone_summit_booth:sections/rhythm/parkour/tick/if
+execute if score anon_WnYlBycD_0 __sandstone matches 2 if score anon_WnYlBycD_21 __sandstone matches 1.. run function sandstone_summit_booth:sections/rhythm/parkour/tick/if
