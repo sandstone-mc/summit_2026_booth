@@ -215,9 +215,9 @@ const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
             },
             brightness: { sky: NBT.int(15), block: NBT.int(15) },
         })
-        summon('interaction', rel(9.5, 0, 27), {
+        summon('interaction', rel(9.5, 0, 26), {
             Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
-            width: NBT.float(1.0),
+            width: NBT.float(2.5),
             height: NBT.float(3.0),
             response: false,
             data: {
