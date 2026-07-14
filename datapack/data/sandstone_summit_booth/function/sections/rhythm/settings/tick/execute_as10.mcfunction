@@ -1,2 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/calibration/start
-advancement revoke @s only sandstone_summit_booth:ui_calibrate

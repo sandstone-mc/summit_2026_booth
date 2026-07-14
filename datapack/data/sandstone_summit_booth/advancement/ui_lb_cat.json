@@ -9,5 +9,8 @@
         }
       }
     }
+  },
+  "rewards": {
+    "function": "sandstone_summit_booth:sections/rhythm/leaderboard/on_cat"
   }
 }

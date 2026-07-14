@@ -2,7 +2,5 @@ function sandstone_summit_booth:sections/rhythm/collision/tick
 function sandstone_summit_booth:sections/rhythm/wall/tick
 function sandstone_summit_booth:sections/rhythm/scoring/tick
 function sandstone_summit_booth:sections/rhythm/parkour/tick
-function sandstone_summit_booth:sections/rhythm/settings/tick
 function sandstone_summit_booth:sections/rhythm/calibration/tick
-function sandstone_summit_booth:sections/rhythm/leaderboard/tick
 function sandstone_summit_booth:sections/rhythm/timer/tick
