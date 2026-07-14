@@ -1,4 +1,4 @@
-import { _, abs, Advancement, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon } from 'sandstone'
+import { _, abs, Advancement, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon, Tag } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
 import type { DialogueTree } from './DialogueTree'
 
@@ -31,6 +31,11 @@ export const RevealingLabel = Label('npc.dialogue.revealing')
 // ticks to ignore new clicks after processing one
 const INTERACT_COOLDOWN_TICKS = 4
 const InteractCooldown = Objective.create('npc.interact_cooldown')
+
+// shared per-tick counter (stored on a fake-player, not per-entity) used to
+// throttle checks that don't need to run every single tick
+const NpcTickCounter = Objective.create('npc.tick_counter')
+const THROTTLE_TICKS = 5
 
 // blocks above the mannequin head the display sits at
 const HEAD_HEIGHT = 0.2
@@ -103,7 +108,7 @@ export function CreateNPC(id: string, options: NPCOptions) {
     })
 }
 
-MCFunction('sections/npcs/spawn', () => {
+const spawnNpcs = MCFunction('sections/npcs/spawn', () => {
     for (const npc of registry) {
         const seatTag = `${npc.instanceTag}.seat` as `${any}${string}`
 
@@ -202,33 +207,39 @@ MCFunction('sections/npcs/spawn', () => {
             })
         }
     }
-}, { runOnLoad: true })
+})
+
+// Summit compliance
+Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [spawnNpcs], { onConflict: 'append' })
 
 MCFunction('sections/npcs/tick', () => {
+    // shared by every NPC below, so the throttled distance check only needs one increment/tick
+    NpcTickCounter('#global').add(1)
+
     for (const npc of registry) {
+        if (!npc.dialogue && npc.lookAt !== 'nearest' && npc.lookAt !== 'interactor') {
+            continue
+        }
+
         const npcSelector = Selector('@e', { tag: npc.instanceTag, type: 'minecraft:mannequin' })
 
-        if (npc.dialogue) {
-            const dialogue = npc.dialogue
+        execute.as(npcSelector).at('@s').run(() => {
+            if (npc.dialogue) {
+                const dialogue = npc.dialogue
 
-            // count down the click debounce
-            execute.as(npcSelector).run(() => {
+                // count down the click debounce
                 _.if(InteractCooldown('@s').greaterThan(0), () => {
                     InteractCooldown('@s').remove(1)
                 })
-            })
 
-            // cancel the dialogue if nobody is around
-            execute.as(npcSelector).at('@s').run(() => {
-                _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
+                // cancel the dialogue if nobody is around
+                _.if(_.and(DialogueLineIndex('@s').greaterThanOrEqualTo(0), NpcTickCounter('#global').moduloBy(THROTTLE_TICKS).equalTo(0)), () => {
                     execute.unless.entity(Selector('@p', { distance: [0, 5] })).run(() => {
                         dialogue.end()
                     })
                 })
-            })
 
-            // typewriter reveal driver: step RevealCount once every RevealSpeed ticks
-            execute.as(npcSelector).run(() => {
+                // typewriter reveal driver: step RevealCount once every RevealSpeed ticks
                 _.if(_.and(DialogueLineIndex('@s').greaterThanOrEqualTo(0), RevealingLabel('@s')), () => {
                     RevealDelay('@s').remove(1)
                     _.if(RevealDelay('@s').lessThanOrEqualTo(0), () => {
@@ -237,27 +248,23 @@ MCFunction('sections/npcs/tick', () => {
                         dialogue.render()
                     })
                 })
-            })
-        }
+            }
 
-        // decorative NPCs: keep facing whoever's closest
-        if (npc.lookAt === 'nearest') {
-            execute.as(npcSelector).at('@s').run(() => {
-                raw('rotate @s facing entity @p feet')
-            })
-        }
+            // decorative NPCs: keep facing whoever's closest
+            if (npc.lookAt === 'nearest') {
+                raw('rotate @s facing entity @p[distance=..5] feet')
+            }
 
-        // face the interactor while talking; look back to the spawn rotation once they leave
-        if (npc.lookAt === 'interactor') {
-            const [yaw, pitch] = npc.rotation ?? [0, 0]
-            execute.as(npcSelector).at('@s').run(() => {
+            // face the interactor while talking; look back to the spawn rotation once they leave
+            if (npc.lookAt === 'interactor') {
+                const [yaw, pitch] = npc.rotation ?? [0, 0]
                 execute.if.entity(Selector('@a', { tag: npc.interactorTag, limit: 1 })).run(() => {
                     raw(`rotate @s facing entity @a[tag=${npc.interactorTag},limit=1] feet`)
                 })
                 execute.unless.entity(Selector('@a', { tag: npc.interactorTag, limit: 1 })).run(() => {
                     raw(`rotate @s ${yaw} ${pitch}`)
                 })
-            })
-        }
+            }
+        })
     }
 }, { runEveryTick: true })

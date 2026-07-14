@@ -52,7 +52,11 @@ const gamblerDialogue = DialogueTree('casino_crowd_3', {
 })
 
 const CROWD: (Omit<NPCOptions, 'name'> & { id: string })[] = [
-    { id: 'casino_crowd_1', position: [-85, 84.5, 55], rotation: [210, 0], pose: 'sitting', dialogue: presentationWatcherDialogue, lookAt: 'interactor', skin: PLACEHOLDER_SKIN },
+    { id: 'casino_crowd_1', position: [-85, 84.5, 55], rotation: [210, 0], pose: 'sitting', dialogue: presentationWatcherDialogue, lookAt: 'interactor', skin: {
+        properties: {
+            value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTUyOGViMmQ3ZjczZWVkN2JlYjY2NWMxNzliYjJiM2VkNjUzM2Y0NTljNTM5YTJhYzZlMjRhNDRlNDRmZWRhYiJ9fX0="
+        }
+    } },
     { id: 'casino_crowd_2', position: [-55, 85, 62], rotation: [90, 0], pose: 'standing', dialogue: merchFiendDialogue, lookAt: 'interactor', skin: { texture: "sandstone_summit_booth:npcs/merch" } },
     { id: 'casino_crowd_3', position: [-74, 74, 53], rotation: [180, 0], pose: 'crouching', dialogue: gamblerDialogue, lookAt: 'none', mainHand: 'minecraft:diamond', skin: PLACEHOLDER_SKIN },
 ]
