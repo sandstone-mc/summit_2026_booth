@@ -209,8 +209,18 @@ const spawnNpcs = MCFunction('sections/npcs/spawn', () => {
     }
 })
 
+const killNpcs = MCFunction('sections/npcs/kill', () => {
+    for (const npc of registry) {
+        const seatTag = `${npc.instanceTag}.seat` as `${any}${string}`
+
+        kill(Selector('@e', { tag: npc.instanceTag }))
+        kill(Selector('@e', { tag: seatTag }))
+    }
+})
+
 // Summit compliance
 Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [spawnNpcs], { onConflict: 'append' })
+Tag('function', 'summit.booth:sandstone_summit_booth/entities/kill', [killNpcs], { onConflict: 'append' })
 
 MCFunction('sections/npcs/tick', () => {
     // shared by every NPC below, so the throttled distance check only needs one increment/tick
