@@ -1,1 +1,0 @@
-execute as @e[tag=sandstone_summit_booth.npc.glitchy, type=minecraft:mannequin] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/end

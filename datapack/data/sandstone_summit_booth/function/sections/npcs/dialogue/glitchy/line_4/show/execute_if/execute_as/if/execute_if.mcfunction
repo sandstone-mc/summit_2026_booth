@@ -1,1 +1,1 @@
-execute as @e[tag=sandstone_summit_booth.npc.blue_tent_guide, type=minecraft:mannequin] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/end
+execute as @e[tag=sandstone_summit_booth.npc.glitchy, type=minecraft:mannequin] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/end

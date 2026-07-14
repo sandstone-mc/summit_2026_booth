@@ -1,1 +1,0 @@
-execute as @a[tag=sandstone_summit_booth.npc.red_tent_sandstone.interactor, limit=1] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if2/execute_as/if

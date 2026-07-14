@@ -1,1 +1,0 @@
-execute as @a[tag=sandstone_summit_booth.npc.casino_crowd_2.interactor, limit=1] run advancement grant @s only summit.sticker_book:sandstone_summit_booth/hidden
