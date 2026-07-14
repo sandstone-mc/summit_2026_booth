@@ -2,9 +2,7 @@
 // everything the summon pass needs (cell size, scale, margins, content).
 
 import { parseLength, pxToTextScale, pxToTextLineHeight } from '../length'
-import { wrapLines, simulateMcWrap, simulateMcWrapToLines, wrapToLines } from '../text-metrics'
-import { writeFileSync, mkdirSync } from 'fs'
-import { join } from 'path'
+import { wrapLines } from '../text-metrics'
 import { DEFAULT_FONT_ID } from '../text-metrics/font-loader'
 import type { CssDeclarations } from '../less/types'
 import type { VNode, StyledSegment } from '../render'
@@ -58,6 +56,16 @@ type TextElementLayout = {
 	marginBottom: number
 	/** Resolved font id (`declarations.font ?? <code>-default rule`). */
 	fontId: string
+	/**
+	 * Set when the caller supplied a `wrap-breaks` prop. The engine has
+	 * its own guess for where MC's text_display will wrap given the
+	 * element's `line_width`; `wrap-breaks` lets the caller correct
+	 * that guess when the engine is wrong. Length 0 means "MC will not
+	 * wrap at all" (line count = 1). A non-empty list pins the break
+	 * points so the engine's `cellH` math matches what MC actually
+	 * renders, even though the actual content / NBT are unchanged.
+	 */
+	wrapBreaksApplied?: number[]
 	/** True when this `<code>` should auto-scroll its content. */
 	scrolling?: boolean
 	/** Number of source (pre-wrap) lines — drives the gutter width and scroll distance. */
@@ -135,36 +143,6 @@ export function isTextType(t: any): boolean {
 
 export function isImgType(t: any): boolean {
 	return IMG_TYPES.has(String(t))
-}
-
-// WRAP debug accumulator — filled by `computeTextLayout` only when
-// `process.env.JSX_DEBUG_WRAP` is set. Dedupe by (path + content) since
-// multiple layout passes (off-screen diagnostic + mount + rerenders)
-// compute the same elements. Writes to `.temp/wrap-report.json` on
-// every push (cheap, accumulates as the build runs).
-const __wrapReport: {
-	type: string
-	path: string
-	content: string
-	scale: number
-	bold: boolean
-	nbtLineWidth: number
-	wrapWidthPx: number
-	widthCompensation: number
-	layout: string[]
-	mc: string[]
-}[] = []
-const __wrapReportSeen = new Set<string>()
-
-function writeWrapReport(): void {
-	if (__wrapReport.length === 0) return
-	const dir = join(process.cwd(), '.temp')
-	try {
-		mkdirSync(dir, { recursive: true })
-		writeFileSync(join(dir, 'wrap-report.json'), JSON.stringify(__wrapReport, null, 2))
-	} catch {
-		// Best-effort — the report is debug-only.
-	}
 }
 
 export function isVisibleType(t: any): boolean {
@@ -264,6 +242,21 @@ function longestLineCharCount(content: string): number {
 	return best
 }
 
+// Parse the `wrap-breaks` JSX prop. Accepts an array of non-negative
+// integers (word indices). Returns `undefined` when the prop is
+// omitted so the existing auto-wrap pipeline runs. Returns `[]` when
+// the caller explicitly wants no wrapping.
+function parseWrapBreaks(raw: unknown): number[] | undefined {
+	if (raw === undefined || raw === null) return undefined
+	if (!Array.isArray(raw)) return []
+	const out: number[] = []
+	for (const v of raw) {
+		const n = typeof v === 'number' ? v : Number(v)
+		if (Number.isInteger(n) && n >= 0) out.push(n)
+	}
+	return out
+}
+
 function computeTextLayout(
 	node: VNode,
 	path: string[],
@@ -319,36 +312,21 @@ function computeTextLayout(
 	const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
 
 	if (type !== 'code') {
-		const lines = wrapLines(content, wrapWidthPx, isBold, fontId)
-		// DEBUG: collect per-element wrap-prediction data into a JSON
-		// report at `.temp/wrap-report.json`. Set `JSX_DEBUG_WRAP=1` to
-		// enable. Downstream the TUI at `.temp/wrap-scripts/tui.ts`
-		// lets the user pick which prediction is right (or type a
-		// custom split) and writes the answer to `.temp/wrap-verdict.json`.
-		if (process.env.JSX_DEBUG_WRAP) {
-			const lineWidthNbt =
-				width !== undefined
-					? Math.round(width.px * widthCompensation)
-					: Math.round(sceneW * 16 * widthCompensation)
-			const mcLineArr = simulateMcWrapToLines(content, lineWidthNbt, textScale, isBold, fontId)
-			const layoutLineArr = wrapToLines(content, wrapWidthPx, isBold, fontId)
-			const dedupKey = `${path.join('>')}::${content}`
-			if (!__wrapReportSeen.has(dedupKey)) {
-				__wrapReportSeen.add(dedupKey)
-				__wrapReport.push({
-					type,
-					path: path.join('>'),
-					content,
-					scale: textScale,
-					bold: isBold,
-					nbtLineWidth: lineWidthNbt,
-					wrapWidthPx,
-					widthCompensation,
-					layout: layoutLineArr,
-					mc: mcLineArr,
-				})
-				writeWrapReport()
-			}
+		// `wrap-breaks` is a caller-supplied override for the engine's
+		// line-count prediction. Each entry is a global word index
+		// (whitespace-delimited, matching `wrapToLines`'s definition);
+		// word N begins a new line. Empty array = "MC doesn't wrap
+		// this at all" (line count = 1). Undefined keeps the engine's
+		// `wrapLines()` guess. The content string passed to MC is
+		// unchanged either way — only `cellH` is corrected.
+		const wrapBreaks = parseWrapBreaks(node.props?.['wrap-breaks'])
+		let lines: number
+		let wrapBreaksApplied: number[] | undefined
+		if (wrapBreaks !== undefined) {
+			wrapBreaksApplied = wrapBreaks
+			lines = wrapBreaks.length === 0 ? 1 : wrapBreaks.length + 1
+		} else {
+			lines = wrapLines(content, wrapWidthPx, isBold, fontId)
 		}
 		const lineHeightBlocks = pxToTextLineHeight(scalePx, fontId)
 		// `width: fit-content` (prose): resolve to the longest visual
@@ -387,6 +365,7 @@ function computeTextLayout(
 			marginTop,
 			marginBottom,
 			fontId,
+			wrapBreaksApplied,
 		}
 	}
 

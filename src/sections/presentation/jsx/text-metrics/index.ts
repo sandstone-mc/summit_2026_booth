@@ -28,15 +28,6 @@ export function fontMetrics(fontId: string = DEFAULT_FONT_ID): FontMetrics {
 	return loader.fontMetrics(fontId)
 }
 
-export function wrapToLines(
-	text: string,
-	lineWidth: number,
-	bold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
-): string[] {
-	return wrap.wrapToLines(text, lineWidth, bold, fontId)
-}
-
 export function wrapLines(
 	text: string,
 	lineWidth: number,
@@ -44,26 +35,6 @@ export function wrapLines(
 	fontId: string = DEFAULT_FONT_ID,
 ): number {
 	return wrap.wrapLines(text, lineWidth, bold, fontId)
-}
-
-export function simulateMcWrap(
-	text: string,
-	lineWidthNbt: number,
-	textScale: number,
-	bold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
-): number {
-	return wrap.simulateMcWrap(text, lineWidthNbt, textScale, bold, fontId)
-}
-
-export function simulateMcWrapToLines(
-	text: string,
-	lineWidthNbt: number,
-	textScale: number,
-	bold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
-): string[] {
-	return wrap.simulateMcWrapToLines(text, lineWidthNbt, textScale, bold, fontId)
 }
 
 export function wrapCodeLinesAsArray(

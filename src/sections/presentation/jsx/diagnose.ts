@@ -157,6 +157,12 @@ function estimateTextHeightBlocks(el: TextElementLayout): number {
 	// fontId + bold from declarations (matches the layout pipeline's
 	// per-element font choice — `<code>` defaults to monocraft, prose
 	// to the default font; bold is on for `h1`/`h2` or explicit LESS).
+	// When the caller pinned the breaks via `wrap-breaks`, trust that
+	// count instead of re-running the wrap guess.
+	if (el.wrapBreaksApplied !== undefined) {
+		const lines = el.wrapBreaksApplied.length === 0 ? 1 : el.wrapBreaksApplied.length + 1
+		return lines * lineHeightBlocks
+	}
 	const wrapWidthPx =
 		(el.width?.px ?? Number.POSITIVE_INFINITY) * el.widthCompensation
 	const fontId = el.declarations.font ?? (el.type === 'code' ? 'monocraft:default' : DEFAULT_FONT_ID)

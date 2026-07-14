@@ -8,7 +8,7 @@
 
 export const slides = [
 	(<>
-		<h1>Do I have to use all of Sandstone's features?</h1>
+		<h1 wrap-breaks={[4, 7]}>Do I have to use all of Sandstone's features?</h1>
 		<p>No — vanilla commands work inline, pretty much verbatim</p>
 		<p>Reach for variables, flow control, and macros only when they help</p>
 		<p>RawResource lets you ship arbitrary JSON untouched</p>
