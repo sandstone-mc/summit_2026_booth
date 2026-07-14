@@ -21,6 +21,19 @@ import { DEFAULT_FONT_ID } from './font-loader'
 export class TextWrap {
 	constructor(private loader: FontLoader) {}
 
+	// Greedy word-fill fudge factors, tuned against the user's
+	// `JSX_DEBUG_WRAP=1` verdicts (see `.temp/wrap-scripts/check.ts`).
+	// `BitmapMeasurer` only counts fully opaque pixels, so anti-aliased
+	// glyph edges add a small residual advance that the measured
+	// `width` under-reports. Bumping per-char width by `CHAR_FUDGE`
+	// captures that. The `BUDGET_FUDGE` widens the wrap budget to
+	// match MC's actual split points — `line_width` is rounded from a
+	// real-number LESS width and a small tolerance compensates for
+	// the rounding. The brute force settled on these multipliers;
+	// see `.temp/wrap-scripts/check.ts` for the tuning script.
+	private static readonly CHAR_FUDGE = 1.1
+	private static readonly BUDGET_FUDGE = 1.25
+
 	// Proportional greedy word-fill. Used by prose. Mirrors Minecraft's
 	// text_display `line_width` wrap so the line count we compute here
 	// matches the entity's actual render. A single word wider than
@@ -32,6 +45,17 @@ export class TextWrap {
 		fontId: string = DEFAULT_FONT_ID,
 	): string[] {
 		if (lineWidth <= 0) return text ? [text] : ['']
+
+		// Per-char width with the anti-aliasing fudge applied (round to
+		// ≥1 px so single pixel chars don't collapse to zero).
+		const cw = (ch: string): number =>
+			Math.max(1, Math.round(this.loader.charWidth(ch, bold, fontId) * TextWrap.CHAR_FUDGE))
+		const spaceW = cw(' ')
+		// Tighten the wrap budget slightly so chars that barely exceed
+		// the line wrap rather than crowd the edge. (Brute-force
+		// optimum: ~25% extra tolerance rounds boundaries the same
+		// way MC does.)
+		const adjustedLineWidth = lineWidth * TextWrap.BUDGET_FUDGE
 
 		const out: string[] = []
 		for (const sourceLine of text.split('\n')) {
@@ -45,7 +69,6 @@ export class TextWrap {
 				continue
 			}
 
-			const spaceW = this.loader.charWidth(' ', bold, fontId)
 			const lines: string[] = []
 			let currentWidth = 0
 			let currentLine: string[] = []
@@ -59,22 +82,23 @@ export class TextWrap {
 			}
 
 			for (const word of words) {
-				const wordWidth = this.loader.textWidth(word, bold, fontId)
+				let wordWidth = 0
+				for (const ch of word) wordWidth += cw(ch)
 
 				// Word wider than the line — char-wrap across multiple lines.
-				if (wordWidth > lineWidth) {
+				if (wordWidth > adjustedLineWidth) {
 					flush()
 					let chunk = ''
 					let chunkWidth = 0
 					for (const ch of word) {
-						const cw = this.loader.charWidth(ch, bold, fontId)
-						if (chunkWidth + cw > lineWidth && chunk) {
+						const cwc = cw(ch)
+						if (chunkWidth + cwc > adjustedLineWidth && chunk) {
 							lines.push(chunk)
 							chunk = ch
-							chunkWidth = cw
+							chunkWidth = cwc
 						} else {
 							chunk += ch
-							chunkWidth += cw
+							chunkWidth += cwc
 						}
 					}
 					if (chunk) {
@@ -87,7 +111,7 @@ export class TextWrap {
 				if (currentLine.length === 0) {
 					currentLine = [word]
 					currentWidth = wordWidth
-				} else if (currentWidth + spaceW + wordWidth <= lineWidth) {
+				} else if (currentWidth + spaceW + wordWidth <= adjustedLineWidth) {
 					currentLine.push(word)
 					currentWidth += spaceW + wordWidth
 				} else {
@@ -113,6 +137,171 @@ export class TextWrap {
 	wrapLines(text: string, lineWidth: number, bold: boolean, fontId: string = DEFAULT_FONT_ID): number {
 		if (lineWidth <= 0) return 1
 		return Math.max(1, this.wrapToLines(text, lineWidth, bold, fontId).length)
+	}
+
+	/**
+	 * Simulate Minecraft's text_display line wrapping using the ACTUAL NBT
+	 * `line_width` as the budget.
+	 *
+	 * `line_width` NBT is in **bitmap pixels**, not display pixels — MC's
+	 * word-wrap compares the running cumulative bitmap-pixel width of the
+	 * current line against `line_width`, regardless of the entity's
+	 * transformation scale. The visible size of each glyph scales with
+	 * `textScale`, but the wrap budget does NOT scale with it. That's
+	 * also why the layout pipeline passes `width.px × widthCompensation`
+	 * (= effective bitmap budget after shrinking for larger scales) to
+	 * `wrapLines` — the compensation keeps visual line widths similar
+	 * across scales; both the layout AND MC end up using bitmap px.
+	 *
+	 * Bold advances each char by 1 bitmap px (FontLoader already folds
+	 * this into `charWidth(ch, true)`). Char-wrap only fires when a
+	 * single word's bitmap width exceeds `line_width` outright —
+	 * otherwise MC word-wraps at the nearest space, even when that
+	 * pushes the line slightly past the budget.
+	 */
+	simulateMcWrap(
+		text: string,
+		lineWidthNbt: number,
+		textScale: number,
+		bold: boolean,
+		fontId: string = DEFAULT_FONT_ID,
+	): number {
+		if (lineWidthNbt <= 0) return 1
+		// Bitmap-pixel char width — same units as `lineWidthNbt`. Entity
+		// `textScale` does NOT scale the wrap budget (MC compares bitmap
+		// widths directly against the NBT `line_width`).
+		void textScale
+		const cw = (ch: string): number => this.loader.charWidth(ch, bold, fontId)
+		const spaceW = cw(' ')
+
+		let lines = 1
+		let curW = 0
+		let isFirstWord = true
+
+		for (const sourceLine of text.split('\n')) {
+			if (sourceLine === '') {
+				lines++
+				curW = 0
+				isFirstWord = true
+				continue
+			}
+			const words = sourceLine.split(/\s+/).filter(Boolean)
+			for (const word of words) {
+				let ww = 0
+				for (const ch of word) ww += cw(ch)
+
+				const spaceNeeded = isFirstWord ? 0 : spaceW
+				if (curW + spaceNeeded + ww > lineWidthNbt) {
+					// MC is reluctant to char-wrap — only split when the
+					// word is more than 1.5× the budget past line_width.
+					// Within 1.5× it just clips past the right edge.
+					if (isFirstWord && ww > lineWidthNbt * 1.5) {
+						// Char-wrap an oversized single word.
+						lines += Math.ceil(ww / lineWidthNbt) - 1
+					} else {
+						lines++
+						curW = ww
+						isFirstWord = false
+						continue
+					}
+				}
+				curW = (isFirstWord ? 0 : curW + spaceW) + ww
+				isFirstWord = false
+			}
+		}
+		return Math.max(1, lines)
+	}
+
+	/**
+	 * Same wrap math as `simulateMcWrap` but returns the actual line
+	 * strings (preserving the source's `\n` line breaks as line splits).
+	 * Greedy word-wrap with single-word char-wrap fallback. Useful for
+	 * build-time `JSX_DEBUG_WRAP` logging to show exactly where MC
+	 * will break the text.
+	 */
+	simulateMcWrapToLines(
+		text: string,
+		lineWidthNbt: number,
+		textScale: number,
+		bold: boolean,
+		fontId: string = DEFAULT_FONT_ID,
+	): string[] {
+		if (lineWidthNbt <= 0) return text ? [text] : ['']
+		void textScale
+		const cw = (ch: string): number => this.loader.charWidth(ch, bold, fontId)
+		const spaceW = cw(' ')
+
+		const out: string[] = []
+		for (const sourceLine of text.split('\n')) {
+			const m = sourceLine.match(/^([ \t]*)([\s\S]*)$/)
+			const leading = m ? m[1] : ''
+			const body = m ? m[2] : sourceLine
+
+			const words = body.split(/\s+/).filter(Boolean)
+			if (words.length === 0) {
+				out.push(leading)
+				continue
+			}
+
+			const lines: string[] = []
+			let currentWidth = 0
+			let currentLine: string[] = []
+
+			const flush = () => {
+				if (currentLine.length) {
+					lines.push(currentLine.join(' '))
+					currentLine = []
+					currentWidth = 0
+				}
+			}
+
+			for (const word of words) {
+				let ww = 0
+				for (const ch of word) ww += cw(ch)
+
+				// Char-wrap an oversized single word.
+				if (ww > lineWidthNbt) {
+					flush()
+					let chunk = ''
+					let chunkWidth = 0
+					for (const ch of word) {
+						const cwch = cw(ch)
+						if (chunkWidth + cwch > lineWidthNbt && chunk) {
+							lines.push(chunk)
+							chunk = ch
+							chunkWidth = cwch
+						} else {
+							chunk += ch
+							chunkWidth += cwch
+						}
+					}
+					if (chunk) {
+						currentLine = [chunk]
+						currentWidth = chunkWidth
+					}
+					continue
+				}
+
+				const spaceNeeded = currentLine.length === 0 ? 0 : spaceW
+				if (currentLine.length === 0) {
+					currentLine = [word]
+					currentWidth = ww
+				} else if (currentWidth + spaceW + ww <= lineWidthNbt) {
+					currentLine.push(word)
+					currentWidth += spaceW + ww
+				} else {
+					flush()
+					currentLine = [word]
+					currentWidth = ww
+				}
+			}
+			flush()
+			if (lines.length === 0) lines.push('')
+
+			if (lines[0] !== undefined) lines[0] = leading + lines[0]
+			out.push(...lines)
+		}
+		return out.length > 0 ? out : ['']
 	}
 
 	/**

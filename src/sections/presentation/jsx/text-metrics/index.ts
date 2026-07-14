@@ -46,6 +46,26 @@ export function wrapLines(
 	return wrap.wrapLines(text, lineWidth, bold, fontId)
 }
 
+export function simulateMcWrap(
+	text: string,
+	lineWidthNbt: number,
+	textScale: number,
+	bold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): number {
+	return wrap.simulateMcWrap(text, lineWidthNbt, textScale, bold, fontId)
+}
+
+export function simulateMcWrapToLines(
+	text: string,
+	lineWidthNbt: number,
+	textScale: number,
+	bold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): string[] {
+	return wrap.simulateMcWrapToLines(text, lineWidthNbt, textScale, bold, fontId)
+}
+
 export function wrapCodeLinesAsArray(
 	text: string,
 	_maxChars: number,

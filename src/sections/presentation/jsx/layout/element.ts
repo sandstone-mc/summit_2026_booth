@@ -2,7 +2,9 @@
 // everything the summon pass needs (cell size, scale, margins, content).
 
 import { parseLength, pxToTextScale, pxToTextLineHeight } from '../length'
-import { wrapLines } from '../text-metrics'
+import { wrapLines, simulateMcWrap, simulateMcWrapToLines, wrapToLines } from '../text-metrics'
+import { writeFileSync, mkdirSync } from 'fs'
+import { join } from 'path'
 import { DEFAULT_FONT_ID } from '../text-metrics/font-loader'
 import type { CssDeclarations } from '../less/types'
 import type { VNode, StyledSegment } from '../render'
@@ -133,6 +135,36 @@ export function isTextType(t: any): boolean {
 
 export function isImgType(t: any): boolean {
 	return IMG_TYPES.has(String(t))
+}
+
+// WRAP debug accumulator — filled by `computeTextLayout` only when
+// `process.env.JSX_DEBUG_WRAP` is set. Dedupe by (path + content) since
+// multiple layout passes (off-screen diagnostic + mount + rerenders)
+// compute the same elements. Writes to `.temp/wrap-report.json` on
+// every push (cheap, accumulates as the build runs).
+const __wrapReport: {
+	type: string
+	path: string
+	content: string
+	scale: number
+	bold: boolean
+	nbtLineWidth: number
+	wrapWidthPx: number
+	widthCompensation: number
+	layout: string[]
+	mc: string[]
+}[] = []
+const __wrapReportSeen = new Set<string>()
+
+function writeWrapReport(): void {
+	if (__wrapReport.length === 0) return
+	const dir = join(process.cwd(), '.temp')
+	try {
+		mkdirSync(dir, { recursive: true })
+		writeFileSync(join(dir, 'wrap-report.json'), JSON.stringify(__wrapReport, null, 2))
+	} catch {
+		// Best-effort — the report is debug-only.
+	}
 }
 
 export function isVisibleType(t: any): boolean {
@@ -288,6 +320,36 @@ function computeTextLayout(
 
 	if (type !== 'code') {
 		const lines = wrapLines(content, wrapWidthPx, isBold, fontId)
+		// DEBUG: collect per-element wrap-prediction data into a JSON
+		// report at `.temp/wrap-report.json`. Set `JSX_DEBUG_WRAP=1` to
+		// enable. Downstream the TUI at `.temp/wrap-scripts/tui.ts`
+		// lets the user pick which prediction is right (or type a
+		// custom split) and writes the answer to `.temp/wrap-verdict.json`.
+		if (process.env.JSX_DEBUG_WRAP) {
+			const lineWidthNbt =
+				width !== undefined
+					? Math.round(width.px * widthCompensation)
+					: Math.round(sceneW * 16 * widthCompensation)
+			const mcLineArr = simulateMcWrapToLines(content, lineWidthNbt, textScale, isBold, fontId)
+			const layoutLineArr = wrapToLines(content, wrapWidthPx, isBold, fontId)
+			const dedupKey = `${path.join('>')}::${content}`
+			if (!__wrapReportSeen.has(dedupKey)) {
+				__wrapReportSeen.add(dedupKey)
+				__wrapReport.push({
+					type,
+					path: path.join('>'),
+					content,
+					scale: textScale,
+					bold: isBold,
+					nbtLineWidth: lineWidthNbt,
+					wrapWidthPx,
+					widthCompensation,
+					layout: layoutLineArr,
+					mc: mcLineArr,
+				})
+				writeWrapReport()
+			}
+		}
 		const lineHeightBlocks = pxToTextLineHeight(scalePx, fontId)
 		// `width: fit-content` (prose): resolve to the longest visual
 		// line's char count × MC's default-font char width (~7 px per char
