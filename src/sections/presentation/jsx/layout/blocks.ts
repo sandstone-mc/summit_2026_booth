@@ -81,10 +81,47 @@ export function shouldCenterStack(blocks: Block[]): boolean {
 	return stack['align-items'] === 'center' && stack['grid-auto-flow'] !== 'row'
 }
 
+// Non-linear downward shift applied to a centered stack (or row block)
+// that has more than one child. The natural log returns 0 at count = 1,
+// guaranteeing a single element is never moved (so a lone `<h1>` stays
+// dead-center regardless of the parent's gap). `gap` is whichever axis
+// spacing governs the layout: row-gap for vertical stacks, column-gap
+// for horizontal rows. `gap = 0` collapses to 0 regardless of count, so
+// LESS without an explicit gap never shifts.
+export function rowDownShift(gap: number, count: number): number {
+	if (count <= 1 || gap <= 0) return 0
+	return gap * Math.log(count)
+}
+
 // Starting Y position for the slide's content stack. Always the slide
 // bottom by default; slide-level centering (see `shouldCenterStack`) lifts
 // the stack so its midpoint aligns with the slide's vertical midpoint.
+//
+// Multi-block centered stacks are nudged down by a non-linear function
+// of `(blocks.length, rowGap)` so each subsequent element doesn't pile
+// up against the slide's visual top — the previous slide's heading
+// establishes where the eye expects "content" to begin, and a pure
+// centered formula leaves multi-paragraph stacks hovering too high.
+// `ln(blocks.length)` is the natural non-linear scaling: it equals 0
+// at `blocks.length === 1` (so single-element headings like a lone
+// `<h1>` stay dead-center) and grows as more elements join the stack.
+// `rowGap` is the row spacing of the owning parent — we sum only the
+// `prev→next` gaps whose parentStack reference actually matches the
+// first block's parent, so the shift reflects this slide's real
+// inter-element spacing rather than always picking the first rowGap.
 export function startingY(sceneH: number, totalH: number, blocks: Block[]): number {
-	if (shouldCenterStack(blocks)) return (sceneH + totalH) / 2
-	return sceneH
+	if (!shouldCenterStack(blocks)) return sceneH
+	const center = (sceneH + totalH) / 2
+	if (blocks.length <= 1) return center
+	// Single representative row-gap for the parent of this stack —
+	// pulled from the first block's parent declarations so a row-gap
+	// change in LESS flows through automatically.
+	const firstStack =
+		blocks[0].kind === 'element' ? blocks[0].el.parentStack : blocks[0].parentStack
+	const rowGap = parseLength(firstStack['row-gap'] ?? '', sceneH)?.meters ?? 0
+	// Non-linear scaling: ln(n) is exactly 0 at n=1, so single-element
+	// headings stay dead-center regardless of row-gap. As elements
+	// join the stack, the natural log gives a diminishing per-element
+	// shift (4 elements shift 1.39× a single row-gap, 10 shift 2.30×).
+	return center - rowDownShift(rowGap, blocks.length)
 }

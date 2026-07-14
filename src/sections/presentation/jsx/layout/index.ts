@@ -17,7 +17,7 @@ import type { Styles } from '../style'
 import type { CssDeclarations } from '../less/types'
 import { computeElementLayout, finalizeScrollCodeLayout, type ElementLayout, type ImgResourceMap } from './element'
 import type { Precomputed } from './code-borders'
-import { blockCellH, blockGap, groupIntoBlocks, startingY, totalStackHeight, type Block } from './blocks'
+import { blockCellH, blockGap, groupIntoBlocks, rowDownShift, startingY, totalStackHeight, type Block } from './blocks'
 import { summonElement } from './summon-entity'
 import { Z_VISUAL_OFFSET, getTextDescender } from './constants'
 
@@ -241,6 +241,12 @@ function placeRowBlocks(
 	} else {
 		workingY -= containerCellH
 	}
+	// Pull the row down when the parent container has multiple children
+	// and a non-zero column-gap — same shape as the vertical-stack
+	// adjustment in `startingY`. `rowDownShift` returns 0 for single-
+	// child rows and for parents that declared no column-gap, so a
+	// lone `<img>` in a row container is unaffected.
+	workingY -= rowDownShift(columnGap, block.children.length)
 	const containerCenterY = origin[1] + workingY + containerCellH / 2
 
 	// When row fits in scene, center whole group symmetrically. When it
