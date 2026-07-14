@@ -96,7 +96,7 @@ const moveWalls = MCFunction(
 				.at('@s')
 				.run(moveBody)
 		})
-		execute.as(Selector('@e', { type: 'minecraft:happy_ghast', tag: Tags.WALL })).run.rotate('@s', ['0', '0'])
+		// execute.as(Selector('@e', { type: 'minecraft:happy_ghast', tag: Tags.WALL })).run.rotate('@s', ['0', '0'])
 	},
 	{ lazy: true },
 )
