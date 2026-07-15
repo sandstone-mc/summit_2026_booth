@@ -1,1 +1,1 @@
-data merge entity @e[tag=ssb.ui.set.song, limit=1] {text:[{text:'  ♪ Song: ',color:'gray'},{text:'     Tetoris        ',color:'aqua',font:'monocraft:default'}]}
+data merge entity @e[tag=ssb.ui.set.song, limit=1] {text:[{text:'  ♪ Song: ',color:'gray'},{text:'     Tetoris        ',color:'aqua',font:'sandstone_summit_booth:monospace'}]}
