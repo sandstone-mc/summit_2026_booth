@@ -4,11 +4,15 @@
 
 import path from 'node:path'
 import sharp from 'sharp'
-import { Model, ItemModelDefinition } from 'sandstone'
+import { Model, ItemModelDefinition, TextureClass } from 'sandstone'
 import type { VNode } from '../render'
 import { flatWalk } from '../tree/walk'
 import { isImgType } from '../layout/element'
 import type { ImgResource, ImgResourceMap } from '../layout/element'
+
+export function resolveImgSrc(src: string | TextureClass): string {
+	return typeof src === 'string' ? src : src.toString()
+}
 
 export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMap> {
 	const seen = new Set<string>()
@@ -18,7 +22,9 @@ export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMa
 	for (const tree of trees) {
 		for (const { node } of flatWalk(tree)) {
 			if (!isImgType(node.type)) continue
-			const src = String(node.props?.src ?? '')
+			const rawSrc = node.props?.src
+			if (!rawSrc) continue
+			const src = resolveImgSrc(rawSrc)
 			if (!src || seen.has(src)) continue
 			seen.add(src)
 
@@ -28,16 +34,27 @@ export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMa
 				continue
 			}
 			const ns = src.slice(0, colonIdx)
-			const texturePath = src.slice(colonIdx + 1)
-			const textureNoExt = texturePath.replace(/\.png$/i, '')
+			const textureNoExt = src.slice(colonIdx + 1)
 
-			const filePath = path.join(projectRoot, 'resources', 'resourcepack', 'assets', ns, 'textures', texturePath)
 			let aspect = 1
-			try {
-				const meta = await sharp(filePath).metadata()
-				if (meta.width && meta.height) aspect = meta.width / meta.height
-			} catch (e: any) {
-				console.warn(`[img] failed to read texture ${filePath}: ${e?.message ?? e}; defaulting to 1:1 aspect`)
+			if (typeof rawSrc === 'string') {
+				const filePath = path.join(projectRoot, 'resources', 'resourcepack', 'assets', ns, 'textures', `${textureNoExt}.png`)
+				try {
+					const meta = await sharp(filePath).metadata()
+					if (meta.width && meta.height) aspect = meta.width / meta.height
+				} catch (e: any) {
+					console.warn(`[img] failed to read texture ${filePath}: ${e?.message ?? e}; defaulting to 1:1 aspect`)
+				}
+			} else {
+				try {
+					const buf = await rawSrc.buffer
+					if (buf) {
+						const meta = await sharp(buf).metadata()
+						if (meta.width && meta.height) aspect = meta.width / meta.height
+					}
+				} catch (e: any) {
+					console.warn(`[img] failed to read TextureClass buffer for ${src}: ${e?.message ?? e}; defaulting to 1:1 aspect`)
+				}
 			}
 
 			Model('item', textureNoExt, {

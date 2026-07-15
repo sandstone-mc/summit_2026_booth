@@ -26,7 +26,7 @@ if (pngs.length > 0) {
 		console.error('[minify] optipng not found (install it or set OPTIPNG_PATH)')
 		process.exit(1)
 	}
-	const result = Bun.spawnSync([optipng, '-o5', '-quiet', ...pngs])
+	const result = Bun.spawnSync([optipng, '-o7', '-quiet', ...pngs])
 	if (!result.success) {
 		console.error('[minify] optipng failed:', result.stderr.toString())
 		process.exit(1)

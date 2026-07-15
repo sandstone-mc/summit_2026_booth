@@ -1,3 +1,4 @@
+import { TextureClass } from 'sandstone'
 import { jsx } from './jsx-runtime'
 import type { VNode } from './render'
 
@@ -62,16 +63,18 @@ export type ExplorerProps = CommonProps & {
 }
 
 /**
- * Image element. `src` is a Minecraft resource location pointing at a PNG
- * (e.g. `"sandstone_summit_booth:ui/presentation/foo.png"`); the
- * renderer auto-creates a flat item model + item_model_definition that
- * references that texture, then displays it on screen via an
- * `item_display` entity. CSS-style `height` / `width` props (e.g.
- * `"30vh"`, `"2vw"`) take precedence over LESS `height` / `width`
- * declarations when set.
+ * Image element. `src` is either a Minecraft resource location pointing
+ * at a PNG (e.g. `"sandstone_summit_booth:ui/presentation/foo.png"`)
+ * or a `TextureClass` from Sandstone — for the latter, the texture's
+ * buffer is read directly at build time and the resource location is
+ * taken from `TextureClass.toString()`. The renderer auto-creates a
+ * flat item model + item_model_definition that references that
+ * texture, then displays it on screen via an `item_display` entity.
+ * CSS-style `height` / `width` props (e.g. `"30vh"`, `"2vw"`) take
+ * precedence over LESS `height` / `width` declarations when set.
  */
 export type ImgProps = CommonProps & {
-	src: string
+	src: string | TextureClass<any>
 	height?: string
 	width?: string
 }

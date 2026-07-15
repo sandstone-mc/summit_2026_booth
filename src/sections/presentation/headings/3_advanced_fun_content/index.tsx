@@ -1,6 +1,29 @@
-// Somehow this stopped being an issue
+import { join } from 'path'
+import sharp from 'sharp'
+import { Texture } from 'sandstone'
+
 import rhythmCode from '../../../rhythm/game/calibration.ts' with { type: 'text' }
 import magicCode from '../../../magic/Spells/Lightning/Thunderbolt.ts' with { type: 'text' }
+
+async function screenshot(path: `${any}${string}`) {
+	const imagePath = `${join(process.cwd(), 'resources', path)}.png`
+
+	const image = await Bun.file(imagePath).arrayBuffer()
+
+	const { width = 0 } = await sharp(image).metadata()
+	const newWidth = Math.max(1, Math.round(width / 8))
+
+	const downscaled = await sharp(image)
+		.resize({ width: newWidth })
+		.png()
+		.toBuffer()
+
+	return downscaled as unknown as Buffer<ArrayBufferLike>
+}
+
+const rhythmGlamshot = Texture('item', 'presentation/rhythm', screenshot('assets/presentation/rhythm_glamshot'))
+
+const magicGlamshot = Texture('item', 'presentation/magic', screenshot('assets/presentation/magic_glamshot'))
 
 // INFO: explorer path-start=3 means to omit the `.sandstone/output/datapack/` part of the path
 
@@ -13,8 +36,8 @@ export const slides = [
 		<p>Longer answer: After the presentation go down to our bottom floor and check out their games!</p>
 
 		<div id="img-grid">
-			<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/arcane.png" height="30vh" />
-			<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/arcane.png" height="30vh" />
+			<img src={rhythmGlamshot} height="30vh" />
+			<img src={magicGlamshot} height="30vh" />
 		</div>
 	</>),
 	// slide[4]
