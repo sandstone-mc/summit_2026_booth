@@ -125,16 +125,6 @@ MCFunction('sections/magic/showcase/selection/tick', () => {
         particle(ped.particleType as any, rel(ped.x, ped.y + 1.5, ped.z), abs(0.3, 0.5, 0.3), 0.01, 1)
       }
     })
-
-    // Proximity actionbar hints — show school name + prompt when within 2.5 blocks
-    for (const ped of PEDESTALS) {
-      const school = SpellLibrary[ped.schoolId]
-      const actionbarJson = [
-        { text: `* ${school.name} *  `, color: ped.color, bold: true },
-        { text: 'Right-click to select', color: 'gray', italic: true },
-      ]
-      raw(`execute as @a[tag=sandstone_summit_booth.showcase.player,limit=1] at @s if entity @e[type=minecraft:interaction,tag=sandstone_summit_booth.showcase.pedestal.${ped.schoolId},distance=..2.5] run title @s actionbar ${JSON.stringify(actionbarJson)}`)
-    }
   })
 }, { runEveryTick: true })
 

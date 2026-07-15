@@ -218,16 +218,23 @@ const scrollLbUpdate = MCFunction(
 				_.if(scrollPos.greaterThanOrEqualTo(frames), () => {
 					scrollPos.set(0)
 				})
-				for (let offset = 0; offset < frames; offset++) {
-					_.if(scrollPos.equalTo(offset), () => {
-						const visible = scrollFrame(name, offset)
-						_.if(leaderboardCategoryView.equalTo(0), () => {
+				_.if(leaderboardCategoryView.equalTo(0), () => {
+					_.switch(
+						scrollPos,
+						Array.from({ length: frames }, (_v, offset) => ['case', offset, () => {
+							const visible = scrollFrame(name, offset)
 							mergeDisplayText(songCatLineSel, songCatLineText(songI, 0, visible))
-						}).else(() => {
+						}] as const),
+					)
+				}).else(() => {
+					_.switch(
+						scrollPos,
+						Array.from({ length: frames }, (_v, offset) => ['case', offset, () => {
+							const visible = scrollFrame(name, offset)
 							mergeDisplayText(songCatLineSel, songCatLineText(songI, 1, visible))
-						})
-					})
-				}
+						}] as const),
+					)
+				})
 			})
 		}
 	},

@@ -43,13 +43,13 @@ function _callWithUID(fn: ReturnType<typeof MCFunction>) {
 }
 
 export const getSelf = MCFunction('sections/magic/playerdb/get_self', () => {
-  execute.as('@s').run(() => _callWithUID(_getByUID))
+  _callWithUID(_getByUID)
 })
 
 export const saveSelf = MCFunction('sections/magic/playerdb/save_self', () => {
-  execute.as('@s').run(() => _callWithUID(_saveByUID))
+  _callWithUID(_saveByUID)
 })
 
 export const clearSelf = MCFunction('sections/magic/playerdb/clear_self', () => {
-  execute.as('@s').run(() => _callWithUID(_initEntry))
+  _callWithUID(_initEntry)
 })
