@@ -62,14 +62,14 @@ const BLANK_LINE: JSONTextComponent = { text: ' ' }
 function songLineText(name: string): JSONTextComponent {
 	return [
 		{ text: `${panels.padding}♪ Song: `, color: 'gray' },
-		{ text: `${name}${panels.padding}`, color: 'aqua', font: 'monocraft:default' },
+		{ text: `${name}${panels.padding}`, color: 'aqua', font: 'sandstone_summit_booth:monospace' },
 	]
 }
 
 function livesLineText(lives: number): JSONTextComponent {
 	return [
 		{ text: `${panels.padding}  Lives: `, color: 'gray' },
-		{ text: `${clampName(`${'❤'.repeat(lives)} ${lives}`)}${panels.padding}`, color: 'red', font: 'monocraft:default' },
+		{ text: `${clampName(`${'❤'.repeat(lives)} ${lives}`)}${panels.padding}`, color: 'red', font: 'sandstone_summit_booth:monospace' },
 	]
 }
 
@@ -77,7 +77,7 @@ function mapLineText(mapI: number): JSONTextComponent {
 	const name = mapCount > 0 ? clampName(mapNames[mapI] ?? 'None') : clampName('No maps')
 	return [
 		{ text: `${panels.padding}🗺 Map: `, color: 'gray' },
-		{ text: `${name}${panels.padding}`, color: 'green', font: 'monocraft:default' },
+		{ text: `${name}${panels.padding}`, color: 'green', font: 'sandstone_summit_booth:monospace' },
 	]
 }
 
@@ -87,7 +87,7 @@ function interpLineText(serverSide: boolean): JSONTextComponent {
 		{
 			text: `${clampName(serverSide ? 'Server-side' : 'Client-side')}${panels.padding}`,
 			color: serverSide ? 'yellow' : 'aqua',
-			font: 'monocraft:default',
+			font: 'sandstone_summit_booth:monospace',
 		},
 	]
 }
@@ -107,14 +107,14 @@ const updateInterpLine = MCFunction(
 const CALIBRATE_TEXT: JSONTextComponent = { text: `${panels.padding}⧗ CALIBRATE${panels.padding}`, color: 'aqua' }
 const CALIBRATING_TEXT: JSONTextComponent = [
 	{ text: `${panels.padding}⧗ `, color: 'aqua', bold: true },
-	{ text: `${clampName('Calibrating…')}${panels.padding}`, color: 'aqua', bold: true, font: 'monocraft:default' },
+	{ text: `${clampName('Calibrating…')}${panels.padding}`, color: 'aqua', bold: true, font: 'sandstone_summit_booth:monospace' },
 ]
 
 const START_TEXT: JSONTextComponent = { text: `${panels.padding}▶ START${panels.padding}`, color: 'green', bold: true }
 const CANCEL_TEXT: JSONTextComponent = { text: `${panels.padding}✖ CANCEL${panels.padding}`, color: 'red', bold: true }
 const IN_PROGRESS_TEXT: JSONTextComponent = [
 	{ text: `${panels.padding}🎵 `, color: 'gold', bold: true },
-	{ text: `${clampName('Match in progress')}${panels.padding}`, color: 'gold', bold: true, font: 'monocraft:default' },
+	{ text: `${clampName('Match in progress')}${panels.padding}`, color: 'gold', bold: true, font: 'sandstone_summit_booth:monospace' },
 ]
 
 function dispatch(selectScore: Score, count: number, render: (i: number) => void) {

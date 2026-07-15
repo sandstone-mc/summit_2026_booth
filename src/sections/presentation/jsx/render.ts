@@ -96,7 +96,7 @@ function collectFonts(trees: VNode[], styles: Styles): Set<string> {
 			if (!isTextType(node.type)) continue
 			const decs = styles.forPath(path)
 			if (decs.font) out.add(decs.font)
-			else if (node.type === 'code') out.add('monocraft:default')
+			else if (node.type === 'code') out.add('sandstone_summit_booth:monospace')
 		}
 	}
 	return out

@@ -48,7 +48,7 @@ export async function prepareCodeHighlights(
 			const source = extractCodeSource(node.props)
 			if (!source) continue
 			const declarations = styles.forPath(path)
-			const fontId = declarations.font ?? 'monocraft:default'
+			const fontId = declarations.font ?? 'sandstone_summit_booth:monospace'
 			const bold = declarations.bold === 'true'
 			const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
 			let width = parseLength(declarations.width ?? '', sceneW)
