@@ -1,0 +1,1 @@
+schedule function sandstone_summit_booth:presentation/slides/loop/schedule 1t replace

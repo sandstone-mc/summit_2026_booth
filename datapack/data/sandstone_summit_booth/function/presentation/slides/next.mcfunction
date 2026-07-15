@@ -16,8 +16,11 @@ schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep13
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep14
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep15
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep16
+schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep17
+schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep18
+schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep19
 scoreboard players add #current sandstone_summit_booth.presentation.slide_idx 1
-execute if score #current sandstone_summit_booth.presentation.slide_idx matches 16.. run scoreboard players set #current sandstone_summit_booth.presentation.slide_idx 0
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 19.. run scoreboard players set #current sandstone_summit_booth.presentation.slide_idx 0
 execute store result score #shown_at sandstone_summit_booth.presentation.scroll run time query gametime
 function sandstone_summit_booth:presentation/slides/hide/0
 function sandstone_summit_booth:presentation/slides/hide/1
@@ -35,6 +38,9 @@ function sandstone_summit_booth:presentation/slides/hide/12
 function sandstone_summit_booth:presentation/slides/hide/13
 function sandstone_summit_booth:presentation/slides/hide/14
 function sandstone_summit_booth:presentation/slides/hide/15
+function sandstone_summit_booth:presentation/slides/hide/16
+function sandstone_summit_booth:presentation/slides/hide/17
+function sandstone_summit_booth:presentation/slides/hide/18
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 0 run function sandstone_summit_booth:presentation/slides/show/0
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 1 run function sandstone_summit_booth:presentation/slides/show/1
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 2 run function sandstone_summit_booth:presentation/slides/show/2
@@ -51,3 +57,6 @@ execute if score #current sandstone_summit_booth.presentation.slide_idx matches 
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 13 run function sandstone_summit_booth:presentation/slides/show/13
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 14 run function sandstone_summit_booth:presentation/slides/show/14
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 15 run function sandstone_summit_booth:presentation/slides/show/15
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 16 run function sandstone_summit_booth:presentation/slides/show/16
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 17 run function sandstone_summit_booth:presentation/slides/show/17
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 18 run function sandstone_summit_booth:presentation/slides/show/18
