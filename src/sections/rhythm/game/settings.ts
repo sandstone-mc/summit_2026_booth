@@ -215,11 +215,12 @@ const scrollSettingsUpdate = MCFunction(
 				_.if(scrollPos.greaterThanOrEqualTo(frames), () => {
 					scrollPos.set(0)
 				})
-				for (let offset = 0; offset < frames; offset++) {
-					_.if(scrollPos.equalTo(offset), () => {
+				_.switch(
+					scrollPos,
+					Array.from({ length: frames }, (_v, offset) => ['case', offset, () => {
 						mergeDisplayText(songLineSel, songLineText(scrollFrame(name, offset)))
-					})
-				}
+					}] as const),
+				)
 			})
 		}
 	},
