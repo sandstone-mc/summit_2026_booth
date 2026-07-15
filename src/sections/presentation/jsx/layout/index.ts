@@ -19,7 +19,7 @@ import { computeElementLayout, finalizeScrollCodeLayout, type ElementLayout, typ
 import type { Precomputed } from './code-borders'
 import { blockCellH, blockGap, groupIntoBlocks, rowDownShift, startingY, totalStackHeight, type Block } from './blocks'
 import { summonElement } from './summon-entity'
-import { Z_VISUAL_OFFSET, getTextDescender } from './constants'
+import { TEXT_RENDER_OFFSET, Z_VISUAL_OFFSET, getTextDescender, parityOffset } from './constants'
 
 export type CodePrecomputedMap = WeakMap<VNode, Precomputed>
 
@@ -155,17 +155,21 @@ function runLayout(
 		const block = blocks[bi]
 		if (block.kind === 'element') {
 			const el = block.el
-			const cellY = origin[1] + accY - el.marginTop - el.cellH + (sceneH % 2 === 0 ? 0 : 0.5)
+			const cellY = origin[1] + accY - el.marginTop - el.cellH + parityOffset(sceneH)
 			// Entity Y depends on element kind:
-			//   scroll `<code>`:  cellY (bottom border flush with slide bottom)
-			//   prose/h/code:     cellY (bottom-center anchor; glyph grows up)
+			//   scroll `<code>`:  cellY - TEXT_RENDER_OFFSET (see constants)
+			//   prose/h/code:     cellY - TEXT_RENDER_OFFSET (see constants)
 			//   image:            cellY + cellH / 2 (image is centered in cell)
+			// `TEXT_RENDER_OFFSET` accounts for MC text_display's fixed
+			// gap between the entity Y and the visible glyph bottom.
+			// Without it, the topmost element on a tightly-stacked slide
+			// renders that many blocks above the slide's top edge.
 			const entityY =
 				el.kind === 'text' && typeof el.scrollTag === 'string'
-					? cellY
+					? cellY - TEXT_RENDER_OFFSET
 					: el.kind === 'image'
 						? cellY + el.cellH / 2
-						: cellY
+						: cellY - TEXT_RENDER_OFFSET
 
 			const entityX = origin[0] + sceneW / 2
 			onElement(el, entityX, entityY, z)
@@ -264,12 +268,14 @@ function placeRowBlocks(
 		const childCenterX = accX + child.cellW / 2
 		// Entity Y depends on element kind — mirrors the non-row placement
 		// (scroll/prose/image each have their own anchor convention).
+		// `TEXT_RENDER_OFFSET` is applied to text elements for the same
+		// reason as in `runLayout` above.
 		const entityY =
 			child.kind === 'text' && typeof child.scrollTag === 'string'
-				? subCellY
+				? subCellY - TEXT_RENDER_OFFSET
 				: child.kind === 'image'
 					? subCellY + child.cellH / 2
-					: subCellY
+					: subCellY - TEXT_RENDER_OFFSET
 		onElement(child, childCenterX, entityY, z)
 		placements.push({ el: child, x: childCenterX, y: entityY, z })
 		maybeRecordScroll(child, entityY, scrollSpecs)
