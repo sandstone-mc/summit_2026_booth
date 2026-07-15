@@ -135,7 +135,7 @@ export type ImgResource = {
 export type ImgResourceMap = Map<string, ImgResource>
 
 // Element-type predicates used across the render + prepare passes.
-const TEXT_TYPES = new Set(['h1', 'h2', 'h3', 'p', 'code'])
+const TEXT_TYPES = new Set(['h1', 'h2', 'h3', 'p', 'code', 'explorer'])
 const IMG_TYPES = new Set(['img'])
 
 export function isTextType(t: any): boolean {
@@ -169,6 +169,7 @@ export function computeElementLayout(
 	imgResources: ImgResourceMap,
 	codePrecomputed: WeakMap<VNode, Precomputed>,
 	rowFlexWidths: WeakMap<VNode, RowFlexWidth> = new WeakMap(),
+	explorerPrecomputed: WeakMap<VNode, Precomputed> = new WeakMap(),
 ): ElementLayout {
 	const { node, path } = nodeWithPath
 	const parentStack =
@@ -180,7 +181,7 @@ export function computeElementLayout(
 		return computeImgLayout(node, path, parentStack, declarations, sceneW, sceneH, imgResources)
 	}
 
-	return computeTextLayout(node, path, parentStack, declarations, type, sceneW, sceneH, codePrecomputed, rowFlexWidths)
+	return computeTextLayout(node, path, parentStack, declarations, type, sceneW, sceneH, codePrecomputed, rowFlexWidths, explorerPrecomputed)
 }
 
 function computeImgLayout(
@@ -269,33 +270,58 @@ function computeTextLayout(
 	sceneH: number,
 	codePrecomputed: WeakMap<VNode, Precomputed>,
 	rowFlexWidths: WeakMap<VNode, RowFlexWidth>,
+	explorerPrecomputed: WeakMap<VNode, Precomputed>,
 ): ElementLayout {
-	const content = type === 'code' ? extractCodeSource(node.props) : extractText(node.props?.children)
+	const isCode = type === 'code'
+	const isExplorer = type === 'explorer'
+	const content = isCode
+		? extractCodeSource(node.props)
+		: isExplorer
+			? extractExplorerSource(node, explorerPrecomputed)
+			: extractText(node.props?.children)
 
 	const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
 
 	const scalePx = fontSize?.px ?? defaultFontPx(type)
 	const textScale = pxToTextScale(scalePx) // NBT `transformation.scale`
 
-	// `<code>` defaults to monocraft unless LESS overrides.
-	const fontId = declarations.font ?? (type === 'code' ? 'monocraft:default' : DEFAULT_FONT_ID)
+	// `<code>` / `<explorer>` default to monocraft unless LESS overrides.
+	const fontId = declarations.font ?? (isCode || isExplorer ? 'monocraft:default' : DEFAULT_FONT_ID)
 
 	const widthCompensation = BASELINE_TEXT_SCALE / textScale
 
 	const heightLen = parseLength(declarations.height ?? '', sceneH)
 	const isBold = type === 'h1' || type === 'h2' || declarations.bold === 'true'
 	// `<code>` line-numbers props
-	const lineNumbers = type === 'code' && (node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true')
-	const sourceLineCount = type === 'code' ? content.split('\n').length : 0
+	const lineNumbers = isCode && (node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true')
+	const sourceLineCount = (isCode || isExplorer) ? content.split('\n').length : 0
 	const gutterChars = lineNumbers ? Math.max(2, String(sourceLineCount).length) : 0
-	const scrolling = type === 'code' && (node.props?.scrolling === true || node.props?.scrolling === 'true')
+	const scrolling =
+		(isCode || isExplorer) &&
+		(node.props?.scrolling === true || node.props?.scrolling === 'true')
 
-	// `<code>` with no explicit width: shrink to the minimum needed to
-	// render the longest source line without wrapping. Synthesize a
-	// `Length` for `width` so the rest of the pipeline (border build +
-	// MC `line_width` in `summon-entity`) just sees a defined width.
-	let width = parseLength(declarations.width ?? '', sceneW)
-	if (type === 'code' && width === undefined) {
+	// `<code>` / `<explorer>` with no explicit width: shrink to the minimum
+	// needed to render the longest source line without wrapping. The
+	// `computeMinCodeLineWidthPx` math is shared because both elements use
+	// the same monospace wrap + bordered layout.
+	//
+	// Width resolution order (matches `<img>`'s `widthRaw`):
+	//   1. JSX `width` prop (explicit user intent)
+	//   2. LESS `width` declaration
+	//   3. shrink-to-fit for `<code>` / `<explorer>`
+	const widthRaw =
+		(typeof node.props?.width === 'string' && node.props.width) ||
+		declarations.width ||
+		''
+	let width = parseLength(widthRaw, sceneW)
+	// `fit-content` for `<code>` / `<explorer>`: shrink to the natural
+	// width (the minimum that renders the longest source line without
+	// wrapping). `parseLength` returns a `meters: 0` placeholder for
+	// `fit-content`, so we replace it with the same shrink-to-fit value
+	// the `width === undefined` fallback computes. Without this, the
+	// wrap budget reads `width.px === 0` and collapses to 10 chars per
+	// row, making the box render unnaturally narrow.
+	if ((isCode || isExplorer) && (width === undefined || width.unit === 'fit-content')) {
 		const minLineWidthPx = computeMinCodeLineWidthPx(content, gutterChars)
 		const pxInDefault = minLineWidthPx / widthCompensation
 		width = { value: pxInDefault, unit: 'px', px: pxInDefault, meters: pxInDefault / 16 }
@@ -316,18 +342,20 @@ function computeTextLayout(
 	const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 
 	const codeColor = declarations.color as `#${string}` | undefined
-	// `<code>` gets dim border + saturated tag so the box reads as code.
+	// `<code>` / `<explorer>` get dim border + saturated tag so the box
+	// reads as a code-style panel. The lang slot's "explorer" tag uses
+	// the same teal as `<code>`'s lang tag for visual consistency.
 	const borderColor =
 		(declarations['border-color'] as `#${string}` | undefined) ??
-		(type === 'code' ? DEFAULT_CODE_BORDER_COLOR : codeColor)
+		((isCode || isExplorer) ? DEFAULT_CODE_BORDER_COLOR : codeColor)
 	const langColor =
 		(declarations['lang-color'] as `#${string}` | undefined) ??
-		(type === 'code' ? DEFAULT_CODE_LANG_COLOR : codeColor)
+		(isCode || isExplorer ? DEFAULT_CODE_LANG_COLOR : codeColor)
 	const gutterColor = (declarations['gutter-color'] as `#${string}` | undefined) ?? '#858585'
 
 	const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
 
-	if (type !== 'code') {
+	if (!isCode && !isExplorer) {
 		// `wrap-breaks` is a caller-supplied override for the engine's
 		// line-count prediction. Each entry is a global word index
 		// (whitespace-delimited, matching `wrapToLines`'s definition);
@@ -385,19 +413,30 @@ function computeTextLayout(
 		}
 	}
 
-	// `<code>` path. Build the row-by-row bordered output once, then
-	// either serialize the full window (non-scroll case) or split into
-	// viewport-sized chunks (scroll case).
+	// `<code>` / `<explorer>` path. Build the row-by-row bordered output
+	// once, then either serialize the full window (non-scroll case) or
+	// split into viewport-sized chunks (scroll case). The two elements
+	// share the bordered layout because their visual shape is identical;
+	// the only differences are (a) where the source string comes from
+	// (already extracted into `content` above) and (b) the precomputed
+	// map that carries per-source-line color segments. `<code>` gets its
+	// segments from the syntax-highlight pass; `<explorer>` gets them
+	// from the tree-walk pass that paints folders vs files.
+	const precomputed = isExplorer ? explorerPrecomputed.get(node) : codePrecomputed.get(node)
+	// `<explorer>`'s top-border lang tag is just the word "explorer" so
+	// the box reads as an explorer panel instead of an unnamed code box.
+	// `<code>` uses its `lang` prop (or empty if unset).
+	const language = isExplorer ? 'explorer' : String(node.props?.lang ?? '')
 	const rows = codeBorders.buildRows({
 		content,
-		language: String(node.props?.lang ?? ''),
+		language,
 		fontId,
 		lineWidthPx: wrapWidthPx,
 		bold: isBold,
 		borderColor,
 		langColor,
 		codeColor,
-		precomputed: codePrecomputed.get(node),
+		precomputed,
 		lineNumbers,
 		lineCount: sourceLineCount,
 		gutterColor,
@@ -511,4 +550,18 @@ export function finalizeScrollCodeLayout(el: ElementLayout): void {
 	el.chunkCount = chunkCount
 	el.chunks = chunks
 	el.scrollDistBlocks = Math.max(0, totalHeightBlocks - cellH)
+}
+
+// Resolve the source string for a `<explorer>` element. The tree was
+// already walked + indented at build time by `prepareExplorerTrees`;
+// `Precomputed.source` carries the raw `\n`-joined lines so the layout
+// pass can use the same wrap math `<code>` uses. Falls back to empty
+// string when the prepare pass didn't produce a precomputed entry
+// (e.g., the explorer was filtered out before layout).
+function extractExplorerSource(
+	node: VNode,
+	explorerPrecomputed: WeakMap<VNode, Precomputed>,
+): string {
+	const pre = explorerPrecomputed.get(node)
+	return pre?.source ?? ''
 }

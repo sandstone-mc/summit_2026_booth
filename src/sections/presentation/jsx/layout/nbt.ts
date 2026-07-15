@@ -26,7 +26,7 @@ export function buildTextJson(
 	if (declarations.strikethrough === 'true') out.strikethrough = true
 	if (declarations.obfuscated === 'true') out.obfuscated = true
 	if (type === 'h1' || type === 'h2') out.bold = true
-	if (type === 'code') out.font = 'monocraft:default'
+	if (type === 'code' || type === 'explorer') out.font = 'monocraft:default'
 	if (declarations.font) out.font = declarations.font as `${string}:${string}`
 	return out
 }
@@ -43,7 +43,7 @@ function buildSegment(
 	if (type === 'h1' || type === 'h2') out.bold = true
 	const font = seg.font ?? declarations.font
 	if (font) out.font = font as `${string}:${string}`
-	else if (type === 'code') out.font = 'monocraft:default'
+	else if (type === 'code' || type === 'explorer') out.font = 'monocraft:default'
 	return out
 }
 

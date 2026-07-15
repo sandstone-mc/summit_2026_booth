@@ -37,6 +37,31 @@ export type CodeProps = CommonProps & {
 }
 
 /**
+ * File-tree view of a directory on disk. Reads the directory at build
+ * time from `root` (relative to the project root) and renders one row
+ * per file / folder inside a bordered monospace box — same border,
+ * padding, wrap and scroll pipeline as `<code>`.
+ *
+ *   `width`       — CSS-style width (e.g. `"20vw"`, `"fit-content"`). Picks
+ *      up the same LESS-driven value as `<code>` and `<img>`; falls back
+ *      to shrink-to-fit when omitted.
+ *   `path-start` — number of leading path components to omit from the
+ *      rendered labels. Lets you trim the well-known prefix (e.g. set
+ *      to 3 with `root=".sandstone/output/datapack/..."` so the user
+ *      sees `data/...` instead of `.sandstone/output/datapack/data/...`).
+ *      Folders show their trailing `/`; files do not. Empty-marker files
+ *      (`.exists`, `.gitkeep`) are skipped.
+ *   `scrolling` — when the rendered tree is taller than the cell,
+ *      auto-scroll the rows upward through the slide over its duration.
+ */
+export type ExplorerProps = CommonProps & {
+	root: string
+	width?: string
+	'path-start'?: number
+	scrolling?: boolean
+}
+
+/**
  * Image element. `src` is a Minecraft resource location pointing at a PNG
  * (e.g. `"sandstone_summit_booth:ui/presentation/foo.png"`); the
  * renderer auto-creates a flat item model + item_model_definition that
@@ -64,6 +89,7 @@ export const style = (props: StyleProps): VNode => {
 }
 export const code = (props: CodeProps): VNode => jsx('code', props, null)
 export const img = (props: ImgProps): VNode => jsx('img', props, null)
+export const explorer = (props: ExplorerProps): VNode => jsx('explorer', props, null)
 
 // Augment JSX intrinsics so <div>, <h1> etc. are type-checked in TSX files
 // that import this module (or anything that transitively imports it).
@@ -78,6 +104,7 @@ declare global {
 			style: StyleProps
 			code: CodeProps
 			img: ImgProps
+			explorer: ExplorerProps
 		}
 	}
 }

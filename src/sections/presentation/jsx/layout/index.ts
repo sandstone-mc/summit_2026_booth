@@ -70,6 +70,7 @@ export function summonVisibleElements(
 	imgResources: ImgResourceMap,
 	sceneTag: LabelClass,
 	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>,
+	explorerPrecomputed: CodePrecomputedMap = new WeakMap(),
 ): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	return runLayout(
 		visible,
@@ -83,6 +84,7 @@ export function summonVisibleElements(
 			summonElement(el, x, y, z, extraTags, sceneTag, initialOpacity)
 		},
 		rowFlexWidths,
+		explorerPrecomputed,
 	)
 }
 
@@ -101,6 +103,7 @@ export function computeSlideScrollSpecs(
 	codePrecomputed: CodePrecomputedMap,
 	imgResources: ImgResourceMap,
 	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>,
+	explorerPrecomputed: CodePrecomputedMap = new WeakMap(),
 ): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	return runLayout(
 		visible,
@@ -112,6 +115,7 @@ export function computeSlideScrollSpecs(
 		imgResources,
 		() => {},
 		rowFlexWidths,
+		explorerPrecomputed,
 	)
 }
 
@@ -125,9 +129,10 @@ function runLayout(
 	imgResources: ImgResourceMap,
 	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
 	rowFlexWidths: WeakMap<VNode, RowFlexWidth> = new WeakMap(),
+	explorerPrecomputed: CodePrecomputedMap = new WeakMap(),
 ): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	const elements: ElementLayout[] = visible.map((nodeWithPath) =>
-		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed, rowFlexWidths),
+		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed, rowFlexWidths, explorerPrecomputed),
 	)
 
 	// Scrolling `<code>` blocks start with `cellH = 0` placeholder; the

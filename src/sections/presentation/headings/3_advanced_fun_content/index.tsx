@@ -29,12 +29,12 @@ export const slides = [
 			<code lang="typescript" src={rhythmCode} line-numbers={true} scrolling={true} />
 
 			{/* Display file/folder outline for output of above code */}
-			{/* <explorer
-				width="20vw"
+			<explorer
+				width="35vw"
 				path-start={3}
 				root=".sandstone/output/datapack/data/sandstone_summit_booth/function/sections/rhythm/calibration"
 				scrolling={true}
-			/> */}
+			/>
 		</div>
 	</>),
 	// slide[5]
@@ -46,12 +46,12 @@ export const slides = [
 			<code lang="typescript" src={magicCode} line-numbers={true} scrolling={true} />
 
 			{/* Display file/folder outline for output of above code */}
-			{/* <explorer
-				width="20vw"
+			<explorer
+				width="35vw"
 				path-start={3}
 				root=".sandstone/output/datapack/data/sandstone_summit_booth/function/sections/magic/spells/lightning/thunderbolt"
 				scrolling={true}
-			/> */}
+			/>
 		</div>
 	</>),
 ]

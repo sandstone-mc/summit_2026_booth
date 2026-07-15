@@ -28,6 +28,18 @@ export const DEFAULT_IMG_HEIGHT = '30vh'
 export const DEFAULT_CODE_BORDER_COLOR = '#6a6a6a' as const
 export const DEFAULT_CODE_LANG_COLOR = '#4ec9b0' as const
 
+// `<explorer>` row colors. Folders use the same teal as `<code>`'s
+// language tag so the visual cue stays consistent across bordered
+// boxes; files use the default code color. Override via LESS
+// `explorer-folder-color` / `explorer-file-color`.
+export const DEFAULT_EXPLORER_FOLDER_COLOR = '#4ec9b0' as const
+export const DEFAULT_EXPLORER_FILE_COLOR = '#d4d4d4' as const
+
+// Number of spaces the explorer tree indents per directory depth. Picked
+// to match the tab→2-spaces normalization `<code>` uses internally, so
+// tree rows line up under the same wrap width.
+export const EXPLORER_INDENT_CHARS = 2
+
 // Repository of grammars available to `<code lang="…">` blocks.
 // `scripts/fetch-syntax-parsers.ts` populates the wasm + .scm files.
 import type { Grammar } from '../highlight/highlighter'

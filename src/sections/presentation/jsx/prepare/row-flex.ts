@@ -67,22 +67,31 @@ function resolveRowFlexWidths(
 	const columnGap = parseLength(parentStack['column-gap'] ?? '', sceneW)?.meters ?? 0
 	const gaps = Math.max(0, rowChildren.length - 1) * columnGap
 
-	// Classify each child as flex or fixed by inspecting its LESS width.
-	// Flex units are `%` and `vw` — they express "share of parent axis",
-	// which is exactly what we want to redistribute. `px`, `vh`, and
-	// `fit-content` are treated as fixed.
+	// Classify each child as flex or fixed by inspecting its width. The
+	// JSX `width` prop wins over LESS `width` (explicit user intent) —
+	// matches `<img>`'s prop-vs-LESS resolution. Only `%` is a flex unit
+	// (CSS Grid "share of parent axis"). `vw`/`vh` are absolute — they're
+	// measured against the viewport (= sceneW/sceneH), not the parent,
+	// so they must NOT be redistributed among siblings.
 	const flexChildren: { node: VNode }[] = []
 	let fixedSum = 0
 	for (const child of rowChildren) {
 		const declarations = styles.forPath(child.path)
-		const width = parseLength(declarations.width ?? '', sceneW)
-		if (width && (width.unit === '%' || width.unit === 'vw')) {
+		// JSX prop width takes priority over LESS — see `<img>`'s
+		// `widthRaw` resolution in `computeImgLayout`.
+		const widthRaw =
+			(typeof child.node.props?.width === 'string' && child.node.props.width) ||
+			declarations.width ||
+			''
+		const width = parseLength(widthRaw, sceneW)
+		if (width && width.unit === '%') {
 			flexChildren.push({ node: child.node })
 			continue
 		}
-		// No LESS width (or fixed-size width) — contributes its natural
-		// meters (0 when unset, matching `computeTextLayout`'s fallback
-		// to sceneW for `<code>` without a width).
+		// No flex width (or absolute width like `vw`/`vh`/`px`) —
+		// contributes its actual meters, or sceneW as the natural
+		// fallback when unset (matches `computeTextLayout`'s default
+		// for `<code>` / `<explorer>` without a width).
 		fixedSum += width?.meters ?? sceneW
 	}
 

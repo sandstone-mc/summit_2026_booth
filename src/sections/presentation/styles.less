@@ -33,10 +33,19 @@ code {
     background: #1e1e1e;
 }
 
+explorer {
+    // Same monospace + size as `<code>` so the two box styles line up
+    // when they appear side-by-side. Width is opt-in: pass `width: …`
+    // per element (e.g. `width: 20vw` or `width: fit-content`) or rely
+    // on the prepare pass's shrink-to-fit fallback.
+    font-size: 8px;
+    color: #d4d4d4;
+    background: #1e1e1e;
+}
+
 #code-grid {
     height: 100%;
     align-items: center;
-    column-gap: 1vw;
     grid-auto-flow: row;
     code {
         width: 100%;

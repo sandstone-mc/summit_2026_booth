@@ -57,6 +57,12 @@ export type Precomputed = {
 	/** Leading whitespace length per source line — emitted in `codeColor`
 	 *  on every visual row of that source line. */
 	leadingLenPerSourceLine: number[]
+	/** Raw pre-wrap source string (one source line per `\n`). Used by the
+	 *  layout pass to recompose `content` for `<explorer>` and any other
+	 *  element whose text doesn't come from JSX children. Optional so
+	 *  older call sites that build Precomputed from just `codeLines`
+	 *  keep type-checking. */
+	source?: string
 }
 
 /**

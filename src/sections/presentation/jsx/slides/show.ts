@@ -53,6 +53,8 @@ export interface SlideShowInput {
 	imgResources?: ImgResourceMap
 	/** Row-flex width overrides (resolved by `prepareRowFlexWidths`). */
 	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>
+	/** Pre-walked `<explorer>` trees (per-source-line color segments + wraps). */
+	explorerPrecomputed?: CodePrecomputedMap
 }
 
 export class SlideShow {
@@ -86,6 +88,7 @@ export class SlideShow {
 	private readonly sceneH: number
 	private readonly origin: readonly [number, number, number]
 	private readonly codePrecomputed: CodePrecomputedMap
+	private readonly explorerPrecomputed: CodePrecomputedMap
 	private readonly rowFlexWidths: WeakMap<VNode, RowFlexWidth>
 	private readonly slideLoop: MCFunctionClass<undefined, undefined>
 	readonly nextSlide: MCFunctionClass<undefined, undefined>
@@ -100,6 +103,7 @@ export class SlideShow {
 		this.sceneH = input.sceneH
 		this.origin = input.origin
 		this.codePrecomputed = input.codePrecomputed
+		this.explorerPrecomputed = input.explorerPrecomputed ?? new WeakMap()
 		this.imgResources = input.imgResources ?? new Map()
 		this.rowFlexWidths = input.rowFlexWidths ?? new WeakMap()
 		this.durations = computeDurationsSeconds(input.slideTexts, input.timing)
@@ -124,6 +128,7 @@ export class SlideShow {
 				this.codePrecomputed,
 				this.imgResources,
 				this.rowFlexWidths,
+				this.explorerPrecomputed,
 			).scrollSpecs,
 		)
 		// The pre-pass walked the layout counter; reset so the actual
@@ -301,6 +306,7 @@ export class SlideShow {
 					this.imgResources,
 					SCENE_TAG,
 					this.rowFlexWidths,
+					this.explorerPrecomputed,
 				)
 			}
 			// 1t delay so spawn packets process before the first show.
@@ -357,6 +363,7 @@ export class SlideShow {
 				this.imgResources,
 				SCENE_TAG,
 				this.rowFlexWidths,
+				this.explorerPrecomputed,
 			)
 		})
 	}
