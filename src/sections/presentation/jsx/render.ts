@@ -199,6 +199,38 @@ export async function renderSlides(
 		const result = diagnosePlacements(placements, i, options.origin[0], options.origin[1], sceneW, sceneH)
 		allIssues.push(...result.issues)
 		excludedBySlide.push(result.excludedVNodes)
+		if (process.env.DEBUG_JSX_LAYOUT) {
+			const sceneBottom = options.origin[1]
+			const sceneTop = options.origin[1] + sceneH
+			console.log(`[jsx-debug] slide=${i} sceneY=[${sceneBottom}, ${sceneTop}]`)
+			for (const p of placements) {
+				const el: any = p.el
+				const lines = el.wrapBreaksApplied !== undefined
+					? (el.wrapBreaksApplied.length === 0 ? 1 : el.wrapBreaksApplied.length + 1)
+					: (el.kind === 'text' ? 'wrapLines' : 1)
+				const preview = (el.content ?? el.imgSrc ?? '').toString().slice(0, 50)
+				console.log(
+					`  type=${el.type} y=${p.y.toFixed(3)} cellH=${el.cellH.toFixed(3)} ` +
+					`marginTop=${el.marginTop.toFixed(3)} marginBot=${el.marginBottom.toFixed(3)} ` +
+					`scalePx=${el.scalePx} lines=${lines} "${preview}"`,
+				)
+				// Wrap-detail dump for header-type elements so the user can
+				// see exactly where the engine expects MC to break lines.
+				if (process.env.DEBUG_JSX_WRAP && el.kind === 'text' && /^h[123]$/.test(el.type)) {
+					const { wrapToLines } = await import('./text-metrics')
+					const wrapWidthPx =
+						(el.width?.px ?? Number.POSITIVE_INFINITY) * el.widthCompensation
+					const bold =
+						el.type === 'h1' || el.type === 'h2' || el.declarations?.bold === 'true'
+					const wrapped = wrapToLines(el.content, wrapWidthPx, bold, el.fontId)
+					console.log(
+						`    [wrap] type=${el.type} scalePx=${el.scalePx} line_width=${Math.round(wrapWidthPx)} ` +
+						`bold=${bold} -> ${wrapped.length} line(s):`,
+					)
+					for (const ln of wrapped) console.log(`      | ${ln}`)
+				}
+			}
+		}
 	}
 	resetScrollIds()
 	if (allIssues.length > 0) {

@@ -37,6 +37,15 @@ export function wrapLines(
 	return wrap.wrapLines(text, lineWidth, bold, fontId)
 }
 
+export function wrapToLines(
+	text: string,
+	lineWidth: number,
+	bold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): string[] {
+	return wrap.wrapToLines(text, lineWidth, bold, fontId)
+}
+
 export function wrapCodeLinesAsArray(
 	text: string,
 	_maxChars: number,

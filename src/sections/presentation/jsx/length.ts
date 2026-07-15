@@ -75,6 +75,10 @@ export function pxToTextScale(px: number): number {
 // `fontMetrics()` throws pre-load; callers run after `loadFontMetrics()`.
 export function pxToTextLineHeight(px: number, fontId: string = DEFAULT_FONT_ID): number {
 	const m = fontMetrics(fontId)
-	const lineSpacingPx = m.cellHeight + m.measuredDescenderPx
+	// MC text_display renders each line in a fixed-height quad (`scale * 0.25`
+	// blocks). The character + its descender both fit inside that quad, so
+	// per-line spacing == cellHeight alone — adding `measuredDescenderPx`
+	// reserves space MC never uses and shifts multi-line text downward.
+	const lineSpacingPx = m.cellHeight
 	return (lineSpacingPx * pxToTextScale(px)) / 32
 }

@@ -243,6 +243,14 @@ function placeRowBlocks(
 	} else {
 		workingY -= containerCellH
 	}
+	if (process.env.DEBUG_JSX_ROW) {
+		console.log(
+			`[row-debug] accY=${accY} marginTop=${firstChild.marginTop} containerCellH=${containerCellH} ` +
+			`bottomAnchored=${bottomAnchored} columnGap=${columnGap} children=${block.children.length} ` +
+			`rowDownShift=${rowDownShift(columnGap, block.children.length)} ` +
+			`=> workingY=${workingY - rowDownShift(columnGap, block.children.length)}`,
+		)
+	}
 	// Pull the row down when the parent container has multiple children
 	// and a non-zero column-gap — same shape as the vertical-stack
 	// adjustment in `startingY`. `rowDownShift` returns 0 for single-

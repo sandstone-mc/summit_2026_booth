@@ -46,7 +46,7 @@ export const GRAMMARS: Record<string, Grammar> = {
 export const TEXT_RENDER_OFFSET = 0.1875
 
 export function parityOffset(sceneH: number): number {
-	return sceneH % 2 === 0 ? 0 : 0.5
+	return sceneH % 2 === 0 ? 0 : 0.25
 }
 
 // Vertical gap (in world blocks) reserved at the bottom of a text
