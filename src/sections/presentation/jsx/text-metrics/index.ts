@@ -5,7 +5,9 @@
 // before any `charWidth` / `wrapLines` / `fontMetrics` call for that font.
 
 import { FontLoader, DEFAULT_FONT_ID, type FontMetrics } from './font-loader'
-import { TextWrap } from './wrap'
+import { TextWrap, type CodeLineWrap } from './wrap'
+
+export type { CodeLineWrap } from './wrap'
 
 export { DEFAULT_FONT_ID } from './font-loader'
 
@@ -68,4 +70,15 @@ export function wrapCodeLinesAsTuples(
 /** Total visual lines a `<code>` source produces when wrapped in monospace. */
 export function wrapCodeLinesMonospace(text: string, maxChars: number): number {
 	return wrap.wrapCodeLinesMonospace(text, maxChars)
+}
+
+/**
+ * Same monospace wrap as `wrapCodeLinesAsArray` but each returned row
+ * also carries the source-line-relative `[bodyStart, bodyEnd)` range
+ * of the body chars it contains. Lets callers tokenize the *raw*
+ * source first and slice the resulting segments into visual rows
+ * without ever splitting a token at the wrap boundary.
+ */
+export function wrapCodeLinesWithOffsets(text: string, maxChars: number): CodeLineWrap[] {
+	return wrap.wrapCodeLinesWithOffsets(text, maxChars)
 }

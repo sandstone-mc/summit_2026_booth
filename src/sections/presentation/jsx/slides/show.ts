@@ -29,6 +29,7 @@ import type { VNode } from '../render'
 import type { NodeWithPath } from '../tree/walk'
 import type { Styles } from '../style'
 import type { ImgResourceMap, CodePrecomputedMap } from '../layout'
+import type { RowFlexWidth } from '../prepare/row-flex'
 import { SCENE_TAG, slideTag, KIND_TEXT_TAG } from './tags'
 import { computeDurationsSeconds, type SlidesTiming } from '../../slides'
 
@@ -50,6 +51,8 @@ export interface SlideShowInput {
 	timing?: SlidesTiming
 	codePrecomputed: CodePrecomputedMap
 	imgResources?: ImgResourceMap
+	/** Row-flex width overrides (resolved by `prepareRowFlexWidths`). */
+	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>
 }
 
 export class SlideShow {
@@ -83,6 +86,7 @@ export class SlideShow {
 	private readonly sceneH: number
 	private readonly origin: readonly [number, number, number]
 	private readonly codePrecomputed: CodePrecomputedMap
+	private readonly rowFlexWidths: WeakMap<VNode, RowFlexWidth>
 	private readonly slideLoop: MCFunctionClass<undefined, undefined>
 	readonly nextSlide: MCFunctionClass<undefined, undefined>
 	readonly mount: MCFunctionClass<undefined, undefined>
@@ -97,6 +101,7 @@ export class SlideShow {
 		this.origin = input.origin
 		this.codePrecomputed = input.codePrecomputed
 		this.imgResources = input.imgResources ?? new Map()
+		this.rowFlexWidths = input.rowFlexWidths ?? new WeakMap()
 		this.durations = computeDurationsSeconds(input.slideTexts, input.timing)
 		this.slideVisibles =
 			input.slideVisibles ??
@@ -118,6 +123,7 @@ export class SlideShow {
 				this.origin,
 				this.codePrecomputed,
 				this.imgResources,
+				this.rowFlexWidths,
 			).scrollSpecs,
 		)
 		// The pre-pass walked the layout counter; reset so the actual
@@ -294,6 +300,7 @@ export class SlideShow {
 					this.codePrecomputed,
 					this.imgResources,
 					SCENE_TAG,
+					this.rowFlexWidths,
 				)
 			}
 			// 1t delay so spawn packets process before the first show.
@@ -349,6 +356,7 @@ export class SlideShow {
 				this.codePrecomputed,
 				this.imgResources,
 				SCENE_TAG,
+				this.rowFlexWidths,
 			)
 		})
 	}

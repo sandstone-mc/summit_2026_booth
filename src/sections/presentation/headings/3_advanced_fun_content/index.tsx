@@ -16,10 +16,8 @@ export const slides = [
 		<p>Longer answer: After the presentation go down to our bottom floor and check out their games!</p>
 
 		<div id="img-grid">
-			<p>t</p>
 			<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/arcane.png" height="30vh" />
 			<img src="sandstone_summit_booth:item/ui/presentation/3_advanced_fun_content/arcane.png" height="30vh" />
-			<p>t</p>
 		</div>
 	</>),
 	// slide[4]

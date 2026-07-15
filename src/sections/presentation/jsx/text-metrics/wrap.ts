@@ -14,9 +14,35 @@
 //     as the same width; the budget is a pure char count, not pixels.
 //     If a glyph is wider or narrower than expected that's a font bug
 //     for the caller to fix, not something the wrap compensates for.
+//
+//   - `wrapCodeLinesWithOffsets` — same monospace wrap as above, but
+//     each returned row carries the source-line-relative `[bodyStart,
+//     bodyEnd)` range of the body chars it contains. Lets the caller
+//     tokenize the *raw* source first and slice the resulting segments
+//     into visual rows without ever splitting a token at the wrap
+//     boundary.
 
 import type { FontLoader } from './font-loader'
 import { DEFAULT_FONT_ID } from './font-loader'
+
+/**
+ * One visual row produced by `wrapCodeLinesWithOffsets`. `visualLine` is
+ * the full text of the row including leading whitespace and (if a wrap
+ * continuation) the artificial leading space the wrap inserts. The
+ * `bodyStart`/`bodyEnd` range is source-line-relative and points at the
+ * body's chars in `sourceLine` — i.e. the chars that came from the
+ * source after the leading whitespace run was stripped. `isContinuation`
+ * is true when the wrap inserted that artificial leading space (it's
+ * not part of the source).
+ */
+export type CodeLineWrap = {
+	visualLine: string
+	sourceLine: number
+	leadingLen: number
+	isContinuation: boolean
+	bodyStart: number
+	bodyEnd: number
+}
 
 export class TextWrap {
 	constructor(private loader: FontLoader) {}
@@ -211,6 +237,93 @@ export class TextWrap {
 			}
 		}
 		out.push(current)
+		return out
+	}
+
+	/**
+	 * Per-visual-row data for `<code>` monospace wrap. `visualLine` is the
+	 * full text of the row (leading whitespace + optional continuation
+	 * indent + body). `bodyStart`/`bodyEnd` are source-line-relative
+	 * offsets into the row's body chars (i.e. the chars that came from
+	 * `sourceLine` after the leading run was stripped). `isContinuation`
+	 * is true for wrap continuations — those rows have an artificial
+	 * leading space the wrap inserts that is NOT part of the source.
+	 */
+	wrapCodeLinesWithOffsets(text: string, maxChars: number): CodeLineWrap[] {
+		const sources = text.split('\n')
+		if (maxChars <= 0) {
+			return sources.map((sourceLine, sourceLineIdx) => {
+				const m = sourceLine.match(/^[ \t]*/)
+				const leadingLen = m ? m[0].length : 0
+				return {
+					visualLine: sourceLine,
+					sourceLine: sourceLineIdx,
+					leadingLen,
+					isContinuation: false,
+					bodyStart: leadingLen,
+					bodyEnd: sourceLine.length,
+				}
+			})
+		}
+		const out: CodeLineWrap[] = []
+		sources.forEach((sourceLine, sourceLineIdx) => {
+			const m = sourceLine.match(/^([ \t]*)([\s\S]*)$/)
+			const leading = m ? m[1] : ''
+			const body = m ? m[2] : sourceLine
+			const leadingLen = leading.length
+			if (body.length === 0) {
+				out.push({
+					visualLine: leading,
+					sourceLine: sourceLineIdx,
+					leadingLen,
+					isContinuation: false,
+					bodyStart: leadingLen,
+					bodyEnd: leadingLen,
+				})
+				return
+			}
+			// Mirror `wrapLineMonospace` so the produced `visualLine`
+			// strings are byte-identical to `wrapCodeLinesAsArray`'s.
+			// The added tracking is `rowBodyStart` (source-line offset of
+			// the first body char in the in-flight `current` row) and
+			// `isContinuation` (false on the first row of a source line,
+			// true on every wrap continuation).
+			let current = leading
+			let breakThreshold = leadingLen
+			let rowBodyStart = leadingLen
+			let isContinuation = false
+			for (let p = 0; p < body.length; p++) {
+				const ch = body[p]
+				if (current.length + 1 > maxChars && current.length > breakThreshold) {
+					// Break BEFORE consuming `ch`. The row being pushed
+					// holds body chars `[rowBodyStart, leadingLen + p)`
+					// in source-line coords; the next row starts with
+					// body[p] at `leadingLen + p`.
+					out.push({
+						visualLine: current,
+						sourceLine: sourceLineIdx,
+						leadingLen,
+						isContinuation,
+						bodyStart: rowBodyStart,
+						bodyEnd: leadingLen + p,
+					})
+					current = leading + ' ' + ch
+					rowBodyStart = leadingLen + p
+					isContinuation = true
+					breakThreshold = leadingLen + 1
+				} else {
+					current += ch
+				}
+			}
+			out.push({
+				visualLine: current,
+				sourceLine: sourceLineIdx,
+				leadingLen,
+				isContinuation,
+				bodyStart: rowBodyStart,
+				bodyEnd: leadingLen + body.length,
+			})
+		})
 		return out
 	}
 

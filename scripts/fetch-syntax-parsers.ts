@@ -2,15 +2,15 @@
  * Populate `resources/jsx/parser/` with the tree-sitter grammars + highlight
  * queries the presentation's `<code>` highlighter needs.
  *
- * Idempotent — exits early if all four output files are already present.
+ * Idempotent — exits early if all output files are already present.
  * On a fresh clone (empty `resources/jsx/parser/` aside from `.gitkeep`),
  * this script:
  *   1. Clones the mcfunction grammar into `resources/jsx/parser/tree-sitter-mcfunction/`
  *      (default: the MulverineX fork — override via `mcfunction.repoUrl`)
  *   2. Runs `bun install` + `bun run build` to emit the wasm into the
  *      grammar's `build/` directory
- *   3. Downloads the upstream TypeScript wasm straight into the parser dir
- *      (override via `typescript.wasmUrl`)
+ *   3. Downloads the upstream TypeScript + JSON wasm straight into the
+ *      parser dir (override via `typescript.wasmUrl` / `json.wasmUrl`)
  *   4. Pulls each language's `queries/highlights.scm` via the GitHub API
  *
  * Source of truth for what's fetched lives in ARTIFACTS below; the matching
@@ -22,6 +22,8 @@
  *   mcfunction.highlights.scm     (copied from the grammar repo)
  *   tree-sitter-typescript.wasm   (downloaded from the upstream release)
  *   typescript.highlights.scm     (concatenated from upstream queries)
+ *   tree-sitter-json.wasm         (downloaded from the upstream release)
+ *   json.highlights.scm           (downloaded from upstream queries)
  *   vscode-dark-modern.json       (reference copy of the upstream theme)
  *
  * The theme is only consumed as a reference — the `SCOPE_COLOR` map in
@@ -72,6 +74,16 @@ const ARTIFACTS = {
 			'https://raw.githubusercontent.com/tree-sitter/tree-sitter-typescript/master/queries/highlights.scm',
 		],
 	},
+	json: {
+		// Downloaded straight into the parser dir (no staging). Upstream
+		// `tree-sitter-json` ships a single prebuilt wasm per release.
+		wasm: path.join(TARGET_DIR, 'tree-sitter-json.wasm'),
+		wasmUrl: 'https://github.com/tree-sitter/tree-sitter-json/releases/latest/download/tree-sitter-json.wasm',
+		query: null,
+		queryUrls: [
+			'https://raw.githubusercontent.com/tree-sitter/tree-sitter-json/master/queries/highlights.scm',
+		],
+	},
 } as const
 
 type LangName = keyof typeof ARTIFACTS
@@ -84,6 +96,10 @@ const OUTPUTS: Record<LangName, { wasm: string; query: string }> = {
 	typescript: {
 		wasm: path.join(TARGET_DIR, 'tree-sitter-typescript.wasm'),
 		query: path.join(TARGET_DIR, 'typescript.highlights.scm'),
+	},
+	json: {
+		wasm: path.join(TARGET_DIR, 'tree-sitter-json.wasm'),
+		query: path.join(TARGET_DIR, 'json.highlights.scm'),
 	},
 }
 
@@ -159,6 +175,21 @@ async function ensureTypescriptAssets(): Promise<void> {
 	}
 }
 
+// Same shape as `ensureTypescriptAssets` but the JSON grammar ships a
+// single prebuilt wasm + single upstream `queries/highlights.scm` (no
+// parent-grammar concatenation needed). Kept as its own function so the
+// JSON-specific URL set lives in one place and the typescript helper
+// doesn't grow an unrelated branch.
+async function ensureJsonAssets(): Promise<void> {
+	const { wasm, query } = OUTPUTS.json
+	if (!existsSync(wasm)) await downloadToFile(ARTIFACTS.json.wasmUrl, wasm)
+	if (!existsSync(query)) {
+		const parts: string[] = []
+		for (const u of ARTIFACTS.json.queryUrls) parts.push(await fetchText(u))
+		await writeFile(query, parts.join('\n\n'))
+	}
+}
+
 async function ensureTheme(): Promise<void> {
 	if (existsSync(THEME_OUTPUT)) {
 		console.log(`  theme already at ${path.relative(ROOT, THEME_OUTPUT)}`)
@@ -188,6 +219,7 @@ async function main(): Promise<void> {
 
 	await ensureMcfunctionAssets()
 	await ensureTypescriptAssets()
+	await ensureJsonAssets()
 	await ensureTheme()
 
 	console.log('\nFinal layout:')

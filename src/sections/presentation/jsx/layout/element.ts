@@ -19,6 +19,7 @@ import {
 } from './constants'
 import { parseMarginBox } from './margin'
 import { extractCodeSource, extractText } from '../tree/extract'
+import type { RowFlexWidth } from '../prepare/row-flex'
 
 const codeBorders = new CodeBorders()
 
@@ -167,6 +168,7 @@ export function computeElementLayout(
 	sceneH: number,
 	imgResources: ImgResourceMap,
 	codePrecomputed: WeakMap<VNode, Precomputed>,
+	rowFlexWidths: WeakMap<VNode, RowFlexWidth> = new WeakMap(),
 ): ElementLayout {
 	const { node, path } = nodeWithPath
 	const parentStack =
@@ -178,7 +180,7 @@ export function computeElementLayout(
 		return computeImgLayout(node, path, parentStack, declarations, sceneW, sceneH, imgResources)
 	}
 
-	return computeTextLayout(node, path, parentStack, declarations, type, sceneW, sceneH, codePrecomputed)
+	return computeTextLayout(node, path, parentStack, declarations, type, sceneW, sceneH, codePrecomputed, rowFlexWidths)
 }
 
 function computeImgLayout(
@@ -266,6 +268,7 @@ function computeTextLayout(
 	sceneW: number,
 	sceneH: number,
 	codePrecomputed: WeakMap<VNode, Precomputed>,
+	rowFlexWidths: WeakMap<VNode, RowFlexWidth>,
 ): ElementLayout {
 	const content = type === 'code' ? extractCodeSource(node.props) : extractText(node.props?.children)
 
@@ -296,6 +299,19 @@ function computeTextLayout(
 		const minLineWidthPx = computeMinCodeLineWidthPx(content, gutterChars)
 		const pxInDefault = minLineWidthPx / widthCompensation
 		width = { value: pxInDefault, unit: 'px', px: pxInDefault, meters: pxInDefault / 16 }
+	}
+	// Row-flex override: when this element is inside a `grid-auto-flow:
+	// row` block and asked for `width: 100%`, `prepareRowFlexWidths`
+	// already computed the row-distributed value. Override the parsed
+	// width so cellW + border build use the smaller constraint.
+	const flexOverride = rowFlexWidths.get(node)
+	if (flexOverride) {
+		width = {
+			value: flexOverride.widthPx,
+			unit: 'px',
+			px: flexOverride.widthPx,
+			meters: flexOverride.widthMeters,
+		}
 	}
 	const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 

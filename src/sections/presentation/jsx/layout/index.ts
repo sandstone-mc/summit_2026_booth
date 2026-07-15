@@ -17,6 +17,7 @@ import type { Styles } from '../style'
 import type { CssDeclarations } from '../less/types'
 import { computeElementLayout, finalizeScrollCodeLayout, type ElementLayout, type ImgResourceMap } from './element'
 import type { Precomputed } from './code-borders'
+import type { RowFlexWidth } from '../prepare/row-flex'
 import { blockCellH, blockGap, groupIntoBlocks, rowDownShift, startingY, totalStackHeight, type Block } from './blocks'
 import { summonElement } from './summon-entity'
 import { TEXT_RENDER_OFFSET, Z_VISUAL_OFFSET, getTextDescender, parityOffset } from './constants'
@@ -68,6 +69,7 @@ export function summonVisibleElements(
 	codePrecomputed: CodePrecomputedMap,
 	imgResources: ImgResourceMap,
 	sceneTag: LabelClass,
+	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>,
 ): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	return runLayout(
 		visible,
@@ -80,6 +82,7 @@ export function summonVisibleElements(
 		(el, x, y, z) => {
 			summonElement(el, x, y, z, extraTags, sceneTag, initialOpacity)
 		},
+		rowFlexWidths,
 	)
 }
 
@@ -97,6 +100,7 @@ export function computeSlideScrollSpecs(
 	origin: readonly [number, number, number],
 	codePrecomputed: CodePrecomputedMap,
 	imgResources: ImgResourceMap,
+	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>,
 ): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	return runLayout(
 		visible,
@@ -107,6 +111,7 @@ export function computeSlideScrollSpecs(
 		codePrecomputed,
 		imgResources,
 		() => {},
+		rowFlexWidths,
 	)
 }
 
@@ -119,29 +124,41 @@ function runLayout(
 	codePrecomputed: CodePrecomputedMap,
 	imgResources: ImgResourceMap,
 	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
+	rowFlexWidths: WeakMap<VNode, RowFlexWidth> = new WeakMap(),
 ): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
 	const elements: ElementLayout[] = visible.map((nodeWithPath) =>
-		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed),
+		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed, rowFlexWidths),
 	)
 
 	// Scrolling `<code>` blocks start with `cellH = 0` placeholder; the
 	// layout engine sizes them to fill remaining slide space after other
 	// elements are placed. Measure the non-scroll stack first by simulating
-	// `accY` advance (margins + gaps + row block heights included), divide
-	// the remaining space across scroll elements, then rebuild chunks.
+	// `accY` advance (margins + gaps + row block heights included), then
+	// finalize per-block so scrolls in a row block each get the full row
+	// height (they share horizontal space, not vertical).
 	const blocks0 = groupIntoBlocks(elements)
 	const nonScrollH = simulateStackAdvance(blocks0, sceneH)
-	const scrollEls = elements.filter(
-		(el) => el.kind === 'text' && typeof el.scrollTag === 'string',
-	)
-	// Each scroll element takes the full remaining space (equal split
-	// when more than one). Clamp to ≥ 2 blocks so the box stays
-	// non-degenerate if other elements overflow.
+	// Clamp to ≥ 2 blocks so the box stays non-degenerate if other
+	// elements overflow.
 	const remaining = Math.max(2, sceneH - nonScrollH)
-	const perScrollCellH = remaining / Math.max(1, scrollEls.length)
-	for (const el of scrollEls) {
-		el.cellH = perScrollCellH
-		finalizeScrollCodeLayout(el)
+	for (const block of blocks0) {
+		const blockScrollEls =
+			block.kind === 'element'
+				? block.el.kind === 'text' && typeof block.el.scrollTag === 'string'
+					? [block.el]
+					: []
+				: block.children.filter(
+						(c) => c.kind === 'text' && typeof c.scrollTag === 'string',
+				  )
+		if (blockScrollEls.length === 0) continue
+		// Every scroll in this block gets the full available height —
+		// within a row block, siblings share X space via `placeRowBlocks`,
+		// so vertical space stays independent per sibling. Single-element
+		// blocks trivially just take the remaining height.
+		for (const el of blockScrollEls) {
+			el.cellH = remaining
+			finalizeScrollCodeLayout(el)
+		}
 	}
 
 	const blocks = groupIntoBlocks(elements)

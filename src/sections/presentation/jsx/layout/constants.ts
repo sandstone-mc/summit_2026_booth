@@ -41,6 +41,10 @@ export const GRAMMARS: Record<string, Grammar> = {
 		wasmPath: 'resources/jsx/parser/tree-sitter-typescript.wasm',
 		queryPath: 'resources/jsx/parser/typescript.highlights.scm',
 	},
+	json: {
+		wasmPath: 'resources/jsx/parser/tree-sitter-json.wasm',
+		queryPath: 'resources/jsx/parser/json.highlights.scm',
+	},
 }
 
 export const TEXT_RENDER_OFFSET = 0.1875

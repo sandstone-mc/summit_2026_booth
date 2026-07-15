@@ -1,7 +1,7 @@
 export const slides = [
 	// slide[6]
 	(<>
-		<h3>Is mcfunction difficult to work with?</h3>
+		<h3 id="header">Is mcfunction difficult to work with?</h3>
 		<p>Hand-written, optimized datapack code in large projects get unwieldy fast; involving repetitive patterns copy-pasted across dozens of files.</p>
 		{/* <explorer
 			width="fit-content"

@@ -48,6 +48,13 @@ export function dedentBlock(s: string): string {
 // wins. Otherwise children can be a string, a function, or an array of
 // any of those (joined). Strips `// == snippet start/end ==` markers
 // when present, returning only the lines between them.
+//
+// After extraction, normalizes indentation so the rendered code fits
+// the slide:
+//   - Each `\t` becomes 2 spaces (sources are a mix of 4-space indent
+//     and tab-indent files).
+//   - Each line's leading whitespace count is halved. This shrinks
+//     heavily-indented snippets so they fit the half-slide cell.
 export function extractCodeSource(props: any): string {
 	let src: string
 	if (typeof props?.src === 'string') {
@@ -62,12 +69,36 @@ export function extractCodeSource(props: any): string {
 
 	const startIdx = src.indexOf(SNIPPET_START)
 	const endIdx = src.indexOf(SNIPPET_END)
+	let raw: string
 	if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
 		const afterStart = src.indexOf('\n', startIdx)
 		if (afterStart !== -1) {
-			const inner = src.slice(afterStart + 1, endIdx)
-			return dedentBlock(inner).replace(/\n+$/, '').replace(/\t/g, '    ')
+			raw = dedentBlock(src.slice(afterStart + 1, endIdx)).replace(/\n+$/, '')
+		} else {
+			raw = src
 		}
+	} else {
+		raw = src
 	}
-	return src.replace(/\t/g, '    ')
+	// Step 1: convert each tab to 2 spaces (not 4) so we don't undo the
+	// halving below by inflating tab widths into 4-space counts.
+	// Step 2: per line, count leading whitespace (tab = 2, space = 1) and
+	// halve it. Replace the leading run with that many spaces.
+	return raw
+		.replace(/\t/g, '  ')
+		.split('\n')
+		.map(halfLeadingIndent)
+		.join('\n')
+}
+
+// Halve the leading whitespace of a single line. Tabs (`\t`) count as
+// 2 columns each (matching the conversion in `extractCodeSource`).
+function halfLeadingIndent(line: string): string {
+	const match = line.match(/^[ \t]*/)
+	if (!match) return line
+	const lead = match[0]
+	let visual = 0
+	for (const c of lead) visual += c === '\t' ? 2 : 1
+	const halved = Math.floor(visual / 2)
+	return ' '.repeat(halved) + line.slice(lead.length)
 }

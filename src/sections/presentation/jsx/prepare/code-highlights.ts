@@ -1,9 +1,9 @@
 // Pre-compute `<code>` block highlights BEFORE the synchronous layout
 // pass. Each VNode gets a `Precomputed` entry containing the wrapped
-// line list + tree-sitter styled segments, so the layout pass can
-// look them up without re-wrapping or re-parsing.
+// line list + tree-sitter styled segments (split per source line), so
+// the layout pass can look them up without re-wrapping or re-parsing.
 
-import { wrapCodeLinesAsArray, wrapCodeLinesAsTuples } from '../text-metrics'
+import { wrapCodeLinesWithOffsets, type CodeLineWrap } from '../text-metrics'
 import { parseLength, pxToTextScale } from '../length'
 import type { Styles } from '../style'
 import type { VNode, StyledSegment } from '../render'
@@ -12,19 +12,23 @@ import { extractCodeSource } from '../tree/extract'
 import { defaultFontPx } from '../layout/constants'
 import { computeMinCodeLineWidthPx, DEFAULT_MONO_CHAR_PX } from '../layout/code-borders'
 import type { Precomputed } from '../layout/code-borders'
+import type { RowFlexWidth } from './row-flex'
 import { precomputeHighlights } from '../highlight'
 import { GRAMMARS } from '../layout/constants'
 
-// Why pre-tokenize the *joined wrapped content* (not the raw source):
-// `wrapCodeLinesAsArray` strips `\n` separators between wrapped lines,
-// so character offsets in the wrapped output don't line up with offsets
-// in the original source. Re-tokenizing the wrapped version means each
-// segment's `[start..end)` falls cleanly inside a single wrapped line.
+// Tokenize the *raw* source (with original `\n` separators) and split
+// the resulting segments by source line. The layout pass then slices
+// each source line's segments into the visual rows its wrap produced.
+// Highlighting the joined-wrapped output instead would lose tokens
+// that landed across a wrap boundary (e.g. `function` wrapping to
+// `func\n tion` — the tokenizer would see `func` + `\n` + `tion` and
+// fail to recognize the keyword).
 export async function prepareCodeHighlights(
 	visiblePerSlide: NodeWithPath[][],
 	styles: Styles,
 	sceneW: number,
 	sceneH: number,
+	rowFlexWidths: WeakMap<VNode, RowFlexWidth> = new WeakMap(),
 ): Promise<WeakMap<VNode, Precomputed>> {
 	const map: WeakMap<VNode, Precomputed> = new WeakMap()
 
@@ -32,8 +36,8 @@ export async function prepareCodeHighlights(
 		node: VNode
 		source: string
 		lang: string
-		codeLines: string[]
-		sourceLineOfVisualRow: number[]
+		codeLineWraps: CodeLineWrap[]
+		sourceLineStarts: number[]
 	}
 	const entries: Entry[] = []
 	for (const visible of visiblePerSlide) {
@@ -64,33 +68,112 @@ export async function prepareCodeHighlights(
 				const pxInDefault = minLineWidthPx / widthCompensation
 				width = { value: pxInDefault, unit: 'px', px: pxInDefault, meters: pxInDefault / 16 }
 			}
+			// Row-flex override: when this `<code>` is inside a
+			// `grid-auto-flow: row` block and asked for `width: 100%`,
+			// `prepareRowFlexWidths` recorded the row-distributed value
+			// here so the wrap + tokenization match the smaller cell.
+			const flexOverride = rowFlexWidths.get(node)
+			if (flexOverride) {
+				width = {
+					value: flexOverride.widthPx,
+					unit: 'px',
+					px: flexOverride.widthPx,
+					meters: flexOverride.widthMeters,
+				}
+			}
 			const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
 			// Same `wrapCodeChars` formula as `code-borders.ts` so the
 			// precomputed wrap matches the rendered rows. Code is treated
 			// as monospace: every char (including space) counts as 1.
+			// Internal overhead is `gutterChars + 5` with line-numbers,
+			// `2` without — matches the bordered-row internal layout so
+			// the no-gutter case uses all available chars per row instead
+			// of leaving 3 chars of slack on the right.
 			const maxRowChars = Math.max(10, Math.floor(wrapWidthPx / DEFAULT_MONO_CHAR_PX) - 2)
-			const maxCodeChars = Math.max(10, maxRowChars - gutterChars - 5)
+			const internalOverhead = gutterChars ? gutterChars + 5 : 2
+			const maxCodeChars = Math.max(10, maxRowChars - internalOverhead)
 			const wrapCodeChars = Math.max(10, maxCodeChars)
-			const codeLines = wrapCodeLinesAsArray(source, wrapCodeChars, bold, fontId)
-			const sourceLineOfVisualRow = wrapCodeLinesAsTuples(
-				source,
-				wrapCodeChars,
-				bold,
-				fontId,
-			).map((t) => t.sourceLine)
-			entries.push({ node, source: codeLines.join('\n'), lang, codeLines, sourceLineOfVisualRow })
+			const codeLineWraps = wrapCodeLinesWithOffsets(source, wrapCodeChars)
+			// Start offset of each source line in `source`. Line 0 starts
+			// at 0; line k+1 starts right after the `\n` that ended line
+			// k. Used by the segment splitter to clip segments per line.
+			const sourceLineStarts: number[] = (() => {
+				const starts: number[] = [0]
+				let offset = -1
+				for (const ch of source) {
+					offset++
+					if (ch === '\n') starts.push(offset + 1)
+				}
+				return starts
+			})()
+			entries.push({ node, source, lang, codeLineWraps, sourceLineStarts })
 		}
 	}
 
 	const lookup = await precomputeHighlights(GRAMMARS, entries.map((e) => ({ source: e.source, lang: e.lang })))
 
 	for (const entry of entries) {
-		const highlighted = lookup(entry.source, entry.lang) as StyledSegment[] | null
+		const allSegments = lookup(entry.source, entry.lang) as StyledSegment[] | null
+		// `precomputeHighlights` returns `null` when no grammar is loaded
+		// for this lang (or `bun run fetch:parsers` was skipped); in that
+		// case the layout falls back to single-color rendering.
+		const highlightedPerSourceLine: Array<StyledSegment[] | null> = allSegments
+			? splitSegmentsBySourceLine(allSegments, entry.sourceLineStarts, entry.source)
+			: entry.sourceLineStarts.map(() => null)
+		// `leadingLenPerSourceLine[k]` is the same for every visual row of
+		// source line k. Pull it from the first wrap for each source line
+		// (the wrap preserves leading whitespace verbatim, so every row of
+		// a given source line agrees).
+		const leadingLenPerSourceLine: number[] = entry.sourceLineStarts.map(() => 0)
+		for (const w of entry.codeLineWraps) {
+			if (leadingLenPerSourceLine[w.sourceLine] === 0 && w.leadingLen > 0) {
+				leadingLenPerSourceLine[w.sourceLine] = w.leadingLen
+			}
+		}
 		map.set(entry.node, {
-			codeLines: entry.codeLines,
-			sourceLineOfVisualRow: entry.sourceLineOfVisualRow,
-			highlighted,
+			codeLines: entry.codeLineWraps.map((w) => w.visualLine),
+			sourceLineOfVisualRow: entry.codeLineWraps.map((w) => w.sourceLine),
+			codeLineWraps: entry.codeLineWraps,
+			highlightedPerSourceLine,
+			leadingLenPerSourceLine,
 		})
 	}
 	return map
+}
+
+// Split a flat `StyledSegment[]` (covering the entire raw source) into
+// per-source-line arrays. Segment positions are implicit — `cursor`
+// tracks each segment's start in source coords as we walk them in
+// order. A segment that spans a newline boundary is sliced into one
+// piece per source line, both retaining the segment's `color`.
+function splitSegmentsBySourceLine(
+	segments: StyledSegment[],
+	sourceLineStarts: number[],
+	source: string,
+): StyledSegment[][] {
+	const perLine: StyledSegment[][] = sourceLineStarts.map(() => [])
+	let cursor = 0
+	let segIdx = 0
+	for (let k = 0; k < sourceLineStarts.length; k++) {
+		const lineStart = sourceLineStarts[k]
+		const lineEnd = k + 1 < sourceLineStarts.length ? sourceLineStarts[k + 1] : source.length
+		// Advance past segments that end before this line.
+		while (segIdx < segments.length && cursor + segments[segIdx].text.length <= lineStart) {
+			cursor += segments[segIdx].text.length
+			segIdx++
+		}
+		// Slice segments that overlap [lineStart, lineEnd).
+		while (segIdx < segments.length && cursor < lineEnd) {
+			const seg = segments[segIdx]
+			const segEnd = cursor + seg.text.length
+			const overlapStart = Math.max(cursor, lineStart)
+			const overlapEnd = Math.min(segEnd, lineEnd)
+			const slice = seg.text.slice(overlapStart - cursor, overlapEnd - cursor)
+			perLine[k].push({ text: slice, color: seg.color })
+			if (segEnd > lineEnd) break
+			cursor = segEnd
+			segIdx++
+		}
+	}
+	return perLine
 }

@@ -10,30 +10,30 @@ import advancementGen from './snippets/advancement_sample.json'
 export const slides = [
 	// slide[7]
 	(<>
-		<h3 wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>
+		<h3 id="header" wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>
 		<p>Not really - Basic Sandstone syntax maps 1:1 to commands and JSON</p>
 		<p>Additonally, LLM-assisted coding works great as a learning aid</p>
 		<p>And if you already know JS you're basically 90% there; TypeScript is just a step beyond that</p>
 	</>),
-	// (<>
-	// 	<h3>Do I need lots of TS / JS experience?</h3>
-	// 	<div id="code-grid">
-	// 		<code lang="typescript" src={mcfunctionCode} />
-	// 		<code lang="mcfunction" src={mcfunctionGen} />
-	// 	</div>
-	// </>),
-	// (<>
-	// 	<h3>Do I need lots of TS / JS experience?</h3>
-	// 	<div id="code-grid">
-	// 		<code lang="typescript" src={recipeCode} />
-	// 		<code lang="json" src={JSON.stringify(recipeGen, null, 4)} />
-	// 	</div>
-	// </>),
-	// (<>
-	// 	<h3>Do I need lots of TS / JS experience?</h3>
-	// 	<div id="code-grid">
-	// 		<code lang="typescript" src={advancementCode} scrolling={true} />
-	// 		<code lang="json" src={JSON.stringify(advancementGen, null, 4)} />
-	// 	</div>
-	// </>),
+	(<>
+		<h3 id="header" wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>
+		<div id="code-grid">
+			<code lang="typescript" src={mcfunctionCode} />
+			<code lang="mcfunction" src={mcfunctionGen} />
+		</div>
+	</>),
+	(<>
+		<h3 id="header" wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>
+		<div id="code-grid">
+			<code lang="typescript" src={recipeCode} scrolling={true} />
+			<code lang="json" src={JSON.stringify(recipeGen, null, 4)} scrolling={true} />
+		</div>
+	</>),
+	(<>
+		<h3 id="header" wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>
+		<div id="code-grid">
+			<code lang="typescript" src={advancementCode} scrolling={true} />
+			<code lang="json" src={JSON.stringify(advancementGen, null, 4)} scrolling={true} />
+		</div>
+	</>),
 ]

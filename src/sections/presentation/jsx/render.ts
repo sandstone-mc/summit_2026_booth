@@ -5,7 +5,7 @@ import { extractText, flatWalk } from './tree'
 import { type SlidesTiming } from '../slides'
 import { computeSlideScrollSpecs, summonVisibleElements, isTextType, isVisibleType } from './layout'
 import { resetScrollIds } from './layout/element'
-import { prepareCodeHighlights, prepareImgResources } from './prepare'
+import { prepareCodeHighlights, prepareImgResources, prepareRowFlexWidths } from './prepare'
 import { SlideShow, SCENE_TAG } from './slides'
 import { diagnosePlacements, filterVisibleByVNode, formatIssues } from './diagnose'
 
@@ -116,14 +116,15 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 	// Pre-compute tree-sitter highlights for every `<code>` block. The
 	// returned `WeakMap` is captured in `mount`'s closure so the synchronous
 	// `summonVisibleElements` call never has to await a parse.
-	const codePrecomputed = await prepareCodeHighlights([visible], styles, options.bounds[0], options.bounds[1])
+	const rowFlexWidths = prepareRowFlexWidths([visible], styles, options.bounds[0])
+	const codePrecomputed = await prepareCodeHighlights([visible], styles, options.bounds[0], options.bounds[1], rowFlexWidths)
 
 	// Register a `Model` + `ItemModelDefinition` for every distinct `<img>`
 	// src so the summon pass can reference them via `minecraft:item_model`.
 	const imgResources = await prepareImgResources([tree])
 
 	const mount = MCFunction('presentation/mount', () => {
-		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [], undefined, codePrecomputed, imgResources, SCENE_TAG)
+		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [], undefined, codePrecomputed, imgResources, SCENE_TAG, rowFlexWidths)
 	})
 
 	const tick = MCFunction('presentation/tick', () => {
@@ -174,7 +175,8 @@ export async function renderSlides(
 	const slideVisibles = trees.map((t) =>
 		flatWalk(t).filter(({ node }) => isVisibleType(node.type)),
 	)
-	const codePrecomputed = await prepareCodeHighlights(slideVisibles, styles, sceneW, sceneH)
+	const rowFlexWidths = prepareRowFlexWidths(slideVisibles, styles, sceneW)
+	const codePrecomputed = await prepareCodeHighlights(slideVisibles, styles, sceneW, sceneH, rowFlexWidths)
 	const imgResources = await prepareImgResources(trees)
 
 	// Off-screen diagnostic — run the placement math per slide once more
@@ -195,6 +197,7 @@ export async function renderSlides(
 			options.origin,
 			codePrecomputed,
 			imgResources,
+			rowFlexWidths,
 		)
 		const result = diagnosePlacements(placements, i, options.origin[0], options.origin[1], sceneW, sceneH)
 		allIssues.push(...result.issues)
@@ -262,6 +265,7 @@ export async function renderSlides(
 		timing,
 		codePrecomputed,
 		imgResources,
+		rowFlexWidths,
 	})
 
 	return {

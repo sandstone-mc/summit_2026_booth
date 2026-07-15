@@ -10,7 +10,7 @@
 //     text_display entity and the scroll-tick toggles which chunk
 //     is visible).
 
-import { wrapCodeLinesAsArray, wrapCodeLinesAsTuples } from '../text-metrics'
+import { wrapCodeLinesWithOffsets, type CodeLineWrap } from '../text-metrics'
 import type { StyledSegment } from '../render'
 
 // Monospace char width used both for the wrap budget (chars per row)
@@ -25,23 +25,38 @@ export const DEFAULT_MONO_CHAR_PX = 6
  * the caller didn't set `width` — the box then shrinks to fit content
  * rather than padding out to infinity.
  *
- * Mirrors the budget math in `buildRows` so the borders end up exactly
- * as wide as MC's `line_width` allows: longest source line + gutter +
- * 5 chars of internal padding + 2 chars for the two `│` bars.
+ * Mirrors the budget math in `buildRows`: longest source line +
+ * internal overhead (`gutterChars + 5` with line-numbers, `2`
+ * without) + 2 chars for the two `│` bars.
  */
 export function computeMinCodeLineWidthPx(content: string, gutterChars: number): number {
 	const longestSourceLineLen = content
 		.split('\n')
 		.reduce((max, line) => Math.max(max, line.length), 0)
-	const maxRowChars = longestSourceLineLen + gutterChars + 5
+	// Internal overhead mirrors `buildRows` — see comment there for
+	// why the no-gutter case uses `2` instead of `5`.
+	const internalOverhead = gutterChars ? gutterChars + 5 : 2
+	const maxRowChars = longestSourceLineLen + internalOverhead
 	return (maxRowChars + 2) * DEFAULT_MONO_CHAR_PX
 }
 
 export type Precomputed = {
+	/** Visual rows (derived from `codeLineWraps[i].visualLine`). Kept for
+	 *  callers that iterate `codeLines.length` without caring about offsets. */
 	codeLines: string[]
 	/** Source line (0-indexed) per visual row in `codeLines`. */
 	sourceLineOfVisualRow: number[]
-	highlighted: StyledSegment[] | null
+	/** Per-visual-row offset data — the slice of the source line each row
+	 *  covers, plus whether the row is a wrap continuation. */
+	codeLineWraps: CodeLineWrap[]
+	/** Segments per source line, in source-line coords. `null` per index
+	 *  when no grammar is loaded / the parser produced no segments for
+	 *  the whole `<code>` block. Lets the layout pass slice segments into
+	 *  visual rows without ever splitting a token at a wrap boundary. */
+	highlightedPerSourceLine: Array<StyledSegment[] | null>
+	/** Leading whitespace length per source line — emitted in `codeColor`
+	 *  on every visual row of that source line. */
+	leadingLenPerSourceLine: number[]
 }
 
 /**
@@ -91,6 +106,68 @@ export class CodeBorders {
 		const seg: StyledSegment = { text: slice }
 		if (color !== undefined) seg.color = color
 		out.push(seg)
+	}
+
+	// Render one visual row's inner content (leading whitespace + wrap
+	// continuation indent + body chars with their token colors) onto
+	// `row`. `wrap` carries the source-line-relative `[bodyStart,
+	// bodyEnd)` range for the body chars; `segs` is that source line's
+	// segments in source-line coords (positions implicit in segment
+	// order). Returns the number of inner chars emitted so the caller
+	// can pad the row up to `longestInnerChars`.
+	private renderRowSegments(
+		row: StyledSegment[],
+		wrap: CodeLineWrap,
+		segs: StyledSegment[] | null,
+		codeColor: `#${string}` | undefined,
+		leadingLen: number,
+		longestInnerChars: number,
+	): number {
+		let written = 0
+		// Leading whitespace from the source — always `codeColor`. Same
+		// chars on every row of the source line (the wrap preserves them
+		// verbatim).
+		if (leadingLen > 0) {
+			this.push(row, ' '.repeat(leadingLen), codeColor)
+			written += leadingLen
+		}
+		// The wrap inserts an artificial leading space on continuation
+		// rows to visually distinguish them from the source's own indent.
+		// That space is NOT in the source, so we emit it in `codeColor`
+		// outside the segment walk.
+		if (wrap.isContinuation) {
+			this.push(row, ' ', codeColor)
+			written += 1
+		}
+		const bodyStart = wrap.bodyStart
+		const bodyEnd = wrap.bodyEnd
+		// Walk source-line segments clipped to [bodyStart, bodyEnd).
+		// Segments are in source-line order and contiguous; cursor
+		// tracks the source-line offset of the next segment's start.
+		if (segs && bodyEnd > bodyStart) {
+			let cursor = 0
+			let sIdx = 0
+			// Skip segments that end before bodyStart.
+			while (sIdx < segs.length && cursor + segs[sIdx].text.length <= bodyStart) {
+				cursor += segs[sIdx].text.length
+				sIdx++
+			}
+			while (sIdx < segs.length && cursor < bodyEnd) {
+				const seg = segs[sIdx]
+				const segEnd = cursor + seg.text.length
+				const fromIdx = Math.max(0, bodyStart - cursor)
+				const toIdx = Math.min(seg.text.length, bodyEnd - cursor)
+				if (fromIdx < toIdx) {
+					const slice = seg.text.slice(fromIdx, toIdx)
+					this.push(row, slice, seg.color)
+					written += slice.length
+				}
+				if (segEnd >= bodyEnd) break
+				cursor = segEnd
+				sIdx++
+			}
+		}
+		return written
 	}
 
 	// Build the bordered+highlighted code content. The precomputed map
@@ -151,29 +228,49 @@ export class CodeBorders {
 		const gutterChars = lineNumbers ? Math.max(2, String(lineCount ?? 0).length) : 0
 		const DEFAULT_CHAR_PX = DEFAULT_MONO_CHAR_PX
 		// `line_width` (MC NBT) caps total row chars between the two `│`s
-		// at `lineWidthPx / DEFAULT_CHAR_PX`. Row overhead =
-		// `gutterChars + 5` chars (leading ' ', gutter prefix, ' │ ')
-		// between the bars; plus the 2 `│`s themselves.
+		// at `lineWidthPx / DEFAULT_CHAR_PX`. Internal overhead matches
+		// the bordered-row construction:
+		//   - With gutter: `gutterChars + 5` chars (gutter content,
+		//     ' │ ' separator + leading/trailing 1-char padding inside
+		//     the `│`s).
+		//   - Without gutter: `2` chars (just the leading and trailing
+		//     1-char padding inside the `│`s — no gutter separator).
+		// Plus the 2 `│` characters themselves.
 		const maxRowChars = Math.max(10, Math.floor(lineWidthPx / DEFAULT_CHAR_PX) - 2)
-		const maxCodeChars = Math.max(10, maxRowChars - gutterChars - 5)
+		const internalOverhead = gutterChars ? gutterChars + 5 : 2
+		const maxCodeChars = Math.max(10, maxRowChars - internalOverhead)
 		// Wrap budget: char count per visual row. Treat every glyph as
 		// monospace — if a char ends up the wrong width that's a font
 		// bug, not something the wrap compensates for. We pack right up
 		// to `maxCodeChars` so no trailing slack is wasted.
 		const wrapCodeChars = Math.max(10, maxCodeChars)
-		const codeLines =
-			precomputed?.codeLines ??
-			wrapCodeLinesAsArray(content, wrapCodeChars, bold, fontId)
-		const sourceLineOfVisualRow: number[] | null =
-			precomputed?.sourceLineOfVisualRow ??
-			(lineNumbers
-				? wrapCodeLinesAsTuples(content, wrapCodeChars, bold, fontId).map((t) => t.sourceLine)
-				: null)
-		const highlighted = precomputed?.highlighted ?? null
+		// Pull wraps from the precomputed map (shared with the async pass
+		// so the layout doesn't recompute). When the caller didn't run the
+		// precompute (no grammar, raw `CodeBorders.wrap` call), compute
+		// here. The precomputed shape mirrors the freshly-computed shape so
+		// the slicing below treats them identically.
+		const codeLineWraps: CodeLineWrap[] =
+			precomputed?.codeLineWraps ?? wrapCodeLinesWithOffsets(content, wrapCodeChars)
+		const codeLines = codeLineWraps.map((w) => w.visualLine)
+		const sourceLineOfVisualRow: number[] | null = codeLineWraps.map((w) => w.sourceLine)
+		const highlightedPerSourceLine: Array<StyledSegment[] | null> | null =
+			precomputed?.highlightedPerSourceLine ?? null
+		// `leadingLenPerSourceLine` (from the precompute pass) maps source
+		// line index → its leading whitespace length. When no precompute
+		// ran, derive it from the wraps (all rows of a source line share
+		// the same `leadingLen`).
+		const leadingLenPerSourceLine: number[] = precomputed?.leadingLenPerSourceLine ?? []
+		if (leadingLenPerSourceLine.length === 0 && codeLineWraps.length > 0) {
+			for (const w of codeLineWraps) {
+				if (leadingLenPerSourceLine[w.sourceLine] === undefined) {
+					leadingLenPerSourceLine[w.sourceLine] = w.leadingLen
+				}
+			}
+		}
 		const longestInnerChars = maxCodeChars
 
 		const langPart = language ? `${language}─` : ''
-		const gutterInner = gutterChars ? gutterChars + 5 : 2
+		const gutterInner = internalOverhead
 		const outerWidth = longestInnerChars + gutterInner
 		const dashCount = Math.max(0, outerWidth - langPart.length)
 
@@ -196,22 +293,6 @@ export class CodeBorders {
 		const bottomBorder: StyledSegment[] = [
 			{ text: `└${'─'.repeat(outerWidth)}┘`, color: borderColor },
 		]
-
-		// Pre-compute each segment's start in `codeLines.join('\n')` —
-		// both segments and codeLines ranges live in that joined coord
-		// space, so position-based slicing (not cursor-walking) works.
-		const segs = highlighted && highlighted.length > 0 ? highlighted : null
-		const segStarts: number[] | null = segs
-			? (() => {
-					const starts = new Array<number>(segs.length)
-					let acc = 0
-					for (let s = 0; s < segs.length; s++) {
-						starts[s] = acc
-						acc += segs[s].text.length
-					}
-					return starts
-				})()
-			: null
 
 		// Build each code row's segment list. The first row omits its
 		// leading '\n' — it's joined after `topBorder` during serialize.
@@ -240,42 +321,32 @@ export class CodeBorders {
 			return row
 		}
 
-		if (segs && segStarts) {
-			let lineStart = 0
-			for (let i = 0; i < codeLines.length; i++) {
-				const lineLen = codeLines[i].length
-				const lineEnd = lineStart + lineLen
+		// Any segments at all? An entry's `highlightedPerSourceLine[k]` is
+		// `null` when no grammar ran (no parser / no `lang`); a non-null
+		// entry may still be an empty array when the parser produced zero
+		// captures. Either way we fall through to the single-color path.
+		const hasAnySegments =
+			highlightedPerSourceLine !== null &&
+			highlightedPerSourceLine.some((s) => s !== null && s.length > 0)
+
+		if (hasAnySegments && highlightedPerSourceLine) {
+			for (let i = 0; i < codeLineWraps.length; i++) {
+				const wrap = codeLineWraps[i]
+				const segs = highlightedPerSourceLine[wrap.sourceLine] ?? null
 				const row = buildRow(i, true)
-
-				let s = 0
-				while (s < segs.length && segStarts[s] + segs[s].text.length <= lineStart) s++
-
-				let written = 0
-				while (s < segs.length && segStarts[s] < lineEnd) {
-					const seg = segs[s]
-					const segStart = segStarts[s]
-					const segEnd = segStart + seg.text.length
-					const fromIdx = Math.max(0, lineStart - segStart)
-					const toIdx = Math.min(seg.text.length, lineEnd - segStart)
-					if (fromIdx < toIdx) {
-						const slice = seg.text.slice(fromIdx, toIdx)
-						this.push(row, slice, seg.color)
-						written += slice.length
-					}
-					if (segEnd >= lineEnd) break
-					s++
-				}
-				if (written < lineLen) {
-					this.push(row, codeLines[i].slice(written), codeColor)
-					written = lineLen
-				}
-				if (written < longestInnerChars) {
-					this.push(row, ' '.repeat(longestInnerChars - written), codeColor)
+				const innerWritten = this.renderRowSegments(
+					row,
+					wrap,
+					segs,
+					codeColor,
+					leadingLenPerSourceLine[wrap.sourceLine] ?? wrap.leadingLen,
+					longestInnerChars,
+				)
+				if (innerWritten < longestInnerChars) {
+					this.push(row, ' '.repeat(longestInnerChars - innerWritten), codeColor)
 				}
 				row.push({ text: ' │', color: borderColor })
-
 				codeRows.push(row)
-				lineStart = lineEnd + 1 // +1 for the \n separator between lines
 			}
 		} else {
 			for (let i = 0; i < codeLines.length; i++) {
