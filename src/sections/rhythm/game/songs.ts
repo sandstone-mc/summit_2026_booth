@@ -1,4 +1,4 @@
-import { _, abs, execute, MCFunction, playsound, stopsound } from 'sandstone'
+import { _, abs, execute, Label, MCFunction, playsound, Selector, stopsound } from 'sandstone'
 import {
 	songCount,
 	songData,
@@ -24,6 +24,8 @@ const musicPos = abs(musicX, musicY, musicZ)
 type SongFn = ReturnType<typeof MCFunction>
 type ScheduledEntry = { tick: number; fn: SongFn; mode: 'append' | 'replace' }
 
+const BoothListener = Label('rhythm.showcase.listener')
+
 function runOrSchedule({ tick, fn, mode }: ScheduledEntry) {
 	if (tick === 0) fn()
 	else fn.schedule.function(`${tick}t`, mode)
@@ -37,7 +39,17 @@ function sharedFn(kind: string, key: string, body: () => void): SongFn {
 	if (existing) return existing
 	const index = sharedCounters.get(kind) ?? 0
 	sharedCounters.set(kind, index + 1)
-	const fn = MCFunction(`sections/rhythm/songs/shared/${kind}${index}`, body, { lazy: true })
+	const fn = MCFunction(`sections/rhythm/songs/shared/${kind}${index}`, () => {
+		execute.as(boothListeners).run(() => {
+			BoothListener('@s').add()
+		})
+		body()
+		execute.as(Selector('@a', {
+			tag: BoothListener
+		})).run(() => {
+			BoothListener('@s').remove()
+		})
+	}, { lazy: true })
 	sharedFns.set(mapKey, fn)
 	return fn
 }
@@ -88,7 +100,9 @@ for (let s = 0; s < songCount; s++) {
 				const fn = sharedFn('n', key, () => {
 					for (const note of notes) {
 						execute
-							.as(boothListeners)
+							.as(Selector('@a', {
+								tag: BoothListener
+							}))
 							.at('@s')
 							.run.playsound(note.sound as any, 'master', '@s', '~ ~ ~', note.volume * music.volume, note.pitch)
 					}
