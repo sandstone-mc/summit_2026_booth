@@ -12,7 +12,7 @@ export const TargetableTag = Tag('entity_type', 'sandstone_summit_booth:targetab
 ])
 
 export const ParticleViewerSelector = Selector('@a', {
-  distance: [0, 16]
+  distance: [0, 24]
 })
 
 export interface ProjectileOptions {

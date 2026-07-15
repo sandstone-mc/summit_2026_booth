@@ -16,7 +16,7 @@ interface StatusEffectOptions {
 const $ = Macro
 
 export const ParticleViewerSelector = Selector('@a', {
-  distance: [0, 16]
+  distance: [0, 24]
 })
 
 export function createStatusEffect(opts: StatusEffectOptions) {
