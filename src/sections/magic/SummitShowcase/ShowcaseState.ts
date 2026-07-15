@@ -305,7 +305,11 @@ export const startSession = MCFunction('sections/magic/showcase/session/start', 
 
 MCFunction('sections/magic/showcase/tick', () => {
     // Update which players are physically inside the booth volume
-    InBoothLabel('@p').remove()
+    execute.as(Selector('@a', {
+        tag: 'showcase.in_magic_showcase'
+    })).run(() => {
+        InBoothLabel('@s').remove()
+    })
     execute.as(ShowcaseMarker).at('@s').run(() => {
         execute.as(Selector('@a', { dx: BOOTH_DX, dy: BOOTH_DY, dz: BOOTH_DZ, gamemode: "!spectator" })).run(() => {
             InBoothLabel('@s').add()
