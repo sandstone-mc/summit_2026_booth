@@ -1,5 +1,5 @@
 import { Label, Selector, _, abs, damage, execute, loc, particle, rel, tp, raw } from 'sandstone'
-import { Caster, createProjectileSpell, spawnSingleBolt, spellMeta } from '../Common'
+import { Caster, createProjectileSpell, ParticleViewerSelector, spawnSingleBolt, spellMeta } from '../Common'
 import { fireRaycast } from '../../utils/raycast'
 import { checkHit } from '../../utils/hitDetection'
 
@@ -61,10 +61,10 @@ createProjectileSpell({
             .unless.entity(target)
             .run(() => tp('@s', loc(0, 0, 0.4)))
     },
-    particles: () => particle('dust_color_transition{from_color:[0.63,0.1,.74],to_color:[0.29,0.29,0.29],scale:1}', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 3, 'force'),
+    particles: () => particle('dust_color_transition{from_color:[0.63,0.1,.74],to_color:[0.29,0.29,0.29],scale:1}', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 3, 'force', ParticleViewerSelector),
     onHit: () => { 
         damage('@s', 4, 'magic') 
-        particle('reverse_portal', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.2, 30, 'force')
+        particle('reverse_portal', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.2, 30, 'force', ParticleViewerSelector)
         Target('@s').remove()
     },
     onExpire: () => {

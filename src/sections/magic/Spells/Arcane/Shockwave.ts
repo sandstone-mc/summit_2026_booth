@@ -1,6 +1,6 @@
 // spells/arcane/shockwave.ts
 import { _, abs, damage, execute, functionCmd, particle, rel, raw, tp, rotate, loc } from 'sandstone'
-import { createProjectileSpell, spawnRingOfBolts } from '../Common'
+import { createProjectileSpell, ParticleViewerSelector, spawnRingOfBolts } from '../Common'
 
 createProjectileSpell({
     schoolId: 'arcane',
@@ -13,7 +13,7 @@ createProjectileSpell({
             tp('@s', loc(0, 0, 0.5))
         },
         particles: () => {
-            particle('dust_color_transition{from_color:[0.63,0.1,.74],to_color:[0.29,0.29,0.29],scale:1}', rel(0, 0.5, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force')
+            particle('dust_color_transition{from_color:[0.63,0.1,.74],to_color:[0.29,0.29,0.29],scale:1}', rel(0, 0.5, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force', ParticleViewerSelector)
         },
         hitWidth: 1.5,
         hitHeight: 2,

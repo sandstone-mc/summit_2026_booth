@@ -1,5 +1,5 @@
 import { MCFunction, Objective, Selector, _, damage, execute, particle, rel, abs, raw, Variable, tp } from 'sandstone'
-import { createStatusEffect } from './Common'
+import { createStatusEffect, ParticleViewerSelector } from './Common'
 import { fireRaycast } from '../utils/raycast'
 
 const EffectName = 'charged'
@@ -22,7 +22,7 @@ const arcRaycast = fireRaycast(`status/${EffectName}/arc`, {
         raw(`rotate @s facing entity ${nearbyUncharged} feet`)
     },
     onStep: () => {
-        particle('electric_spark', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.1, 2, 'force')
+        particle('electric_spark', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.1, 2, 'force', ParticleViewerSelector)
 
         // Stop when we reach the target
         execute.if.entity(Selector('@e', {
@@ -31,13 +31,13 @@ const arcRaycast = fireRaycast(`status/${EffectName}/arc`, {
             distance: [0, 0.6]
         })).run(() => {
             // Burst particles at contact point
-            particle('electric_spark', rel(0, 0, 0), abs(0.3, 0.8, 0.3), 0.1, 20, 'force')
+            particle('electric_spark', rel(0, 0, 0), abs(0.3, 0.8, 0.3), 0.1, 20, 'force', ParticleViewerSelector)
             raw(`tag @e[tag=status.${EffectName}.arc.ray_active,limit=1] remove status.${EffectName}.arc.ray_active`)
         })
     },
     onHit: () => {
         // Hit a block before reaching target
-        particle('electric_spark', rel(0, 0, 0), abs(0.1, 0.3, 0.1), 0.05, 5, 'force')
+        particle('electric_spark', rel(0, 0, 0), abs(0.1, 0.3, 0.1), 0.05, 5, 'force', ParticleViewerSelector)
     }
 })
 
@@ -51,7 +51,7 @@ const status = createStatusEffect({
     damageAmount: 1,
     damageInterval: 30,
     particles: () => {
-        particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.05, 3, 'force')
+        particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.05, 3, 'force', ParticleViewerSelector)
     },
     onApply: () => {},
     onEnd: () => {},
@@ -63,7 +63,7 @@ const status = createStatusEffect({
                 arcToTarget()
 
                 execute.as(nearbyUncharged).run(() => {
-                    particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.1, 15, 'force')
+                    particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.1, 15, 'force', ParticleViewerSelector)
                     damage('@s', 1, 'lightning_bolt')
                     status.apply(Variable(1))
                 })

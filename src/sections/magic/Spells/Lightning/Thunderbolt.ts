@@ -1,5 +1,5 @@
 import { MCFunction, particle, rel, abs, Variable, damage, tp, Objective, _ } from 'sandstone'
-import { castSpell, spellMeta } from '../Common'
+import { castSpell, ParticleViewerSelector, spellMeta } from '../Common'
 import { Charged, Stunned } from '../../StatusEffects'
 import { checkHit } from '../../utils/hitDetection'
 import { fireRaycast } from '../../utils/raycast'
@@ -8,8 +8,8 @@ const meta = spellMeta('lightning', 'thunderbolt')
 const rollScore = Objective.create(`spell.lightning.thunderbolt_roll`, 'dummy')
 
 const chainStrike = MCFunction(`sections/magic/${meta.spellPath}/chain_strike`, () => {
-    particle('end_rod', rel(0, 0, 0), abs(0.1, 1, 0.1), 0, 5, 'force')
-    particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.2, 20, 'force')
+    particle('end_rod', rel(0, 0, 0), abs(0.1, 1, 0.1), 0, 5, 'force', ParticleViewerSelector)
+    particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.2, 20, 'force', ParticleViewerSelector)
 
     damage('@s', 4, 'lightning_bolt')
     Stunned.apply(Variable(2))
@@ -31,7 +31,7 @@ const boltRaycast = fireRaycast(meta.spellPath, {
     stepSize: 0.5,
     onStep: () => {
         // Thin electric trail
-        particle('electric_spark', rel(0, 0, 0), abs(0.02, 0.02, 0.02), 0.01, 1, 'force')
+        particle('electric_spark', rel(0, 0, 0), abs(0.02, 0.02, 0.02), 0.01, 1, 'force', ParticleViewerSelector)
     },
     onHit: () => strikeAtPosition(),
     onComplete: () => strikeAtPosition(),

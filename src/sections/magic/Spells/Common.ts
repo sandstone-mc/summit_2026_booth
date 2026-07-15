@@ -11,6 +11,10 @@ export const TargetableTag = Tag('entity_type', 'sandstone_summit_booth:targetab
     'minecraft:zombie',
 ])
 
+export const ParticleViewerSelector = Selector('@a', {
+  distance: [0, 24]
+})
+
 export interface ProjectileOptions {
   // identity
   tag: LabelClass
