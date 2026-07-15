@@ -137,7 +137,7 @@ function songCatLineText(songI: number, catI: number, nameOverride?: string): JS
 	const catColor = catI === 0 ? 'gold' : 'light_purple'
 	return [
 		{ text: `${panels.padding}♪ `, color: 'gold' },
-		{ text: songName, color: 'yellow', font: 'monocraft:default' },
+		{ text: songName, color: 'yellow', font: 'sandstone_summit_booth:monospace' },
 		{ text: ' - ', color: 'gray' },
 		{ text: `${catName}${panels.padding}`, color: catColor },
 	]

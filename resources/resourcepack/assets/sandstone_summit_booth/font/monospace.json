@@ -9,7 +9,7 @@
     },
     {
       "type": "bitmap",
-      "file": "monocraft:font/nonlatin_european.png",
+      "file": "sandstone_summit_booth:font/monospace/nonlatin_european.png",
       "ascent": 7,
       "chars": [
         "¡‰­·₴≠¿×ØÞһðøþΑΒ",
@@ -83,7 +83,7 @@
     },
     {
       "type": "bitmap",
-      "file": "monocraft:font/ascii.png",
+      "file": "sandstone_summit_booth:font/monospace/ascii.png",
       "ascent": 7,
       "chars": [
         "\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",

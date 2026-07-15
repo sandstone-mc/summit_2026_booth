@@ -285,8 +285,8 @@ function computeTextLayout(
 	const scalePx = fontSize?.px ?? defaultFontPx(type)
 	const textScale = pxToTextScale(scalePx) // NBT `transformation.scale`
 
-	// `<code>` / `<explorer>` default to monocraft unless LESS overrides.
-	const fontId = declarations.font ?? (isCode || isExplorer ? 'monocraft:default' : DEFAULT_FONT_ID)
+	// `<code>` / `<explorer>` default to sandstone_summit_booth:monospace unless LESS overrides.
+	const fontId = declarations.font ?? (isCode || isExplorer ? 'sandstone_summit_booth:monospace' : DEFAULT_FONT_ID)
 
 	const widthCompensation = BASELINE_TEXT_SCALE / textScale
 
