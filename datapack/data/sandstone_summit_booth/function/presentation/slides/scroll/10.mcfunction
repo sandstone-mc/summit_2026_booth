@@ -74,7 +74,7 @@ execute if score #limit sandstone_summit_booth.presentation.scroll matches 20 ru
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 4
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll = #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll /= #limit sandstone_summit_booth.presentation.scroll
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 21
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 19
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll < #limit sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 0
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll > #limit sandstone_summit_booth.presentation.scroll
@@ -138,9 +138,3 @@ execute if score #limit sandstone_summit_booth.presentation.scroll matches 18 ru
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 19
 scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
 execute if score #limit sandstone_summit_booth.presentation.scroll matches 19 run function sandstone_summit_booth:presentation/slides/scroll/10/if41
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 20
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 20 run function sandstone_summit_booth:presentation/slides/scroll/10/if42
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 21
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 21 run function sandstone_summit_booth:presentation/slides/scroll/10/if43
