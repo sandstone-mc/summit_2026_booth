@@ -19,6 +19,7 @@ import type { Placement } from './layout'
 import { wrapLines } from './text-metrics'
 import { pxToTextLineHeight } from './length'
 import { DEFAULT_FONT_ID } from './text-metrics/font-loader'
+import { TEXT_RENDER_OFFSET, parityOffset } from './layout/constants'
 import type { VNode } from './render'
 
 // Local type alias — `TextElementLayout` is internal to `element.ts`.
@@ -75,7 +76,7 @@ export function diagnosePlacements(
 	const excludedVNodes = new Set<VNode>()
 
 	for (const placement of placements) {
-		const bounds = estimateRenderBounds(placement)
+		const bounds = estimateRenderBounds(placement, sceneH)
 		if (
 			bounds.renderBottom === null ||
 			bounds.renderTop === null ||
@@ -201,7 +202,7 @@ function previewFor(el: TextElementLayout): string {
  *                   `[entityX - textWidth/2, entityX + textWidth/2]` for prose.
  *   - image:        `[entityY ± cellH/2, entityX ± cellW/2]` (centered).
  */
-function estimateRenderBounds(placement: Placement): {
+function estimateRenderBounds(placement: Placement, sceneH: number): {
 	renderBottom: number | null
 	renderTop: number | null
 	renderLeft: number | null
@@ -236,9 +237,16 @@ function estimateRenderBounds(placement: Placement): {
 		// (centered). Treat everything except `code` as centered.
 		const centered = el.type !== 'code'
 		const halfW = textWidth / 2
+		// `placement.y` is `TEXT_RENDER_OFFSET` below the visible glyph
+		// bottom (the layout engine shifts text entities down to compensate
+		// for MC text_display's pre-glyph gap) AND `parityOffset(sceneH)`
+		// above the slide's logical top (a half-block snap the layout
+		// applies when scene height is odd). Undo both so the bounds
+		// reflect the cell's logical position rather than its MC coords.
+		const lift = TEXT_RENDER_OFFSET - parityOffset(sceneH)
 		return {
-			renderBottom: placement.y,
-			renderTop: placement.y + textHeight,
+			renderBottom: placement.y + lift,
+			renderTop: placement.y + textHeight + lift,
 			renderLeft: centered ? placement.x - halfW : placement.x,
 			renderRight: centered ? placement.x + halfW : placement.x + textWidth,
 			contentPreview: previewFor(el),

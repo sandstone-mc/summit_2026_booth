@@ -43,6 +43,12 @@ export const GRAMMARS: Record<string, Grammar> = {
 	},
 }
 
+export const TEXT_RENDER_OFFSET = 0.1875
+
+export function parityOffset(sceneH: number): number {
+	return sceneH % 2 === 0 ? 0 : 0.5
+}
+
 // Vertical gap (in world blocks) reserved at the bottom of a text
 // element's cell to make room for descender-bearing characters (g, p,
 // q, y, etc.) so they don't visually bleed into the next cell.
