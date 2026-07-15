@@ -5,7 +5,11 @@
       "conditions": {
         "entity": {
           "entity_type": "minecraft:interaction",
-          "nbt": "{Tags:[\"sandstone_summit_booth.npc.casino_crowd_2\"]}"
+          "entity_tags": {
+            "all_of": [
+              "sandstone_summit_booth.npc.casino_crowd_2"
+            ]
+          }
         }
       }
     }

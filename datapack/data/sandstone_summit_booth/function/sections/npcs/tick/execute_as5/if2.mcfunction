@@ -1,1 +1,1 @@
-execute unless entity @p[distance=0..5] run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_1/end
+execute unless entity @a[distance=0..5, limit=1] run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_1/end
