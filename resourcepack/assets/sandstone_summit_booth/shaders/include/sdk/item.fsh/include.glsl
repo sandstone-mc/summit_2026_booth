@@ -211,7 +211,9 @@ vec3 snd_skyCrystalCave(vec3 dir) {
     return col;
 }
 
+#ifndef PI
 #define PI 3.14159265
+#endif
 
 vec2 snd_tunnelPath(float z) {
     return vec2(0.5 * sin(z), 0.5 * sin(z * 0.7));
