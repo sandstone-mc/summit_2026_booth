@@ -1,4 +1,4 @@
-particle flame ~ ~ ~ 0.1 0.1 0.1 0.01 5 force
+particle flame ~ ~ ~ 0.1 0.1 0.1 0.01 5 force @a[distance=0..24]
 tp @s ^ ^ ^1.2
 scoreboard players remove @s sandstone_summit_booth.lifetime 1
 execute if score @s sandstone_summit_booth.lifetime matches ..0 run kill @s

@@ -1,4 +1,4 @@
-particle dust_color_transition{from_color:[0.63,0.1,.74],to_color:[0.29,0.29,0.29],scale:1} ~ ~0.5 ~ 0.05 0.05 0.05 0.01 1 force
+particle dust_color_transition{from_color:[0.63,0.1,.74],to_color:[0.29,0.29,0.29],scale:1} ~ ~0.5 ~ 0.05 0.05 0.05 0.01 1 force @a[distance=0..24]
 rotate @s ~2 ~
 tp @s ^ ^ ^0.5
 scoreboard players remove @s sandstone_summit_booth.lifetime 1

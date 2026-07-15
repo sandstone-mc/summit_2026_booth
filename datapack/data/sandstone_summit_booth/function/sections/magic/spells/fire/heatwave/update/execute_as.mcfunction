@@ -1,4 +1,4 @@
-particle flame ~ ~ ~ 0.05 0 0.05 0.01 2 force
+particle flame ~ ~ ~ 0.05 0 0.05 0.01 2 force @a[distance=0..24]
 rotate @s ~5 ~
 tp @s ^ ^ ^0.2
 scoreboard players remove @s sandstone_summit_booth.lifetime 1

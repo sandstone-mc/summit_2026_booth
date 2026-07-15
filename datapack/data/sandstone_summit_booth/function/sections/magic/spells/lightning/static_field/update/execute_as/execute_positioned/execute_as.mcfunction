@@ -1,4 +1,4 @@
-particle electric_spark ~ ~1 ~ 0.2 0.5 0.2 0.1 10 force
+particle electric_spark ~ ~1 ~ 0.2 0.5 0.2 0.1 10 force @a[distance=0..24]
 damage @s 1 lightning_bolt
 scoreboard players set anon_WnYlBycD_76 __sandstone 1
 data modify storage __sandstone:variable anon_WnYlBycD_4 set value {}
