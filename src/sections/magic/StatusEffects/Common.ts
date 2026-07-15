@@ -15,6 +15,10 @@ interface StatusEffectOptions {
 
 const $ = Macro
 
+export const ParticleViewerSelector = Selector('@a', {
+  distance: [0, 16]
+})
+
 export function createStatusEffect(opts: StatusEffectOptions) {
   const statusTag = Label(`status.${opts.name}`)
   const statusTime = Objective.create(`status.${opts.name}_timer`)

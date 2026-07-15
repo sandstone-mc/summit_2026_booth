@@ -1,4 +1,4 @@
-import { createStatusEffect } from './Common'
+import { createStatusEffect, ParticleViewerSelector } from './Common'
 import { particle, rel, abs, attribute } from 'sandstone'
 
 const status = createStatusEffect({
@@ -7,8 +7,8 @@ const status = createStatusEffect({
     damageAmount: 0,
     damageInterval: 1000,
     particles: () => {
-        particle('crit', rel(0, 1, 0), abs(0.1, 0.25, 0.1), 0.01, 1, 'force')
-        particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.05, 3, 'force')
+        particle('crit', rel(0, 1, 0), abs(0.1, 0.25, 0.1), 0.01, 1, 'force', ParticleViewerSelector)
+        particle('electric_spark', rel(0, 1, 0), abs(0.3, 0.5, 0.3), 0.05, 3, 'force', ParticleViewerSelector)
     },
     onApply: () => {
         attribute('@s', 'minecraft:movement_speed').add(`sandstone_summit_booth:stunned`, -0.3, 'add_multiplied_total')

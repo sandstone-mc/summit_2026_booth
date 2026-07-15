@@ -1,5 +1,5 @@
 import { abs, damage, Label, MCFunction, particle, raw, rel, tp, functionCmd } from 'sandstone'
-import { castSpell, spellMeta } from '../Common'
+import { castSpell, ParticleViewerSelector, spellMeta } from '../Common'
 import { checkHit } from '../../utils/hitDetection'
 import { fireRaycast } from '../../utils/raycast'
 
@@ -13,8 +13,8 @@ const whipRaycast = fireRaycast(meta.spellPath, {
         tp('@s', rel(0, 1.62, 0))
     },
     onStep: () => {
-        particle('spore_blossom_air', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force')
-        particle('minecraft:tinted_leaves{color:[0,1,0,1]}', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force')
+        particle('spore_blossom_air', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force', ParticleViewerSelector)
+        particle('minecraft:tinted_leaves{color:[0,1,0,1]}', rel(0, 0, 0), abs(0.05, 0.05, 0.05), 0.01, 1, 'force', ParticleViewerSelector)
         checkHit({
             width: 1.5,
             height: 3,

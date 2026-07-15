@@ -1,6 +1,6 @@
 import { _, abs, damage, data, Data, effect, execute, kill, Label, MCFunction, particle, rel, Selector, Variable } from 'sandstone'
 import { Freezing } from '../../StatusEffects'
-import { castSpell, Caster, Lifetime } from '../Common'
+import { castSpell, Caster, Lifetime, ParticleViewerSelector } from '../Common'
 
 const spellPath = 'spells/ice/blizzard'
 const Storm = Label('spell.ice.blizzard.storm')
@@ -28,7 +28,7 @@ MCFunction(`sections/magic/${spellPath}/update_storms`, () => {
     })
 
     execute.as(StormSelector).at('@s').run(() => {
-        particle('snowflake', rel(0, 3, 0), abs(3, 3, 3), 0.0, 80, 'force')
+        particle('snowflake', rel(0, 3, 0), abs(3, 3, 3), 0.0, 40, 'force', ParticleViewerSelector)
         Lifetime('@s').remove(5)
 
         _.if(Lifetime('@s').lessThanOrEqualTo(0), () => {
