@@ -1,0 +1,1 @@
+data merge entity @e[tag=ssb.ui.set.song, limit=1] {text:[{text:'  ♪ Song: ',color:'gray'},{text:"Vento D'oro - JoJo  ",color:'aqua',font:'sandstone_summit_booth:monospace'}]}

@@ -1,0 +1,2 @@
+execute if score anon_WnYlBycD_5 __sandstone matches 0 run return run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/switch3
+return run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/switch4

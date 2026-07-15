@@ -1,3 +1,4 @@
+execute as @a[x=-94, y=51, z=10, dx=48, dy=24, dz=64] run tag @s add sandstone_summit_booth.rhythm.showcase.listener
 function sandstone_summit_booth:sections/rhythm/songs/shared/n221
 schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n214 5t append
 schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n222 11t append
@@ -50,3 +51,4 @@ schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n216 183t 
 schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n217 187t append
 schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n218 194t append
 schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n205 198t append
+execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] run tag @s remove sandstone_summit_booth.rhythm.showcase.listener

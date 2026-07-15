@@ -1,3 +1,1 @@
-function sandstone_summit_booth:sections/magic/showcase/reset
-scoreboard players reset @s sandstone_summit_booth.showcase.reset
-scoreboard players enable @s sandstone_summit_booth.showcase.reset
+execute as @a[gamemode=!spectator, dx=19, dy=5, dz=26] run tag @s add sandstone_summit_booth.showcase.in_magic_showcase

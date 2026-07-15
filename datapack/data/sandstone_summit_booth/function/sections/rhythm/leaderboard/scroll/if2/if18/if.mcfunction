@@ -1,2 +1,0 @@
-execute if score anon_WnYlBycD_5 __sandstone matches 0 run return run data merge entity @e[tag=ssb.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:' JoJo   Il Vento D',color:'yellow',font:'sandstone_summit_booth:monospace'},{text:' - ',color:'gray'},{text:'Best Score  ',color:'gold'}]}
-data merge entity @e[tag=ssb.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:' JoJo   Il Vento D',color:'yellow',font:'sandstone_summit_booth:monospace'},{text:' - ',color:'gray'},{text:'Deathless  ',color:'light_purple'}]}

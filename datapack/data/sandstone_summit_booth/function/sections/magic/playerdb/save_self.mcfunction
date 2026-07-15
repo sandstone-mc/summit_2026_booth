@@ -1,1 +1,2 @@
-execute as @s run function sandstone_summit_booth:sections/magic/playerdb/save_self/execute_as
+execute store result storage sandstone_summit_booth:macro uid int 1 run scoreboard players get @s sandstone_summit_booth.pdb.uid
+function sandstone_summit_booth:sections/magic/playerdb/_save_by_uid with storage sandstone_summit_booth:macro {}
