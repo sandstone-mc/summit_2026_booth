@@ -56,12 +56,4 @@ export const slides = [
 			/> */}
 		</div>
 	</>),
-	// slide[6]
-	(<>
-		<div id="img-grid">
-			<p>asd</p>
-			<p>asd</p>
-			<p>asd</p>
-		</div>
-	</>)
 ]

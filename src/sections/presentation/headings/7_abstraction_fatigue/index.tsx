@@ -7,7 +7,7 @@
  */
 
 export const slides = [
-	// slide[10]
+	// slide[9]
 	(<>
 		<h1 wrap-breaks={[4, 7]}>Do I have to use all of Sandstone's features?</h1>
 		<p>No — vanilla commands work inline, pretty much verbatim</p>

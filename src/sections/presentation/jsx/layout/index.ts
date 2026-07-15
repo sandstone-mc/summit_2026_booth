@@ -251,12 +251,12 @@ function placeRowBlocks(
 			`=> workingY=${workingY - rowDownShift(columnGap, block.children.length)}`,
 		)
 	}
-	// Pull the row down when the parent container has multiple children
-	// and a non-zero column-gap — same shape as the vertical-stack
-	// adjustment in `startingY`. `rowDownShift` returns 0 for single-
-	// child rows and for parents that declared no column-gap, so a
-	// lone `<img>` in a row container is unaffected.
-	workingY -= rowDownShift(columnGap, block.children.length)
+
+	if (bottomAnchored) {
+		workingY += TEXT_RENDER_OFFSET
+	} else {
+		workingY -= rowDownShift(columnGap, block.children.length)
+	}
 	const containerCenterY = origin[1] + workingY + containerCellH / 2
 
 	// When row fits in scene, center whole group symmetrically. When it

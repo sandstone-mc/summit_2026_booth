@@ -7,7 +7,7 @@
  */
 
 export const slides = [
-	// slide[9]
+	// slide[8]
 	(<>
 		<h1>What about my existing code?</h1>
 		<p>Drop existing files into resources/ — they ship untouched</p>
