@@ -179,7 +179,7 @@ const spawnNpcs = MCFunction('sections/npcs/spawn', () => {
                     click: {
                         trigger: 'minecraft:player_interacted_with_entity',
                         conditions: {
-                            entity: { entity_type: 'minecraft:interaction', nbt: `{Tags:["${npc.instanceTag}"]}` },
+                            entity: { entity_type: 'minecraft:interaction', entity_tags: { all_of: [npc.instanceTag] } },
                         },
                     },
                 },
@@ -244,7 +244,7 @@ MCFunction('sections/npcs/tick', () => {
 
                 // cancel the dialogue if nobody is around
                 _.if(_.and(DialogueLineIndex('@s').greaterThanOrEqualTo(0), NpcTickCounter('#global').moduloBy(THROTTLE_TICKS).equalTo(0)), () => {
-                    execute.unless.entity(Selector('@p', { distance: [0, 5] })).run(() => {
+                    execute.unless.entity(Selector('@a', { distance: [0, 5], limit: 1 })).run(() => {
                         dialogue.end()
                     })
                 })
