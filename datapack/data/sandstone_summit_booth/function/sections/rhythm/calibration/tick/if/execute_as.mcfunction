@@ -1,2 +1,2 @@
-data remove entity @s attack
-execute if score anon_WnYlBycD_13 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/calibration/sample
+execute if data entity @s attack run function sandstone_summit_booth:sections/rhythm/calibration/tick/if/execute_as/execute_if
+execute if data entity @s interaction run function sandstone_summit_booth:sections/rhythm/calibration/tick/if/execute_as/execute_if2

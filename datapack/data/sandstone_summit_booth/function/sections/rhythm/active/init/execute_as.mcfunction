@@ -1,3 +1,5 @@
+tp @s -70 64 42 180 0
+execute at @s run playsound minecraft:entity.player.levelup master @s
 attribute @s minecraft:fall_damage_multiplier base set 0
 attribute @s minecraft:movement_speed base set 0.1
 scoreboard players operation @s sandstone_summit_booth.rhythm.wall.lives = anon_WnYlBycD_45 __sandstone
