@@ -1,11 +1,11 @@
 {
-	"format_version": "1.21.11",
+	"format_version": "26.2",
 	"credit": "Made with Blockbench",
 	"textures": {
-		"0": "sandstone_summit_booth:item/1",
-		"1": "sandstone_summit_booth:item/2",
-		"3": "sandstone_summit_booth:item/4",
-		"particle": "sandstone_summit_booth:item/1"
+		"0": "sandstone_summit_booth:item/balloon/primary",
+		"1": "sandstone_summit_booth:item/balloon/secondary",
+		"3": "sandstone_summit_booth:item/balloon/string",
+		"particle": "sandstone_summit_booth:item/balloon/primary"
 	},
 	"elements": [
 		{

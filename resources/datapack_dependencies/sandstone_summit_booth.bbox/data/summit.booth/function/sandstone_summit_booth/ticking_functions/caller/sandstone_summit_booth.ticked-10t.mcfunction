@@ -1,0 +1,2 @@
+schedule function summit.booth:sandstone_summit_booth/ticking_functions/caller/sandstone_summit_booth.ticked-10t 10t
+function sandstone_summit_booth:ticked/10t

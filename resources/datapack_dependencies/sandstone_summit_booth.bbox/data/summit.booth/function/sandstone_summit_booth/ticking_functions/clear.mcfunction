@@ -1,0 +1,4 @@
+scoreboard players set #sandstone_summit_booth summit.ticked_functions_active 0
+schedule clear summit.booth:sandstone_summit_booth/ticking_functions/caller/sandstone_summit_booth.ticked-1t
+schedule clear summit.booth:sandstone_summit_booth/ticking_functions/caller/sandstone_summit_booth.ticked-5t
+schedule clear summit.booth:sandstone_summit_booth/ticking_functions/caller/sandstone_summit_booth.ticked-10t

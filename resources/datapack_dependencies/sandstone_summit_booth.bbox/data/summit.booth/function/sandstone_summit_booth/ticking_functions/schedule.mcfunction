@@ -1,0 +1,5 @@
+scoreboard players set #sandstone_summit_booth summit.ticked_functions_active 1
+schedule function summit.booth:sandstone_summit_booth/ticking_functions/check 1s
+schedule function summit.booth:sandstone_summit_booth/ticking_functions/caller/sandstone_summit_booth.ticked-1t 1t
+schedule function summit.booth:sandstone_summit_booth/ticking_functions/caller/sandstone_summit_booth.ticked-5t 1t
+schedule function summit.booth:sandstone_summit_booth/ticking_functions/caller/sandstone_summit_booth.ticked-10t 1t

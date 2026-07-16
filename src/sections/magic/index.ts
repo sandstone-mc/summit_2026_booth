@@ -7,10 +7,12 @@ import './Spells'
 import './StatusEffects'
 
 import './SummitShowcase'
-import { abs, execute, kill, MCFunction, NBT, place, Selector, summon } from 'sandstone'
+import { abs, execute, kill, MCFunction, NBT, place, RawResource, Selector, summon } from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { panels } from '@rhythm/config/internal/derived'
 import { summonMarker, killMarker } from './SummitShowcase'
+import { NAMESPACE } from 'src/shared.ts'
+import { join } from 'path'
 
 const INFO_PANEL_TAG = 'sandstone_summit_booth.magic.info_panel' as `${any}${string}`
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth' as `${any}${string}`
@@ -36,9 +38,16 @@ const INFO_TEXT: JSONTextComponent = [
 //     "on_player_exit": "sandstone_summit_booth:sections/main/exit_showcase"
 // }
 
+RawResource(
+    `${NAMESPACE}/structure/facade.nbt`,
+    Bun.file(
+        join(process.cwd(), 'resources', 'data', 'showcase', 'facade.nbt')
+    ).arrayBuffer() as unknown as Buffer<ArrayBufferLike>,
+)
+
 export const setup = MCFunction('sections/magic/setup', () => {
     execute.positioned(abs(-80, 63, 22)).run(() => {
-        place.template("sandstone_summit_booth:showcase_magic")
+        place.template("sandstone_summit_booth:magic")
     })
     execute.positioned(abs(-79, 64, 23)).run(() => {
         summonMarker()

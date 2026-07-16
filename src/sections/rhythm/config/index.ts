@@ -1,6 +1,8 @@
 import type { RhythmConfig } from './internal/types'
 import { rgb, rgba } from './internal/colors'
 
+import './internal/shaders'
+
 export { Difficulty, CellType } from './internal/types'
 export type { RenderingMode, Cell, PanelConfig, RhythmConfig } from './internal/types'
 

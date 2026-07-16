@@ -23,6 +23,8 @@ function rpFile(path: string, file: ReturnType<typeof Bun.file>) {
 
 export function emitSoundsJson() {
 	if (Object.keys(soundEvents).length === 0) return
+
+	// TODO: Sandstone bug - this should use SoundsClass
 	RawResource(sandstonePack.resourcePack(), `${NAMESPACE}/sounds.json`, JSON.stringify(soundEvents, null, 2))
 }
 

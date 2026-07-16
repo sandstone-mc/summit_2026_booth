@@ -1,4 +1,4 @@
-import { _, abs, execute, fill, kill, MCFunction, NBT, place, raw, say, Selector, summon, Tag, tp, Variable } from 'sandstone'
+import { _, abs, execute, fill, kill, MCFunction, NBT, place, raw, RawResource, say, Selector, summon, Tag, tp, Variable } from 'sandstone'
 import { panels } from '@rhythm/config/internal/derived'
 import { Tags as RhythmTags } from '@rhythm/game/state'
 import { spawnSettingsPanel } from '@rhythm/game/settings'
@@ -6,6 +6,8 @@ import { spawnLeaderboardPanel } from '@rhythm/game/leaderboard'
 
 import { setup as rhythmSetup, cleanup as rhythmCleanup } from '../rhythm'
 import { setup as magicSetup, cleanup as magicCleanup } from '../magic'
+import { NAMESPACE } from 'src/shared'
+import { join } from 'path'
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth' as `${any}${string}`
 
@@ -97,13 +99,20 @@ export const swapToMagic = MCFunction('sections/main/showcase/swap_to_magic', ()
 
 const PLACEHOLDER_TAG = 'sandstone_summit_booth.showcase.placeholder' as `${any}${string}`
 
+RawResource(
+    `${NAMESPACE}/structure/facade.nbt`,
+    Bun.file(
+        join(process.cwd(), 'resources', 'data', 'showcase', 'facade.nbt')
+    ).arrayBuffer() as unknown as Buffer<ArrayBufferLike>,
+)
+
 // backdrop shown while no showcase has been active for a while (see `showcaseIdleTicks` below)
 const setupPlaceholder = () => {
     raw('summon minecraft:text_display -70 65.375 52.01 {Tags:["summit.static","summit.booth_entity.sandstone_summit_booth","sandstone_summit_booth.showcase.placeholder"],Passengers: [{alignment: "center", background: -16777216, default_background: 0b, id: "minecraft:text_display",Tags:["summit.static","summit.booth_entity.sandstone_summit_booth","sandstone_summit_booth.showcase.placeholder"], line_width: 300, see_through: 0b, shadow: 0b, text: {bold: 0b, color: "gray", text: "         (Start one using the controls to the right)           "}, text_opacity: -1b, transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.377f, 0.375f, 0.375f], translation: [0.012287293f, -0.0625f, 0.0f]}}], alignment: "center", background: -16777216, default_background: 0b, line_width: 300, see_through: 0b, shadow: 0b, text: {bold: 0b, color: "aqua", text: "Minigame Inactive"}, text_opacity: -1b, transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.3125f, 1.3125f, 1.3125f], translation: [0.0f, 0.0f, 0.0f]}}')
     raw('summon minecraft:block_display -80.0 64 45.0 {Tags:["summit.static","summit.booth_entity.sandstone_summit_booth","sandstone_summit_booth.showcase.placeholder"],block_state: {Name: "minecraft:end_gateway"}, transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [21.0f, 8.0f, 6.0f], translation: [0.0f, 0.0f, 0.0f]}}')
 
     execute.positioned(abs(SHOWCASE_MIN.x, SHOWCASE_MIN.y, SHOWCASE_MIN.z + 1)).run(() => {
-        place.template('sandstone_summit_booth:empty_facade')
+        place.template('sandstone_summit_booth:facade')
     })
 }
 

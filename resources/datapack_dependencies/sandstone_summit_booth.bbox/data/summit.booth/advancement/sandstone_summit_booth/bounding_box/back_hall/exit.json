@@ -13,8 +13,8 @@
                 "dimension": "minecraft:overworld",
                 "position": {
                   "x": {
-                    "min": -93.0,
-                    "max": -79.0
+                    "min": -91.0,
+                    "max": -80.0
                   },
                   "y": {
                     "min": 58.0,

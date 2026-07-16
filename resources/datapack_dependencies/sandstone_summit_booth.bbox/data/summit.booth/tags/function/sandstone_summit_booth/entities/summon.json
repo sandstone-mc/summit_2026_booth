@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "sandstone_summit_booth:sections/main/showcase/ui/spawn",
+    "sandstone_summit_booth:sections/npcs/spawn",
+    "summit.booth:sandstone_summit_booth/entities/schem/summon"
+  ]
+}

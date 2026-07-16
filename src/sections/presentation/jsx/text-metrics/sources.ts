@@ -2,13 +2,14 @@
 //
 // - Default font: misode/mcmeta's `assets` branch, cached locally at
 //   `.sandstone/cache/font/`. Network only happens on first build.
-// - Custom font: local `resources/resourcepack/assets/<ns>/font/...`.
+// - Custom font: local `resources/assets/font/...` (sibling of `assets/`
+//   the resourcepack pulls textures from at build time).
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
 const CACHE_DIR = join(process.cwd(), '.sandstone', 'cache', 'font')
-const RESOURCES_DIR = join(process.cwd(), 'resources', 'resourcepack', 'assets')
+const ASSETS_FONT_DIR = join(process.cwd(), 'resources', 'assets', 'font')
 
 // misode/mcmeta's `assets` branch tracks MC's latest bundled resources.
 const MCMETA_BASE = 'https://raw.githubusercontent.com/misode/mcmeta/assets/assets'
@@ -28,20 +29,23 @@ export class DefaultFontSource {
 	}
 }
 
-// Custom font: load JSON + bitmaps from the user's resourcepack dir.
+// Custom font: load JSON + bitmaps from `resources/assets/font/`.
 export class LocalFontSource {
-	// Resource location `minecraft:include/default` → local font JSON path.
+	// Resource location `<ns>:<name>` → local JSON path. Each font is a
+	// subdir of `resources/assets/font/<name>/providers.json`.
 	jsonPath(fontId: string): string {
-		const [ns, ...rest] = fontId.split(':')
-		if (!ns) throw new Error(`text-metrics: invalid font ID ${fontId}`)
-		return join(RESOURCES_DIR, ns, 'font', `${rest.join(':')}.json`)
+		const [, ...rest] = fontId.split(':')
+		if (!rest.length) throw new Error(`text-metrics: invalid font ID ${fontId}`)
+		return join(ASSETS_FONT_DIR, rest.join(':'), 'providers.json')
 	}
 
-	// Bitmap ref `minecraft:font/ascii.png` → local PNG path.
+	// Bitmap ref `<ns>:font/<path>` → local PNG path. The leading `font/`
+	// is dropped — files live directly under `resources/assets/font/`.
 	bitmapPath(file: string): string {
-		const [ns, ...rest] = file.split(':')
-		if (!ns) throw new Error(`text-metrics: invalid bitmap file ref ${file}`)
-		return join(RESOURCES_DIR, ns, 'textures', ...rest)
+		const [, ...rest] = file.split(':')
+		if (!rest.length) throw new Error(`text-metrics: invalid bitmap file ref ${file}`)
+		const tail = rest.join('/').replace(/^font\//, '')
+		return join(ASSETS_FONT_DIR, tail)
 	}
 
 	readJson(fontId: string): Buffer {
@@ -49,7 +53,7 @@ export class LocalFontSource {
 		if (!existsSync(p)) {
 			throw new Error(
 				`text-metrics: custom font ${fontId} not found at ${p} — ` +
-					`add it under resources/resourcepack/assets/<namespace>/font/`,
+					`add it under resources/assets/font/<name>/providers.json`,
 			)
 		}
 		return readFileSync(p)
