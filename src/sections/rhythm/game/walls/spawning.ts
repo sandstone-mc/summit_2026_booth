@@ -257,10 +257,6 @@ function buildDifficultySpawn(songDifficulty: Difficulty) {
 
 	const pool = buildWeightedPool(songDifficulty)
 	const sorted = [...pool].sort((a, b) => a - b)
-	const ranges: { start: number; entryIdx: number }[] = []
-	for (let i = 0; i < sorted.length; i++) {
-		if (i === 0 || sorted[i] !== sorted[i - 1]) ranges.push({ start: i, entryIdx: sorted[i] })
-	}
 
 	return MCFunction(
 		`sections/rhythm/obstacle/spawn_d${songDifficulty}`,
@@ -274,9 +270,9 @@ function buildDifficultySpawn(songDifficulty: Difficulty) {
 						if (groupIdxList.length === 1) {
 							groupDispatchFns[0]()
 						} else {
-							scoreSwitch(
+							_.switch(
 								lastGroupId,
-								groupIdxList.map((groupId, i) => [groupId, () => groupDispatchFns[i]()]),
+								groupIdxList.map((groupId, i) => ['case', groupId, () => groupDispatchFns[i]()] as const),
 							)
 						}
 						shouldContinueGroup.set(1)
@@ -288,13 +284,10 @@ function buildDifficultySpawn(songDifficulty: Difficulty) {
 
 			_.if(shouldContinueGroup.equalTo(0), () => {
 				execute.store.result.score(randomPick).run.random.value([0, sorted.length - 1], 'wall_pick')
-				for (const [i, range] of ranges.entries()) {
-					const from = range.start
-					const to = (ranges[i + 1]?.start ?? sorted.length) - 1
-					_.if(randomPick.matches([from, to]), () => {
-						poolEntries[range.entryIdx].spawnFn()
-					})
-				}
+				_.switch(
+					randomPick,
+					sorted.map((entryIdx, i) => ['case', i, () => poolEntries[entryIdx].spawnFn()] as const),
+				)
 			})
 		},
 		{ lazy: true },
