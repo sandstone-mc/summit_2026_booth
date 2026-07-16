@@ -1,0 +1,1 @@
+{"textures":{"0":"sandstone_summit_booth:item/rhythm/skybox_void"},"elements":[{"from":[0.001,-0.35875,0.2867],"to":[15.999,14.99,16.2847],"faces":{"north":{"uv":[0.5,0.5,0.5,0.5],"texture":"#0"},"east":{"uv":[0.5,0.5,0.5,0.5],"texture":"#0"},"west":{"uv":[0.5,0.5,0.5,0.5],"texture":"#0"},"down":{"uv":[0.5,0.5,0.5,0],"texture":"#0"}}}]}
