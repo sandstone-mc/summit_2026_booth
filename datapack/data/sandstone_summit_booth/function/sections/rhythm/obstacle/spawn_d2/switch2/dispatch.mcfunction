@@ -1,0 +1,1 @@
+$return run function sandstone_summit_booth:sections/rhythm/obstacle/spawn_d2/switch2/case_$(env_0)

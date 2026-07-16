@@ -1,0 +1,1 @@
+return run function sandstone_summit_booth:sections/rhythm/obstacle/g6_m2
