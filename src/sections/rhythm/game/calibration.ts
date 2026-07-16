@@ -14,6 +14,7 @@ import {
 	tp,
 	tellraw,
 	Variable,
+    Data,
 } from 'sandstone'
 import { gameplay } from '@rhythm/config'
 import { rgba } from '@rhythm/config/internal/colors'
@@ -114,24 +115,20 @@ export const calibrationTick = MCFunction(
 	'sections/rhythm/calibration/tick',
 	() => {
 		_.if(status.equalTo(GameStatus.CALIBRATING), () => {
-			execute
-				.as(pad)
-				.if.data.entity('@s', 'attack')
-				.run(() => {
+			execute.as(pad).run(() => {
+				execute.if.data.entity('@s', 'attack').run(() => {
 					data.remove.entity('@s', 'attack')
 					_.if(sampling.equalTo(1), () => {
 						takeSample()
 					})
 				})
-			execute
-				.as(pad)
-				.if.data.entity('@s', 'interaction')
-				.run(() => {
+				execute.if.data.entity('@s', 'interaction').run(() => {
 					data.remove.entity('@s', 'interaction')
 					_.if(sampling.equalTo(1), () => {
 						takeSample()
 					})
 				})
+			})
 		})
 	},
 	{ lazy: true },

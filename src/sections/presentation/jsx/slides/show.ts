@@ -7,7 +7,6 @@ import {
 	type MCFunctionClass,
 	Selector,
 	NBT,
-	data,
 	execute,
 	sleep,
 	schedule,
@@ -32,6 +31,7 @@ import type { ImgResourceMap, CodePrecomputedMap } from '../layout'
 import type { RowFlexWidth } from '../prepare/row-flex'
 import { SCENE_TAG, slideTag, KIND_TEXT_TAG } from './tags'
 import { computeDurationsSeconds, type SlidesTiming } from '../../slides'
+import type { StaticCase } from 'sandstone/flow'
 
 export interface SlideShowInput {
 	trees: VNode[]
@@ -282,11 +282,13 @@ export class SlideShow {
 			for (let s = 0; s < this.totalSlides; s++) {
 				this.hideSlide[s]()
 			}
+			const cases: StaticCase<number>[] = []
+
 			for (let s = 0; s < this.totalSlides; s++) {
-				_.if(this.currentSlide.equalTo(s), () => {
-					this.showSlide[s]()
-				})
+				cases.push(['case', s, () => this.showSlide[s]()])
 			}
+
+			_.switch(this.currentSlide, cases)
 		})
 
 		this.mount = MCFunction('presentation/mount', () => {

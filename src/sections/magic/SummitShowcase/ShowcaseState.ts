@@ -161,9 +161,7 @@ export const reset = MCFunction('sections/magic/showcase/reset', () => {
             raw('clear @s minecraft:stick[custom_data~{\'sandstone_summit_booth.id\':\'magic_wand\'}]')
             SessionPlayerLabel('@s').remove()
         })
-    })
 
-    execute.as(ShowcaseMarker).at('@s').run(() => {
         // kill showcase mobs, selection pedestals, and session UI buttons
         kill(ShowcaseMobs)
         raw('kill @e[tag=sandstone_summit_booth.showcase.pedestal]')

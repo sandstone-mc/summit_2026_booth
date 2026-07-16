@@ -96,11 +96,10 @@ export const computeScores = MCFunction(
 			finalScore('@s').set(points('@s'))
 			finalScore('@s').multiply(tempCombo('@s'))
 			finalScore('@s').divide(gameplay.scoring.maxCombo)
-		})
 
-		title(gamePlayer).times(10, 60, 20)
-		title(gamePlayer).title({ text: 'Game Over!', color: 'red', bold: true })
-		execute.as(gamePlayer).run(() => {
+			title('@s').times(10, 60, 20)
+			title('@s').title({ text: 'Game Over!', color: 'red', bold: true })
+
 			title('@s').subtitle([{ text: 'Score: ', color: 'gray' }, finalScore('@s')])
 			tellraw('@s', [{ text: '♪ ', color: 'gold' }, { text: 'Final score: ', color: 'gray' }, finalScore('@s')])
 		})

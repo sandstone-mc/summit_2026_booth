@@ -45,3 +45,4 @@ for (const map of configuredMaps) {
 
 export const mapCount = mapList.length
 export const mapNames = mapList.map((m) => m.name)
+export const mapStructures = mapList.map((m) => m.structure)

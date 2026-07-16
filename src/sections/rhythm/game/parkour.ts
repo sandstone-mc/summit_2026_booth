@@ -150,8 +150,8 @@ export const parkourTick = MCFunction(
 					playerY.set(Data('entity', '@s', 'Pos[1]'), 10)
 					_.if(
 						_.and(
-							_.entity(Selector('@e', { tag: Tags.PARKOUR_REWARD, distance: [0, 2.5] })),
 							playerY.greaterThanOrEqualTo(rewardY),
+							_.entity(Selector('@e', { tag: Tags.PARKOUR_REWARD, distance: [0, 2.5] })),
 						),
 						() => {
 							wallLives('@s').add(1)

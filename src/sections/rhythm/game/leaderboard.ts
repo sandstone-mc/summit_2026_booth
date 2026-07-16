@@ -74,6 +74,7 @@ const sortScratch = Objective.create('rlb.sort', 'dummy')
 const runSort = MCFunction(
 	'sections/rhythm/leaderboard/sort/run',
 	() => {
+		// TODO: rewrite this, the leaderboard doesn't even work properly in-game anyway
 		for (let rank = 0; rank < leaderboardConfig.size; rank++) {
 			highestScore.set(0)
 			execute.as(Selector('@a', { tag: `!${LB_SEL}` })).run(() => {

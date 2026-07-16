@@ -1,7 +1,7 @@
 import { _, abs, execute, fill, type ItemModelDefinitionClass, kill, MCFunction, NBT, Selector, summon } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
 import { arena } from '@rhythm/config/internal/arena'
-import { mapCount, mapList, mapNames } from '@rhythm/config/internal/maps'
+import { mapCount, mapList, mapStructures } from '@rhythm/config/internal/maps'
 import { mapSelect, Tags, boothTags } from './state'
 import { NAMESPACE } from '@shared'
 
@@ -29,7 +29,7 @@ const placeMapBlocks = MCFunction(
 		for (let i = 0; i < mapCount; i++) {
 			_.if(mapSelect.equalTo(i), () => {
 				execute.run.place.template(
-					`${NAMESPACE}:${mapNames[i]}`,
+					`${NAMESPACE}:${mapStructures[i]}`,
 					abs(px, py, pz),
 					rotation,
 					arena.structureMirror,
@@ -66,7 +66,7 @@ function skyboxNbt(model: ItemModelDefinitionClass): SymbolEntity['item_display'
 			components: {
 				// @ts-ignore
 				// keys containing ':' must be pre-quoted for snbt
-				'"minecraft:item_model"': model,
+				'"minecraft:item_model"': `${model}`,
 			},
 		},
 	}
@@ -78,13 +78,15 @@ export const spawnSkybox = MCFunction(
 		killSkybox()
 		if (mapCount === 0) return
 		const [cx, cy, cz] = skyboxCenter
+		
+		const summonDisplay = (map: number) => summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(mapList[map].skybox))
 		if (mapCount === 1) {
-			summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(mapList[0].skybox))
+			summonDisplay(0)
 		} else {
-			for (let i = 0; i < mapCount; i++) {
-				_.if(mapSelect.equalTo(i), () => {
-					summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(mapList[i].skybox))
-				})
+			const ifStatement = _.if(mapSelect.equalTo(0), () => summonDisplay(0))
+
+			for (let i = 1; i < mapCount; i++) {
+				ifStatement.elseIf(mapSelect.equalTo(i), () => summonDisplay(i))
 			}
 		}
 	},

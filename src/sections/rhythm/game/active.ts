@@ -15,10 +15,12 @@ export const setActive = MCFunction(
 	() => {
 		status.set(GameStatus.ACTIVE)
 
-		const [x, y, z] = arena.playerSpawn
-		tp(gamePlayer, abs(x, y, z), [`${arena.playerYaw}`, '0'])
-
 		execute.as(gamePlayer).run(() => {
+			const [x, y, z] = arena.playerSpawn
+			tp('@s', abs(x, y, z), [`${arena.playerYaw}`, '0'])
+
+			execute.at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
+
 			attribute('@s', 'minecraft:fall_damage_multiplier').baseSet(0)
 			attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
 			wallLives('@s').set(livesSetting)
@@ -46,8 +48,6 @@ export const setActive = MCFunction(
 		playSong()
 		scheduleWalls()
 		updateSettingsPanel()
-
-		execute.as(gamePlayer).at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
 	},
 	{ lazy: true },
 )
