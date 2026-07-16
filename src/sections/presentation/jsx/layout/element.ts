@@ -21,6 +21,7 @@ import {
 import { parseMarginBox } from './margin'
 import { extractCodeSource, extractText } from '../tree/extract'
 import type { RowFlexWidth } from '../prepare/row-flex'
+import type { ItemModelDefinitionClass } from 'sandstone'
 
 const codeBorders = new CodeBorders()
 
@@ -122,7 +123,7 @@ type ImageElementLayout = {
 	marginTop: number
 	marginBottom: number
 	imgSrc: string
-	imgItemModel: string
+	imgItemModel: ItemModelDefinitionClass
 	imgAspect: number
 }
 
@@ -131,7 +132,7 @@ export type ElementLayout = TextElementLayout | ImageElementLayout
 export type ImgResource = {
 	src: string
 	aspect: number
-	itemModel: string
+	itemModel: ItemModelDefinitionClass
 }
 export type ImgResourceMap = Map<string, ImgResource>
 

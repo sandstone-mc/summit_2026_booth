@@ -8,10 +8,12 @@ import { Model, ItemModelDefinition, TextureClass } from 'sandstone'
 import type { VNode } from '../render'
 import { flatWalk } from '../tree/walk'
 import { isImgType } from '../layout/element'
-import type { ImgResource, ImgResourceMap } from '../layout/element'
+import type { ImgResourceMap } from '../layout/element'
+import { NAMESPACE } from '@shared'
 
 export function resolveImgSrc(src: string | TextureClass): string {
-	return typeof src === 'string' ? src : src.toString()
+	if (typeof src === 'string') return src
+	return `${src.path[0]}:${src.path.slice(2).join('/')}`
 }
 
 export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMap> {
@@ -22,23 +24,28 @@ export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMa
 	for (const tree of trees) {
 		for (const { node } of flatWalk(tree)) {
 			if (!isImgType(node.type)) continue
-			const rawSrc = node.props?.src
-			if (!rawSrc) continue
+			const rawSrc: undefined | string | TextureClass = node.props?.src
+			if (rawSrc === undefined) continue
+			// TODO: Sandstone bug, replace with `${rawSrc}` once its fixed
 			const src = resolveImgSrc(rawSrc)
 			if (!src || seen.has(src)) continue
 			seen.add(src)
 
-			const colonIdx = src.indexOf(':')
-			if (colonIdx <= 0) {
-				console.warn(`[img] src "${src}" is not a resource location (expected "<ns>:<path>"); skipping`)
-				continue
-			}
-			const ns = src.slice(0, colonIdx)
-			const textureNoExt = src.slice(colonIdx + 1)
+			const [ namespace, modelType, ...modelPath ] = src.split('/').flatMap((part, i) => {
+				if (i === 0) {
+					const colonI = part.indexOf(':')
+
+					if (colonI !== -1) {
+						return [part.slice(0, colonI), part.slice(colonI + 1)]
+					}
+					return [NAMESPACE, part]
+				}
+				return part
+			})
 
 			let aspect = 1
 			if (typeof rawSrc === 'string') {
-				const filePath = path.join(projectRoot, 'resources', 'resourcepack', 'assets', ns, 'textures', `${textureNoExt}.png`)
+				const filePath = `${path.join(projectRoot, 'resources', 'resourcepack', 'assets', namespace, 'textures', ...modelPath)}.png`
 				try {
 					const meta = await sharp(filePath).metadata()
 					if (meta.width && meta.height) aspect = meta.width / meta.height
@@ -57,16 +64,19 @@ export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMa
 				}
 			}
 
-			Model('item', textureNoExt, {
-				parent: 'minecraft:item/generated',
-				textures: { layer0: `${ns}:${textureNoExt}` },
+			out.set(src, {
+				src,
+				aspect,
+				itemModel: ItemModelDefinition(modelPath.join('/'), {
+					model: {
+						type: 'minecraft:model',
+						model: Model(modelType as 'item', modelPath.join('/'), {
+							parent: 'minecraft:item/generated',
+							textures: { layer0: `${namespace}:${modelType}/${modelPath.join('/')}` },
+						})
+					},
+				})
 			})
-			ItemModelDefinition(textureNoExt, {
-				model: { type: 'minecraft:model', model: `${ns}:item/${textureNoExt}` },
-			})
-
-			const resource: ImgResource = { src, aspect, itemModel: `${ns}:${textureNoExt}` }
-			out.set(src, resource)
 		}
 	}
 	return out

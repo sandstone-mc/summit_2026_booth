@@ -117,8 +117,8 @@ export function summonImageEntity(
 			components: {
 				// SNBT keys with `:` must be pre-quoted to dodge the parser
 				// treating the colon as a type-tag.
-				/* @ts-ignore — TODO: Sandstone bug; unquoted `minecraft:item_model` should work after the fix. */
-				'"minecraft:item_model"': el.imgItemModel!,
+				/* @ts-ignore — // TODO: Sandstone bug: both the key and the value here are jank */
+				'"minecraft:item_model"': `${el.imgItemModel!}`,
 			},
 		},
 		item_display: 'fixed',
