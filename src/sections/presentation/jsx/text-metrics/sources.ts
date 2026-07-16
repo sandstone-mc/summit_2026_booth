@@ -1,14 +1,14 @@
 // Font sources: where to load a font JSON / PNG from.
 //
 // - Default font: misode/mcmeta's `assets` branch, cached locally at
-//   `.sandstone/cache/font/`. Network only happens on first build.
+//   `resources/cache/font/`. Network only happens on first build.
 // - Custom font: local `resources/assets/font/...` (sibling of `assets/`
 //   the resourcepack pulls textures from at build time).
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 
-const CACHE_DIR = join(process.cwd(), '.sandstone', 'cache', 'font')
+const CACHE_DIR = join(process.cwd(), 'resources', 'cache', 'font')
 const ASSETS_FONT_DIR = join(process.cwd(), 'resources', 'assets', 'font')
 
 // misode/mcmeta's `assets` branch tracks MC's latest bundled resources.

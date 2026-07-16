@@ -12,7 +12,6 @@
     "dev:diff:snapshot": "bun run scripts/diff-build.ts snapshot",
     "dev:history:generate": "bun run scripts/generate-build-history.ts",
     "dev:deploy": "bun run scripts/deploy.ts",
-    "fetch:parsers": "bun run scripts/fetch-syntax-parsers.ts",
     "typecheck": "tsc --noEmit 2>&1 | awk '/^src\\/sections\\/(magic|rhythm|elevator)/{s=1;next} s&&/^[[:space:]]/{next} /^[^[:space:]]/{s=0} {print}'"
   },
   "keywords": [],

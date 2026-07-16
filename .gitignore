@@ -1,16 +1,9 @@
 node_modules
-dist
 .vscode
 .env
 .sandstone
 resources/cache
-resources/datapack_dependencies/summit-dp-core*
-# tree-sitter parsers + queries for the presentation `<code>` highlighter.
-# Fetch with `bun run fetch:parsers` (see scripts/fetch-syntax-parsers.ts).
-resources/jsx/parser/*
-!resources/jsx/parser/.gitkeep
-.cache
-songs/private/*
+resources/assets/songs/private/*
 .temp
 
 # baseline dir for scripts/diff-build.ts
@@ -18,3 +11,4 @@ songs/private/*
 
 # never publish summit internals
 resources/datapack_dependencies/*do-not-share*
+resources/datapack_dependencies/summit-dp-core*

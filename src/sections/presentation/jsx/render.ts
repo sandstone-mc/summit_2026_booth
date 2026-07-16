@@ -8,6 +8,7 @@ import { resetScrollIds } from './layout/element'
 import { prepareCodeHighlights, prepareExplorerTrees, prepareImgResources, prepareRowFlexWidths } from './prepare'
 import { SlideShow, SCENE_TAG } from './slides'
 import { diagnosePlacements, filterVisibleByVNode, formatIssues } from './diagnose'
+import { ensureGrammars } from './grammar-fetcher'
 
 export type VNode = { type: any; props: any; key: any }
 
@@ -105,7 +106,7 @@ function collectFonts(trees: VNode[], styles: Styles): Set<string> {
 // ── Single-tree render ──────────────────────────────────────────
 
 export async function render(tree: VNode, options: RenderOptions): Promise<Scene> {
-	await loadFontMetrics()
+	await Promise.all([ensureGrammars(), loadFontMetrics()])
 	const elements = flatWalk(tree)
 
 	const lessSource = collectLess([tree])
@@ -156,7 +157,7 @@ export async function renderSlides(
 ): Promise<SlideScene> {
 	if (trees.length === 0) throw new Error('renderSlides: at least one slide required')
 
-	await loadFontMetrics()
+	await Promise.all([ensureGrammars(), loadFontMetrics()])
 
 	const sceneW = options.bounds[0]
 	const sceneH = options.bounds[1]

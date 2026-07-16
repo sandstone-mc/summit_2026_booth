@@ -396,46 +396,58 @@ theme; no runtime cost in Minecraft.
 ### Layout
 
 ```
-resources/jsx/parser/                    # gitignored, populated by fetch
-  tree-sitter-typescript.wasm
-  typescript.highlights.scm
-  tree-sitter-mcfunction.wasm           # built from .temp/tree-sitter-mcfunction
-  mcfunction.highlights.scm
+resources/cache/                          # gitignored wholesale
+  jsx/parser/                             # auto-populated on first build
+    tree-sitter-typescript.wasm
+    typescript.highlights.scm
+    tree-sitter-mcfunction.wasm           # built from the cloned grammar below
+    tree-sitter-mcfunction/               # gitignored clone of the grammar repo
+    mcfunction.highlights.scm
+    tree-sitter-json.wasm
+    json.highlights.scm
+    vscode-dark-modern.json               # reference copy of the upstream theme
+  font/                                   # misode/mcmeta default-font cache (used by text-metrics)
+  sounds/                                 # fluidsynth+ffmpeg rendered OGGs (used by rhythm)
+  smithed/                                # (separate) Smithed library cache
 
-scripts/fetch-syntax-parsers.ts          # populates the above
-src/sections/presentation/jsx/highlight.ts  # tokenizer + theme + precompute
-src/sections/presentation/jsx/render.ts     # wires it into wrapCodeWithBorders
+src/sections/presentation/jsx/grammar-fetcher.ts   # auto-fetches + memoizes
+src/sections/presentation/jsx/highlight/           # highlighter + theme + tokenize
+src/sections/presentation/jsx/layout/constants.ts  # GRAMMARS registry consumed by prepare/
+src/sections/presentation/jsx/render.ts            # calls ensureGrammars() at top of render()/renderSlides()
 ```
 
 ### First-time setup
 
-Run once after cloning (and again after adding a grammar):
+No manual step. `render()` and `renderSlides()` call `ensureGrammars()`
+(from `src/sections/presentation/jsx/grammar-fetcher.ts`) on first
+invocation, which:
 
-```bash
-bun run fetch:parsers
-```
+1. Clones the mcfunction grammar into `resources/cache/jsx/parser/tree-sitter-mcfunction/`,
+2. Runs `bun install` + `bun run build` to emit its wasm,
+3. Downloads the upstream TypeScript + JSON wasm + `queries/highlights.scm`
+   into the parser dir,
+4. Downloads the VS Code Dark Modern theme JSON,
+5. Prints a per-language size summary.
 
-That builds the local mcfunction grammar from `.temp/tree-sitter-mcfunction/`,
-downloads the upstream TypeScript wasm + query into `resources/jsx/parser/`,
-and prints a size summary. The output dir is in `.gitignore`, so a fresh
-clone won't have these files until you run this. Builds that find a missing
-grammar gracefully degrade to the legacy single-color `<code>` rendering.
+Memoized at module scope, so once-per-build cost. All filesystem +
+network failures are caught + warned — a failed fetch degrades `<code>`
+blocks to single-color rendering for that build rather than aborting it.
 
 ### Adding a language
 
-1. Add an entry to `GRAMMARS` in `src/sections/presentation/jsx/render.ts`:
+1. Add an entry to `GRAMMARS` in
+   `src/sections/presentation/jsx/layout/constants.ts`:
    ```ts
-   const GRAMMARS = {
+   export const GRAMMARS = {
      …
      python: {
-       wasmPath: 'resources/jsx/parser/tree-sitter-python.wasm',
-       queryPath: 'resources/jsx/parser/python.highlights.scm',
+       wasmPath: 'resources/cache/jsx/parser/tree-sitter-python.wasm',
+       queryPath: 'resources/cache/jsx/parser/python.highlights.scm',
      },
    }
    ```
-2. Add the matching fetch entry to `ARTIFACTS` in
-   `scripts/fetch-syntax-parsers.ts` (and the `OUTPUTS` map for output paths).
-3. `bun run fetch:parsers`
+2. Add the matching `ARTIFACTS` + `OUTPUTS` entry in
+   `src/sections/presentation/jsx/grammar-fetcher.ts`.
 
 ### Color theme
 

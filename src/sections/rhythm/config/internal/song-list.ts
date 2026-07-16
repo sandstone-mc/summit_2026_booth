@@ -10,7 +10,10 @@ export interface SongConfig {
 	audioOffset?: number
 }
 
-const SONGS_DIRS = [join(PROJECT_ROOT, 'songs/public'), join(PROJECT_ROOT, 'songs/private')]
+const SONGS_DIRS = [
+	join(PROJECT_ROOT, 'resources/assets/songs/public'),
+	join(PROJECT_ROOT, 'resources/assets/songs/private'),
+]
 
 export async function findSongFile(filename: string): Promise<string | undefined> {
 	for (const dir of SONGS_DIRS) {

@@ -9,7 +9,7 @@ const FFMPEG = process.env.FFMPEG_PATH ?? 'ffmpeg'
 const FFPROBE = process.env.FFPROBE_PATH ?? 'ffprobe'
 
 const SOUNDFONT = process.env.SOUNDFONT ?? '/usr/share/soundfonts/FluidR3_GM.sf2'
-const CACHE_DIR = join(PROJECT_ROOT, '.cache/sounds')
+const CACHE_DIR = join(PROJECT_ROOT, 'resources/cache/sounds')
 
 const soundEvents: Record<string, { sounds: { name: string; stream: boolean }[] }> = {}
 
@@ -17,7 +17,7 @@ function rpFile(path: string, file: ReturnType<typeof Bun.file>) {
 	RawResource(
 		sandstonePack.resourcePack(),
 		path,
-		file.arrayBuffer().then((buf) => Buffer.from(buf)),
+		file.arrayBuffer() as unknown as Promise<Buffer<ArrayBufferLike>>, // TODO: Sandstone bug
 	)
 }
 

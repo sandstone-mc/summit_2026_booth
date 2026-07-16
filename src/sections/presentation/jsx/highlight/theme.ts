@@ -2,7 +2,7 @@
 // tree-sitter capture name. Strips `.suffix` one at a time so a missing
 // `@string.escape` entry falls back to `@string`, etc.
 
-const THEME_PATH = 'resources/jsx/parser/vscode-dark-modern.json'
+const THEME_PATH = 'resources/cache/jsx/parser/vscode-dark-modern.json'
 
 type ThemeSyntax = Record<string, { color?: string | null } | undefined>
 type ThemeJson = { themes?: Array<{ style?: { syntax?: ThemeSyntax } }> }

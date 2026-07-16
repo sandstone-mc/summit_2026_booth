@@ -19,8 +19,8 @@ function computePackHash(): string {
 	walkDir(join(PROJECT_ROOT, 'src'))
 
 	for (const songsJson of [
-		join(PROJECT_ROOT, 'songs/public/songs.json'),
-		join(PROJECT_ROOT, 'songs/private/songs.json'),
+		join(PROJECT_ROOT, 'resources/assets/songs/public/songs.json'),
+		join(PROJECT_ROOT, 'resources/assets/songs/private/songs.json'),
 	]) {
 		if (existsSync(songsJson)) hash.update(readFileSync(songsJson))
 	}

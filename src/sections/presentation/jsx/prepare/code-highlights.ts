@@ -115,7 +115,7 @@ export async function prepareCodeHighlights(
 	for (const entry of entries) {
 		const allSegments = lookup(entry.source, entry.lang) as StyledSegment[] | null
 		// `precomputeHighlights` returns `null` when no grammar is loaded
-		// for this lang (or `bun run fetch:parsers` was skipped); in that
+		// for this lang (e.g. grammar-fetcher auto-fetch failed); in that
 		// case the layout falls back to single-color rendering.
 		const highlightedPerSourceLine: Array<StyledSegment[] | null> = allSegments
 			? splitSegmentsBySourceLine(allSegments, entry.sourceLineStarts, entry.source)

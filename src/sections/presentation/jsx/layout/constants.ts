@@ -41,21 +41,21 @@ export const DEFAULT_EXPLORER_FILE_COLOR = '#d4d4d4' as const
 export const EXPLORER_INDENT_CHARS = 2
 
 // Repository of grammars available to `<code lang="…">` blocks.
-// `scripts/fetch-syntax-parsers.ts` populates the wasm + .scm files.
+// `grammar-fetcher.ts` populates the wasm + .scm files on first build.
 import type { Grammar } from '../highlight/highlighter'
 
 export const GRAMMARS: Record<string, Grammar> = {
 	mcfunction: {
-		wasmPath: 'resources/jsx/parser/tree-sitter-mcfunction.wasm',
-		queryPath: 'resources/jsx/parser/mcfunction.highlights.scm',
+		wasmPath: 'resources/cache/jsx/parser/tree-sitter-mcfunction.wasm',
+		queryPath: 'resources/cache/jsx/parser/mcfunction.highlights.scm',
 	},
 	typescript: {
-		wasmPath: 'resources/jsx/parser/tree-sitter-typescript.wasm',
-		queryPath: 'resources/jsx/parser/typescript.highlights.scm',
+		wasmPath: 'resources/cache/jsx/parser/tree-sitter-typescript.wasm',
+		queryPath: 'resources/cache/jsx/parser/typescript.highlights.scm',
 	},
 	json: {
-		wasmPath: 'resources/jsx/parser/tree-sitter-json.wasm',
-		queryPath: 'resources/jsx/parser/json.highlights.scm',
+		wasmPath: 'resources/cache/jsx/parser/tree-sitter-json.wasm',
+		queryPath: 'resources/cache/jsx/parser/json.highlights.scm',
 	},
 }
 
