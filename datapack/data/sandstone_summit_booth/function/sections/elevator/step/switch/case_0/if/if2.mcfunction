@@ -1,5 +1,5 @@
 execute as @e[tag=sandstone_summit_booth.elevator.car, limit=1] run tp @s -55 83.5 46
 scoreboard players set anon_WnYlBycD_0 __sandstone 0
 execute as @a[tag=sandstone_summit_booth.elevator.rider] at @s run tp @s ~ 84.03125 ~
-fill -57 83 44 -53 83 48 minecraft:barrier replace minecraft:air
+fill -57 83 44 -53 83 48 minecraft:barrier
 execute as @a[tag=sandstone_summit_booth.elevator.rider] run attribute @s minecraft:gravity modifier remove sandstone_summit_booth:elevator_ride
