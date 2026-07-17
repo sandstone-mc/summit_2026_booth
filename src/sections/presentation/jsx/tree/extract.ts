@@ -1,7 +1,16 @@
 // Text + code-source extraction from a JSX children subtree.
 
-import type { VNode } from '../render'
+import type { StyledSegment, VNode } from '../render'
 import { SNIPPET_END, SNIPPET_START, isVNode } from './walk'
+
+/** Font id applied to inline `…` spans. */
+export const INLINE_CODE_FONT = 'sandstone_summit_booth:monospace'
+
+/** Default text colour for inline `` `code` `` spans. */
+export const DEFAULT_INLINE_CODE_COLOR = '#9e9e9e' as const
+
+/** Default background colour stored for inline `` `code` `` spans. */
+export const DEFAULT_INLINE_CODE_BG = '#2d2d2d' as const
 
 // Recursively extract a plain string from a children tree: strings,
 // numbers, function-toString, nested VNodes (recurse on their children),
@@ -101,4 +110,139 @@ function halfLeadingIndent(line: string): string {
 	for (const c of lead) visual += c === '\t' ? 2 : 1
 	const halved = Math.floor(visual / 2)
 	return ' '.repeat(halved) + line.slice(lead.length)
+}
+
+// ── Inline formatting ────────────────────────────────────────────
+//
+// Parse Markdown-flavoured inline markers out of a JSX prose string:
+//   ***foo***  → bold + italic on "foo"
+//   **foo**    → bold on "foo"
+//   *foo*      → italic on "foo"
+//   `foo`      → monospace gray on "foo"
+//
+// State machine scans left → right, toggling bold / italic / inCode.
+// On every state change the accumulated chars are flushed as a fresh
+// StyledSegment so the next segment carries the new style. Order
+// matters: `***` is checked first, then `**`, then `*`, so `***foo***`
+// parses as one atomic bold+italic span. Inside an open code span
+// `*` and `**` and `***` are literal characters (no nesting). An
+// unclosed marker stays open — `**foo` renders as bold("foo"), no
+// error path.
+//
+// Marker characters are NEVER emitted into the output text — only the
+// chars between them.
+//
+// `codeColor` and `codeBg` are baked into every `` ` `` segment the
+// parser produces; the layout pass reads them off LESS declarations
+// and passes them through.
+
+export function parseInlineFormatting(
+	s: string,
+	codeColor: `#${string}` = DEFAULT_INLINE_CODE_COLOR,
+	codeBg: `#${string}` = DEFAULT_INLINE_CODE_BG,
+): StyledSegment[] {
+	if (!s) return []
+	const out: StyledSegment[] = []
+	let buf = ''
+	let bold = false
+	let italic = false
+	let inCode = false
+
+	const flush = () => {
+		if (buf.length === 0) return
+		const seg: StyledSegment = { text: buf }
+		if (bold) seg.bold = true
+		if (italic) seg.italic = true
+		if (inCode) {
+			seg.font = INLINE_CODE_FONT
+			seg.color = codeColor
+			seg.background = codeBg
+		}
+		out.push(seg)
+		buf = ''
+	}
+
+	let i = 0
+	const n = s.length
+	while (i < n) {
+		const ch = s[i]
+		if (!inCode) {
+			// `***` toggles both bold AND italic atomically so `***foo***`
+			// doesn't parse as bold-then-italic-on-empty. Checked before
+			// `**` to claim the leading two stars.
+			if (ch === '*' && s[i + 1] === '*' && s[i + 2] === '*') {
+				flush()
+				bold = !bold
+				italic = !italic
+				i += 3
+				continue
+			}
+			if (ch === '*' && s[i + 1] === '*') {
+				flush()
+				bold = !bold
+				i += 2
+				continue
+			}
+			if (ch === '*') {
+				flush()
+				italic = !italic
+				i += 1
+				continue
+			}
+			if (ch === '`') {
+				flush()
+				inCode = true
+				i += 1
+				continue
+			}
+		} else if (ch === '`') {
+			// Inside a code span: only the closing backtick is special —
+			// every other char (including `*`) is literal text.
+			flush()
+			inCode = false
+			i += 1
+			continue
+		}
+		buf += ch
+		i += 1
+	}
+	flush()
+	return out
+}
+
+// Walk a JSX children subtree and apply `parseInlineFormatting` to
+// every string-valued leaf. Numbers and string literals are converted
+// via String() before parsing. VNodes recurse on their own children;
+// arrays are flattened. False / null contribute nothing.
+//
+// Used by the layout pass to turn a `<p>`'s mixed prose into a
+// StyledSegment stream that the segment-aware wrap can measure
+// correctly across font changes.
+export function extractTextAsSegments(
+	children: any,
+	codeColor: `#${string}` = DEFAULT_INLINE_CODE_COLOR,
+	codeBg: `#${string}` = DEFAULT_INLINE_CODE_BG,
+): StyledSegment[] {
+	if (children == null || children === false) return []
+	if (typeof children === 'string') return parseInlineFormatting(children, codeColor, codeBg)
+	if (typeof children === 'number') return parseInlineFormatting(String(children), codeColor, codeBg)
+	if (typeof children === 'function') return parseInlineFormatting(codeSourceFromFunction(children), codeColor, codeBg)
+	if (isVNode(children)) return extractTextAsSegments(children.props?.children, codeColor, codeBg)
+	if (Array.isArray(children)) {
+		const out: StyledSegment[] = []
+		for (const c of children) out.push(...extractTextAsSegments(c, codeColor, codeBg))
+		return out
+	}
+	return []
+}
+
+// True when a `StyledSegment[]` would be rendered differently than a
+// single-string pass — i.e. it has more than one segment, or its single
+// segment carries a font / bold / italic / color override. Callers can
+// short-circuit the segment path when this returns false and emit the
+// existing string-based entity.
+export function isFormattedSegments(segs: StyledSegment[]): boolean {
+	if (segs.length !== 1) return true
+	const s = segs[0]
+	return Boolean(s.bold || s.italic || s.font || s.color || s.background)
 }

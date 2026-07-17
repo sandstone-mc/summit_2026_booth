@@ -24,6 +24,17 @@
 
 import type { FontLoader } from './font-loader'
 import { DEFAULT_FONT_ID } from './font-loader'
+import type { StyledSegment } from '../render'
+
+type SegToken = {
+	ch: string
+	bold: boolean
+	italic: boolean
+	fontId: string
+	color?: `#${string}`
+	background?: `#${string}`
+	segIdx: number
+}
 
 /**
  * One visual row produced by `wrapCodeLinesWithOffsets`. `visualLine` is
@@ -160,6 +171,203 @@ export class TextWrap {
 	wrapLines(text: string, lineWidth: number, bold: boolean, fontId: string = DEFAULT_FONT_ID): number {
 		if (lineWidth <= 0) return 1
 		return Math.max(1, this.wrapToLines(text, lineWidth, bold, fontId).length)
+	}
+
+	/**
+	 * Wrap a `StyledSegment[]` (inline-formatted prose from
+	 * `parseInlineFormatting`) into per-visual-line `StyledSegment[]`s.
+	 * Each token carries its own font/bold/italic so char widths span
+	 * font changes correctly — a mono-flavoured `` `code` `` span in a
+	 * proportional paragraph is measured against the monospace font,
+	 * the rest against the base font, and the budget is the sum.
+	 *
+	 * The greedy algorithm and fudge factors (CHAR_FUDGE / BUDGET_FUDGE)
+	 * mirror `wrapToLines` so a mixed-fluent paragraph wraps at the same
+	 * point MC will. Each visual line is the source segments sliced by
+	 * token range, with style copied from the originating segment so a
+	 * single multi-char span survives the slice unchanged.
+	 */
+	wrapSegmentedLines(
+		segments: StyledSegment[],
+		lineWidth: number,
+		baseBold: boolean,
+		fontId: string = DEFAULT_FONT_ID,
+	): StyledSegment[][] {
+		if (segments.length === 0) return [[]]
+		if (lineWidth <= 0) return [segments.map((s) => ({ ...s }))]
+
+		// Expand segments -> per-char token stream. Undefined `bold`
+		// inherits the entity-level `baseBold` so an h1 without `**…**`
+		// markers is still measured bold (matching MC's text-component
+		// bold inheritance).
+		const tokens: SegToken[] = []
+		for (let si = 0; si < segments.length; si++) {
+			const seg = segments[si]
+			const segBold = seg.bold ?? baseBold
+			const segFont = seg.font ?? fontId
+			for (const ch of seg.text) {
+				tokens.push({
+					ch,
+					bold: segBold,
+					italic: seg.italic ?? false,
+					fontId: segFont,
+					color: seg.color,
+					background: seg.background,
+					segIdx: si,
+				})
+			}
+		}
+		if (tokens.length === 0) return [[]]
+
+		const cw = (t: SegToken): number =>
+			Math.max(1, Math.round(this.loader.charWidth(t.ch, t.bold, t.fontId) * TextWrap.CHAR_FUDGE))
+		// Inter-word space width always measured against the BASE font.
+		// The token-stream budget adds one space width per gap between
+		// adjacent visual-line words; the rendering of the space itself
+		// in MC inherits the surrounding text style, but the budget's
+		// absolute pixel cost is dominated by the base font and stays
+		// stable across inline-style changes.
+		const spaceW = Math.max(1, Math.round(this.loader.charWidth(' ', false, fontId) * TextWrap.CHAR_FUDGE))
+		const adjustedLineWidth = lineWidth * TextWrap.BUDGET_FUDGE
+
+		const out: StyledSegment[][] = []
+
+		// Iterate per source line (split on '\n' carried in the token
+		// stream — `\n` inside a segment's text is preserved through
+		// the parser, so a soft break in the JSX string still counts
+		// as a hard wrap here).
+		let lineStart = 0
+		for (let i = 0; i <= tokens.length; i++) {
+			if (i === tokens.length || tokens[i].ch === '\n') {
+				this.wrapSegmentLine(
+					tokens,
+					segments,
+					lineStart,
+					i,
+					adjustedLineWidth,
+					cw,
+					spaceW,
+					out,
+				)
+				lineStart = i + 1
+			}
+		}
+
+		return out.length > 0 ? out : [[]]
+	}
+
+	private wrapSegmentLine(
+		tokens: SegToken[],
+		segments: StyledSegment[],
+		lineStart: number,
+		lineEnd: number,
+		adjustedLineWidth: number,
+		cw: (t: SegToken) => number,
+		spaceW: number,
+		out: StyledSegment[][],
+	): void {
+		if (lineEnd === lineStart) {
+			out.push([])
+			return
+		}
+
+		// Leading whitespace count. Preserved verbatim on the FIRST
+		// visual line of this source line — matches `wrapToLines`'s
+		// `leading + lines[0]` behavior.
+		let leadEnd = lineStart
+		while (leadEnd < lineEnd && (tokens[leadEnd].ch === ' ' || tokens[leadEnd].ch === '\t')) {
+			leadEnd++
+		}
+
+		type Range = { start: number; end: number }
+		const bodyLines: Range[] = []
+		let curStart = leadEnd
+		let curEnd = leadEnd
+		let curW = 0
+
+		const flush = () => {
+			if (curEnd > curStart) bodyLines.push({ start: curStart, end: curEnd })
+			curStart = curEnd
+			curW = 0
+		}
+
+		let pos = leadEnd
+		while (pos < lineEnd) {
+			// Greedy word — contiguous non-whitespace, non-newline tokens.
+			let wordEnd = pos
+			while (
+				wordEnd < lineEnd &&
+				tokens[wordEnd].ch !== ' ' &&
+				tokens[wordEnd].ch !== '\t' &&
+				tokens[wordEnd].ch !== '\n'
+			) {
+				wordEnd++
+			}
+			if (wordEnd === pos) {
+				// Defensive: shouldn't happen given the loop guard, but
+				// keep advancing to avoid an infinite loop on degenerate
+				// input (e.g. a bare whitespace char stranded in a
+				// segment).
+				pos++
+				continue
+			}
+			let w = 0
+			for (let k = pos; k < wordEnd; k++) w += cw(tokens[k])
+
+			// Char-wrap when a single word is wider than the budget.
+			// Mirrors wrapToLines's chunk-by-chunk fallback.
+			if (w > adjustedLineWidth) {
+				flush()
+				let chunkStart = pos
+				let chunkW = 0
+				for (let k = pos; k < wordEnd; k++) {
+					const tcw = cw(tokens[k])
+					if (chunkW + tcw > adjustedLineWidth && k > chunkStart) {
+						bodyLines.push({ start: chunkStart, end: k })
+						chunkStart = k
+						chunkW = tcw
+					} else {
+						chunkW += tcw
+					}
+				}
+				if (chunkStart < wordEnd) bodyLines.push({ start: chunkStart, end: wordEnd })
+				curStart = wordEnd
+				curEnd = wordEnd
+				curW = 0
+				// Skip trailing spaces after the char-wrapped word.
+				pos = wordEnd
+				while (pos < lineEnd && (tokens[pos].ch === ' ' || tokens[pos].ch === '\t')) pos++
+				continue
+			}
+
+			if (curEnd === curStart) {
+				curStart = pos
+				curEnd = wordEnd
+				curW = w
+			} else if (curW + spaceW + w <= adjustedLineWidth) {
+				curEnd = wordEnd
+				curW += spaceW + w
+			} else {
+				flush()
+				curStart = pos
+				curEnd = wordEnd
+				curW = w
+			}
+
+			// Skip inter-word spaces. The next iteration resumes on the
+			// next word; the implicit inter-word space is added back via
+			// `spaceW` in the budget check above.
+			pos = wordEnd
+			while (pos < lineEnd && (tokens[pos].ch === ' ' || tokens[pos].ch === '\t')) pos++
+		}
+		flush()
+		if (bodyLines.length === 0) bodyLines.push({ start: leadEnd, end: leadEnd })
+
+		for (let li = 0; li < bodyLines.length; li++) {
+			const line = bodyLines[li]
+			const sliceStart = li === 0 ? lineStart : line.start
+			out.push(sliceTokensToSegments(tokens, segments, sliceStart, line.end))
+		}
 	}
 
 	/**
@@ -350,4 +558,113 @@ export class TextWrap {
 		}
 		return Math.max(1, total)
 	}
+}
+
+/**
+ * Slice `segments` into per-visual-line arrays at the user-supplied
+ * word-break points. Each `breakWord` is a global word index (the
+ * `wrap-breaks` JSX prop convention) — word N begins a new visual line.
+ *
+ * Used when the caller trusts their break list over the engine's
+ * natural wrap (e.g. MC's actual wrap disagrees with our greedy
+ * word-fill, or the user wants a specific 2-line layout regardless
+ * of width). Splits across segments are safe because we walk the
+ * per-char token stream with whitespace-aware word tracking.
+ */
+export function sliceSegmentsByWordBreaks(
+	segments: StyledSegment[],
+	breakWords: number[],
+): StyledSegment[][] {
+	if (segments.length === 0) return [[]]
+
+	// Build token stream the same way `wrapSegmentedLines` does, but
+	// without bold/font inheritance — we only need char + segIdx.
+	const tokens: { ch: string; segIdx: number }[] = []
+	for (let si = 0; si < segments.length; si++) {
+		for (const ch of segments[si].text) tokens.push({ ch, segIdx: si })
+	}
+	if (tokens.length === 0) return [[]]
+
+	// Walk the token stream, accumulating words. A word starts on a
+	// non-whitespace token that follows a whitespace-or-beginning state.
+	const sortedBreaks = [...breakWords].sort((a, b) => a - b)
+	let wordIdx = 0
+	let breakCursor = 0
+	type Range = { start: number; end: number }
+	const ranges: Range[] = []
+	let curStart = 0
+	let curEnd = 0
+	let inWord = false
+	for (let i = 0; i < tokens.length; i++) {
+		const ch = tokens[i].ch
+		const isWs = ch === ' ' || ch === '\t'
+		if (isWs) {
+			if (inWord) {
+				wordIdx++
+				inWord = false
+				// After incrementing, check if the NEXT word should
+				// start a new visual line.
+				if (
+					breakCursor < sortedBreaks.length &&
+					wordIdx === sortedBreaks[breakCursor]
+				) {
+					ranges.push({ start: curStart, end: curEnd })
+					curStart = curEnd
+					breakCursor++
+				}
+			}
+		} else {
+			if (!inWord) {
+				inWord = true
+			}
+			curEnd = i + 1
+		}
+	}
+	if (inWord) wordIdx++
+	if (curEnd > curStart) ranges.push({ start: curStart, end: curEnd })
+
+	// Edge case: empty ranges (e.g. the text starts with whitespace,
+	// no words encountered) — emit at least one empty visual line so
+	// the layout doesn't drop the element entirely.
+	if (ranges.length === 0) return [[]]
+
+	const out: StyledSegment[][] = []
+	for (const range of ranges) {
+		out.push(sliceTokensToSegments(tokens, segments, range.start, range.end))
+	}
+	return out
+}
+
+// Walk `tokens[start..end)`, grouping consecutive tokens that share a
+// `segIdx`, and emit one `StyledSegment` per group. Style fields
+// (color/font/bold/italic/background) are copied verbatim from the
+// source segment, so a sliced span retains the user's explicit flags
+// while undefined fields fall back to entity-level / baseBold at NBT
+// emission time.
+function sliceTokensToSegments(
+	tokens: { ch: string; segIdx: number }[],
+	segments: StyledSegment[],
+	start: number,
+	end: number,
+): StyledSegment[] {
+	const out: StyledSegment[] = []
+	let i = start
+	while (i < end) {
+		const segIdx = tokens[i].segIdx
+		const sourceSeg = segments[segIdx]
+		let text = ''
+		while (i < end && tokens[i].segIdx === segIdx) {
+			text += tokens[i].ch
+			i++
+		}
+		if (!text) continue
+		const seg: StyledSegment = { text }
+		if (sourceSeg.color !== undefined) seg.color = sourceSeg.color
+		if (sourceSeg.background !== undefined) seg.background = sourceSeg.background
+		if (sourceSeg.font !== undefined) seg.font = sourceSeg.font
+		if (sourceSeg.bold !== undefined) seg.bold = sourceSeg.bold
+		if (sourceSeg.italic !== undefined) seg.italic = sourceSeg.italic
+		out.push(seg)
+	}
+	return out
 }

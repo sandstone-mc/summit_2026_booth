@@ -4,8 +4,12 @@
 
 import { NBT } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
+import { DEFAULT_FONT_ID } from '../text-metrics'
 import type { StyledSegment } from '../render'
 import { parseColorInt } from './color'
+
+/** Default text color for segments without an explicit override. */
+const DEFAULT_TEXT_COLOR = '#ffffff' as const
 
 // Build the `text` field for a text_display. Single string → one
 // color from `declarations.color`; array of segments → each segment
@@ -37,13 +41,32 @@ function buildSegment(
 	type: string,
 ): NonNullable<SymbolEntity['text_display']['text']> {
 	const out: NonNullable<SymbolEntity['text_display']['text']> = { text: seg.text }
-	const color = seg.color ?? (declarations.color as `#${string}` | undefined)
-	if (color) out.color = color
-	if (declarations.bold === 'true') out.bold = true
-	if (type === 'h1' || type === 'h2') out.bold = true
-	const font = seg.font ?? declarations.font
-	if (font) out.font = font as `${string}:${string}`
-	else if (type === 'code' || type === 'explorer') out.font = 'sandstone_summit_booth:monospace'
+	// Color, bold, italic, font are ALL set explicitly on every
+	// segment. Minecraft's text component system merges sibling styles
+	// when a later segment leaves a field unset — the field carries
+	// over from the previous segment. Without an explicit reset, a
+	// plain-text segment following a `` `code` `` span would inherit
+	// the code span's gray color / monospace font. Defaults below
+	// match MC's own defaults (`#ffffff` text, `false` bold/italic,
+	// `minecraft:default` font).
+	out.color = (seg.color ?? declarations.color ?? DEFAULT_TEXT_COLOR) as `#${string}`
+	if (seg.bold === true) out.bold = true
+	else if (seg.bold === false) out.bold = false
+	else if (declarations.bold === 'true') out.bold = true
+	else if (type === 'h1' || type === 'h2') out.bold = true
+	else out.bold = false
+	if (seg.italic === true) out.italic = true
+	else if (seg.italic === false) out.italic = false
+	else if (declarations.italic === 'true') out.italic = true
+	else out.italic = false
+	out.font = (seg.font ?? declarations.font ?? (type === 'code' || type === 'explorer' ? 'sandstone_summit_booth:monospace' : DEFAULT_FONT_ID)) as `${string}:${string}`
+	// `seg.background` is stored but NOT rendered as a per-segment
+	// field — MC text components have no per-component `background`.
+	// The LESS `inline-code-bg` declaration is stored on the segment
+	// for future per-entity fan-out (multiple item_display boxes
+	// behind a single text_display entity to simulate per-span
+	// highlights). For now, callers that want to render an inline-code
+	// background will need the layout to emit highlight entities.
 	return out
 }
 

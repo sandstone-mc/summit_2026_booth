@@ -457,6 +457,8 @@ export type CssPropertyName =
 	| 'margin-bottom'
 	| 'border-color'
 	| 'lang-color'
+	| 'inline-code-color'
+	| 'inline-code-bg'
 	| 'font'
 	| 'text-align'
 	| 'align-items'

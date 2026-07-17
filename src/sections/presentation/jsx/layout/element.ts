@@ -2,7 +2,7 @@
 // everything the summon pass needs (cell size, scale, margins, content).
 
 import { parseLength, pxToTextScale, pxToTextLineHeight } from '../length'
-import { wrapLines } from '../text-metrics'
+import { wrapLines, wrapSegmentedLines, sliceSegmentsByWordBreaks, textWidth, charWidth } from '../text-metrics'
 import { resolveImgSrc } from '../prepare/img-resources'
 import { DEFAULT_FONT_ID } from '../text-metrics/font-loader'
 import type { CssDeclarations } from '../less/types'
@@ -19,7 +19,13 @@ import {
 	defaultFontPx,
 } from './constants'
 import { parseMarginBox } from './margin'
-import { extractCodeSource, extractText } from '../tree/extract'
+import {
+	DEFAULT_INLINE_CODE_BG,
+	DEFAULT_INLINE_CODE_COLOR,
+	extractCodeSource,
+	extractText,
+	parseInlineFormatting,
+} from '../tree/extract'
 import type { RowFlexWidth } from '../prepare/row-flex'
 import type { ItemModelDefinitionClass } from 'sandstone'
 
@@ -113,10 +119,21 @@ type TextElementLayout = {
 	__scrollRows?: BorderedRows
 	/** `lineHeightBlocks` cached at the same time as `__scrollRows`. */
 	__scrollLineHeightBlocks?: number
+	/**
+	 * Inline-formatted prose segments for `<p>` / `<h*>` — a flat
+	 * `StyledSegment[]` already in source order. Set when the
+	 * element's text contains `**bold**` / `*italic*` / `` `code` ``
+	 * markers. The summon pass hands this array directly to MC's
+	 * `text` field — Minecraft's `text_display.line_width` does the
+	 * actual wrap at runtime; we never inject `\n` characters.
+	 */
+	styledContent?: StyledSegment[]
 	imgSrc?: undefined
 	imgItemModel?: undefined
 	imgAspect?: undefined
 }
+
+
 
 type ImageElementLayout = {
 	kind: 'image'
@@ -371,17 +388,76 @@ function computeTextLayout(
 	const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
 
 	if (!isCode && !isExplorer) {
-		// `wrap-breaks` is a caller-supplied override for the engine's
+		// Inline-formatting detection. Parse `**bold**`, `*italic*`, and
+		// `` `code` `` markers out of `content`. When markers produce a
+		// styled segment array, the wrap uses the segment-aware path so
+		// monospace spans are measured against the monospace font and
+		// the cellH reflects the segment-aware line count.
+		//
+		// LESS knobs `inline-code-color` / `inline-code-bg` override the
+		// gray default for inline `` `code` `` spans. `inline-code-bg` is
+		// stored only — MC text components have no per-segment background
+		// field; see `nbt.ts` and `summon-entity.ts` for the deferred
+		// per-segment rendering.
+		const inlineCodeColor =
+			(declarations['inline-code-color'] as `#${string}` | undefined) ??
+			DEFAULT_INLINE_CODE_COLOR
+		const inlineCodeBg =
+			(declarations['inline-code-bg'] as `#${string}` | undefined) ??
+			DEFAULT_INLINE_CODE_BG
+		const parsedSegments = parseInlineFormatting(content, inlineCodeColor, inlineCodeBg)
+		const isFormatted = parsedSegments.some(
+			(s) => s.bold || s.italic || s.font || s.color || s.background,
+		)
+
+		// `wrap-breaks` is a caller-supplied hint for the engine's
 		// line-count prediction. Each entry is a global word index
 		// (whitespace-delimited, matching `wrapToLines`'s definition);
 		// word N begins a new line. Empty array = "MC doesn't wrap
 		// this at all" (line count = 1). Undefined keeps the engine's
-		// `wrapLines()` guess. The content string passed to MC is
-		// unchanged either way — only `cellH` is corrected.
+		// `wrapLines()` guess.
+		//
+		// NOTE: `wrap-breaks` is purely an INSTRUCTION-to-ENGINE — it
+		// tells the layout pass where MC will actually break given
+		// the element's `line_width`, so `cellH` can match. The text
+		// content itself is left unchanged: MC's runtime wrap decides
+		// actual break points. We do NOT inject `\n` characters into
+		// the rendered text.
 		const wrapBreaks = parseWrapBreaks(node.props?.['wrap-breaks'])
 		let lines: number
 		let wrapBreaksApplied: number[] | undefined
-		if (wrapBreaks !== undefined) {
+		let styledContent: StyledSegment[] | undefined
+		if (isFormatted) {
+			// Hand MC the flat segment array verbatim. Minecraft's
+			// text_display wraps at runtime based on `line_width`, so
+			// the segments stay in source order without `\n` separators.
+			styledContent = parsedSegments
+			// Use the segment-aware wrap purely as a line-COUNT guess
+			// for cellH. When the caller supplied `wrap-breaks`, trust
+			// it instead — it's the engine's view of where MC will
+			// actually break at runtime.
+			if (wrapBreaks !== undefined) {
+				wrapBreaksApplied = wrapBreaks
+				lines = wrapBreaks.length === 0 ? 1 : wrapBreaks.length + 1
+			} else {
+				lines = wrapSegmentedLines(parsedSegments, wrapWidthPx, isBold, fontId).length
+			}
+			// Targeted debug for the test paragraph in slide 6 AND the
+			// wrap-breaks `<p wrap-breaks={[5]}>\`RawResource\`` on slide 7.
+			if (content.includes('Test **bold** *italic*') || content.includes('RawResource')) {
+				console.log(`[inline-debug] type=${type} content=${JSON.stringify(content)}`)
+				console.log(`[inline-debug] parsedSegments=${parsedSegments.length}: ` + parsedSegments.map(s => {
+					const tags: string[] = []
+					if (s.bold) tags.push('B')
+					if (s.italic) tags.push('I')
+					if (s.font) tags.push('F')
+					if (s.color) tags.push('C')
+					return `${JSON.stringify(s.text)}${tags.length ? '[' + tags.join(',') + ']' : ''}`
+				}).join(' '))
+				console.log(`[inline-debug] wrapWidthPx=${wrapWidthPx.toFixed(1)} isBold=${isBold} fontId=${fontId}`)
+				console.log(`[inline-debug] cellH inputs: lines=${lines} lineHeightBlocks=${(pxToTextLineHeight(scalePx, fontId)).toFixed(3)} heightLen=${heightLen?.meters ?? 'none'} isBold=${isBold} declarations.bold=${declarations.bold} declarations.font=${declarations.font} wrapBreaks=${JSON.stringify(wrapBreaks)}`)
+			}
+		} else if (wrapBreaks !== undefined) {
 			wrapBreaksApplied = wrapBreaks
 			lines = wrapBreaks.length === 0 ? 1 : wrapBreaks.length + 1
 		} else {
@@ -391,11 +467,23 @@ function computeTextLayout(
 		// `width: fit-content` (prose): resolve to the longest visual
 		// line's char count × MC's default-font char width (~7 px per char
 		// in default scale, conservative vs the literal 6 px to absorb
-		// wider glyphs like 'd', 'm', 'w'). Cap at slide width.
+		// wider glyphs like 'd', 'm', 'w'). Cap at slide width. When
+		// inline formatting is active, measure each line using the
+		// loader's actual per-char widths so monospace spans contribute
+		// the correct pixel cost.
 		if (width?.unit === 'fit-content') {
-			const longestChars = longestLineCharCount(content)
-			const charWidthBlocks = (7 / 16) * textScale
-			const naturalWidthBlocks = Math.min(sceneW, longestChars * charWidthBlocks)
+			let longestPx = 0
+			if (styledContent) {
+				for (const seg of styledContent) {
+					const bold = seg.bold ?? isBold
+					const fontIdForSeg = seg.font ?? fontId
+					for (const ch of seg.text) longestPx += charWidth(ch, bold, fontIdForSeg)
+				}
+			} else {
+				longestPx = textWidth(content, isBold, fontId)
+			}
+			// Convert pixel width back into MC blocks (1 block = 16 px).
+			const naturalWidthBlocks = Math.min(sceneW, longestPx / 16)
 			width = {
 				value: naturalWidthBlocks * 16,
 				unit: 'px',
@@ -425,6 +513,7 @@ function computeTextLayout(
 			marginBottom,
 			fontId,
 			wrapBreaksApplied,
+			styledContent,
 		}
 	}
 

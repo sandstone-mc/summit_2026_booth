@@ -9,6 +9,7 @@ import { buildTextJson, buildIdentityTransform, applyBackgroundColor } from './n
 import { Z_VISUAL_OFFSET } from './constants'
 import { KIND_TEXT_TAG } from '../slides/tags'
 import type { ElementLayout } from './element'
+import type { StyledSegment } from '../render'
 
 const ROTATION_QUATERNION = NBT.float([0, 0, 0, 1])
 const ZERO_TRANSLATION = NBT.float([0, 0, 0])
@@ -65,9 +66,24 @@ export function summonTextEntity(
 	// Single entity (non-scroll, or scroll with no chunks).
 	const tags: (`${any}${string}` | LabelClass)[] = [sceneTag, ...extraTags]
 	if (el.scrollTag) tags.push(el.scrollTag as `${any}${string}`)
+
+	// Inline-formatted prose (`<p>` / `<h*>` with `**bold**` etc.):
+	// the layout pass already parsed the segments and stored them
+	// in source order on `styledContent`. We hand the array
+	// straight to MC's `text` field — Minecraft's `line_width`
+	// does the actual wrap at runtime, so we never inject `\n`
+	// characters here. Falls through to the bordered / plain
+	// string path when no formatting was detected.
+	let textContent: string | StyledSegment[]
+	if (el.styledContent && el.styledContent.length > 0) {
+		textContent = el.styledContent
+	} else {
+		textContent = el.borderedContent ?? el.content
+	}
+
 	const nbt: SymbolEntity['text_display'] = {
 		Tags: tags,
-		text: buildTextJson(el.borderedContent ?? el.content, el.declarations, el.type),
+		text: buildTextJson(textContent, el.declarations, el.type),
 		transformation: buildIdentityTransform(el.textScale),
 	}
 

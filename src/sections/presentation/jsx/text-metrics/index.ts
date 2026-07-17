@@ -4,8 +4,13 @@
 // loader instances themselves. `loadFontMetrics` must be awaited
 // before any `charWidth` / `wrapLines` / `fontMetrics` call for that font.
 
+import type { StyledSegment } from '../render'
 import { FontLoader, DEFAULT_FONT_ID, type FontMetrics } from './font-loader'
-import { TextWrap, type CodeLineWrap } from './wrap'
+import {
+	TextWrap,
+	sliceSegmentsByWordBreaks as sliceSegmentsByWordBreaksRaw,
+	type CodeLineWrap,
+} from './wrap'
 
 export type { CodeLineWrap } from './wrap'
 
@@ -46,6 +51,35 @@ export function wrapToLines(
 	fontId: string = DEFAULT_FONT_ID,
 ): string[] {
 	return wrap.wrapToLines(text, lineWidth, bold, fontId)
+}
+
+/**
+ * Wrap a `StyledSegment[]` (inline-formatted prose from
+ * `parseInlineFormatting`) into per-visual-line `StyledSegment[]`s.
+ * Each token carries its own font/bold/italic so char widths span
+ * font changes correctly.
+ */
+export function wrapSegmentedLines(
+	segments: StyledSegment[],
+	lineWidth: number,
+	baseBold: boolean,
+	fontId: string = DEFAULT_FONT_ID,
+): StyledSegment[][] {
+	return wrap.wrapSegmentedLines(segments, lineWidth, baseBold, fontId)
+}
+
+/**
+ * Slice `segments` into per-visual-line arrays at the user-supplied
+ * word-break points (the `wrap-breaks` JSX prop convention). Honours
+ * the break list exactly, ignoring natural wrap. Used when the
+ * caller trusts their break list over the engine's guess — typically
+ * because MC's actual wrap differs from ours.
+ */
+export function sliceSegmentsByWordBreaks(
+	segments: StyledSegment[],
+	breakWords: number[],
+): StyledSegment[][] {
+	return sliceSegmentsByWordBreaksRaw(segments, breakWords)
 }
 
 export function wrapCodeLinesAsArray(

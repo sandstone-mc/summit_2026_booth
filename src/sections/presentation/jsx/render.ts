@@ -18,6 +18,16 @@ export type StyledSegment = {
 	color?: `#${string}`
 	/** Per-segment font override (otherwise inherits from declarations). */
 	font?: `${string}:${string}`
+	/** Per-segment bold override. */
+	bold?: boolean
+	/** Per-segment italic override. */
+	italic?: boolean
+	/**
+	 * Per-segment background (decimal ARGB). Currently visualised at entity
+	 * level only — MC text components have no per-segment background field.
+	 * Stored so callers can override it later without an extra layout pass.
+	 */
+	background?: `#${string}`
 }
 
 export type RenderOptions = {
@@ -86,18 +96,26 @@ function collectLess(trees: VNode[]): string {
 
 /**
  * Collect every distinct font ID any element could resolve to. We pull
- * the LESS `font` declaration AND the `<code>` default — anything we
- * might render must be loaded into text-metrics before layout starts,
- * since `wrapLines` throws if asked about an unloaded font.
+ * the LESS `font` declaration, the `<code>` default, AND inline `` `code` ``
+ * markers inside prose — any element we might render must be loaded
+ * into text-metrics before layout starts, since `wrapLines` throws
+ * if asked about an unloaded font.
  */
 function collectFonts(trees: VNode[], styles: Styles): Set<string> {
 	const out = new Set<string>([DEFAULT_FONT_ID])
 	for (const tree of trees) {
 		for (const { node, path } of flatWalk(tree)) {
 			if (!isTextType(node.type)) continue
+			if (node.type === 'code' || node.type === 'explorer') {
+				out.add('sandstone_summit_booth:monospace')
+				continue
+			}
+			// Prose elements: scan for inline `` `code` `` markers so the
+			// monospace font is preloaded when a paragraph contains them.
+			const text = extractText(node.props?.children)
+			if (text && /`/.test(text)) out.add('sandstone_summit_booth:monospace')
 			const decs = styles.forPath(path)
 			if (decs.font) out.add(decs.font)
-			else if (node.type === 'code') out.add('sandstone_summit_booth:monospace')
 		}
 	}
 	return out
