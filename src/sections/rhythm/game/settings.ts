@@ -384,7 +384,7 @@ const onMapCycleBack = MCFunction(
 
 // every button is reward-triggered
 function clickEntity(buttonTag: Tags) {
-	return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: buttonTag } }
+	return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [buttonTag] } }
 }
 
 Advancement('ui_song_cycle', {

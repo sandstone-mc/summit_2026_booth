@@ -84,7 +84,7 @@ function floorBarrierCorners(floorIdx: number) {
 
 function fillFloorBarrier(floorIdx: number) {
     const [corner1, corner2] = floorBarrierCorners(floorIdx)
-    fill(corner1, corner2, 'minecraft:barrier').replace('minecraft:air')
+    fill(corner1, corner2, 'minecraft:barrier')
 }
 
 function clearFloorBarrier(floorIdx: number) {
