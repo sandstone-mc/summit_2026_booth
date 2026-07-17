@@ -25,6 +25,19 @@ import type { ItemModelDefinitionClass } from 'sandstone'
 
 const codeBorders = new CodeBorders()
 
+// Parse the `side-padding` JSX prop. Accepts a `[left, right]` tuple
+// or a single number (applied to both sides). Returns the default
+// `[1, 1]` when the prop is missing or malformed.
+function parseSidePadding(raw: unknown): [number, number] {
+	if (Array.isArray(raw) && raw.length >= 2) {
+		const l = Number(raw[0])
+		const r = Number(raw[1])
+		if (Number.isFinite(l) && Number.isFinite(r)) return [l, r]
+	}
+	if (typeof raw === 'number' && Number.isFinite(raw)) return [raw, raw]
+	return [1, 1]
+}
+
 // Module-level counter: each scrolling `<code>` element gets a unique
 // tag string (`code_scroll_${id}`) so the per-slide scroll-tick can
 // target its entity even when several scrolls share one slide.
@@ -429,6 +442,9 @@ function computeTextLayout(
 	// the box reads as an explorer panel instead of an unnamed code box.
 	// `<code>` uses its `lang` prop (or empty if unset).
 	const language = isExplorer ? 'explorer' : String(node.props?.lang ?? '')
+	// `[left, right]` chars of side-padding inside the `│` borders.
+	// Default `[1, 1]`; `[0, 0]` makes content touch the borders.
+	const sidePadding = parseSidePadding(node.props?.['side-padding'])
 	const rows = codeBorders.buildRows({
 		content,
 		language,
@@ -442,6 +458,7 @@ function computeTextLayout(
 		lineNumbers,
 		lineCount: sourceLineCount,
 		gutterColor,
+		sidePadding,
 	})
 
 	// `lines` (visual row count) = top border + codeRows + bottom border.

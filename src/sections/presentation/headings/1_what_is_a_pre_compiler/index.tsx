@@ -1,9 +1,7 @@
 export const slides = [
-	// slide[0]
 	(<><div id="text-grid">
 		<h1>What is a pre-compiler?</h1>
 	</div></>),
-	// slide[1]
 	(<><div id="text-grid">
 		<p>A tool that translates non-vanilla code into raw mcfunction & JSON files.</p>
 		<p>They usually allow you to organize your code exactly how you want to, without having to manually juggle hundreds of files.</p>

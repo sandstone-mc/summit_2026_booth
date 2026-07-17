@@ -8,12 +8,14 @@ import recipeGen from './snippets/recipe_sample.json'
 import advancementGen from './snippets/advancement_sample.json'
 
 export const slides = [
-	// slide[7]
 	(<>
-		<h3 id="header" wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>
-		<p>Not really - Basic Sandstone syntax maps 1:1 to commands and JSON</p>
-		<p>Additonally, LLM-assisted coding works great as a learning aid</p>
-		<p>And if you already know JS you're basically 90% there; TypeScript is just a step beyond that</p>
+		<h2 id="header">Do I need lots of TS / JS experience?</h2>
+		{/** This text-grid is not actually greedily taking the rest of the page height and centering the paragraphs, investigate */}
+		<div id="text-grid">
+			<p>Not really - Basic Sandstone syntax maps 1:1 to commands and JSON</p>
+			<p>Additonally, LLM-assisted coding works great as a learning aid</p>
+			<p>And if you already know JS you're basically 90% there; TypeScript is just a step beyond that</p>
+		</div>
 	</>),
 	(<>
 		<h3 id="header" wrap-breaks={[]}>Do I need lots of TS / JS experience?</h3>

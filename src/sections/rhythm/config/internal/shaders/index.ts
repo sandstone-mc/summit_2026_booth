@@ -55,3 +55,7 @@ export const [skybox_rainbows, skybox_neon, skybox_void ] = [
 		}),
 	},
 }))
+
+const placeholder = 'placeholder'
+
+export default placeholder

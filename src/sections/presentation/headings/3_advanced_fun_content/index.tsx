@@ -28,7 +28,6 @@ const magicGlamshot = Texture('item', 'presentation/magic', screenshot('assets/p
 // INFO: explorer path-start=3 means to omit the `.sandstone/output/datapack/` part of the path
 
 export const slides = [
-	// slide[3]
 	(<>
 		<h2 id="header">Can people make advanced, fun content with Sandstone?</h2>
 
@@ -40,7 +39,6 @@ export const slides = [
 			<img src={magicGlamshot} height="30vh" />
 		</div>
 	</>),
-	// slide[4]
 	(<>
 		<h3 id="header">Ori's Rhythm Game Example</h3>
 
@@ -54,10 +52,10 @@ export const slides = [
 				path-start={3}
 				root=".sandstone/output/datapack/data/sandstone_summit_booth/function/sections/rhythm/calibration"
 				scrolling={true}
+				no-dash={true}
 			/>
 		</div>
 	</>),
-	// slide[5]
 	(<>
 		<h3 id="header">LilSpartan's Arcane Magic Example</h3>
 
@@ -71,6 +69,7 @@ export const slides = [
 				path-start={3}
 				root=".sandstone/output/datapack/data/sandstone_summit_booth/function/sections/magic/spells/lightning/thunderbolt"
 				scrolling={true}
+				no-dash={true}
 			/>
 		</div>
 	</>),

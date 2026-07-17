@@ -29,12 +29,16 @@ export type StyleProps = { children?: string; source?: string }
  *   `scrolling` — when the wrapped content is taller than the cell,
  *      auto-scroll the text upward through the slide over the slide's
  *      duration. Default: false.
+ *   `sidePadding` — `[left, right]` chars of space inserted inside the
+ *      `│` borders on every line. Default `[1, 1]`. Use `[0, 0]` for
+ *      flush content.
  */
 export type CodeProps = CommonProps & {
 	lang?: string
 	src?: string
 	'line-numbers'?: boolean
 	scrolling?: boolean
+	'side-padding'?: [number, number]
 }
 
 /**
@@ -54,12 +58,20 @@ export type CodeProps = CommonProps & {
  *      (`.exists`, `.gitkeep`) are skipped.
  *   `scrolling` — when the rendered tree is taller than the cell,
  *      auto-scroll the rows upward through the slide over its duration.
+ *   `sidePadding` — `[left, right]` chars of space inserted inside the
+ *      `│` borders on every line. Default `[1, 1]`. Use `[0, 0]` for
+ *      flush content.
+ *   `no-dash` — render connectors as just `├` and `└` (no `─`), so
+ *      each entry takes 1 fewer char of horizontal space. Default
+ *      `false`. Ancestor columns (`│ ` / `  `) are unchanged.
  */
 export type ExplorerProps = CommonProps & {
 	root: string
 	width?: string
 	'path-start'?: number
 	scrolling?: boolean
+	'side-padding'?: [number, number]
+	'no-dash'?: boolean
 }
 
 /**

@@ -6,7 +6,7 @@ import { checkHit } from '../utils/hitDetection'
 export const Caster = Label('spell.caster')
 export const Lifetime = Objective.create('lifetime')
 
-export const TargetableTag = Tag('entity_type', 'sandstone_summit_booth:targetable', [
+export const Targetable = Tag('entity_type', 'sandstone_summit_booth:targetable', [
     'minecraft:bogged',
     'minecraft:zombie',
 ])

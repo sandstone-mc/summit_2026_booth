@@ -1,5 +1,5 @@
 import { execute, rel, Selector } from 'sandstone'
-import { TargetableTag } from '../Spells/Common'
+import { Targetable } from '../Spells/Common'
 
 interface HitboxOptions {
     type?: string;  //default #sandstone_summit_booth:targetable
@@ -11,7 +11,7 @@ interface HitboxOptions {
 export const checkHit = (opts: HitboxOptions) => {
     const w = opts.width || 0.9
     const h = opts.height || 2.0
-    const type = opts.type || TargetableTag
+    const type = opts.type || Targetable
 
     execute.positioned(rel(-w, -h / 2, -w)).run(() => {
         execute.as(Selector('@e', {

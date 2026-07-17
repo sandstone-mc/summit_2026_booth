@@ -1,18 +1,10 @@
-/**
- * Slide: Do I have to use all of Sandstone's features?
- *
- * Notes (kept for reference, not parsed as content):
- * - raw: write vanilla commands with sandstone pretty much verbatim
- * - https://sandstone.dev/docs/features/resources/custom_resource RawResource
- */
-
-export const slides = [
-	// slide[9]
-	(<>
-		<h1 wrap-breaks={[4, 7]}>Do I have to use all of Sandstone's features?</h1>
-		<p>No — vanilla commands work inline, pretty much verbatim</p>
+export const slides = [(<>
+	<h2 id="header" wrap-breaks={[6]}>Do I have to use all of Sandstone's features?</h2>
+	{/** This text-grid is not actually greedily taking the rest of the page height and centering the paragraphs, investigate */}
+	<div id="text-grid">
+		<p>No - vanilla commands work pretty much verbatim, with the `raw()` utility available as a backup</p>
 		<p>Reach for variables, flow control, and macros only when they help</p>
-		<p>RawResource lets you ship arbitrary JSON untouched</p>
+		<p wrap-breaks={[5]}>`RawResource` lets you ship arbitrary files untouched</p>
 		<p>Adopt features gradually, as your project needs them</p>
-	</>),
-]
+	</div>
+</>)]

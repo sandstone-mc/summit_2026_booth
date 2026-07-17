@@ -1,19 +1,21 @@
-/**
- * Slide: How does Sandstone compare to other options?
- *
- * Notes (kept for reference, not parsed as content):
- * - Animated text demo of typing a summon command with full auto-complete,
- *   including NBT.
- * - Showcase using node modules in Ori's code.
- */
+import shaderCode from '../../../rhythm/config/internal/shaders/index' with { type: 'text' }
 
 export const slides = [
-	// slide[13]
 	(<>
-		<h1>How does Sandstone compare?</h1>
-		<p>Full auto-complete, even for NBT payload keys</p>
-		<p>Catch typos and type errors before the build runs</p>
-		<p>Use node modules inside your datapack code — not just mcfunction</p>
-		<p>Same TypeScript ecosystem your other projects already use</p>
+		<h2 id="header">How does Sandstone compare?</h2>
+		<p>Full auto-complete & error-checking, even for NBT!</p>
+		{/** Insert auto-complete demo */}
 	</>),
+	(<>
+		<h3 id="header">How does Sandstone compare?</h3>
+		<p>Use node modules directly inside your datapack code - not just Sandstone abstactions.</p>
+		<code
+			id="shader-code"
+			src={shaderCode}
+			lang="typescript"
+			scrolling={true}
+			line-numbers={true}
+		/>
+		<p>If you're already familiar with JS/TS you operate in the same, familiar ecosystem.</p>
+	</>)
 ]

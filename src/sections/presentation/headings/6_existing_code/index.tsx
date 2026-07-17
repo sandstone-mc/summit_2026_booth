@@ -1,18 +1,10 @@
-/**
- * Slide: What about my existing code?
- *
- * Notes (kept for reference, not parsed as content):
- * - Drop existing files in `resources/`; they ship untouched alongside
- *   files generated from TypeScript.
- */
-
-export const slides = [
-	// slide[8]
-	(<>
-		<h1>What about my existing code?</h1>
-		<p>Drop existing files into resources/ — they ship untouched</p>
-		<p>New TypeScript files live alongside, generated into the same datapack</p>
+export const slides = [(<>
+	<h2 id="header">What about my existing code?</h2>
+	{/** This text-grid is not actually greedily taking the rest of the page height and centering the paragraphs, investigate */}
+	<div id="text-grid">
+		<p>Drop existing files into `resources/datapack/` and `resources/resourecepack/` - they ship untouched</p>
+		<p>Write new code in TypeScript files in the same project, generated into the same datapack</p>
 		<p>Mix and match: convert what helps, leave the rest as-is</p>
-		<p>No forced rewrite — adopt Sandstone at your own pace</p>
-	</>),
-]
+		<p>No forced rewrite - adopt Sandstone at your own pace</p>
+	</div>
+</>)]

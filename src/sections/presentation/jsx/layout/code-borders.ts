@@ -96,6 +96,13 @@ export type WrapArgs = {
 	lineNumbers: boolean
 	lineCount?: number
 	gutterColor: `#${string}` | undefined
+	/**
+	 * `[left, right]` chars of space inside the `│` borders on every
+	 * line. Default `[1, 1]` — that's the 1-char breathing room on
+	 * each side of the content. Use `[0, 0]` for flush content,
+	 * `[2, 0]` for extra left indent, etc.
+	 */
+	sidePadding?: [number, number]
 }
 
 export class CodeBorders {
@@ -195,6 +202,7 @@ export class CodeBorders {
 		lineNumbers: boolean = false,
 		lineCount?: number,
 		gutterColor: `#${string}` | undefined = undefined,
+		sidePadding?: [number, number],
 	): StyledSegment[] {
 		const rows = this.buildRows({
 			content,
@@ -209,6 +217,7 @@ export class CodeBorders {
 			lineNumbers,
 			lineCount,
 			gutterColor,
+			sidePadding,
 		})
 		return this.serializeWindow(rows, 0, rows.codeRows.length)
 	}
@@ -230,20 +239,27 @@ export class CodeBorders {
 			lineNumbers,
 			lineCount,
 			gutterColor,
+			sidePadding,
 		} = args
 		const gutterChars = lineNumbers ? Math.max(2, String(lineCount ?? 0).length) : 0
 		const DEFAULT_CHAR_PX = DEFAULT_MONO_CHAR_PX
+		// `[left, right]` chars of space inside the `│` borders on every
+		// line. Default `[1, 1]`. `0, 0` makes content touch the borders
+		// directly. `[2, 0]` adds an extra left indent, etc.
+		const paddingLeft = sidePadding?.[0] ?? 1
+		const paddingRight = sidePadding?.[1] ?? 1
 		// `line_width` (MC NBT) caps total row chars between the two `│`s
 		// at `lineWidthPx / DEFAULT_CHAR_PX`. Internal overhead matches
 		// the bordered-row construction:
-		//   - With gutter: `gutterChars + 5` chars (gutter content,
-		//     ' │ ' separator + leading/trailing 1-char padding inside
-		//     the `│`s).
-		//   - Without gutter: `2` chars (just the leading and trailing
-		//     1-char padding inside the `│`s — no gutter separator).
+		//   - With gutter: `paddingL + gutterChars + 3 + paddingR`
+		//     (left pad + gutter content + ' │ ' separator + right pad).
+		//   - Without gutter: `paddingL + paddingR` (just the two side
+		//     pads; no separator).
 		// Plus the 2 `│` characters themselves.
 		const maxRowChars = Math.max(10, Math.floor(lineWidthPx / DEFAULT_CHAR_PX) - 2)
-		const internalOverhead = gutterChars ? gutterChars + 5 : 2
+		const internalOverhead = gutterChars
+			? paddingLeft + gutterChars + 3 + paddingRight
+			: paddingLeft + paddingRight
 		const maxCodeChars = Math.max(10, maxRowChars - internalOverhead)
 		// Wrap budget: char count per visual row. Treat every glyph as
 		// monospace — if a char ends up the wrong width that's a font
@@ -279,6 +295,10 @@ export class CodeBorders {
 		const gutterInner = internalOverhead
 		const outerWidth = longestInnerChars + gutterInner
 		const dashCount = Math.max(0, outerWidth - langPart.length)
+		// Char constants for the bordered row's left/right edges. Each
+		// edge is the `│` border plus `paddingL` / `paddingR` spaces.
+		const leftEdge = '│' + ' '.repeat(paddingLeft)
+		const rightEdge = ' '.repeat(paddingRight) + '│'
 
 		const fmtLineNum = (n: number) => {
 			const s = String(n)
@@ -308,7 +328,7 @@ export class CodeBorders {
 		const buildRow = (i: number, leadingNewline: boolean): StyledSegment[] => {
 			const row: StyledSegment[] = []
 			if (leadingNewline) row.push({ text: '\n', color: borderColor })
-			row.push({ text: '│ ', color: borderColor })
+			row.push({ text: leftEdge, color: borderColor })
 			if (lineNumbers) {
 				const isContinuation =
 					i > 0 &&
@@ -351,14 +371,14 @@ export class CodeBorders {
 				if (innerWritten < longestInnerChars) {
 					this.push(row, ' '.repeat(longestInnerChars - innerWritten), codeColor)
 				}
-				row.push({ text: ' │', color: borderColor })
+				row.push({ text: rightEdge, color: borderColor })
 				codeRows.push(row)
 			}
 		} else {
 			for (let i = 0; i < codeLines.length; i++) {
 				const row = buildRow(i, true)
 				row.push({ text: codeLines[i].padEnd(longestInnerChars, ' '), color: codeColor })
-				row.push({ text: ' │', color: borderColor })
+				row.push({ text: rightEdge, color: borderColor })
 				codeRows.push(row)
 			}
 		}
