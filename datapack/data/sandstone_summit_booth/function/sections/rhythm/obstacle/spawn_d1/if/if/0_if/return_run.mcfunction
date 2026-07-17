@@ -1,2 +1,2 @@
 function sandstone_summit_booth:sections/rhythm/obstacle/spawn_d1/switch
-scoreboard players set anon_WnYlBycD_16 __sandstone 1
+scoreboard players set anon_WnYlBycD_18 __sandstone 1

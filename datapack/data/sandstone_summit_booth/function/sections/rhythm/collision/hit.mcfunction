@@ -1,7 +1,7 @@
 scoreboard players remove @s sandstone_summit_booth.rhythm.wall.lives 1
 scoreboard players add @s sandstone_summit_booth.rhythm.hits 1
 scoreboard players set @s sandstone_summit_booth.rhythm.combo 0
-scoreboard players set anon_WnYlBycD_40 __sandstone 1
+scoreboard players set anon_WnYlBycD_42 __sandstone 1
 function sandstone_summit_booth:sections/rhythm/collision/break_wall
 playsound minecraft:entity.player.hurt master @s
 tag @s add ssb.rhythm.wall.cd

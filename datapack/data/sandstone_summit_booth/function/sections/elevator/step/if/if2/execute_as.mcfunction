@@ -1,0 +1,1 @@
+execute store result score elevator.rider_y_0_WnYlBycD __sandstone run data get entity @s Pos[1] 10

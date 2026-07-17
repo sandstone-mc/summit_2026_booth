@@ -1,0 +1,1 @@
+return run function sandstone_summit_booth:sections/elevator/floors/1/go/switch3

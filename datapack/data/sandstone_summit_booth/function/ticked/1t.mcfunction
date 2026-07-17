@@ -1,4 +1,5 @@
 function sandstone_summit_booth:presentation/tick
+function sandstone_summit_booth:sections/elevator/step
 function sandstone_summit_booth:sections/rhythm/tick_loop
 function sandstone_summit_booth:sections/magic/playerdb/tick
 function sandstone_summit_booth:sections/magic/showcase/selection/tick

@@ -1,8 +1,8 @@
 function sandstone_summit_booth:sections/main/showcase/session/start
-scoreboard players set anon_WnYlBycD_0 __sandstone 1
-execute store result score anon_WnYlBycD_43 __sandstone run time query gametime
-scoreboard players set anon_WnYlBycD_6 __sandstone 0
-execute store result score anon_WnYlBycD_6 __sandstone run scoreboard players get @a[tag=ssb.rhythm.player, limit=1] sandstone_summit_booth.rhythm.cal
-scoreboard players operation anon_WnYlBycD_6 __sandstone *= 10 __sandstone
-scoreboard players set anon_WnYlBycD_42 __sandstone 5
+scoreboard players set anon_WnYlBycD_2 __sandstone 1
+execute store result score anon_WnYlBycD_45 __sandstone run time query gametime
+scoreboard players set anon_WnYlBycD_8 __sandstone 0
+execute store result score anon_WnYlBycD_8 __sandstone run scoreboard players get @a[tag=ssb.rhythm.player, limit=1] sandstone_summit_booth.rhythm.cal
+scoreboard players operation anon_WnYlBycD_8 __sandstone *= 10 __sandstone
+scoreboard players set anon_WnYlBycD_44 __sandstone 5
 return run function sandstone_summit_booth:sections/rhythm/start/countdown_tick

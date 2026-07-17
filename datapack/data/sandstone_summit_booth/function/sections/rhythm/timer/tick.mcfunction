@@ -1,1 +1,1 @@
-execute if score anon_WnYlBycD_0 __sandstone matches 2 run function sandstone_summit_booth:sections/rhythm/timer/tick/if
+execute if score anon_WnYlBycD_2 __sandstone matches 2 run function sandstone_summit_booth:sections/rhythm/timer/tick/if

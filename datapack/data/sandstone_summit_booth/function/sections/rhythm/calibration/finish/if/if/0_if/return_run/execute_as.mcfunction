@@ -1,4 +1,4 @@
-scoreboard players operation @s sandstone_summit_booth.rhythm.cal = anon_WnYlBycD_10 __sandstone
+scoreboard players operation @s sandstone_summit_booth.rhythm.cal = anon_WnYlBycD_12 __sandstone
 tellraw @s [{"text":"⧗ ","color":"aqua"},{"text":"Calibration saved: ","color":"gray"},{"score":{"name":"@s","objective":"sandstone_summit_booth.rhythm.cal"}},{"text":"ms","color":"aqua"},{"text":" (applied to your future runs).","color":"gray"}]
 tellraw @s [{"text":"⧗ ","color":"aqua"},{"text":"Estimated latency to the server: ","color":"gray"},{"score":{"name":"@s","objective":"sandstone_summit_booth.rhythm.cal"}},{"text":"ms","color":"aqua"},{"text":" (network + audio + reaction time)","color":"dark_gray"}]
 execute at @s run playsound minecraft:entity.player.levelup master @s ~ ~ ~ 0.8 1.5

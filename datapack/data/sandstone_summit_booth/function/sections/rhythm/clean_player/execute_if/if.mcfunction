@@ -1,2 +1,2 @@
-execute if score anon_WnYlBycD_0 __sandstone matches 2 run return run function sandstone_summit_booth:sections/rhythm/end/run
-execute if score anon_WnYlBycD_0 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/start/cancel
+execute if score anon_WnYlBycD_2 __sandstone matches 2 run return run function sandstone_summit_booth:sections/rhythm/end/run
+execute if score anon_WnYlBycD_2 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/start/cancel

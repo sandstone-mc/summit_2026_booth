@@ -1,2 +1,2 @@
-scoreboard players operation anon_WnYlBycD_33 __sandstone = anon_WnYlBycD_36 __sandstone
+scoreboard players operation anon_WnYlBycD_35 __sandstone = anon_WnYlBycD_38 __sandstone
 execute as @a[tag=!ssb.lb.sel] run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/run/if8/execute_as

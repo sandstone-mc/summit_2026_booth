@@ -1,2 +1,2 @@
-execute if score anon_WnYlBycD_0 __sandstone matches 1 run return run data merge entity @e[tag=ssb.ui.set.btn, limit=1] {text:{text:'  ✖ CANCEL  ',color:'red',bold:true}}
+execute if score anon_WnYlBycD_2 __sandstone matches 1 run return run data merge entity @e[tag=ssb.ui.set.btn, limit=1] {text:{text:'  ✖ CANCEL  ',color:'red',bold:true}}
 data merge entity @e[tag=ssb.ui.set.btn, limit=1] {text:{text:'  ▶ START  ',color:'green',bold:true}}

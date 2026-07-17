@@ -1,0 +1,3 @@
+execute at @e[tag=sandstone_summit_booth.elevator.car, limit=1] positioned ~-2.5 ~0.53125 ~-2.5 as @a[tag=!sandstone_summit_booth.elevator.rider, dx=5, dy=5, dz=5] run tag @s add sandstone_summit_booth.elevator.rider
+execute as @a[tag=sandstone_summit_booth.elevator.rider] at @e[tag=sandstone_summit_booth.elevator.car, limit=1] positioned ~-2.5 ~0.53125 ~-2.5 unless entity @s[dx=5, dy=5, dz=5] run function sandstone_summit_booth:sections/elevator/step/execute_as
+execute unless score anon_WnYlBycD_0 __sandstone = anon_WnYlBycD_1 __sandstone run function sandstone_summit_booth:sections/elevator/step/if

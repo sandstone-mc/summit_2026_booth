@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "sandstone_summit_booth:presentation/tick",
+    "sandstone_summit_booth:sections/elevator/step",
     "sandstone_summit_booth:sections/rhythm/tick_loop",
     "sandstone_summit_booth:sections/magic/playerdb/tick",
     "sandstone_summit_booth:sections/magic/showcase/selection/tick",

@@ -1,1 +1,1 @@
-execute if score anon_WnYlBycD_0 __sandstone matches 0 run function sandstone_summit_booth:sections/rhythm/reset_player
+execute if score anon_WnYlBycD_2 __sandstone matches 0 run function sandstone_summit_booth:sections/rhythm/reset_player

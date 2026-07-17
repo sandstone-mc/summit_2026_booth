@@ -1,1 +1,1 @@
-execute if score @s sandstone_summit_booth.rlb.s0d > anon_WnYlBycD_37 __sandstone run scoreboard players add anon_WnYlBycD_38 __sandstone 1
+execute if score @s sandstone_summit_booth.rlb.s0d > anon_WnYlBycD_39 __sandstone run scoreboard players add anon_WnYlBycD_40 __sandstone 1

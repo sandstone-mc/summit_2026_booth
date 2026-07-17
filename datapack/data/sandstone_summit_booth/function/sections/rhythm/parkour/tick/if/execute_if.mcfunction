@@ -1,2 +1,2 @@
-execute store result score anon_WnYlBycD_22 __sandstone run data get entity @s Pos[1] 10
-execute if score anon_WnYlBycD_22 __sandstone >= anon_WnYlBycD_23 __sandstone if entity @e[tag=ssb.rhythm.pk.reward, distance=0..2.5] run function sandstone_summit_booth:sections/rhythm/parkour/tick/if/execute_if/if
+execute store result score anon_WnYlBycD_24 __sandstone run data get entity @s Pos[1] 10
+execute if score anon_WnYlBycD_24 __sandstone >= anon_WnYlBycD_25 __sandstone if entity @e[tag=ssb.rhythm.pk.reward, distance=0..2.5] run function sandstone_summit_booth:sections/rhythm/parkour/tick/if/execute_if/if

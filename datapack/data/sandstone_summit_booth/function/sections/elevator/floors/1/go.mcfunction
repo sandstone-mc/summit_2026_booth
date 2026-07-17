@@ -1,0 +1,1 @@
+execute if score anon_WnYlBycD_0 __sandstone = anon_WnYlBycD_1 __sandstone unless score anon_WnYlBycD_0 __sandstone matches 1 run function sandstone_summit_booth:sections/elevator/floors/1/go/if

@@ -2,4 +2,4 @@ summon minecraft:item_display -69.5 66.5 22.5 {Tags:['summit.booth_entity.sandst
 summon minecraft:interaction -69 64 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new'],width:0.5f,height:1f}
 summon minecraft:interaction -69 66 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new'],width:0.5f,height:1f}
 summon minecraft:happy_ghast -69 68 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,attributes:[{id:'minecraft:scale',base:0.25d}],active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}
-scoreboard players set anon_WnYlBycD_15 __sandstone 0
+scoreboard players set anon_WnYlBycD_17 __sandstone 0
