@@ -17,3 +17,4 @@ execute if score #current sandstone_summit_booth.presentation.slide_idx matches 
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 16 run function sandstone_summit_booth:presentation/slides/scroll/16
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 17 run function sandstone_summit_booth:presentation/slides/scroll/17
 execute if score #current sandstone_summit_booth.presentation.slide_idx matches 18 run function sandstone_summit_booth:presentation/slides/scroll/18
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 19 run function sandstone_summit_booth:presentation/slides/scroll/19
