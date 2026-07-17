@@ -1,4 +1,4 @@
-import { Label, NBT, Objective, rel, fill, MCFunction, execute, Selector, summon, tp, abs, kill, _, raw, scoreboard, Tag } from 'sandstone'
+import { Label, NBT, Objective, rel, fill, MCFunction, execute, Selector, summon, tp, abs, kill, _, raw, scoreboard, Tag, clear, ItemPredicate } from 'sandstone'
 
 import { ShowcaseMarker } from '.'
 import { clearSelf, getSelf, saveSelf, io } from '../PlayerDB'
@@ -6,6 +6,7 @@ import { mana, maxMana, manaRegen } from '../player_handler'
 import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
 import { SymbolEntity } from 'sandstone/arguments';
 import { endShowcaseSession, PlayersInShowcase, startShowcaseSession } from 'src/sections/main/showcase'
+import { AllPedestals } from './Selection';
 
 export const State = Objective.create('showcase.state', 'dummy')
 export const GlobalState = State('#global')
@@ -137,39 +138,36 @@ export const closeDoor = MCFunction('sections/magic/showcase/door/close', () => 
     })
 }, { lazy: true })
 
-
-export const openDoor = MCFunction('sections/magic/showcase/door/open', () => {
-    execute.as(ShowcaseMarker).at('@s').run(() => {
-        fill(rel(ENTRANCE_X, ENTRANCE_Y, ENTRANCE_Z), rel(ENTRANCE_X + (ENTRANCE_DX - 1), ENTRANCE_Y + (ENTRANCE_DY - 1), ENTRANCE_Z + (ENTRANCE_DZ - 1)), 'minecraft:air')
-    })
-}, { lazy: true })
-
-
 export const reset = MCFunction('sections/magic/showcase/reset', () => {
     GlobalState.set(STATES.RESETTING)
 
-    execute.as(ShowcaseMarker).at('@s').positioned(RESET_POS).run(() => {
-        // teleport all players in the booth out (handles both session player and extras)
-        execute.as(InBoothPlayer).run(() => {
-            tp('@s', rel(0.5, 0, 3), abs(0, 0))
-            raw('clear @s minecraft:stick[custom_data~{\'sandstone_summit_booth.id\':\'magic_wand\'}]')
-            SessionPlayerLabel('@s').remove()
-            InBoothLabel('@s').remove()
+    execute.as(ShowcaseMarker).at('@s').run(() => {
+        fill(rel(ENTRANCE_X, ENTRANCE_Y, ENTRANCE_Z), rel(ENTRANCE_X + (ENTRANCE_DX - 1), ENTRANCE_Y + (ENTRANCE_DY - 1), ENTRANCE_Z + (ENTRANCE_DZ - 1)), 'minecraft:air')
+
+        execute.positioned(RESET_POS).run(() => {
+            // TODO: sandstone bug, replace with clear('@s', ItemPredicate(...)) once the types for it work
+            const clearWand = () => clear('@s', 'minecraft:stick[custom_data~{\'sandstone_summit_booth.id\':\'magic_wand\'}]')
+
+            // teleport all players in the booth out (handles both session player and extras)
+            execute.as(InBoothPlayer).run(() => {
+                tp('@s', rel(0.5, 0, 3), abs(0, 0))
+                clearWand()
+                SessionPlayerLabel('@s').remove()
+                InBoothLabel('@s').remove()
+            })
+            // also clean up session player if they already left the volume
+            execute.as(SessionPlayer).run(() => {
+                clearWand()
+                SessionPlayerLabel('@s').remove()
+            })
+
+            // kill showcase mobs, selection pedestals, and session UI buttons
+            kill(ShowcaseMobs)
+            kill(AllPedestals)
+            kill(ShowcaseButtons)
+
+            GlobalState.set(STATES.IDLE)
         })
-        // also clean up session player if they already left the volume
-        execute.as(SessionPlayer).run(() => {
-            raw('clear @s minecraft:stick[custom_data~{\'sandstone_summit_booth.id\':\'magic_wand\'}]')
-            SessionPlayerLabel('@s').remove()
-        })
-
-        // kill showcase mobs, selection pedestals, and session UI buttons
-        kill(ShowcaseMobs)
-        raw('kill @e[tag=sandstone_summit_booth.showcase.pedestal]')
-        kill(ShowcaseButtons)
-
-        openDoor()
-
-        GlobalState.set(STATES.IDLE)
     })
 
     endShowcaseSession()

@@ -26,8 +26,8 @@ const PEDESTALS: Pedestal[] = [
   { schoolId: 'nature',    x: 14, y: 0, z: 22,   color: 'green',        particleType: 'falling_spore_blossom', item: 'minecraft:flowering_azalea' },
 ]
 
-const PedestalLabel = Label('showcase.pedestal')
-const AllPedestals = Selector('@e', { tag: PedestalLabel })
+export const PedestalLabel = Label('showcase.pedestal')
+export const AllPedestals = Selector('@e', { tag: PedestalLabel })
 
 // Per-school click handlers — called by name via raw so not lazy
 for (const ped of PEDESTALS) {

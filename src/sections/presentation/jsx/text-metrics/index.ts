@@ -6,11 +6,7 @@
 
 import type { StyledSegment } from '../render'
 import { FontLoader, DEFAULT_FONT_ID, type FontMetrics } from './font-loader'
-import {
-	TextWrap,
-	sliceSegmentsByWordBreaks as sliceSegmentsByWordBreaksRaw,
-	type CodeLineWrap,
-} from './wrap'
+import { TextWrap, type CodeLineWrap } from './wrap'
 
 export type { CodeLineWrap } from './wrap'
 
@@ -66,20 +62,6 @@ export function wrapSegmentedLines(
 	fontId: string = DEFAULT_FONT_ID,
 ): StyledSegment[][] {
 	return wrap.wrapSegmentedLines(segments, lineWidth, baseBold, fontId)
-}
-
-/**
- * Slice `segments` into per-visual-line arrays at the user-supplied
- * word-break points (the `wrap-breaks` JSX prop convention). Honours
- * the break list exactly, ignoring natural wrap. Used when the
- * caller trusts their break list over the engine's guess — typically
- * because MC's actual wrap differs from ours.
- */
-export function sliceSegmentsByWordBreaks(
-	segments: StyledSegment[],
-	breakWords: number[],
-): StyledSegment[][] {
-	return sliceSegmentsByWordBreaksRaw(segments, breakWords)
 }
 
 export function wrapCodeLinesAsArray(

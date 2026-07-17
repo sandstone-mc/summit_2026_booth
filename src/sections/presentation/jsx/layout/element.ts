@@ -2,7 +2,7 @@
 // everything the summon pass needs (cell size, scale, margins, content).
 
 import { parseLength, pxToTextScale, pxToTextLineHeight } from '../length'
-import { wrapLines, wrapSegmentedLines, sliceSegmentsByWordBreaks, textWidth, charWidth } from '../text-metrics'
+import { wrapLines, wrapSegmentedLines, textWidth, charWidth } from '../text-metrics'
 import { resolveImgSrc } from '../prepare/img-resources'
 import { DEFAULT_FONT_ID } from '../text-metrics/font-loader'
 import type { CssDeclarations } from '../less/types'
@@ -441,21 +441,6 @@ function computeTextLayout(
 				lines = wrapBreaks.length === 0 ? 1 : wrapBreaks.length + 1
 			} else {
 				lines = wrapSegmentedLines(parsedSegments, wrapWidthPx, isBold, fontId).length
-			}
-			// Targeted debug for the test paragraph in slide 6 AND the
-			// wrap-breaks `<p wrap-breaks={[5]}>\`RawResource\`` on slide 7.
-			if (content.includes('Test **bold** *italic*') || content.includes('RawResource')) {
-				console.log(`[inline-debug] type=${type} content=${JSON.stringify(content)}`)
-				console.log(`[inline-debug] parsedSegments=${parsedSegments.length}: ` + parsedSegments.map(s => {
-					const tags: string[] = []
-					if (s.bold) tags.push('B')
-					if (s.italic) tags.push('I')
-					if (s.font) tags.push('F')
-					if (s.color) tags.push('C')
-					return `${JSON.stringify(s.text)}${tags.length ? '[' + tags.join(',') + ']' : ''}`
-				}).join(' '))
-				console.log(`[inline-debug] wrapWidthPx=${wrapWidthPx.toFixed(1)} isBold=${isBold} fontId=${fontId}`)
-				console.log(`[inline-debug] cellH inputs: lines=${lines} lineHeightBlocks=${(pxToTextLineHeight(scalePx, fontId)).toFixed(3)} heightLen=${heightLen?.meters ?? 'none'} isBold=${isBold} declarations.bold=${declarations.bold} declarations.font=${declarations.font} wrapBreaks=${JSON.stringify(wrapBreaks)}`)
 			}
 		} else if (wrapBreaks !== undefined) {
 			wrapBreaksApplied = wrapBreaks
