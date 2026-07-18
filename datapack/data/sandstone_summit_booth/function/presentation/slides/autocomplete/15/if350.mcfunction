@@ -1,0 +1,1 @@
+execute as @e[tag=ac_cursor_ac_0, tag=sandstone_summit_booth.slide_15] run data modify entity @s text_opacity set value 0i
