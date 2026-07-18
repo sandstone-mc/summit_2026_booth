@@ -5,9 +5,10 @@
 //   2. groupIntoBlocks → split into single-element blocks + row-flow blocks
 //   3. iterate blocks, compute positioning, summon each entity
 //
-// The placement pass is shared with `computeSlideScrollSpecs`, which
+// The placement pass is shared with `computeSlideTickSpecs`, which
 // runs the same math without emitting any `summon` commands — letting
-// the slide show build its scroll-tick MCFunctions ahead of mount.
+// the slide show build its scroll + autocomplete tick MCFunctions
+// ahead of mount.
 
 import { parseLength, pxToTextLineHeight } from '../length'
 import type { LabelClass } from 'sandstone'
@@ -18,7 +19,7 @@ import type { CssDeclarations } from '../less/types'
 import { computeElementLayout, finalizeScrollCodeLayout, type ElementLayout, type ImgResourceMap } from './element'
 import type { Precomputed } from './code-borders'
 import type { RowFlexWidth } from '../prepare/row-flex'
-import { blockCellH, blockGap, groupIntoBlocks, rowDownShift, startingY, totalStackHeight, type Block } from './blocks'
+import { blockCellH, blockGap, columnBlockNaturalHeight, groupIntoBlocks, rowDownShift, startingY, totalStackHeight, type Block } from './blocks'
 import { summonElement } from './summon-entity'
 import { TEXT_RENDER_OFFSET, Z_VISUAL_OFFSET, getTextDescender, parityOffset } from './constants'
 
@@ -42,6 +43,81 @@ export type ScrollSpec = {
 	declarations: CssDeclarations
 	/** Element type ('code' for scrolling blocks today). */
 	type: string
+}
+
+/**
+ * Spec captured during layout for a `<autocomplete>` element.
+ * Consumed by `presentation/slides/autocomplete/<idx>` to drive the
+ * editor text swap + cursor translation/blink + popup text+visibility
+ * per typing stage.
+ */
+export type AutocompleteSpec = {
+	/** Stable identifier suffixed onto per-role tags (`ac_<autoId>`). */
+	autoId: string
+	/** Stage count for this element — the tick clamps `elapsed/ticksPerStage` to `[0, stageCount-1]`. */
+	stageCount: number
+	/** Cursor blink half-period in ticks (default 5). */
+	cursorBlink: number
+	/** Number of source lines in the snippet being typed out. Used by
+	 * the tick to derive the popup's Y offset from the cursor anchor. */
+	sourceLineCount: number
+	/** Per-stage popup trigger column, in BLOCKS from the editor anchor X.
+	 * The principled "where the popup should appear" value at this
+	 * stage (= paddingLeft + colChars * charWidthBlocks + charWidthBlocks/2,
+	 * the cursor's visual center at the end of the typed text on the
+	 * current line). Tracked so future formula revisions can target the
+	 * right value without re-deriving from the typed slice every time.
+	 * The live cursor X math currently uses an empirically-tuned constant
+	 * (-12 hack) instead. */
+	popupTriggerColumnBlocks: number[]
+	/** Stage at which the NBT-key popup moment begins (the `Tags`
+	 * IntelliSense moment). Used by the tick's debug-freeze to pin the
+	 * animation at the NBT popup's first visible frame. */
+	nbtStageStart: number
+	/** LESS declarations for editor text — drives `buildTextJson` per stage. */
+	editorDeclarations: CssDeclarations
+	/** LESS declarations for popup text — drives `buildTextJson` per stage. */
+	popupDeclarations: CssDeclarations
+	/** Popup's `line_width` in px, PER STAGE (index = stage). Different
+	 * moments have different longest entries (entity vs NBT key), so
+	 * each moment gets its own width. 0 when the popup is hidden at
+	 * that stage. */
+	popupWidthPxPerStage: number[]
+	/** Cursor glyph width in blocks (for popup left-anchoring at cursor's right edge). */
+	cursorWidthBlocks: number
+	/** Cursor glyph height in blocks (one line at cursor's font/scale). */
+	cursorHeightBlocks: number
+	/** Per-row line height in blocks at the popup's font/scale. The tick
+	 * uses this together with each segment's `offsetYBlocks` to position
+	 * the segment entities relative to the per-stage popup anchor. */
+	popupLineHeightBlocks: number
+	/** Total popup height in blocks (entries only — no border rows). */
+	popupHeightBlocks: number
+	/** Static segment info: consecutive bg-color runs that share a single
+	 * text_display entity. `offsetYBlocks` is the static Y offset from
+	 * the per-stage popup anchor Y to position the segment so its first
+	 * row lines up where it should within the popup quad. */
+	popupSegments: {
+		bgInt: number
+		startRow: number
+		endRow: number
+		heightBlocks: number
+		offsetYBlocks: number
+	}[]
+	/** Per-stage editor bordered content. Index = stage. */
+	editorContent: StyledSegment[][]
+	/** Per-stage cursor X offset (blocks) from editor's left edge. */
+	cursorXPerStage: number[]
+	/** Per-stage cursor Y offset (blocks) from editor's entity Y. */
+	cursorYPerStage: number[]
+	/** Per-stage popup `text_opacity` value (-1 visible, 0 hidden).
+	 * Same value is applied to every popup segment entity for that stage. */
+	popupVisiblePerStage: number[]
+	/** Per-stage popup segment content: outer index = stage, middle =
+	 * segment index, inner = segments for that segment (with `\n`
+	 * separators between rows). Empty arrays when the popup is hidden
+	 * at that stage. */
+	popupSegmentContent: StyledSegment[][][]
 }
 
 /**
@@ -71,7 +147,7 @@ export function summonVisibleElements(
 	sceneTag: LabelClass,
 	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>,
 	explorerPrecomputed: CodePrecomputedMap = new WeakMap(),
-): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
+): { scrollSpecs: ScrollSpec[]; autocompleteSpecs: AutocompleteSpec[]; placements: Placement[] } {
 	return runLayout(
 		visible,
 		styles,
@@ -91,10 +167,10 @@ export function summonVisibleElements(
 /**
  * Layout-only twin of `summonVisibleElements`. Runs the placement math
  * without emitting any `summon` commands — used during SlideShow
- * construction to collect per-slide scroll specs before any MCFunction
- * is built.
+ * construction to collect per-slide tick specs (scroll + autocomplete)
+ * before any MCFunction is built.
  */
-export function computeSlideScrollSpecs(
+export function computeSlideTickSpecs(
 	visible: NodeWithPath[],
 	styles: Styles,
 	sceneW: number,
@@ -104,7 +180,11 @@ export function computeSlideScrollSpecs(
 	imgResources: ImgResourceMap,
 	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>,
 	explorerPrecomputed: CodePrecomputedMap = new WeakMap(),
-): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
+): {
+	scrollSpecs: ScrollSpec[]
+	autocompleteSpecs: AutocompleteSpec[]
+	placements: Placement[]
+} {
 	return runLayout(
 		visible,
 		styles,
@@ -130,7 +210,7 @@ function runLayout(
 	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
 	rowFlexWidths: WeakMap<VNode, RowFlexWidth> = new WeakMap(),
 	explorerPrecomputed: CodePrecomputedMap = new WeakMap(),
-): { scrollSpecs: ScrollSpec[]; placements: Placement[] } {
+): { scrollSpecs: ScrollSpec[]; autocompleteSpecs: AutocompleteSpec[]; placements: Placement[] } {
 	const elements: ElementLayout[] = visible.map((nodeWithPath) =>
 		computeElementLayout(nodeWithPath, styles, sceneW, sceneH, imgResources, codePrecomputed, rowFlexWidths, explorerPrecomputed),
 	)
@@ -173,6 +253,7 @@ function runLayout(
 
 	const placements: Placement[] = []
 	const scrollSpecs: ScrollSpec[] = []
+	const autocompleteSpecs: AutocompleteSpec[] = []
 	for (let bi = 0; bi < blocks.length; bi++) {
 		const block = blocks[bi]
 		if (block.kind === 'element') {
@@ -182,6 +263,7 @@ function runLayout(
 			//   scroll `<code>`:  cellY - TEXT_RENDER_OFFSET (see constants)
 			//   prose/h/code:     cellY - TEXT_RENDER_OFFSET (see constants)
 			//   image:            cellY + cellH / 2 (image is centered in cell)
+			//   autocomplete:     cellY - TEXT_RENDER_OFFSET (text-style anchor)
 			// `TEXT_RENDER_OFFSET` accounts for MC text_display's fixed
 			// gap between the entity Y and the visible glyph bottom.
 			// Without it, the topmost element on a tightly-stacked slide
@@ -197,11 +279,12 @@ function runLayout(
 			onElement(el, entityX, entityY, z)
 			placements.push({ el, x: entityX, y: entityY, z })
 			maybeRecordScroll(el, entityY, scrollSpecs)
+			maybeRecordAutocomplete(el, entityY, entityX, z, autocompleteSpecs)
 			accY -= el.marginTop + el.cellH
 			if (bi < blocks.length - 1) {
 				accY -= blockGap(block, blocks[bi + 1], sceneH) + el.marginBottom
 			}
-		} else {
+		} else if (block.kind === 'row') {
 			accY = placeRowBlocks(
 				block,
 				accY,
@@ -211,6 +294,24 @@ function runLayout(
 				z,
 				onElement,
 				scrollSpecs,
+				autocompleteSpecs,
+				placements,
+			)
+			if (bi < blocks.length - 1) {
+				const lastChild = block.children[block.children.length - 1]
+				accY -= blockGap(block, blocks[bi + 1], sceneH) + lastChild.marginBottom
+			}
+		} else {
+			accY = placeColumnBlocks(
+				block,
+				accY,
+				sceneW,
+				sceneH,
+				origin,
+				z,
+				onElement,
+				scrollSpecs,
+				autocompleteSpecs,
 				placements,
 			)
 			if (bi < blocks.length - 1) {
@@ -219,7 +320,7 @@ function runLayout(
 			}
 		}
 	}
-	return { scrollSpecs, placements }
+	return { scrollSpecs, autocompleteSpecs, placements }
 }
 
 function placeRowBlocks(
@@ -231,6 +332,7 @@ function placeRowBlocks(
 	z: number,
 	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
 	scrollSpecs: ScrollSpec[],
+	autocompleteSpecs: AutocompleteSpec[],
 	placements: Placement[],
 ): number {
 	const columnGap = parseLength(block.parentStack['column-gap'] ?? '', sceneW)?.meters ?? 0
@@ -309,10 +411,71 @@ function placeRowBlocks(
 		onElement(child, childCenterX, entityY, z)
 		placements.push({ el: child, x: childCenterX, y: entityY, z })
 		maybeRecordScroll(child, entityY, scrollSpecs)
+		maybeRecordAutocomplete(child, entityY, childCenterX, z, autocompleteSpecs)
 		accX += child.cellW + columnGap
 	}
 
 	return workingY
+}
+
+// Place a `column` block — a column container (e.g. `#text-grid`) whose
+// LESS declares `align-items: center` AND a `height`. The container
+// expands to `max(natural stack, height)`; the height value supports
+// percentage units which resolve against the current `accY` (= remaining
+// slide height when this column follows earlier content). Children stack
+// vertically inside the container with `row-gap`, centered when the
+// container is taller than the natural stack.
+function placeColumnBlocks(
+	block: Extract<Block, { kind: 'column' }>,
+	accY: number,
+	sceneW: number,
+	sceneH: number,
+	origin: readonly [number, number, number],
+	z: number,
+	onElement: (el: ElementLayout, x: number, y: number, z: number) => void,
+	scrollSpecs: ScrollSpec[],
+	autocompleteSpecs: AutocompleteSpec[],
+	placements: Placement[],
+): number {
+	const rowGap = parseLength(block.parentStack['row-gap'] ?? '', sceneH)?.meters ?? 0
+
+	const heightProp = block.parentStack.height
+	const pctMatch = heightProp?.trim().match(/^(-?\d*\.?\d+)\s*%$/i)
+	const naturalH = columnBlockNaturalHeight(block, sceneH)
+	const heightMeters = pctMatch
+		? (parseFloat(pctMatch[1]) / 100) * accY
+		: (parseLength(heightProp ?? '', sceneH)?.meters ?? 0)
+	const containerCellH = Math.max(naturalH, heightMeters)
+
+	// Vertical center within the container: equal top/bottom padding so
+	// the children land mid-container rather than flush against the top.
+	const topPadding = Math.max(0, (containerCellH - naturalH) / 2)
+
+	const centerX = origin[0] + sceneW / 2
+
+	// `workingY` is the TOP of the next child's cell in scene coords.
+	// Container top sits at `accY`; first child starts `topPadding` below
+	// that, minus its marginTop.
+	let workingY = accY - topPadding
+	for (const child of block.children) {
+		workingY -= child.marginTop
+		const cellY = origin[1] + workingY - child.cellH + parityOffset(sceneH)
+		// Entity Y mirrors `runLayout`'s element-kind dispatch so a
+		// column-block text/image renders the same as a top-level one.
+		const entityY =
+			child.kind === 'text' && typeof child.scrollTag === 'string'
+				? cellY - TEXT_RENDER_OFFSET
+				: child.kind === 'image'
+					? cellY + child.cellH / 2
+					: cellY - TEXT_RENDER_OFFSET
+		onElement(child, centerX, entityY, z)
+		placements.push({ el: child, x: centerX, y: entityY, z })
+		maybeRecordScroll(child, entityY, scrollSpecs)
+		maybeRecordAutocomplete(child, entityY, centerX, z, autocompleteSpecs)
+		workingY -= child.cellH + rowGap
+	}
+
+	return accY - containerCellH
 }
 
 // Simulate the vertical advance of `accY` over a stack of blocks —
@@ -335,8 +498,24 @@ function simulateStackAdvance(blocks: Block[], sceneH: number): number {
 			if (i < blocks.length - 1) {
 				accY -= blockGap(b, blocks[i + 1], sceneH) + b.el.marginBottom
 			}
-		} else {
+		} else if (b.kind === 'row') {
 			accY -= blockCellH(b)
+			if (i < blocks.length - 1) {
+				const lastChild = b.children[b.children.length - 1]
+				accY -= blockGap(b, blocks[i + 1], sceneH) + lastChild.marginBottom
+			}
+		} else {
+			// Column block: container height = max(natural stack, parsed
+			// `height` of the remaining slide space). Matches the math
+			// `placeColumnBlocks` uses, so the simulate pass doesn't
+			// over- or under-count how much slide height the column eats.
+			const naturalH = columnBlockNaturalHeight(b, sceneH)
+			const heightProp = b.parentStack.height
+			const pctMatch = heightProp?.trim().match(/^(-?\d*\.?\d+)\s*%$/i)
+			const heightMeters = pctMatch
+				? (parseFloat(pctMatch[1]) / 100) * accY
+				: (parseLength(heightProp ?? '', sceneH)?.meters ?? 0)
+			accY -= Math.max(naturalH, heightMeters)
 			if (i < blocks.length - 1) {
 				const lastChild = b.children[b.children.length - 1]
 				accY -= blockGap(b, blocks[i + 1], sceneH) + lastChild.marginBottom
@@ -365,6 +544,46 @@ function maybeRecordScroll(
 	})
 }
 
+// Mirror of `maybeRecordScroll` for `<autocomplete>` elements. Captures
+// every per-stage slice the tick MCFunction needs to drive the three
+// entities (editor text, cursor translation, popup text+visibility).
+function maybeRecordAutocomplete(
+	el: ElementLayout,
+	entityY: number,
+	entityX: number,
+	entityZ: number,
+	autocompleteSpecs: AutocompleteSpec[],
+): void {
+	if (el.kind !== 'autocomplete') return
+	autocompleteSpecs.push({
+		autoId: el.autoId,
+		stageCount: el.stageCount,
+		cursorBlink: el.cursorBlink,
+		sourceLineCount: el.sourceLineCount,
+		popupTriggerColumnBlocks: el.popupTriggerColumnBlocks,
+		nbtStageStart: el.nbtStageStart,
+		editorDeclarations: el.declarations,
+		popupDeclarations: el.declarations,
+		popupWidthPxPerStage: el.popupWidthPxPerStage,
+		cursorWidthBlocks: el.cursorWidthBlocks,
+		cursorHeightBlocks: el.cursorHeightBlocks,
+		popupLineHeightBlocks: el.popupLineHeightBlocks,
+		popupHeightBlocks: el.popupHeightBlocks,
+		popupSegments: el.popupSegments,
+		editorContent: el.stages.map((s) => s.editorContent),
+		cursorXPerStage: el.stages.map((s) => s.cursorXBlocks),
+		cursorYPerStage: el.stages.map((s) => s.cursorYBlocks),
+		popupVisiblePerStage: el.stages.map((s) => (s.popupVisible ? -1 : 0)),
+		popupSegmentContent: el.stages.map((s) => s.popupSegmentContent),
+	})
+	// Suppress unused-var lint on entityX/entityY/entityZ — kept on
+	// signature so future per-slide tick logic can target the entity by
+	// world coords if needed.
+	void entityX
+	void entityY
+	void entityZ
+}
+
 export type { Precomputed } from './code-borders'
 export type { ElementLayout, ImgResource, ImgResourceMap } from './element'
-export { isTextType, isImgType, isVisibleType, resetScrollIds } from './element'
+export { isTextType, isImgType, isVisibleType, resetScrollIds, resetAutocompleteIds } from './element'

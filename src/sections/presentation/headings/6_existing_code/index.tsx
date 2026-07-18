@@ -1,6 +1,5 @@
 export const slides = [(<>
 	<h2 id="header">What about my existing code?</h2>
-	{/** This text-grid is not actually greedily taking the rest of the page height and centering the paragraphs, investigate */}
 	<div id="text-grid">
 		<p>Drop existing files into `resources/datapack/` and `resources/resourecepack/` - they ship untouched</p>
 		<p>Write new code in TypeScript files in the same project, generated into the same datapack</p>

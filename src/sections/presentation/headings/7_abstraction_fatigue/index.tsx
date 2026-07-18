@@ -1,6 +1,5 @@
 export const slides = [(<>
 	<h2 id="header" wrap-breaks={[6]}>Do I have to use all of Sandstone's features?</h2>
-	{/** This text-grid is not actually greedily taking the rest of the page height and centering the paragraphs, investigate */}
 	<div id="text-grid">
 		<p>No - vanilla commands work pretty much verbatim, with the `raw()` utility available as a backup</p>
 		<p>Reach for variables, flow control, and macros only when they help</p>

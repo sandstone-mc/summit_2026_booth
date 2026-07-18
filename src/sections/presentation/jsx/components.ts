@@ -106,6 +106,47 @@ export const code = (props: CodeProps): VNode => jsx('code', props, null)
 export const img = (props: ImgProps): VNode => jsx('img', props, null)
 export const explorer = (props: ExplorerProps): VNode => jsx('explorer', props, null)
 
+/**
+ * Animated VS Code–style autocomplete demo. Emits three layered
+ * text_display entities — editor (bordered code box), cursor (a "|"
+ * that blinks), and an IntelliSense popup (a bordered list with one
+ * highlighted entry) — and drives them through a sequence of typing
+ * stages via the per-slide tick MCFunction.
+ *
+ *   `width` / `height`      CSS-style size (e.g. `"50vw"`, `"32vh"`).
+ *                           Defaults: `50vw` × `32vh`.
+ *   `lang`                  Tree-sitter language for the editor (e.g.
+ *                           `"typescript"`). Syntax highlights come from
+ *                           the same pipeline `<code>` uses.
+ *   `source`                Override the code being typed. Default: the
+ *                           multi-line `summon(...)` showcase.
+ *   `line-numbers`          Render a line-number gutter inside the
+ *                           editor border. Default: `true`.
+ *   `side-padding`          `[left, right]` chars of padding inside
+ *                           the editor border. Default: `[1, 1]`.
+ *   `intellisense-entity-stage`
+ *                           Typed-char index where the entity-ID popup
+ *                           appears (default tuned to the showcase
+ *                           source — `summon(` followed by `'`).
+ *   `intellisense-nbt-stage`
+ *                           Typed-char index where the NBT-key popup
+ *                           appears (default tuned to the showcase
+ *                           source — the `{ ` after the last arg).
+ */
+export type AutocompleteProps = CommonProps & {
+	width?: string
+	height?: string
+	lang?: string
+	source?: string
+	'line-numbers'?: boolean
+	'side-padding'?: [number, number]
+	'intellisense-entity-stage'?: number
+	'intellisense-nbt-stage'?: number
+}
+
+export const autocomplete = (props: AutocompleteProps): VNode =>
+	jsx('autocomplete', props, null)
+
 // Augment JSX intrinsics so <div>, <h1> etc. are type-checked in TSX files
 // that import this module (or anything that transitively imports it).
 declare global {
@@ -120,6 +161,7 @@ declare global {
 			code: CodeProps
 			img: ImgProps
 			explorer: ExplorerProps
+			autocomplete: AutocompleteProps
 		}
 	}
 }

@@ -30,7 +30,7 @@ export function buildTextJson(
 	if (declarations.strikethrough === 'true') out.strikethrough = true
 	if (declarations.obfuscated === 'true') out.obfuscated = true
 	if (type === 'h1' || type === 'h2') out.bold = true
-	if (type === 'code' || type === 'explorer') out.font = 'sandstone_summit_booth:monospace'
+	if (type === 'code' || type === 'explorer' || type === 'autocomplete') out.font = 'sandstone_summit_booth:monospace'
 	if (declarations.font) out.font = declarations.font as `${string}:${string}`
 	return out
 }
@@ -59,7 +59,7 @@ function buildSegment(
 	else if (seg.italic === false) out.italic = false
 	else if (declarations.italic === 'true') out.italic = true
 	else out.italic = false
-	out.font = (seg.font ?? declarations.font ?? (type === 'code' || type === 'explorer' ? 'sandstone_summit_booth:monospace' : DEFAULT_FONT_ID)) as `${string}:${string}`
+	out.font = (seg.font ?? declarations.font ?? (type === 'code' || type === 'explorer' || type === 'autocomplete' ? 'sandstone_summit_booth:monospace' : DEFAULT_FONT_ID)) as `${string}:${string}`
 	// `seg.background` is stored but NOT rendered as a per-segment
 	// field — MC text components have no per-component `background`.
 	// The LESS `inline-code-bg` declaration is stored on the segment

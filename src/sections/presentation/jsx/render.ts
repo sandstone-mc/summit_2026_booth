@@ -3,7 +3,7 @@ import { Styles } from './style'
 import { DEFAULT_FONT_ID, loadFontMetrics } from './text-metrics'
 import { extractText, flatWalk } from './tree'
 import { type SlidesTiming } from '../slides'
-import { computeSlideScrollSpecs, summonVisibleElements, isTextType, isVisibleType } from './layout'
+import { computeSlideTickSpecs, summonVisibleElements, isTextType, isVisibleType, resetAutocompleteIds } from './layout'
 import { resetScrollIds } from './layout/element'
 import { prepareCodeHighlights, prepareExplorerTrees, prepareImgResources, prepareRowFlexWidths } from './prepare'
 import { SlideShow, SCENE_TAG } from './slides'
@@ -210,7 +210,7 @@ export async function renderSlides(
 	const allIssues = [] as ReturnType<typeof diagnosePlacements>['issues']
 	const excludedBySlide: Set<VNode>[] = []
 	for (let i = 0; i < slideVisibles.length; i++) {
-		const { placements } = computeSlideScrollSpecs(
+		const { placements } = computeSlideTickSpecs(
 			slideVisibles[i],
 			styles,
 			sceneW,
@@ -258,6 +258,7 @@ export async function renderSlides(
 		}
 	}
 	resetScrollIds()
+	resetAutocompleteIds()
 	if (allIssues.length > 0) {
 		const fullyOff = allIssues.filter((i) => i.kind === 'full')
 		const partial = allIssues.filter((i) => i.kind === 'partial')

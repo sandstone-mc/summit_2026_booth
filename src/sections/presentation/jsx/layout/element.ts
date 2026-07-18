@@ -10,7 +10,8 @@ import type { VNode, StyledSegment } from '../render'
 import type { NodeWithPath } from '../tree/walk'
 import type { Styles } from '../style'
 import type { BorderedRows, Precomputed } from './code-borders'
-import { CodeBorders, computeMinCodeLineWidthPx } from './code-borders'
+import { CodeBorders, computeMinCodeLineWidthPx, DEFAULT_MONO_CHAR_PX } from './code-borders'
+import { parseColorInt } from './color'
 import {
 	DEFAULT_CODE_BORDER_COLOR,
 	DEFAULT_CODE_LANG_COLOR,
@@ -27,7 +28,7 @@ import {
 	parseInlineFormatting,
 } from '../tree/extract'
 import type { RowFlexWidth } from '../prepare/row-flex'
-import type { ItemModelDefinitionClass } from 'sandstone'
+import { summon, type ItemModelDefinitionClass } from 'sandstone'
 
 const codeBorders = new CodeBorders()
 
@@ -57,6 +58,19 @@ let nextScrollId = 0
 /** Reset the scroll-id counter so the next walk starts from `code_scroll_0`. */
 export function resetScrollIds(): void {
 	nextScrollId = 0
+}
+
+// Module-level counter for `<autocomplete>` elements. Each gets an `ac_<n>`
+// suffix on its per-role tags (`ac_editor_<n>`, `ac_cursor_<n>`,
+// `ac_popup_<n>`) so the per-slide tick MCFunction can target each
+// role's entity uniquely. Same sharing rule as `nextScrollId` — the
+// pre-pass and the summon pass must agree, so `resetAutocompleteIds()`
+// runs between them.
+let nextAutocompleteId = 0
+
+/** Reset the autocomplete-id counter so the next walk starts from `ac_0`. */
+export function resetAutocompleteIds(): void {
+	nextAutocompleteId = 0
 }
 
 type TextElementLayout = {
@@ -157,7 +171,110 @@ type ImageElementLayout = {
 	imgAspect: number
 }
 
-export type ElementLayout = TextElementLayout | ImageElementLayout
+/**
+ * Animated autocomplete demo. One JSX `<autocomplete>` element expands
+ * into three text_display entities (editor, cursor, popup) at the same
+ * XZ. The `stages[]` array describes what each of the three entities
+ * renders at every typing stage; the per-slide tick MCFunction
+ * (`presentation/slides/autocomplete/<idx>`) drives all three per stage.
+ */
+type AutocompleteElementLayout = {
+	kind: 'autocomplete'
+	node: VNode
+	path: string[]
+	parentStack: CssDeclarations
+	declarations: CssDeclarations
+	type: 'autocomplete'
+	content: string
+	borderedContent?: StyledSegment[]
+	width: ReturnType<typeof parseLength>
+	scalePx: number
+	textScale: number
+	widthCompensation: number
+	cellH: number
+	cellW: number
+	marginTop: number
+	marginBottom: number
+	fontId: string
+	/** Stable identifier suffixed onto per-role tags (`ac_<n>`). */
+	autoId: string
+	/** Total number of typing stages. tick uses `stage = clamp(elapsed/ticksPerStage, 0, stageCount-1)`. */
+	stageCount: number
+	/** Per-stage state for editor + cursor + popup. Index = stage. */
+	stages: {
+		/** Bordered editor text at this stage (code-progressed-to-here). */
+		editorContent: StyledSegment[]
+		/** Cursor X offset in blocks from the editor's left edge. */
+		cursorXBlocks: number
+		/** Cursor Y offset in blocks from the editor's entity position. */
+		cursorYBlocks: number
+		/** Whether the IntelliSense popup is visible at this stage. */
+		popupVisible: boolean
+		/** Per-segment popup text at this stage — outer index = segment
+		 * index (0 = SELECTED / top segment, 1+ = the rest), inner =
+		 * segments for that segment. Each segment's rows are joined with
+		 * `\n` segments so a single text_display entity can render
+		 * multiple consecutive rows of the same bg color. Empty when the
+		 * popup isn't visible at this stage. */
+		popupSegmentContent: StyledSegment[][]
+		/** Index of the highlighted entry in the popup. -1 = none. */
+		popupHighlightIdx: number
+	}[]
+	/** Cursor blink period in ticks (default 5). The tick toggles every `cursorBlink` ticks. */
+	cursorBlink: number
+	/** Number of source lines in the snippet the autocomplete is typing
+	 * out. The tick uses this to compute the popup's Y offset relative
+	 * to the cursor (instead of a hardcoded half-line nudge). */
+	sourceLineCount: number
+	/** Per-stage popup trigger column, in BLOCKS from the editor anchor X.
+	 * Computed from the typed slice's column count as the cursor's visual
+	 * center at the end of the typed text on the current line:
+	 *   = paddingLeftBlocks + colChars * charWidthBlocks + charWidthBlocks/2
+	 * This is the column where the popup would appear IF the cursor's
+	 * visual position were derived purely from the typed-text-end column
+	 * (the principled math, ignoring the -12 hack in the live cursor X
+	 * formula). Tracked per stage so future revisions of the cursor/popup
+	 * formulas can target the right value without re-deriving from the
+	 * typed slice every time. The live `cursorXPerStage` is left at the
+	 * current empirically-tuned formula (with the -12 hack). */
+	popupTriggerColumnBlocks: number[]
+	/** Width in px of the popup's `line_width` PER STAGE (index = stage).
+	 * Different moments (entity-ID vs NBT-key) have different content
+	 * lengths, so their `line_width` differs. 0 when the popup is hidden. */
+	popupWidthPxPerStage: number[]
+	/** Popup broken into consecutive bg-color RUNS — consecutive rows that
+	 * share the same background become a single text_display entity (so
+	 * e.g. a 4-row popup with `[blue, gray, gray, gray]` becomes 2
+	 * entities: one 1-line blue + one 3-line gray). Each entry's
+	 * `offsetYBlocks` is the static Y offset (in blocks, in the editor's
+	 * local "down = positive" coord system) from the per-stage popup
+	 * anchor Y to position this segment's text rows at the right vertical
+	 * spot within the popup. `heightBlocks` is the segment's rendered
+	 * height in blocks (one or more rows of `popupLineHeightBlocks`). */
+	popupSegments: {
+		bgInt: number
+		startRow: number
+		endRow: number
+		heightBlocks: number
+		offsetYBlocks: number
+	}[]
+	/** Cursor color hex string. */
+	cursorColor: `#${string}`
+	/** Cursor glyph width in blocks (used to anchor popup left at cursor right). */
+	cursorWidthBlocks: number
+	/** Cursor glyph height in blocks (used to anchor popup top at cursor top). */
+	cursorHeightBlocks: number
+	/** Per-row line height in blocks at the popup's font/scale. Used by
+	 * the tick to compute each row's Y offset from the popup anchor. */
+	popupLineHeightBlocks: number
+	/** Popup total height in blocks (rows only — no border rows). */
+	popupHeightBlocks: number
+	/** Whether each IntelliSense moment is enabled. */
+	entityStageStart: number
+	nbtStageStart: number
+}
+
+export type ElementLayout = TextElementLayout | ImageElementLayout | AutocompleteElementLayout
 
 export type ImgResource = {
 	src: string
@@ -167,7 +284,11 @@ export type ImgResource = {
 export type ImgResourceMap = Map<string, ImgResource>
 
 // Element-type predicates used across the render + prepare passes.
-const TEXT_TYPES = new Set(['h1', 'h2', 'h3', 'p', 'code', 'explorer'])
+// `<autocomplete>` is treated as text-shaped (it is text_content even
+// though it expands into three entities). Keeps `isVisibleType` returning
+// true and avoids breaking `groupIntoBlocks` — it falls through as a
+// single-element block.
+const TEXT_TYPES = new Set(['h1', 'h2', 'h3', 'p', 'code', 'explorer', 'autocomplete'])
 const IMG_TYPES = new Set(['img'])
 
 export function isTextType(t: any): boolean {
@@ -211,6 +332,18 @@ export function computeElementLayout(
 
 	if (type === 'img') {
 		return computeImgLayout(node, path, parentStack, declarations, sceneW, sceneH, imgResources)
+	}
+
+	if (type === 'autocomplete') {
+		return computeAutocompleteLayout(
+			node,
+			path,
+			parentStack,
+			declarations,
+			sceneW,
+			sceneH,
+			codePrecomputed,
+		)
 	}
 
 	return computeTextLayout(node, path, parentStack, declarations, type, sceneW, sceneH, codePrecomputed, rowFlexWidths, explorerPrecomputed)
@@ -657,4 +790,542 @@ function extractExplorerSource(
 ): string {
 	const pre = explorerPrecomputed.get(node)
 	return pre?.source ?? ''
+}
+
+const no_op = () => {
+	summon('armor_stand', '~ ~ ~', {
+		CustomName: {
+			text: 'Funny guy',
+			color: 'yellow',
+			bold: true,
+		}
+	})
+}
+
+// Default source for the showcase `<autocomplete>` element when no
+// `source` prop is provided. The choice is deliberate: it covers two
+// IntelliSense moments — entity IDs (inside the first string literal)
+// and NBT keys (inside the object literal) — and uses real Sandstone
+// syntax so the syntax-highlight pipeline is exercised.
+export const DEFAULT_AUTOCOMPLETE_SOURCE = `summon('armor_stand', '~ ~ ~', {
+  CustomName: {
+    text: 'Funny guy',
+    color: 'yellow',
+    bold: true,
+  }
+})`
+
+// Number of code rows the autocomplete editor always renders, regardless
+// of how many source lines have been typed. The final state fills all
+// `MAX_CODE_LINES` with real content; intermediate stages pad the
+// remaining rows with empty placeholder lines (no line numbers) so the
+// editor visually shows a fixed-height IDE-style code area.
+//
+// Matches the line count of `DEFAULT_AUTOCOMPLETE_SOURCE` (5). Callers
+// overriding `source` with a longer value would need to either keep the
+// current MAX_CODE_LINES (and accept trailing rows truncated by MC's
+// line_width wrap) or expose this as a prop — left as-is for now.
+const MAX_CODE_LINES = DEFAULT_AUTOCOMPLETE_SOURCE.split('\n').length
+
+// Build the layout record for a `<autocomplete>` element. Emits three
+// layered text_display entities per element (editor + cursor + popup);
+// the per-slide tick MCFunction in `slides/show.ts` drives all three
+// per stage via the per-stage `stages[]` array.
+//
+// Dimensions mirror `<code>` — bordered source, monospace font, scroll
+// not requested — so we reuse `codeBorders.buildRows` for the FULL
+// typed source and then derive per-stage snapshots by wrapping the
+// progressive prefix via `codeBorders.wrap`. Each stage's editor text
+// has its own top + bottom border so chunk swap looks identical to the
+// scrolling `<code>` mechanism.
+//
+// Popup snapshots are baked the same way (bordered list rows). The
+// tick MCFunction swaps the popup's `text` and toggles its
+// `text_opacity` based on whether the current stage falls inside an
+// IntelliSense moment.
+function computeAutocompleteLayout(
+	node: VNode,
+	path: string[],
+	parentStack: CssDeclarations,
+	declarations: CssDeclarations,
+	sceneW: number,
+	sceneH: number,
+	codePrecomputed: WeakMap<VNode, Precomputed>,
+): AutocompleteElementLayout {
+	const autoId = `ac_${nextAutocompleteId++}`
+	const content = (typeof node.props?.source === 'string' && node.props.source) ||
+		DEFAULT_AUTOCOMPLETE_SOURCE
+
+	const lang = (typeof node.props?.lang === 'string' && node.props.lang) || 'typescript'
+
+	const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
+	const scalePx = fontSize?.px ?? defaultFontPx('code')
+	const textScale = pxToTextScale(scalePx)
+	const BASELINE_TEXT_SCALE = pxToTextScale(10)
+	const widthCompensation = BASELINE_TEXT_SCALE / textScale
+
+	const fontId = declarations.font ?? 'sandstone_summit_booth:monospace'
+
+	// Width resolution — prop → LESS → default. `fit-content` shrinks to
+	// the longest source line, same rule as `<code>`.
+	const widthRaw =
+		(typeof node.props?.width === 'string' && node.props.width) ||
+		declarations.width ||
+		'50vw'
+	let width = parseLength(widthRaw, sceneW)
+	if (width === undefined || width.unit === 'fit-content') {
+		const minLineWidthPx = computeMinCodeLineWidthPx(content, 0)
+		const pxInDefault = minLineWidthPx / widthCompensation
+		width = { value: pxInDefault, unit: 'px', px: pxInDefault, meters: pxInDefault / 16 }
+	}
+
+	const heightLen = parseLength(
+		(typeof node.props?.height === 'string' && node.props.height) || declarations.height || '32vh',
+		sceneH,
+	)
+
+	const lineNumbers =
+		node.props?.['line-numbers'] === true || node.props?.['line-numbers'] === 'true' ||
+		declarations['line-numbers'] === 'true'
+	const sidePadding: [number, number] = Array.isArray(node.props?.['side-padding'])
+		? (node.props['side-padding'] as [number, number])
+		: [1, 1]
+
+	const sourceLineCount = content.split('\n').length
+	const gutterChars = lineNumbers ? Math.max(2, String(sourceLineCount).length) : 0
+
+	// Build bordered rows for the FULL typed source so we know the
+	// viewport layout (top border + code rows + bottom border). Per-stage
+	// snapshots take the prefix and wrap again — the same `codeBorders.wrap`
+	// machinery used by non-scroll `<code>`.
+	const fullWrapWidthPx = (width?.px ?? sceneW * 16) * widthCompensation
+	const codeRows = codeBorders.buildRows({
+		content,
+		language: lang,
+		fontId,
+		lineWidthPx: fullWrapWidthPx,
+		bold: false,
+		borderColor: declarations['border-color'] as `#${string}` | undefined,
+		langColor: declarations['lang-color'] as `#${string}` | undefined,
+		codeColor: declarations.color as `#${string}` | undefined,
+		precomputed: undefined,
+		lineNumbers,
+		lineCount: sourceLineCount,
+		gutterColor: declarations['gutter-color'] as `#${string}` | undefined,
+		sidePadding,
+	})
+
+	const lineHeightBlocks = pxToTextLineHeight(scalePx, fontId)
+	const totalVisualLines = codeRows.codeRows.length + 2 // +2 for top + bottom borders
+	const cellH = heightLen?.meters ?? lineHeightBlocks * totalVisualLines
+	const cellW = width?.meters ?? sceneW
+
+	const { top: marginTop, bottom: marginBottom } = parseMarginBox(declarations, sceneH)
+
+	// Cursor blink interval (in ticks). Default 5 = ~0.25s at 20 tps.
+	const cursorBlink = 5
+
+	// Popup defaults — content shown during the two IntelliSense moments.
+	// Highlighted entry is always index 0 (`minecraft:zombie` for entity
+	// IDs, `Tags` for NBT keys).
+	const ENTITY_IDS = ['minecraft:zombie', 'minecraft:skeleton', 'minecraft:creeper', 'minecraft:spider']
+	const NBT_KEYS = ['Tags', 'Health', 'CustomName', 'HandItems']
+
+	// Stage indices where each IntelliSense moment starts. Defaults tuned
+	// to the showcase source: entity popup fires after typing `'`
+	// (stage 10), NBT popup fires after typing `{ ` (stage 47).
+	const entityStageStart =
+		typeof node.props?.['intellisense-entity-stage'] === 'number'
+			? (node.props['intellisense-entity-stage'] as number)
+			: 10
+	const nbtStageStart =
+		typeof node.props?.['intellisense-nbt-stage'] === 'number'
+			? (node.props['intellisense-nbt-stage'] as number)
+			: 47
+
+	// Each popup moment is visible for WINDOW stages. Long enough for the
+	// user to read, short enough that typing resumes before the slide ends.
+	const POPUP_WINDOW = 6
+
+	const cursorColor = ((declarations['cursor-color'] as `#${string}` | undefined) ??
+		'#ffffff') as `#${string}`
+
+	const popupBg = declarations['popup-bg'] as `#${string}` | undefined
+
+	// Popups are sized to the MINIMUM width that fits the longest
+	// IntelliSense entry with its `= ` prefix and NO border overhead.
+	// We measure the longest entry's actual rendered pixel width via
+	// `textWidth` (accounts for per-glyph widths in the popup's font).
+	// The popup is forced to monospace by `buildTextJson`'s per-type
+	// rule (`'autocomplete'` → `sandstone_summit_booth:monospace`),
+	// unless the LESS explicitly sets `font:`. Match that here so the
+	// `line_width` matches what MC will actually render.
+	//
+	// The width is computed PER STAGE — the entity-ID moment and the
+	// NBT-key moment have different longest entries (`minecraft:skeleton`
+	// vs `CustomName`), so a single global `popupWidthPx` was over-sizing
+	// the NBT popup's quad and shifting its visible content right of
+	// where the cursor anchor formula placed the entity origin. The tick
+	// now writes the per-stage width to the segment entities' `line_width`
+	// so each moment has its own correctly-sized quad.
+	const popupFontId =
+		declarations.font ?? 'sandstone_summit_booth:monospace'
+	const widestEntityRow = '= ' + ENTITY_IDS.reduce((a, b) =>
+		textWidth(b, false, popupFontId) > textWidth(a, false, popupFontId) ? b : a,
+	)
+	const widestNbtRow = '= ' + NBT_KEYS.reduce((a, b) =>
+		textWidth(b, false, popupFontId) > textWidth(a, false, popupFontId) ? b : a,
+	)
+	const widestEntityRowPx = textWidth(widestEntityRow, false, popupFontId)
+	const widestNbtRowPx = textWidth(widestNbtRow, false, popupFontId)
+	if (process.env.DEBUG_AUTOCOMPLETE) {
+		console.log(
+			`[autocomplete-debug] popupFontId=${popupFontId} ` +
+			`widestEntityRow=${JSON.stringify(widestEntityRow)}(${widestEntityRow.length - 2}ch) ` +
+			`entityPx=${widestEntityRowPx} ` +
+			`widestNbtRow=${JSON.stringify(widestNbtRow)}(${widestNbtRow.length - 2}ch) ` +
+			`nbtPx=${widestNbtRowPx} scalePx=${scalePx}`,
+		)
+	}
+	// The popup is split into consecutive BG-COLOR RUNS — rows that share
+	// the same background become a single text_display entity (so e.g.
+	// a 4-row popup with `[blue, gray, gray, gray]` becomes 2 entities:
+	// one 1-line blue segment + one 3-line gray segment). MC text
+	// components can't carry per-segment backgrounds, but a single
+	// text_display with all-same-bg rows joined by `\n` renders those
+	// rows as one entity that visually looks identical to N separate
+	// row entities.
+	const otherRowBg = declarations['popup-other-bg'] as `#${string}` | undefined
+	const selectedRowBgInt: number = popupBg ? (parseColorInt(popupBg) ?? 0) : 0
+	const otherRowBgInt: number = otherRowBg ? (parseColorInt(otherRowBg) ?? 0) : 0
+	// Row count = max entries across the two popup moments; today both
+	// use 4 items, but this stays correct if the lists ever diverge.
+	const popupMaxRowCount = Math.max(ENTITY_IDS.length, NBT_KEYS.length)
+	const rowBgInts: number[] = Array.from(
+		{ length: popupMaxRowCount },
+		(_, idx) => (idx === 0 ? selectedRowBgInt : otherRowBgInt),
+	)
+
+	// Cursor glyph width/height in blocks — both used to anchor the
+	// popup's TOP-LEFT to the cursor's TOP-RIGHT each stage. — both used to anchor the
+	// popup's TOP-LEFT to the cursor's TOP-RIGHT each stage. The cursor
+	// uses the declarations' font (or the default font if unset) at
+	// `textScale`. `charWidth` returns bitmap px; multiply by scale
+	// and divide by 32 to get blocks.
+	const cursorFontId = declarations.font ?? DEFAULT_FONT_ID
+	const cursorCharWidthPx = charWidth('|', false, cursorFontId)
+	const cursorWidthBlocks = (cursorCharWidthPx * textScale) / 32
+	const cursorHeightBlocks = pxToTextLineHeight(scalePx, cursorFontId)
+
+	// Per-row line height in blocks at the popup's font/scale. The popup
+	// is N rows (no border rows) split into consecutive bg-color
+	// segments — each segment renders as its own text_display.
+	const popupLineHeightBlocks = pxToTextLineHeight(scalePx, popupFontId)
+	// Height for one set of popup entries (ENTITY_IDS or NBT_KEYS share
+	// the same count today).
+	const popupHeightBlocks = popupLineHeightBlocks * ENTITY_IDS.length
+
+	// Group consecutive rows with the same background color into
+	// segments. Each segment is a single text_display entity whose
+	// `text` contains the segment's rows joined by `\n`, and whose
+	// `background` is the segment's bgInt. `offsetYBlocks` is the
+	// STATIC Y offset (in blocks, positive = down) from the per-stage
+	// popup anchor Y to where this segment's entity should sit so its
+	// first row lands at the right vertical position within the popup.
+	//
+	// The first segment (s=0, the SELECTED / top row) gets an extra
+	// `- popupLineHeightBlocks` so its single-line quad sits a full
+	// line above the analytical position — empirically MC's text
+	// rendering for a 1-line segment renders at the QUAD's vertical
+	// CENTER rather than its top, which means without this nudge the
+	// selected row's GLYPHS sit at the OLD popup's "zombie baseline"
+	// instead of "zombie center", visually overlapping the row below.
+	type Segment = AutocompleteElementLayout['popupSegments'][number]
+	const popupSegments: Segment[] = (() => {
+		const segs: Segment[] = []
+		let s = 0
+		while (s < popupMaxRowCount) {
+			const bgInt = rowBgInts[s]
+			let e = s + 1
+			while (e < popupMaxRowCount && rowBgInts[e] === bgInt) e++
+			const heightBlocks = (e - s) * popupLineHeightBlocks
+			let offsetYBlocks =
+				popupHeightBlocks / 2
+				- s * popupLineHeightBlocks
+				- (e - s) * popupLineHeightBlocks / 2
+			if (s === 0) offsetYBlocks += popupLineHeightBlocks
+			segs.push({ bgInt, startRow: s, endRow: e, heightBlocks, offsetYBlocks })
+			s = e
+		}
+		return segs
+	})()
+
+	// MC text_display's quad is CENTERED on the entity origin regardless
+	// of `alignment`. `alignment='left'` left-justifies the text within
+	// the centered quad, so the visible TEXT LEFT edge sits at
+	// `popupEntityX - popupQuadHalfWidth`. The half-width is now
+	// computed PER STAGE in the tick (from `popupWidthPxPerStage / 64`),
+	// since the popup width differs between the entity-ID moment and
+	// the NBT-key moment. The static `popupQuadHalfWidthBlocks` field
+	// is removed — the tick derives the right value per stage.
+
+	// Walk the source char-by-char, producing one stage per typed char.
+	// `editorContent[stage]` = bordered text wrapping `content.slice(0, stage + 1)`,
+	// padded out to `MAX_CODE_LINES` rows with empty placeholder rows (no line
+	// numbers, just blank space between `│`s). This makes the editor show a
+	// fixed-height IDE-style code area: as the user types into later lines,
+	// empty rows disappear from the bottom. The final state fills all
+	// `MAX_CODE_LINES` rows.
+	const stages: AutocompleteElementLayout['stages'] = []
+	const popupWidthPxPerStage: number[] = []
+	const popupTriggerColumnBlocksPerStage: number[] = []
+	for (let s = 0; s <= content.length; s++) {
+		const slice = content.slice(0, s)
+		const bordered = buildPaddedCodeBordered(
+			slice,
+			lang,
+			fontId,
+			fullWrapWidthPx,
+			lineNumbers,
+			sourceLineCount,
+			declarations,
+			sidePadding,
+			MAX_CODE_LINES,
+		)
+
+		// Cursor position: count newlines in `slice` to know which source
+		// line the cursor is on, then count chars since last newline for
+		// the column. Convert to block offsets from the editor's center.
+		const newlinesBefore = (slice.match(/\n/g) ?? []).length
+		const lastNewlineIdx = slice.lastIndexOf('\n')
+		const colChars = lastNewlineIdx >= 0
+			? slice.length - lastNewlineIdx - 1
+			: slice.length
+
+		const charWidthBlocks = 0.375
+		const CURSOR_HORIZONTAL_OFFSET_CHARS = 12
+		// TODO: unrelated to this but the autocomplete demo element is causing console error spam on the server, figure out the slopcode causing that
+		const CURSOR_DRIFT_PER_CHAR = 0.07
+		const paddingLeftBlocks = (sidePadding[0] + (lineNumbers ? gutterChars + 3 : 0) + 1) * charWidthBlocks
+		// Cursor visual CENTER positioned at the typed-text end of the
+		// editor's bordered line. The line has a `│` border on each side
+		// and the cursor text (`|`) is centered on its entity origin.
+		// Position = `paddingLeftBlocks + colChars * (charWidthBlocks - CURSOR_DRIFT_PER_CHAR) -
+		// CURSOR_HORIZONTAL_OFFSET_CHARS * charWidthBlocks - 0.5`
+		// (empirically tuned — `-12 * charWidthBlocks - 0.5` puts the
+		// cursor entity X such that the popup appears 1.2 blocks past
+		// the cursor's visual right edge when the popup is at the OLD
+		// formula's position).
+		const cursorXBlocks =
+			paddingLeftBlocks +
+			colChars * (charWidthBlocks - CURSOR_DRIFT_PER_CHAR) -
+			CURSOR_HORIZONTAL_OFFSET_CHARS * charWidthBlocks -
+			0.5
+		const visualRowOfCursor = newlinesBefore + 2
+		const cursorYBlocks = cellH - visualRowOfCursor * lineHeightBlocks
+
+		// Popup state at this stage.
+		const inEntityRange = s >= entityStageStart && s < entityStageStart + POPUP_WINDOW
+		const inNbtRange = s >= nbtStageStart && s < nbtStageStart + POPUP_WINDOW
+		const popupVisible = inEntityRange || inNbtRange
+		// Per-stage popup width — entity vs NBT moment has different
+		// longest entries (`minecraft:skeleton` vs `CustomName`), so
+		// pick the right one based on which moment this stage is in.
+		// 0 when the popup is hidden (so the tick can skip the line_width
+		// emit entirely).
+		const popupWidthPx: number = inNbtRange
+			? widestNbtRowPx
+			: inEntityRange
+				? widestEntityRowPx
+				: 0
+		// Per-row segments (StyledSegment[] per row) — built once per
+		// stage when the popup is visible. We then group consecutive rows
+		// by segment below to produce per-segment content for the tick.
+		const rowSegments = popupVisible
+			? buildPopupRows(
+				inNbtRange ? NBT_KEYS : ENTITY_IDS,
+				0,
+				declarations,
+			)
+			: []
+		const popupSegmentContent: StyledSegment[][] = popupSegments.map((seg) => {
+			if (!popupVisible) return []
+			// Concatenate this segment's rows, separated by `\n` segments
+			// (so MC renders them as separate lines within the entity's
+			// multi-line quad).
+			const out: StyledSegment[] = []
+			for (let r = seg.startRow; r < seg.endRow; r++) {
+				if (r > seg.startRow) {
+					out.push({ text: '\n', color: '#ffffff' as `#${string}` })
+				}
+				for (const s2 of rowSegments[r] ?? []) out.push({ ...s2 })
+			}
+			return out
+		})
+		const popupHighlightIdx = popupVisible ? 0 : -1
+
+		// Per-stage popup trigger column (principled math, no -12 hack):
+		// place the cursor's visual center at the end of the typed text on
+		// the current line. The `│` border occupies one char before col 0
+		// (`+ charWidthBlocks`), then `colChars` chars of typed text
+		// (`+ colChars * charWidthBlocks`); the cursor is centered on its
+		// own position (so add `+ charWidthBlocks/2` for centering).
+		const popupTriggerColumnBlocks =
+			paddingLeftBlocks +
+			colChars * charWidthBlocks +
+			charWidthBlocks / 2
+
+		popupWidthPxPerStage.push(popupWidthPx)
+		popupTriggerColumnBlocksPerStage.push(popupTriggerColumnBlocks)
+		stages.push({
+			editorContent: bordered,
+			cursorXBlocks,
+			cursorYBlocks,
+			popupVisible,
+			popupSegmentContent,
+			popupHighlightIdx,
+		})
+	}
+
+	// `stageCount` indexes stages [0..N-1] where N = content.length (one
+	// stage per typed char). We clamp to [0, stageCount-1] in the tick.
+	const stageCount = stages.length
+
+	return {
+		kind: 'autocomplete',
+		node,
+		path,
+		parentStack,
+		declarations,
+		type: 'autocomplete',
+		content,
+		width,
+		scalePx,
+		textScale,
+		widthCompensation,
+		cellH,
+		cellW,
+		marginTop,
+		marginBottom,
+		fontId,
+		autoId,
+		stageCount,
+		stages,
+		cursorBlink,
+		sourceLineCount,
+		popupTriggerColumnBlocks: popupTriggerColumnBlocksPerStage,
+		popupWidthPxPerStage,
+		popupSegments,
+		cursorColor,
+		cursorWidthBlocks,
+		cursorHeightBlocks,
+		popupLineHeightBlocks,
+		popupHeightBlocks,
+		entityStageStart,
+		nbtStageStart,
+	}
+}
+
+// Build a per-row, border-free text_display representation of a small
+// IntelliSense dropdown. Each row is its own `StyledSegment[]` (no `\n`
+// separators, no border characters) so the popup can be rendered as N
+// separate text_displays — one per row — and each row can carry its own
+// `background` NBT. Every row is prefixed with `= ` and rendered in white
+// (`#ffffff`); the `highlightIdx` arg is retained for symmetry with the
+// bordered version and is currently unused (selection is conveyed by the
+// top row's background color, set by the caller).
+//
+// Each row is padded with trailing spaces to match the longest entry's
+// rendered width. Keeps the per-row visual width consistent so the
+// `<autocomplete>` background quads line up — e.g. zombie (`=  …zombie`)
+// gets `Math.max(...items.map(len)) - 16` trailing spaces to match
+// skeleton's longer length.
+function buildPopupRows(
+	items: string[],
+	_highlightIdx: number,
+	_declarations: CssDeclarations,
+): StyledSegment[][] {
+	const white: `#${string}` = '#ffffff'
+	const longestItemLen = items.reduce((maxLen, item) => Math.max(maxLen, item.length), 0)
+	return items.map((item): StyledSegment[] => {
+		const out: StyledSegment[] = [
+			{ text: '= ', color: white },
+			{ text: item, color: white },
+		]
+		const padLen = longestItemLen - item.length
+		if (padLen > 0) {
+			out.push({ text: ' '.repeat(padLen), color: white })
+		}
+		return out
+	})
+}
+
+// Build a bordered text_display representation of the editor's current
+// `slice`, padded out to `maxLines` visual rows with empty placeholder
+// rows. The active rows (whatever `codeBorders.buildRows` produces for
+// `slice`) keep their full bordered structure (line numbers, content,
+// colors). The empty rows below them match the active row's width so
+// the borders stay aligned, but contain no line numbers or content —
+// just `│` + spaces + `│` rendered as a single border-colored segment.
+//
+// Used by `<autocomplete>` so the editor's visible area stays a fixed
+// `maxLines` rows tall as typing progresses; the final state has all
+// `maxLines` filled with real content (no empty rows).
+function buildPaddedCodeBordered(
+	slice: string,
+	lang: string,
+	fontId: string,
+	fullWrapWidthPx: number,
+	lineNumbers: boolean,
+	sourceLineCount: number,
+	declarations: CssDeclarations,
+	sidePadding: [number, number],
+	maxLines: number,
+): StyledSegment[] {
+	const borderColor = declarations['border-color'] as `#${string}` | undefined
+	const langColor = declarations['lang-color'] as `#${string}` | undefined
+	const codeColor = declarations.color as `#${string}` | undefined
+	const gutterColor = declarations['gutter-color'] as `#${string}` | undefined
+
+	const rows = codeBorders.buildRows({
+		content: slice,
+		language: lang,
+		fontId,
+		lineWidthPx: fullWrapWidthPx,
+		bold: false,
+		borderColor,
+		langColor,
+		codeColor,
+		precomputed: undefined,
+		lineNumbers,
+		lineCount: sourceLineCount,
+		gutterColor,
+		sidePadding,
+	})
+
+	const numEmptyRows = Math.max(0, maxLines - rows.codeRows.length)
+	// Empty row matches the line-numbered row's outer width so the
+	// left/right `│` borders stay vertically aligned with the active
+	// rows above. The interior preserves the gutter STRUCTURE (left
+	// border + blank gutter slot + ` │ ` separator + blank content
+	// area + right border) but with no line number and no text — so
+	// the box looks like a row that's waiting for input, not a
+	// collapsed `│        │`.
+	const gutterChars = rows.gutterChars
+	const longestInnerChars = rows.longestInnerChars
+	const emptyRowText =
+		'│ ' + ' '.repeat(gutterChars) + ' │ ' + ' '.repeat(longestInnerChars) + ' │'
+
+	const out: StyledSegment[] = []
+	for (const seg of rows.topBorder) out.push({ ...seg })
+	for (const row of rows.codeRows) for (const seg of row) out.push({ ...seg })
+	for (let i = 0; i < numEmptyRows; i++) {
+		out.push({ text: '\n', color: borderColor })
+		out.push({ text: emptyRowText, color: borderColor })
+	}
+	if (rows.bottomBorder.length > 0) {
+		out.push({ text: '\n', color: rows.bottomBorder[0].color })
+		for (const seg of rows.bottomBorder) out.push({ ...seg })
+	}
+	return out
 }

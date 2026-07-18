@@ -10,9 +10,22 @@ import type { ElementLayout } from './element'
 export type Block =
 	| { kind: 'element'; el: ElementLayout }
 	| { kind: 'row'; parentStack: CssDeclarations; children: ElementLayout[] }
+	| { kind: 'column'; parentStack: CssDeclarations; children: ElementLayout[] }
+
+// A `column` block groups consecutive children of a column container
+// whose LESS declares `align-items: center` AND a `height`. The container
+// then expands to fill the remaining vertical space below any preceding
+// elements, and the children are vertically centered within it. Mirrors
+// how `grid-auto-flow: row` groups `row` blocks, but for column-flow.
+function isCenteredColumnContainer(stack: CssDeclarations | undefined): boolean {
+	if (!stack) return false
+	return stack['align-items'] === 'center' && stack.height != null && stack.height !== ''
+}
 
 // Walk the elements list, grouping consecutive siblings whose parent
-// has `grid-auto-flow: row` into one `row` block.
+// has `grid-auto-flow: row` into one `row` block, or
+// `align-items: center + height` into one `column` block. Anything
+// else stays a single-element block.
 export function groupIntoBlocks(elements: ElementLayout[]): Block[] {
 	const blocks: Block[] = []
 	for (let i = 0; i < elements.length; ) {
@@ -24,6 +37,17 @@ export function groupIntoBlocks(elements: ElementLayout[]): Block[] {
 				i++
 			}
 			blocks.push({ kind: 'row', parentStack: el.parentStack, children })
+		} else if (isCenteredColumnContainer(el.parentStack)) {
+			const children: ElementLayout[] = []
+			while (
+				i < elements.length &&
+				isCenteredColumnContainer(elements[i].parentStack) &&
+				elements[i].parentStack === el.parentStack
+			) {
+				children.push(elements[i])
+				i++
+			}
+			blocks.push({ kind: 'column', parentStack: el.parentStack, children })
 		} else {
 			blocks.push({ kind: 'element', el })
 			i++
@@ -34,6 +58,16 @@ export function groupIntoBlocks(elements: ElementLayout[]): Block[] {
 
 export function blockCellH(b: Block): number {
 	return b.kind === 'element' ? b.el.cellH : Math.max(...b.children.map((c) => c.cellH))
+}
+
+// Natural column height: sum of children cellH + (n-1) row-gaps. The
+// column block can shrink-wrap to this when its `height` value is
+// smaller than the natural stack (rare for `height: 100%`, common for
+// fixed-height column containers).
+export function columnBlockNaturalHeight(b: Extract<Block, { kind: 'column' }>, sceneH: number): number {
+	const rowGap = parseLength(b.parentStack['row-gap'] ?? '', sceneH)?.meters ?? 0
+	const total = b.children.reduce((sum, c) => sum + c.cellH, 0)
+	return total + Math.max(0, b.children.length - 1) * rowGap
 }
 
 // Gap between two adjacent blocks: parent's `row-gap` (only when both

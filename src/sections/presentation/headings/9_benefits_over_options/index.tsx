@@ -4,7 +4,7 @@ export const slides = [
 	(<>
 		<h2 id="header">How does Sandstone compare?</h2>
 		<p>Full auto-complete & error-checking, even for NBT!</p>
-		{/** Insert auto-complete demo */}
+		<autocomplete id="ac-demo" />
 	</>),
 	(<>
 		<h3 id="header">How does Sandstone compare?</h3>

@@ -35,7 +35,6 @@
 export const slides = [
 	(<>
 		<h3 id="header">How can Object Oriented Programming help with my project?</h3>
-		{/** This text-grid is not actually greedily taking the rest of the page height and centering the paragraphs, investigate */}
 		<div id="text-grid">
 			<p>Wrap repeated patterns behind a single call</p>
 			<p>Type-safe interfaces make shared code easy to read and review</p>

@@ -9,7 +9,7 @@
 export { render, renderSlides } from './render'
 export type { VNode, StyledSegment, RenderOptions, Scene, SlideScene } from './render'
 
-export { div, p, h1, h2, center, style, code, img, explorer } from './components'
+export { div, p, h1, h2, center, style, code, img, explorer, autocomplete } from './components'
 export type {
 	CommonProps,
 	DivProps,
@@ -21,6 +21,7 @@ export type {
 	CodeProps,
 	ImgProps,
 	ExplorerProps,
+	AutocompleteProps,
 } from './components'
 
 export { Fragment, jsx, jsxs, jsxDEV } from './jsx-runtime'
