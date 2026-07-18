@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
  * Populate `.previous-builds/` git history by replaying builds since
- * "✨️ Add output diff tracking" (b48a8eb0).
+ * "✨️ Initial auto-complete demo implementation" (a0840ca).
  *
  * For each source commit in that range, oldest-first:
  *   1. rm -rf node_modules/
@@ -24,7 +24,7 @@ import { join, relative } from 'path'
 
 const ROOT = join(import.meta.dirname, '..')
 const PREV = join(ROOT, '.previous-builds')
-const SINCE = 'b48a8eb0' // ✨️ Add output diff tracking
+const SINCE = 'a0840ca' // ✨️ Initial auto-complete demo implementation
 
 // ---------- helpers ----------
 
