@@ -1,6 +1,7 @@
 import {_, abs, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, raw, rel, Selector, Tag, Variable } from 'sandstone'
 import { VectorClass } from 'sandstone/variables'
 import { NAMESPACE } from '@shared'
+import { sleep } from 'bun';
 
 type Floor = {
     elevator_pos: [number, number, number],
@@ -52,6 +53,8 @@ const FOOTPRINT = { dx: 5, dy: 5, dz: 5 } as const
 // tag for players riding the elevator
 const RiderLabel = Label('elevator.rider')
 const GRAVITY_ATTRIBUTE = 'minecraft:gravity' as `${string}:${string}`
+const SAFE_FALL_ATTRIBUTE = 'minecraft:safe_fall_distance' as `${string}:${string}`
+const SAFE_FALL_BOOST = 1000
 
 // all floors share the same x/z so the car only ever needs to move on Y
 const [SHAFT_X, , SHAFT_Z] = FLOORS[STARTING_FLOOR].elevator_pos
@@ -120,12 +123,14 @@ function applyRiderGravityForTrip() {
         }).else(() => {
             attribute('@s', GRAVITY_ATTRIBUTE).add(GRAVITY_MODIFIER, GRAVITY_MULT_UP, 'add_multiplied_total')
         })
+        attribute('@s', SAFE_FALL_ATTRIBUTE).add(GRAVITY_MODIFIER, SAFE_FALL_BOOST, 'add_value')
     })
 }
 
 function releaseAllRiders() {
     execute.as(Riders).run(() => {
         attribute('@s', GRAVITY_ATTRIBUTE).remove(GRAVITY_MODIFIER)
+        attribute('@s', SAFE_FALL_ATTRIBUTE).remove(GRAVITY_MODIFIER)
     })
 }
 
@@ -195,6 +200,7 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
 export const killElevator = MCFunction('sections/elevator/kill', () => {
     execute.as(Riders).run(() => {
         attribute('@s', GRAVITY_ATTRIBUTE).remove(GRAVITY_MODIFIER)
+        attribute('@s', SAFE_FALL_ATTRIBUTE).remove(GRAVITY_MODIFIER)
         RiderLabel('@s').remove()
         DriverLabel('@s').remove()
     })
@@ -222,6 +228,7 @@ MCFunction('sections/elevator/step', () => {
             RiderLabel('@s').remove()
             DriverLabel('@s').remove()
             attribute('@s', GRAVITY_ATTRIBUTE).remove(GRAVITY_MODIFIER)
+            attribute('@s', SAFE_FALL_ATTRIBUTE).remove(GRAVITY_MODIFIER)
         })
 
     _.if(CurrentFloor.notEqualTo(TargetFloor), () => {
