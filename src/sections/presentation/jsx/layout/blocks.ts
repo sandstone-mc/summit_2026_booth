@@ -5,12 +5,12 @@
 import { parseLength } from '../length'
 import type { CssDeclarations } from '../less/types'
 import { TEXT_RENDER_OFFSET, getTextDescender } from './constants'
-import type { ElementLayout } from './element'
+import type { ComponentLayoutBase } from '../components/base'
 
 export type Block =
-	| { kind: 'element'; el: ElementLayout }
-	| { kind: 'row'; parentStack: CssDeclarations; children: ElementLayout[] }
-	| { kind: 'column'; parentStack: CssDeclarations; children: ElementLayout[] }
+	| { kind: 'element'; el: ComponentLayoutBase }
+	| { kind: 'row'; parentStack: CssDeclarations; children: ComponentLayoutBase[] }
+	| { kind: 'column'; parentStack: CssDeclarations; children: ComponentLayoutBase[] }
 
 // A `column` block groups consecutive children of a column container
 // whose LESS declares `align-items: center` AND a `height`. The container
@@ -26,19 +26,19 @@ function isCenteredColumnContainer(stack: CssDeclarations | undefined): boolean 
 // has `grid-auto-flow: row` into one `row` block, or
 // `align-items: center + height` into one `column` block. Anything
 // else stays a single-element block.
-export function groupIntoBlocks(elements: ElementLayout[]): Block[] {
+export function groupIntoBlocks(elements: ComponentLayoutBase[]): Block[] {
 	const blocks: Block[] = []
 	for (let i = 0; i < elements.length; ) {
 		const el = elements[i]
 		if (el.parentStack?.['grid-auto-flow'] === 'row') {
-			const children: ElementLayout[] = []
+			const children: ComponentLayoutBase[] = []
 			while (i < elements.length && elements[i].parentStack === el.parentStack) {
 				children.push(elements[i])
 				i++
 			}
 			blocks.push({ kind: 'row', parentStack: el.parentStack, children })
 		} else if (isCenteredColumnContainer(el.parentStack)) {
-			const children: ElementLayout[] = []
+			const children: ComponentLayoutBase[] = []
 			while (
 				i < elements.length &&
 				isCenteredColumnContainer(elements[i].parentStack) &&
@@ -75,8 +75,11 @@ export function columnBlockNaturalHeight(b: Extract<Block, { kind: 'column' }>, 
 export function blockGap(prev: Block, next: Block, sceneH: number): number {
 	const prevEl = prev.kind === 'element' ? prev.el : prev.children[prev.children.length - 1]
 	const nextEl = next.kind === 'element' ? next.el : next.children[0]
+	const prevText = prevEl as ComponentLayoutBase & { fontId?: string; scalePx?: number }
 	const textDescender =
-		prevEl.kind === 'text' && nextEl.kind !== 'text' ? getTextDescender(prevEl.fontId, prevEl.scalePx) : 0
+		prevEl.kind === 'text' && nextEl.kind !== 'text'
+			? getTextDescender(prevText.fontId!, prevText.scalePx!)
+			: 0
 	const prevStack = prev.kind === 'element' ? prev.el.parentStack : prev.parentStack
 	const nextStack = next.kind === 'element' ? next.el.parentStack : next.parentStack
 	const rowGap =

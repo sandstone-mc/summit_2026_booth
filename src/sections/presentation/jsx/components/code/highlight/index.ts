@@ -1,6 +1,6 @@
 // Public highlight API. Wraps `Highlighter` + pre-computation helper.
 
-import type { StyledSegment } from '../render'
+import type { StyledSegment } from '../../../render'
 import type { Grammar } from './highlighter'
 import { Highlighter } from './highlighter'
 

@@ -1,19 +1,28 @@
-// Builders for `text_display` and `item_display` NBT. Each takes the
-// pre-computed layout fields and returns the SymbolEntity record the
-// summon command emits.
+// Shared NBT + format helpers used by every component's summon step.
+// `buildTextJson` handles single string vs array of segments + per-type
+// font/bold overrides; `buildIdentityTransform` produces the standard
+// scale-only transform for text_display entities.
 
 import { NBT } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
 import { DEFAULT_FONT_ID } from '../text-metrics'
 import type { StyledSegment } from '../render'
-import { parseColorInt } from './color'
+import { parseColorInt } from '../layout/color'
 
-/** Default text color for segments without an explicit override. */
 const DEFAULT_TEXT_COLOR = '#ffffff' as const
 
-// Build the `text` field for a text_display. Single string → one
-// color from `declarations.color`; array of segments → each segment
-// carries its own color/font, falling back to declarations.
+// Unit rotation quaternion `(0, 0, 0, 1)` — emitted verbatim for both
+// `left_rotation` + `right_rotation` on every display entity.
+export const ROTATION_QUATERNION = NBT.float([0, 0, 0, 1])
+export const ZERO_TRANSLATION = NBT.float([0, 0, 0])
+export const FULL_BRIGHTNESS = { sky: NBT.int(15), block: NBT.int(15) } as const
+
+// Format a number with `.0` suffix when integer so the NBT parser
+// doesn't choke when downstream float contexts expect a decimal.
+export function fmt(v: number): string {
+	return `${v}${Number.isInteger(v) ? '.0' : ''}`
+}
+
 export function buildTextJson(
 	content: string | StyledSegment[],
 	declarations: Record<string, string>,
@@ -42,13 +51,8 @@ function buildSegment(
 ): NonNullable<SymbolEntity['text_display']['text']> {
 	const out: NonNullable<SymbolEntity['text_display']['text']> = { text: seg.text }
 	// Color, bold, italic, font are ALL set explicitly on every
-	// segment. Minecraft's text component system merges sibling styles
-	// when a later segment leaves a field unset — the field carries
-	// over from the previous segment. Without an explicit reset, a
-	// plain-text segment following a `` `code` `` span would inherit
-	// the code span's gray color / monospace font. Defaults below
-	// match MC's own defaults (`#ffffff` text, `false` bold/italic,
-	// `minecraft:default` font).
+	// segment — MC text components merge sibling styles when a later
+	// segment leaves a field unset. Defaults below match MC's own.
 	out.color = (seg.color ?? declarations.color ?? DEFAULT_TEXT_COLOR) as `#${string}`
 	if (seg.bold === true) out.bold = true
 	else if (seg.bold === false) out.bold = false
@@ -60,24 +64,15 @@ function buildSegment(
 	else if (declarations.italic === 'true') out.italic = true
 	else out.italic = false
 	out.font = (seg.font ?? declarations.font ?? (type === 'code' || type === 'explorer' || type === 'autocomplete' ? 'sandstone_summit_booth:monospace' : DEFAULT_FONT_ID)) as `${string}:${string}`
-	// `seg.background` is stored but NOT rendered as a per-segment
-	// field — MC text components have no per-component `background`.
-	// The LESS `inline-code-bg` declaration is stored on the segment
-	// for future per-entity fan-out (multiple item_display boxes
-	// behind a single text_display entity to simulate per-span
-	// highlights). For now, callers that want to render an inline-code
-	// background will need the layout to emit highlight entities.
+	// `seg.background` is stored but NOT rendered — MC text components
+	// have no per-component `background`. Reserved for future per-entity
+	// fan-out (multiple item_display boxes behind a single text_display).
 	return out
 }
 
-// Unit-rotation quaternion components `(0, 0, 0, 1)` — every display
-// entity emits this verbatim for both `left_rotation` + `right_rotation`.
-const ROTATION_QUATERNION = NBT.float([0, 0, 0, 1])
-const ZERO_TRANSLATION = NBT.float([0, 0, 0])
-
-// Build a 4-component identity transformation. The shape mirrors the
-// original render.ts call sites — `NBT.float` returns an array; we
-// wrap it three times so the encoder emits one axis each.
+// 4-component identity transformation. Shape mirrors the original
+// `render.ts` call sites — `NBT.float` returns an array; wrap it three
+// times so the encoder emits one axis each.
 export function buildIdentityTransform(s: number) {
 	const sf = NBT.float(s)
 	return {
@@ -88,11 +83,25 @@ export function buildIdentityTransform(s: number) {
 	}
 }
 
-// Parse a `#RRGGBB` color into the int text_display wants.
+// Parse `#RRGGBB` color into the int text_display wants. Caller always
+// gets an opaque color — alpha byte forced to 0xFF.
 export function applyBackgroundColor(decs: Record<string, string>, nbt: { background?: ReturnType<typeof NBT.int> }): void {
 	const bg = decs.background ? parseColorInt(decs.background) : undefined
 	if (bg !== undefined) {
 		const bgi = NBT.int(bg)
 		nbt.background = bgi as unknown as ReturnType<typeof NBT.int>
 	}
+}
+
+// Parse the `side-padding` JSX prop. Accepts a `[left, right]`
+// tuple or a single number; returns the default `[1, 1]` when the
+// prop is missing or malformed. Shared by code/explorer preps.
+export function parseSidePadding(raw: unknown): [number, number] {
+	if (Array.isArray(raw) && raw.length >= 2) {
+		const l = Number(raw[0])
+		const r = Number(raw[1])
+		if (Number.isFinite(l) && Number.isFinite(r)) return [l, r]
+	}
+	if (typeof raw === 'number' && Number.isFinite(raw)) return [raw, raw]
+	return [1, 1]
 }

@@ -4,9 +4,11 @@ Based on the sandstone starter template, Sandstone creates Minecraft datapacks a
 
 ## Rules
 1. Do NOT read the output commands when large structures of text (50 characters+) are involved, trust Sandstone, improve your debug logging to get the data you need in the least amount of tokens possible.
-  - For example, if you are debugging JSON text components and you need to figure out what the plaintext state of it is, concatinate all of the `text` values from the objects in the component, do NOT just log the entire JSON
+   - For example, if you are debugging JSON text components and you need to figure out what the plaintext state of it is, concatinate all of the `text` values from the objects in the component, do NOT just log the entire JSON
 2. Avoid when possible reading the entire contents of mcfunction files.
 3. In minecraft, as the `y` coordinate of an entity increases (3, 4, 5, ...) they raise upwards/higher in the world. Years ago notch decided for some reason to do this, despite the standard in mathematics being the opposite.
+4. When the user puts a TODO comment in front of something that the user has intentionally broken the syntax of, read the TODO comment and address it directly and immediately.
+5. Avoid `any` and `unknown` when possible, if that means large refactoring do it.
 
 ## Commands
 

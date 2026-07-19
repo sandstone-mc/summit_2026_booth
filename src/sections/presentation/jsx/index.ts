@@ -2,20 +2,20 @@
 //
 // Top-level entry: `render(tree, options)` for a single JSX tree or
 // `renderSlides(trees, options, timing?)` for a multi-slide scene.
-// The rest of this index re-exports the props types + JSX components
-// so consumers can `import { h1, code, img } from '@/jsx'` and TSX
-// infers everything via the augmented JSX.IntrinsicElements.
+// JSX intrinsic elements are typed via `JSX.IntrinsicElements` in
+// `components.ts`. The component classes are re-exported for callers
+// who want to instantiate manually (rare).
 
 export { render, renderSlides } from './render'
 export type { VNode, StyledSegment, RenderOptions, Scene, SlideScene } from './render'
 
-export { div, p, h1, h2, center, style, code, img, explorer, autocomplete } from './components'
 export type {
 	CommonProps,
 	DivProps,
 	PProps,
 	H1Props,
 	H2Props,
+	H3Props,
 	CenterProps,
 	StyleProps,
 	CodeProps,

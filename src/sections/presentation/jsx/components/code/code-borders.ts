@@ -10,8 +10,8 @@
 //     text_display entity and the scroll-tick toggles which chunk
 //     is visible).
 
-import { wrapCodeLinesWithOffsets, type CodeLineWrap } from '../text-metrics'
-import type { StyledSegment } from '../render'
+import { wrapCodeLinesWithOffsets, type CodeLineWrap } from '../../text-metrics'
+import type { StyledSegment } from '../../render'
 
 // Monospace char width used both for the wrap budget (chars per row)
 // and the back-translation to MC's `line_width` (pixels per row). Every

@@ -1,6 +1,7 @@
 // Walks a LESS AST and flattens rulesets into a selector → declarations
 // map. `&` in nested rulesets expands against the enclosing selector chain.
 
+import { parse } from '../less'
 import type {
 	LessRulesetNode,
 	LessSelectorNode,
@@ -18,7 +19,6 @@ export class LessCollector {
 	static async build(lessSource: string): Promise<Map<string, CssDeclarations>> {
 		const c = new LessCollector()
 		if (!lessSource.trim()) return c.into
-		const { parse } = await import('../less')
 		const ast = await parse(lessSource)
 		c.collect(ast, [])
 		return c.into

@@ -14,7 +14,12 @@
 // sibling elements without distinguishing id/class share the same
 // path string, which would cause the exclusion Set to over-match.
 
-import type { ElementLayout } from './layout/element'
+import type { ComponentLayoutBase } from './components/base'
+import type { CodeLayout } from './components/code/code-layout'
+import type { ProseLayout } from './components/prose/prose-base'
+import type { ExplorerLayout } from './components/explorer/explorer-layout'
+import type { AutocompleteLayout } from './components/autocomplete/autocomplete-layout'
+import type { ImageLayout } from './components/image/image-component'
 import type { Placement } from './layout'
 import { wrapLines } from './text-metrics'
 import { pxToTextLineHeight } from './length'
@@ -22,43 +27,46 @@ import { DEFAULT_FONT_ID } from './text-metrics/font-loader'
 import { TEXT_RENDER_OFFSET, parityOffset } from './layout/constants'
 import type { VNode } from './render'
 
-// Local type alias — `TextElementLayout` is internal to `element.ts`.
-type TextElementLayout = Extract<ElementLayout, { kind: 'text' }>
+// Code-shaped layouts share bordered-row + chunk fields. Used inside
+// the diagnostic to narrow `el: TextLayout` after a `type === 'code'`
+// or `type === 'explorer'` check.
+type CodeLikeLayout = CodeLayout | ExplorerLayout
+// All text-style layouts share kind='text' + the common render
+// fields. Union — narrowing by `type` accesses variant-specific fields.
+type TextLayout = CodeLayout | ProseLayout | ExplorerLayout | AutocompleteLayout
 
 export type OffScreenKind = 'partial' | 'full'
 
 export type OffScreenIssue = {
 	slideIdx: number
 	kind: OffScreenKind
-	/** Truncated preview of the element's text content (best effort). */
-	contentPreview: string
-	/** Path of the offending VNode within its slide tree (for filtering). */
-	nodePath: readonly string[]
+	nodePath: string
 	entityY: number
 	entityX: number
-	textTop: number
-	textBottom: number
-	textLeft: number
-	textRight: number
+	textTop: number | null
+	textBottom: number | null
+	textLeft: number | null
+	textRight: number | null
 	slideBottom: number
 	slideTop: number
 	slideLeft: number
 	slideRight: number
-	/** Which axes are clipped: 'vertical', 'horizontal', or both. */
-	offAxis: string[]
+	offAxis: ('vertical' | 'horizontal')[]
+	contentPreview: string
 }
+
+export type PlacementForIssue = Placement
 
 export type DiagnoseResult = {
 	issues: OffScreenIssue[]
-	/** VNode references of fully-off-screen elements — caller may skip these. */
 	excludedVNodes: Set<VNode>
 }
 
 /**
- * Scan a list of placements and flag elements whose rendered region
- * doesn't fit inside the slide. Checks both vertical (Y) and horizontal
- * (X) bounds. `originY` / `originX` are the slide's bottom-left corner
- * in world coords; `sceneW` / `sceneH` are the slide dimensions.
+ * Run the off-screen diagnostic across every placement. Returns the
+ * list of issues + the set of VNodes whose placements are fully off-
+ * screen (caller should drop them from `slideVisibles` so the slide
+ * show never summons them).
  */
 export function diagnosePlacements(
 	placements: readonly Placement[],
@@ -68,36 +76,40 @@ export function diagnosePlacements(
 	sceneW: number,
 	sceneH: number,
 ): DiagnoseResult {
-	const slideLeft = originX
-	const slideRight = originX + sceneW
 	const slideBottom = originY
 	const slideTop = originY + sceneH
+	const slideLeft = originX
+	const slideRight = originX + sceneW
+
 	const issues: OffScreenIssue[] = []
 	const excludedVNodes = new Set<VNode>()
 
 	for (const placement of placements) {
-		const bounds = estimateRenderBounds(placement, sceneH)
-		if (
-			bounds.renderBottom === null ||
-			bounds.renderTop === null ||
-			bounds.renderLeft === null ||
-			bounds.renderRight === null
-		) {
-			continue
-		}
-		const fullyOffY = bounds.renderTop <= slideBottom || bounds.renderBottom >= slideTop
-		const fullyOffX = bounds.renderRight <= slideLeft || bounds.renderLeft >= slideRight
-		const partialOffY =
-			!fullyOffY && (bounds.renderBottom < slideBottom || bounds.renderTop > slideTop)
-		const partialOffX =
-			!fullyOffX && (bounds.renderLeft < slideLeft || bounds.renderRight > slideRight)
-		const fullyOff = fullyOffY || fullyOffX
-		if (!fullyOff && !partialOffY && !partialOffX) continue
+		const el = placement.el
+		const bounds = renderBounds(el, placement, sceneH)
+		if (!bounds) continue
 
-		const nodePath = placement.el.path
-		const offAxis: string[] = []
-		if (fullyOffY || partialOffY) offAxis.push('vertical')
-		if (fullyOffX || partialOffX) offAxis.push('horizontal')
+		const nodePath = pathString(el)
+		const textBottom = bounds.renderBottom ?? 0
+		const textTop = bounds.renderTop ?? 0
+		const textLeft = bounds.renderLeft ?? 0
+		const textRight = bounds.renderRight ?? 0
+
+		const fullyOff =
+			textBottom >= slideTop ||
+			textTop <= slideBottom ||
+			textLeft >= slideRight ||
+			textRight <= slideLeft
+		const partialOff =
+			textBottom > slideTop ||
+			textTop > slideBottom ||
+			textLeft > slideRight ||
+			textRight > slideLeft
+		if (!fullyOff && !partialOff) continue
+
+		const offAxis: ('vertical' | 'horizontal')[] = []
+		if (textBottom >= slideTop || textTop <= slideBottom) offAxis.push('vertical')
+		if (textLeft >= slideRight || textRight <= slideLeft) offAxis.push('horizontal')
 
 		issues.push({
 			slideIdx,
@@ -116,37 +128,94 @@ export function diagnosePlacements(
 			slideRight,
 			offAxis,
 		})
-		if (fullyOff) {
-			excludedVNodes.add(placement.el.node)
-		}
+		if (fullyOff) excludedVNodes.add(el.node)
 	}
 
 	return { issues, excludedVNodes }
 }
 
+function pathString(el: ComponentLayoutBase): string {
+	const parts = el.path
+	if (parts.length === 0) return String(el.type)
+	return parts.join(' > ')
+}
+
+type RenderBounds = {
+	renderBottom: number | null
+	renderTop: number | null
+	renderLeft: number | null
+	renderRight: number | null
+	contentPreview: string
+}
+
+function renderBounds(
+	el: ComponentLayoutBase,
+	placement: Placement,
+	sceneH: number,
+): RenderBounds | null {
+	if (el.kind === 'image') {
+		const halfH = el.cellH / 2
+		const halfW = el.cellW / 2
+		const imgEl = el as ImageLayout
+		return {
+			renderBottom: placement.y - halfH,
+			renderTop: placement.y + halfH,
+			renderLeft: placement.x - halfW,
+			renderRight: placement.x + halfW,
+			contentPreview: `<img src="${imgEl.imgSrc ?? ''}">`,
+		}
+	}
+	if (el.kind === 'text') {
+		const textEl = el as TextLayout
+		const textHeight = estimateTextHeightBlocks(textEl)
+		if (textHeight <= 0) {
+			return { renderBottom: null, renderTop: null, renderLeft: null, renderRight: null, contentPreview: '' }
+		}
+		const textWidth = estimateTextWidthBlocks(textEl)
+		const centered = el.type !== 'code'
+		const halfW = textWidth / 2
+		const lift = TEXT_RENDER_OFFSET - parityOffset(sceneH)
+		return {
+			renderBottom: placement.y + lift,
+			renderTop: placement.y + textHeight + lift,
+			renderLeft: centered ? placement.x - halfW : placement.x,
+			renderRight: centered ? placement.x + halfW : placement.x + textWidth,
+			contentPreview: previewFor(textEl),
+		}
+	}
+	return { renderBottom: null, renderTop: null, renderLeft: null, renderRight: null, contentPreview: '' }
+}
+
+/**
+ * Approximate the rendered text width in blocks. Uses the element's
+ * LESS `width` declaration (in px, 1 block = 16 px) as the wrap width.
+ * `line_width` is in pre-scale pixels so doesn't map directly to blocks.
+ */
+function estimateTextWidthBlocks(el: TextLayout): number {
+	if (!('styleWidth' in el) || !el.styleWidth) return 0
+	return el.styleWidth.px / 16
+}
+
 /**
  * Estimate the rendered text height in blocks for a text element.
  * Three regimes, matching how the layout pipeline builds the entity:
- *   - scroll `<code>`: `(viewportCodeRows + 2) * lineHeight` (the chunk
- *     is bordered + scrolled chunk slices)
- *   - non-scroll `<code>`: count newlines in the bordered content + 2
- *     (top + bottom border), times lineHeight
- *   - prose (`<p>` / `<h*>`): wrap at `width * widthCompensation` and
- *     count visual rows
+ *   - scroll `<code>` / `<explorer>`: `(viewportCodeRows + 2) * lineHeight`
+ *   - non-scroll `<code>` / `<explorer>`: count newlines in borderedContent + 2
+ *   - prose (`<p>` / `<h*>` / `<autocomplete>`): wrap at `width *
+ *     widthCompensation` and count visual rows
  */
-function estimateTextHeightBlocks(el: TextElementLayout): number {
+function estimateTextHeightBlocks(el: TextLayout): number {
 	const lineHeightBlocks = pxToTextLineHeight(el.scalePx, el.fontId)
 	if (lineHeightBlocks <= 0) return 0
 
-	if (el.kind === 'text' && el.type === 'code') {
-		// Scrolling code: chunk 0 is the initial render — same row count.
-		if (el.chunks && el.chunks.length > 0 && el.viewportCodeRows !== undefined) {
-			return (el.viewportCodeRows + 2) * lineHeightBlocks
+	if (el.type === 'code' || el.type === 'explorer') {
+		const codeLike = el as CodeLikeLayout
+		if (codeLike.chunks && codeLike.chunks.length > 0 && codeLike.viewportCodeRows !== undefined) {
+			return (codeLike.viewportCodeRows + 2) * lineHeightBlocks
 		}
-		// Non-scrolling code: count newlines in borderedContent + borders.
-		if (el.borderedContent && el.borderedContent.length > 0) {
-			let rows = 2 // top + bottom border
-			for (const seg of el.borderedContent) {
+		if (codeLike.borderedContent && codeLike.borderedContent.length > 0) {
+			let rows = 2
+			for (const seg of codeLike.borderedContent) {
 				rows += countNewlines(seg.text)
 			}
 			return rows * lineHeightBlocks
@@ -154,22 +223,23 @@ function estimateTextHeightBlocks(el: TextElementLayout): number {
 		return 0
 	}
 
-	// Prose path — wrap at the element's effective width. Recompute
-	// fontId + bold from declarations (matches the layout pipeline's
-	// per-element font choice — `<code>` defaults to monospace, prose
-	// to the default font; bold is on for `h1`/`h2` or explicit LESS).
-	// When the caller pinned the breaks via `wrap-breaks`, trust that
-	// count instead of re-running the wrap guess.
-	if (el.wrapBreaksApplied !== undefined) {
-		const lines = el.wrapBreaksApplied.length === 0 ? 1 : el.wrapBreaksApplied.length + 1
+	// Prose path — when the caller pinned the breaks via
+	// `wrap-breaks`, trust that count instead of re-running the wrap
+	// guess. AutocompleteLayout shares `content` + `widthCompensation`
+	// + `styleWidth` + `declarations` with ProseLayout but lacks
+	// `wrapBreaksApplied`; the optional access via `?.` keeps both
+	// branches compiling.
+	const proseLike = el as ProseLayout
+	if (proseLike.wrapBreaksApplied !== undefined) {
+		const lines = proseLike.wrapBreaksApplied.length === 0 ? 1 : proseLike.wrapBreaksApplied.length + 1
 		return lines * lineHeightBlocks
 	}
 	const wrapWidthPx =
-		(el.width?.px ?? Number.POSITIVE_INFINITY) * el.widthCompensation
-	const fontId = el.declarations.font ?? (el.type === 'code' ? 'sandstone_summit_booth:monospace' : DEFAULT_FONT_ID)
+		(proseLike.styleWidth?.px ?? Number.POSITIVE_INFINITY) * proseLike.widthCompensation
+	const fontId = proseLike.declarations.font ?? DEFAULT_FONT_ID
 	const bold =
-		el.type === 'h1' || el.type === 'h2' || el.declarations.bold === 'true'
-	const lines = wrapLines(el.content, wrapWidthPx, bold, fontId)
+		el.type === 'h1' || el.type === 'h2' || proseLike.declarations.bold === 'true'
+	const lines = wrapLines(proseLike.content, wrapWidthPx, bold, fontId)
 	return lines * lineHeightBlocks
 }
 
@@ -179,97 +249,16 @@ function countNewlines(s: string): number {
 	return n
 }
 
-function previewFor(el: TextElementLayout): string {
+function previewFor(el: TextLayout): string {
 	if (el.kind !== 'text') return ''
-	if (el.borderedContent && el.borderedContent.length > 0) {
-		// Code blocks: render the first row's text content as the preview.
+	if ('borderedContent' in el && el.borderedContent && el.borderedContent.length > 0) {
 		const first = el.borderedContent.find(
-			(s: { text: string }) =>
-				!!s.text && !s.text.startsWith('─') && !s.text.startsWith('└'),
+			(s) => !!s.text && !s.text.startsWith('─') && !s.text.startsWith('└'),
 		)
 		const src = (first?.text ?? '').replace(/[\n│─]/g, ' ').trim()
 		return src.slice(0, 60)
 	}
 	return el.content.slice(0, 60)
-}
-
-/**
- * Compute the rendered region for any visible element. Returns `null`
- * for any bound that can't be measured.
- *   - text/code:    `[entityY, entityY + lineHeight × visualRows]` vertically
- *                   (text extends upward from the entity anchor); horizontally
- *                   `[entityX, entityX + textWidth]` for left-aligned code,
- *                   `[entityX - textWidth/2, entityX + textWidth/2]` for prose.
- *   - image:        `[entityY ± cellH/2, entityX ± cellW/2]` (centered).
- */
-function estimateRenderBounds(placement: Placement, sceneH: number): {
-	renderBottom: number | null
-	renderTop: number | null
-	renderLeft: number | null
-	renderRight: number | null
-	contentPreview: string
-} {
-	const el = placement.el
-	if (el.kind === 'image') {
-		const halfH = el.cellH / 2
-		const halfW = el.cellW / 2
-		return {
-			renderBottom: placement.y - halfH,
-			renderTop: placement.y + halfH,
-			renderLeft: placement.x - halfW,
-			renderRight: placement.x + halfW,
-			contentPreview: `<img src="${el.imgSrc ?? ''}">`,
-		}
-	}
-	if (el.kind === 'text') {
-		const textHeight = estimateTextHeightBlocks(el)
-		if (textHeight <= 0) {
-			return {
-				renderBottom: null,
-				renderTop: null,
-				renderLeft: null,
-				renderRight: null,
-				contentPreview: '',
-			}
-		}
-		const textWidth = estimateTextWidthBlocks(el)
-		// `<code>` defaults to `alignment: 'left'`; prose uses MC's default
-		// (centered). Treat everything except `code` as centered.
-		const centered = el.type !== 'code'
-		const halfW = textWidth / 2
-		// `placement.y` is `TEXT_RENDER_OFFSET` below the visible glyph
-		// bottom (the layout engine shifts text entities down to compensate
-		// for MC text_display's pre-glyph gap) AND `parityOffset(sceneH)`
-		// above the slide's logical top (a half-block snap the layout
-		// applies when scene height is odd). Undo both so the bounds
-		// reflect the cell's logical position rather than its MC coords.
-		const lift = TEXT_RENDER_OFFSET - parityOffset(sceneH)
-		return {
-			renderBottom: placement.y + lift,
-			renderTop: placement.y + textHeight + lift,
-			renderLeft: centered ? placement.x - halfW : placement.x,
-			renderRight: centered ? placement.x + halfW : placement.x + textWidth,
-			contentPreview: previewFor(el),
-		}
-	}
-	return {
-		renderBottom: null,
-		renderTop: null,
-		renderLeft: null,
-		renderRight: null,
-		contentPreview: '',
-	}
-}
-
-/**
- * Approximate the rendered text width in blocks. Uses the element's
- * LESS `width` declaration (in px, 1 block = 16 px) as the wrap width.
- * `line_width` is in pre-scale pixels so doesn't map directly to blocks.
- */
-function estimateTextWidthBlocks(el: TextElementLayout): number {
-	if (el.kind !== 'text') return 0
-	if (el.width) return el.width.px / 16
-	return 0
 }
 
 /**
@@ -297,12 +286,12 @@ export function formatIssues(issues: readonly OffScreenIssue[]): string {
 			const parts: string[] = []
 			if (issue.offAxis.includes('vertical')) {
 				parts.push(
-					`Y: rendered [${issue.textBottom.toFixed(2)}, ${issue.textTop.toFixed(2)}], slide [${issue.slideBottom}, ${issue.slideTop}]`,
+					`Y: rendered [${(issue.textBottom ?? 0).toFixed(2)}, ${(issue.textTop ?? 0).toFixed(2)}], slide [${issue.slideBottom}, ${issue.slideTop}]`,
 				)
 			}
 			if (issue.offAxis.includes('horizontal')) {
 				parts.push(
-					`X: rendered [${issue.textLeft.toFixed(2)}, ${issue.textRight.toFixed(2)}], slide [${issue.slideLeft}, ${issue.slideRight}]`,
+					`X: rendered [${(issue.textLeft ?? 0).toFixed(2)}, ${(issue.textRight ?? 0).toFixed(2)}], slide [${issue.slideLeft}, ${issue.slideRight}]`,
 				)
 			}
 			lines.push(`    ${parts.join('; ')}`)

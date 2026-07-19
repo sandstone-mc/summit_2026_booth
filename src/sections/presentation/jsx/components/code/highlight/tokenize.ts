@@ -1,7 +1,7 @@
 // Tag sweep over highlighted source positions → flat StyledSegment[].
 // Lower priority wins; ties broken by larger range.
 
-import type { StyledSegment } from '../render'
+import type { StyledSegment } from '../../../render'
 
 const CATEGORY_ORDER = [
 	'comment',

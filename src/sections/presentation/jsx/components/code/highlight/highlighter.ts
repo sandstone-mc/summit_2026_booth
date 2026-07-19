@@ -2,7 +2,7 @@
 // against user source, tokenizes via `Tokenizer`.
 
 import { Parser, Language, Query } from 'web-tree-sitter'
-import type { StyledSegment } from '../render'
+import type { StyledSegment } from '../../../render'
 import { Theme } from './theme'
 import { Tokenizer } from './tokenize'
 
