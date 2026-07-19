@@ -1,3 +1,3 @@
-execute unless data storage sandstone_summit_booth:meta {hash:"54041d220553"} run tellraw @a [{"text":"[Summit Booth] ","color":"gold"},{"text":"Datapack updated ","color":"green"},{"text":"(54041d220553)","color":"gray"}]
-execute if data storage sandstone_summit_booth:meta {hash:"54041d220553"} run tellraw @a [{"text":"[Summit Booth] ","color":"gold"},{"text":"Datapack reloaded","color":"aqua"}]
-data modify storage sandstone_summit_booth:meta hash set value "54041d220553"
+execute unless data storage sandstone_summit_booth:meta {hash:"454fe7df3f0c"} run tellraw @a [{"text":"[Summit Booth] ","color":"gold"},{"text":"Datapack updated ","color":"green"},{"text":"(454fe7df3f0c)","color":"gray"}]
+execute if data storage sandstone_summit_booth:meta {hash:"454fe7df3f0c"} run tellraw @a [{"text":"[Summit Booth] ","color":"gold"},{"text":"Datapack reloaded","color":"aqua"}]
+data modify storage sandstone_summit_booth:meta hash set value "454fe7df3f0c"
