@@ -3,6 +3,5 @@ execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run pla
 execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.basedrum master @s ~ ~ ~ 1 1
 execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.basedrum master @s ~ ~ ~ 1 1
 execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.flute master @s ~ ~ ~ 1 1.8877486253633868
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.harp master @s ~ ~ ~ 1 0.9438743126816935
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.pling master @s ~ ~ ~ 1 0.7071067811865475
+execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.pling master @s ~ ~ ~ 1 0.6299605249474366
 execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] run tag @s remove sandstone_summit_booth.rhythm.showcase.listener

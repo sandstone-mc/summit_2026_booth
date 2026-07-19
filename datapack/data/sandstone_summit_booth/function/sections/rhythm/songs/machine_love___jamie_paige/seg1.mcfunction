@@ -1,1 +1,0 @@
-playsound sandstone_summit_booth:music.song_machine_love___jamie_paige_s1 master @a[x=-94, y=51, z=10, dx=48, dy=24, dz=64] -70 63 42 1000

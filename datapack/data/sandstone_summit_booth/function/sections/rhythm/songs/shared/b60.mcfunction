@@ -1,0 +1,41 @@
+execute as @a[x=-94, y=51, z=10, dx=48, dy=24, dz=64] run tag @s add sandstone_summit_booth.rhythm.showcase.listener
+function sandstone_summit_booth:sections/rhythm/songs/shared/n839
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n400 13t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n674 18t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n840 22t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n639 29t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n295 36t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n841 40t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n842 44t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n843 47t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n844 49t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n845 51t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n846 53t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n847 56t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n848 58t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n849 71t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n359 89t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n850 91t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n851 93t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n850 100t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n411 102t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n359 107t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n852 111t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n359 118t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n411 120t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n850 124t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n853 129t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n411 138t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n854 142t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n411 147t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n855 156t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n856 160t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n857 164t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n858 171t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n411 173t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n859 178t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n860 182t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n861 189t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n411 191t append
+schedule function sandstone_summit_booth:sections/rhythm/songs/shared/n862 196t append
+execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] run tag @s remove sandstone_summit_booth.rhythm.showcase.listener
