@@ -1,3 +1,0 @@
-execute as @e[tag=ac_cursor_ac_0, tag=sandstone_summit_booth.slide_15] run data modify entity @s transformation.translation set value [-0.2400000000000002f,2.02f,0f]
-execute as @e[tag=ac_popup_ac_0_seg_0, tag=sandstone_summit_booth.slide_15] run data modify entity @s transformation.translation set value [1.0224999999999997f,4.02f,0f]
-execute as @e[tag=ac_popup_ac_0_seg_1, tag=sandstone_summit_booth.slide_15] run data modify entity @s transformation.translation set value [1.0224999999999997f,2.52f,0f]
