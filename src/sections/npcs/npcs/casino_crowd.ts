@@ -44,7 +44,8 @@ const gamblerDialogue = DialogueTree('casino_crowd_3', {
             {
                 variants: [
                     "All in on red!",
-                    "I keep betting but this wheel never spins..."
+                    "I keep betting but this wheel never spins...",
+                    "let it ride!!!!"
                 ],
             },
         ],

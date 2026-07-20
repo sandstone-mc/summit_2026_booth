@@ -158,7 +158,7 @@ export const CAR_TELEPORT_DURATION = 1
 
 // the car is driven by whichever rider currently holds this tag
 const DriverLabel = Label('elevator.driver')
-const RiderDriver = Selector('@a', { tag: DriverLabel, limit: 1 })
+const RiderDriver = Selector('@a', { tag: DriverLabel, limit: 1, gamemode: "!spectator" })
 const RiderY = Variable(0, 'elevator.rider_y')
 
 const RIDER_SPEED_BLOCKS_PER_TICK = 0.2
@@ -232,12 +232,12 @@ function openFloorDoors(floorIdx: number) {
 
 function closeFloorDoors(floorIdx: number) {
     for (const door of FLOORS[floorIdx].doors) {
-        fill(abs(door.min.x, door.min.y, door.min.z), abs(door.max.x, door.max.y, door.max.z), `minecraft:dark_oak_shelf[facing=${door.direction}]`)
+        fill(abs(door.min.x, door.min.y, door.min.z), abs(door.max.x, door.max.y, door.max.z), `minecraft:dark_oak_shelf[facing=${door.direction}]`).strict()
         if (door.direction === 'south') {
-            fill(abs(door.min.x, door.min.y, door.min.z - 1), abs(door.max.x, door.max.y, door.max.z - 1), `minecraft:oxidized_copper_trapdoor[open=true,facing=north]`)
+            fill(abs(door.min.x, door.min.y, door.min.z - 1), abs(door.max.x, door.max.y, door.max.z - 1), `minecraft:oxidized_copper_trapdoor[open=true,facing=north]`).strict()
         }
         if (door.direction === 'west') {
-            fill(abs(door.min.x + 1, door.min.y, door.min.z), abs(door.max.x + 1, door.max.y, door.max.z), `minecraft:oxidized_copper_trapdoor[open=true,facing=east]`)
+            fill(abs(door.min.x + 1, door.min.y, door.min.z), abs(door.max.x + 1, door.max.y, door.max.z), `minecraft:oxidized_copper_trapdoor[open=true,facing=east]`).strict()
         }
         setDoorDisplayScale(door.display_door, 1)
     }
