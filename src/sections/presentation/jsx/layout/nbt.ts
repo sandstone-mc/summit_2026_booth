@@ -2,7 +2,7 @@
 // pre-computed layout fields and returns the SymbolEntity record the
 // summon command emits.
 
-import { NBT } from 'sandstone'
+import { NBT, NBTInt } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
 import { DEFAULT_FONT_ID } from '../text-metrics'
 import type { StyledSegment } from '../render'
@@ -89,10 +89,8 @@ export function buildIdentityTransform(s: number) {
 }
 
 // Parse a `#RRGGBB` color into the int text_display wants.
-export function applyBackgroundColor(decs: Record<string, string>, nbt: { background?: ReturnType<typeof NBT.int> }): void {
+export function applyBackgroundColor(decs: Record<string, string>, nbt: { background?: NBTInt }): void {
 	const bg = decs.background ? parseColorInt(decs.background) : undefined
-	if (bg !== undefined) {
-		const bgi = NBT.int(bg)
-		nbt.background = bgi as unknown as ReturnType<typeof NBT.int>
-	}
+
+	nbt.background = NBT.int(bg || 0x00000000)
 }

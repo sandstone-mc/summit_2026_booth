@@ -2,7 +2,7 @@
 // element or row-flow block. Must run inside an MCFunction callback —
 // the commands attach to the active MCFunction.
 
-import { summon, NBT, type LabelClass } from 'sandstone'
+import { summon, NBT, type LabelClass, NBTInt } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
 import { parseColorInt } from './color'
 import { buildTextJson, buildIdentityTransform, applyBackgroundColor } from './nbt'
@@ -40,7 +40,7 @@ export function summonTextEntity(
 		}
 		applyBackgroundColor(
 			el.declarations,
-			nbt as unknown as { background?: ReturnType<typeof NBT.int> },
+			nbt as unknown as { background?: NBTInt },
 		)
 		if (el.width !== undefined)
 			nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
@@ -87,7 +87,7 @@ export function summonTextEntity(
 		transformation: buildIdentityTransform(el.textScale),
 	}
 
-	applyBackgroundColor(el.declarations, nbt as unknown as { background?: ReturnType<typeof NBT.int> })
+	applyBackgroundColor(el.declarations, nbt as unknown as { background?: NBTInt })
 	if (el.width !== undefined) nbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))
 	else if (el.declarations['line-width']) nbt.line_width = NBT.int(parseInt(el.declarations['line-width']))
 	if (el.declarations.shadow === 'true') nbt.shadow = true
@@ -190,7 +190,7 @@ export function summonAutocompleteEntities(
 	}
 	applyBackgroundColor(
 		el.declarations,
-		editorNbt as unknown as { background?: ReturnType<typeof NBT.int> },
+		editorNbt as unknown as { background?: NBTInt },
 	)
 	if (el.width !== undefined)
 		editorNbt.line_width = NBT.int(Math.round(el.width.px * el.widthCompensation))

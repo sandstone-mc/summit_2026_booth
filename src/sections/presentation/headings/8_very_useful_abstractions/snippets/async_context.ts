@@ -7,7 +7,7 @@ MCFunction('explode_countdown', () => {
         say('10')
         sleep('1s')
     }
-    say('BOOM')
+    say('BOOOOOOM')
 }, {
     asyncContext: true,
 })
