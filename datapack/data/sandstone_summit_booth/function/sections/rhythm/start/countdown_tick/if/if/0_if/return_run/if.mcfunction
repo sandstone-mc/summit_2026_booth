@@ -1,3 +1,3 @@
-execute if score anon_WnYlBycD_44 __sandstone matches 4.. run return run title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"green"},{"score":{"name":"anon_WnYlBycD_44","objective":"__sandstone"}}," seconds..."]
-execute if score anon_WnYlBycD_44 __sandstone matches 2.. run return run title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"yellow"},{"score":{"name":"anon_WnYlBycD_44","objective":"__sandstone"}}," seconds..."]
-title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"red"},{"score":{"name":"anon_WnYlBycD_44","objective":"__sandstone"}}," second..."]
+execute if score anon_WnYlBycD_45 __sandstone matches 4.. run return run title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"green"},{"score":{"name":"anon_WnYlBycD_45","objective":"__sandstone"}}," seconds..."]
+execute if score anon_WnYlBycD_45 __sandstone matches 2.. run return run title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"yellow"},{"score":{"name":"anon_WnYlBycD_45","objective":"__sandstone"}}," seconds..."]
+title @a[tag=ssb.rhythm.player] actionbar [{"text":"Starting in ","color":"red"},{"score":{"name":"anon_WnYlBycD_45","objective":"__sandstone"}}," second..."]

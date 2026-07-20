@@ -1,4 +1,4 @@
-scoreboard players set anon_WnYlBycD_62 __sandstone 5
+scoreboard players set anon_WnYlBycD_63 __sandstone 5
 data modify storage __sandstone:variable anon_WnYlBycD_5 set value {}
-execute store result storage __sandstone:variable anon_WnYlBycD_5.param_0 int 1 run scoreboard players get anon_WnYlBycD_62 __sandstone
+execute store result storage __sandstone:variable anon_WnYlBycD_5.param_0 int 1 run scoreboard players get anon_WnYlBycD_63 __sandstone
 function sandstone_summit_booth:sections/magic/status/charged/apply with storage __sandstone:variable anon_WnYlBycD_5

@@ -1,4 +1,4 @@
-scoreboard players remove anon_WnYlBycD_14 __sandstone 1
-execute store result score anon_WnYlBycD_9 __sandstone run time query gametime
+scoreboard players remove anon_WnYlBycD_15 __sandstone 1
+execute store result score anon_WnYlBycD_10 __sandstone run time query gametime
 function sandstone_summit_booth:sections/rhythm/calibration/beat/if/if
 function sandstone_summit_booth:sections/rhythm/calibration/beat/if/if2

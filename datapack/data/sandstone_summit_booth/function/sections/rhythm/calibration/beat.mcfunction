@@ -1,2 +1,2 @@
 execute unless entity @a[tag=ssb.rhythm.cal.player, limit=1] run function sandstone_summit_booth:sections/rhythm/calibration/cancel
-execute if score anon_WnYlBycD_2 __sandstone matches 4 run function sandstone_summit_booth:sections/rhythm/calibration/beat/if
+execute if score anon_WnYlBycD_3 __sandstone matches 4 run function sandstone_summit_booth:sections/rhythm/calibration/beat/if

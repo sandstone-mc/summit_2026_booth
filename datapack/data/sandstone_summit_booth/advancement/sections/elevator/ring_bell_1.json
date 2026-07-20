@@ -1,0 +1,74 @@
+{
+  "criteria": {
+    "rung_bell_1": {
+      "trigger": "minecraft:default_block_use",
+      "conditions": {
+        "player": [
+          {
+            "condition": "minecraft:entity_properties",
+            "entity": "this",
+            "predicate": {
+              "minecraft:entity_tags": {
+                "all_of": [
+                  "summit.in_booth.sandstone_summit_booth"
+                ]
+              }
+            }
+          }
+        ],
+        "location": [
+          {
+            "condition": "minecraft:location_check",
+            "predicate": {
+              "position": {
+                "y": {
+                  "min": 73,
+                  "max": 78
+                }
+              },
+              "block": {
+                "blocks": "minecraft:bell"
+              }
+            }
+          },
+          {
+            "condition": "minecraft:inverted",
+            "term": {
+              "condition": "minecraft:value_check",
+              "value": {
+                "type": "minecraft:score",
+                "target": {
+                  "type": "minecraft:fixed",
+                  "name": "anon_WnYlBycD_0"
+                },
+                "score": "__sandstone"
+              },
+              "range": {
+                "min": 1,
+                "max": 1
+              }
+            }
+          },
+          {
+            "condition": "minecraft:value_check",
+            "value": {
+              "type": "minecraft:score",
+              "target": {
+                "type": "minecraft:fixed",
+                "name": "anon_WnYlBycD_2"
+              },
+              "score": "__sandstone"
+            },
+            "range": {
+              "min": 0,
+              "max": 0
+            }
+          }
+        ]
+      }
+    }
+  },
+  "rewards": {
+    "function": "sandstone_summit_booth:sections/elevator/call_elevator_1"
+  }
+}

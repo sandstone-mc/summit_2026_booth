@@ -1,2 +1,2 @@
-execute if score anon_WnYlBycD_41 __sandstone matches 24.. run scoreboard players set anon_WnYlBycD_41 __sandstone 0
+execute if score anon_WnYlBycD_42 __sandstone matches 24.. run scoreboard players set anon_WnYlBycD_42 __sandstone 0
 function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if2/if2

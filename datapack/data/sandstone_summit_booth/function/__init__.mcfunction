@@ -74,9 +74,9 @@ scoreboard players set anon_WnYlBycD_15 __sandstone 0
 scoreboard players set anon_WnYlBycD_16 __sandstone 0
 scoreboard players set anon_WnYlBycD_17 __sandstone 0
 scoreboard players set anon_WnYlBycD_18 __sandstone 0
-scoreboard players set anon_WnYlBycD_19 __sandstone 28000
-scoreboard players set anon_WnYlBycD_20 __sandstone 56
-scoreboard players set anon_WnYlBycD_21 __sandstone 0
+scoreboard players set anon_WnYlBycD_19 __sandstone 0
+scoreboard players set anon_WnYlBycD_20 __sandstone 28000
+scoreboard players set anon_WnYlBycD_21 __sandstone 56
 scoreboard players set anon_WnYlBycD_22 __sandstone 0
 scoreboard players set anon_WnYlBycD_23 __sandstone 0
 scoreboard players set anon_WnYlBycD_24 __sandstone 0
@@ -102,8 +102,9 @@ scoreboard players set anon_WnYlBycD_43 __sandstone 0
 scoreboard players set anon_WnYlBycD_44 __sandstone 0
 scoreboard players set anon_WnYlBycD_45 __sandstone 0
 scoreboard players set anon_WnYlBycD_46 __sandstone 0
-scoreboard players set anon_WnYlBycD_47 __sandstone 3
-scoreboard players set anon_WnYlBycD_48 __sandstone 0
+scoreboard players set anon_WnYlBycD_47 __sandstone 0
+scoreboard players set anon_WnYlBycD_48 __sandstone 3
+scoreboard players set anon_WnYlBycD_49 __sandstone 0
 scoreboard players set main.showcase.current_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.active_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.idle_ticks_0_WnYlBycD __sandstone 0
