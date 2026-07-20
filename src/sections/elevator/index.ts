@@ -1,43 +1,40 @@
-import {_, abs, Advancement, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, raw, rel, Selector, sleep, summon, Tag, Variable } from 'sandstone'
-import { VectorClass } from 'sandstone/variables'
-import { NAMESPACE } from '@shared'
+import {_, abs, Advancement, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, raw, rel, say, type Score, Selector, summon, Tag, Variable } from 'sandstone'
+import { BOOTH_ENTITY_TAG, NAMESPACE } from '@shared'
+import { summonElevator } from './summon'
 
 type Door = {
     min: {
-        x: number;
-        y: number;
-        z: number;
+        x: number,
+        y: number,
+        z: number,
     };
     max: {
-        x: number;
-        y: number;
-        z: number;
+        x: number,
+        y: number,
+        z: number,
     },
-    block: string;
-    display_door: number;
+    block: string,
+    display_door: number,
 }
 
 type CallButton = {
     light: {
-        pos: [number, number, number];
-        rotation: [number, number, number, number];
-        scale: [number, number, number];
-        translation: [number, number, number];
-    };
-    interaction: {
-        pos: [number, number, number];
-    };
+        pos: [number, number, number],
+        rotation: [number, number, number, number],
+        scale: [number, number, number],
+        translation: [number, number, number],
+    },
 }
 
 type Floor = {
     elevator_pos: [number, number, number],
-    name: string;
-    number: number;
-    doors: Door[];
-    callButton: CallButton;
+    name: string,
+    number: number,
+    doors: Door[],
+    callButton: CallButton,
 }
 
-const FLOORS: Floor[] = [
+export const FLOORS: Floor[] = [
     { 
         elevator_pos: [-55, 83.5, 46],
         name: 'Casino | Upper Level',
@@ -60,13 +57,10 @@ const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-58.25, 85.5, 47.5],
+                pos: [-58.25, 85.5, 47.5], // TODO
                 rotation: [0.5, -0.5, 0.5, 0.5],
-                scale: [0.9999996, 0.99999934, 0.9999995],
+                scale: [1, 1, 1],
                 translation: [0.75, 0.5, -0.5],
-            },
-            interaction: {
-                pos: [-58.01, 85.25, 47.5],
             },
         },
     },
@@ -92,13 +86,10 @@ const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-58.25, 75.5, 47.5],
+                pos: [-58.25, 75.5, 47.5], // TODO
                 rotation: [0.5, -0.5, 0.5, 0.5],
-                scale: [0.9999996, 0.99999934, 0.9999995],
+                scale: [1, 1, 1],
                 translation: [0.75, 0.5, -0.5],
-            },
-            interaction: {
-                pos: [-58.01, 75.25, 47.5],
             },
         },
     },
@@ -124,41 +115,31 @@ const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-52.5, 65.5, 50.25],
+                pos: [-52.5, 65.5, 50.25], // TODO
                 rotation: [0.7071068, 0.0, 0.0, 0.7071068],
-                scale: [0.99999994, 0.9999999, 0.9999999],
+                scale: [1, 1, 1],
                 translation: [-0.5, 0.5, -0.75],
-            },
-            interaction: {
-                pos: [-52.5, 65.25, 50.01],
             },
         },
     },
 ]
 
 // index of the floor to spawn the elevator at
-const STARTING_FLOOR = 2
-const BOOTH_ENTITY_TAG = `summit.booth_entity.${NAMESPACE}` as `${any}${string}`
+export const STARTING_FLOOR = 2
 
 // Elevator car selector and tag
-const CarLabel = Label('elevator.car')
-const Car = Selector('@e', { tag: CarLabel, limit: 1 })
+export const CarLabel = Label('elevator.car')
+const Car = CarLabel(Selector('@e', { limit: 1 }))
 
 const CarPartLabel = Label('elevator.car_part')
 
-// tags for the car's door displays: all of them get DoorLabel, plus one of Door1Label/Door2Label
-// depending on which of the car's two door faces they belong to
-const DoorLabel = Label('elevator.door')
 const Door1Label = Label('elevator.door.1')
 const Door2Label = Label('elevator.door.2')
-
-// outside call buttons: one shared tag for bulk kill, plus one tag per floor
-// (shared by that floor's light + interaction) to target/identify them individually
 const ButtonLabel = Label('elevator.button')
 const ButtonFloorLabels = FLOORS.map((_, floorIdx) => Label(`elevator.button.${floorIdx}` as `${any}${string}`))
 
 // id for the gravity modifier given to players riding the elevator
-const GRAVITY_MODIFIER = `${NAMESPACE}:elevator_ride` as `${string}:${string}`
+const GRAVITY_MODIFIER = `${NAMESPACE}:elevator_ride` as const
 
 // where is the elevator
 const CurrentFloor = Variable(STARTING_FLOOR)
@@ -172,13 +153,13 @@ const FOOTPRINT = { dx: 5, dy: 5, dz: 5 } as const
 
 // tag for players riding the elevator
 const RiderLabel = Label('elevator.rider')
-const GRAVITY_ATTRIBUTE = 'minecraft:gravity' as `${string}:${string}`
-const SAFE_FALL_ATTRIBUTE = 'minecraft:safe_fall_distance' as `${string}:${string}`
+const GRAVITY_ATTRIBUTE = 'minecraft:gravity' as const
+const SAFE_FALL_ATTRIBUTE = 'minecraft:safe_fall_distance' as const
 const SAFE_FALL_BOOST = 1000
 
 // all floors share the same x/z so the car only ever needs to move on Y
 const [SHAFT_X, , SHAFT_Z] = FLOORS[STARTING_FLOOR].elevator_pos
-const CAR_TELEPORT_DURATION = 1
+export const CAR_TELEPORT_DURATION = 1
 
 // the car is driven by whichever rider currently holds this tag
 const DriverLabel = Label('elevator.driver')
@@ -199,6 +180,8 @@ const LIFTOFF_LAUNCH_SCORE = Math.round(RIDER_SPEED_BLOCKS_PER_TICK * LAUNCH_SCA
 
 const Riders = Selector('@a', { tag: RiderLabel })
 
+const ElevatorIsMoving = Variable(0)
+
 function floorBarrierCorners(floorIdx: number) {
     const [x, yRaw, z] = FLOORS[floorIdx].elevator_pos
     const y = Math.floor(yRaw)
@@ -217,23 +200,9 @@ function clearFloorBarrier(floorIdx: number) {
 
 function setDoorDisplayScale(displayDoor: number, scale: number) {
     const label = displayDoor === 1 ? Door1Label : Door2Label
-    execute.as(Selector('@e', { tag: label })).run(() => {
-        Data('entity', '@s', 'transformation.scale').set([NBT.float(scale), NBT.float(scale), NBT.float(scale)])
+    execute.as(Selector('@e', { tag: [label] })).run(() => {
+        Data('entity', '@s', 'transformation.scale').set(NBT.float([scale, scale, scale]))
     })
-}
-
-// lights/unlights a single floor's call button torch
-function setButtonLight(floorIdx: number, lit: boolean) {
-    execute.as(Selector('@e', { tag: ButtonFloorLabels[floorIdx], type: 'minecraft:block_display' })).run(() => {
-        Data('entity', '@s', 'block_state.Properties.lit').set(lit ? 'true' : 'false')
-    })
-}
-
-// only `activeFloorIdx`'s call button is lit; every other floor's button goes dark
-function updateButtonLights(activeFloorIdx: number) {
-    for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
-        setButtonLight(floorIdx, floorIdx === activeFloorIdx)
-    }
 }
 
 function openFloorDoors(floorIdx: number) {
@@ -319,7 +288,20 @@ function snapToFloor(floorIdx: number) {
     releaseAllRiders()
 }
 
-// opens `floorIdx`'s doors and marks its call button as the active floor
+// lights/unlights a single floor's call button torch
+function setButtonLight(floorIdx: number, lit: boolean) {
+    execute.as(Selector('@e', { tag: ButtonFloorLabels[floorIdx], type: 'minecraft:block_display' })).run(() => {
+        Data('entity', '@s', 'block_state.Properties.lit').set(lit ? 'true' : 'false')
+    })
+}
+
+// only `activeFloorIdx`'s call button is lit; every other floor's button goes dark
+function updateButtonLights(activeFloorIdx: number) {
+    for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
+        setButtonLight(floorIdx, floorIdx === activeFloorIdx)
+    }
+}
+
 function openArrivalDoors(floorIdx: number) {
     openFloorDoors(floorIdx)
     updateButtonLights(floorIdx)
@@ -329,6 +311,8 @@ function openArrivalDoors(floorIdx: number) {
 function arriveAt(floorIdx: number) {
     snapToFloor(floorIdx)
     openArrivalDoors(floorIdx)
+
+    ElevatorIsMoving.set(0)
 }
 
 // starts a trip from CurrentFloor to TargetFloor
@@ -352,6 +336,8 @@ function beginTrip() {
     applyRiderGravityForTrip()
 
     _.if(TargetFloor.lessThan(CurrentFloor), () => launchRidersUp())
+    
+    ElevatorIsMoving.set(1)
 }
 
 function requestFloor(floorIdx: number) {
@@ -362,20 +348,73 @@ function requestFloor(floorIdx: number) {
     })
 }
 
-// outside call button: same mid-trip/same-floor guard as requestFloor, but the (necessarily empty) car just teleports straight to the floor, skipping the rider ride animation
-function callFloor(floorIdx: number) {
-    _.if(_.and(CurrentFloor.equalTo(TargetFloor), CurrentFloor.notEqualTo(floorIdx)), () => {
-        TargetFloor.set(floorIdx)
-        closeAllDoors()
-        arriveAt(floorIdx)
+function ringBellN(x: number, y: number, z: number, targetFloor: number) {
+    const rungBell = Advancement(`sections/elevator/ring_bell_${targetFloor}`, {
+        criteria: {
+            [`rung_bell_${targetFloor}` as const]: {
+                trigger: 'minecraft:default_block_use',
+                conditions: {
+                    location: [
+                        {
+                            condition: 'minecraft:location_check',
+                            predicate: {
+                                position: { x: { min: x, max: x }, y: {min: y, max: y}, z: {min: z, max: z} },
+                                block: { blocks: 'minecraft:bell' }
+                            }
+                        },
+                        {
+                            condition: 'minecraft:inverted',
+                            term: {
+                                condition: 'minecraft:value_check',
+                                value: {
+                                    type: 'minecraft:score',
+                                    target: { type: 'minecraft:fixed', name: CurrentFloor.target },
+                                    score: CurrentFloor.objective
+                                },
+                                range: {
+                                    min: targetFloor,
+                                    max: targetFloor,
+                                }
+                            }
+                        },
+                        {
+                            condition: 'minecraft:value_check',
+                            value: {
+                                type: 'minecraft:score',
+                                target: { type: 'minecraft:fixed', name: ElevatorIsMoving.target },
+                                score: ElevatorIsMoving.objective
+                            },
+                            range: {
+                                min: 0,
+                                max: 0,
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        rewards: {
+            function: MCFunction(`sections/elevator/call_elevator_${targetFloor}`, () => {
+                rungBell.revoke('@s')
+
+                TargetFloor.set(targetFloor)
+                closeAllDoors()
+                arriveAt(targetFloor)
+            })
+        }
     })
 }
+
+ringBellN(-53, 65, 50, 0)
+ringBellN(-59, 75, 47, 1)
+ringBellN(-59, 85, 48, 2)
 
 export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
     CurrentFloor.set(STARTING_FLOOR)
     TargetFloor.set(STARTING_FLOOR)
+    ElevatorIsMoving.set(0)
 
-    raw(`summon minecraft:block_display ${FLOORS[STARTING_FLOOR].elevator_pos.join(' ')} {Tags: ["${CarLabel.fullName}", "${BOOTH_ENTITY_TAG}"], Passengers: [{block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, -0.5f, -1.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, -0.5f, -1.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, -0.5f, -0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, -0.5f, 0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, -0.5f, 0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, -0.5f, 0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, -0.5f, -0.5f]}}, {block_state: {Name: "minecraft:black_wool"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-2.5f, -0.5f, -0.5f]}}, {block_state: {Name: "minecraft:black_wool"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-2.5f, -0.5f, -1.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, -0.5f, -1.5f]}}, {block_state: {Name: "minecraft:stripped_dark_oak_log", Properties: {axis: "z"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 0.5f, -2.5f]}}, {block_state: {Name: "minecraft:stripped_dark_oak_log", Properties: {axis: "z"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 0.5f, -2.5f]}}, {block_state: {Name: "minecraft:stripped_dark_oak_log", Properties: {axis: "x"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-2.5f, 0.5f, 0.5f]}}, {block_state: {Name: "minecraft:stripped_dark_oak_log", Properties: {axis: "x"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 0.5f, -1.5f]}}, {block_state: {Name: "minecraft:stripped_dark_oak_log", Properties: {axis: "x"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 0.5f, -0.5f]}}, {block_state: {Name: "minecraft:stripped_dark_oak_log", Properties: {axis: "x"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 0.5f, 0.5f]}}, {block_state: {Name: "minecraft:stripped_dark_oak_log", Properties: {axis: "z"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 0.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 3.5f, 0.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 1.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 2.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 2.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 2.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 3.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 3.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 3.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 3.5f, -1.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 2.5f, -1.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 1.5f, -1.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 1.5f, -0.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 1.5f, 0.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 2.5f, 0.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 2.5f, -0.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [1.5f, 3.5f, -0.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 1.5f, -2.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-2.5f, 1.5f, 0.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-2.5f, 3.5f, 0.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-2.5f, 2.5f, 0.5f]}}, {block_state: {Name: "minecraft:dark_oak_fence", Properties: {east: "false", north: "false", south: "false", waterlogged: "false", west: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, -0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [-1.5f, 2.125f, -2.0f]}}, {block_state: {Name: "minecraft:dark_oak_fence", Properties: {east: "false", north: "false", south: "false", waterlogged: "false", west: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, -0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [-0.5f, 2.125f, -2.0f]}}, {block_state: {Name: "minecraft:dark_oak_fence", Properties: {east: "false", north: "false", south: "false", waterlogged: "false", west: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, -0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [0.5f, 2.125f, -2.0f]}}, {block_state: {Name: "minecraft:dark_oak_fence", Properties: {east: "false", north: "false", south: "false", waterlogged: "false", west: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [-0.5f, 0.5f, -0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999934f, 0.99999934f, 0.9999989f], translation: [1.0f, 2.125f, -0.5f]}}, {block_state: {Name: "minecraft:dark_oak_fence", Properties: {east: "false", north: "false", south: "false", waterlogged: "false", west: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [-0.5f, 0.5f, -0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999934f, 0.99999934f, 0.9999989f], translation: [1.0f, 2.125f, 0.5f]}}, {block_state: {Name: "minecraft:dark_oak_fence", Properties: {east: "false", north: "false", south: "false", waterlogged: "false", west: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [-0.5f, 0.5f, -0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999934f, 0.99999934f, 0.9999989f], translation: [1.0f, 2.125f, 1.5f]}}, {block_state: {Name: "minecraft:dark_oak_fence", Properties: {east: "false", north: "false", south: "false", waterlogged: "false", west: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [-0.5f, 0.5f, -0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999934f, 0.99999934f, 0.9999989f], translation: [-2.0f, 2.125f, 1.5f]}}, {block_state: {Name: "minecraft:crafter", Properties: {crafting: "false", orientation: "up_south", triggered: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 1.5f, -2.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.5f, 0.5f, 0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.9999992f, 0.9999992f, 0.9999988f], translation: [-2.5f, 0.5f, -1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [-0.5f, 0.5f, -0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999934f, 0.99999934f, 0.9999989f], translation: [-2.5f, 1.5f, 0.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [-0.5f, 0.5f, -0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999934f, 0.99999934f, 0.9999989f], translation: [-2.5f, 2.5f, 0.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [-0.5f, 0.5f, -0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999934f, 0.99999934f, 0.9999989f], translation: [-2.5f, 3.5f, 0.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [-0.5f, 0.5f, -0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999934f, 0.99999934f, 0.9999989f], translation: [-2.5f, 4.5f, 0.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.5f, 0.5f, 0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.9999992f, 0.9999992f, 0.9999988f], translation: [-2.5f, 3.5f, -1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.5f, 0.5f, 0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.9999992f, 0.9999992f, 0.9999988f], translation: [-2.5f, 2.5f, -1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.5f, 0.5f, 0.5f, 0.5f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.9999992f, 0.9999992f, 0.9999988f], translation: [-2.5f, 1.5f, -1.5f]}}, {block_state: {Name: "minecraft:black_wool"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-2.5f, 4.5f, -0.5f]}}, {block_state: {Name: "minecraft:black_wool"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-2.5f, 4.5f, -1.5f]}}, {block_state: {Name: "minecraft:redstone_lamp", Properties: {lit: "true"}}, brightness: {block: 15, sky: 15}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 4.3125f, -0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 4.5f, -1.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 4.5f, -1.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 4.5f, -1.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 4.5f, -0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 4.5f, 0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 4.5f, 0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 4.5f, 0.5f]}}, {block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 4.5f, -0.5f]}}, {block_state: {Name: "minecraft:black_wool"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, -0.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_wool"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, -0.5f, 1.5f]}}, {block_state: {Name: "minecraft:stripped_dark_oak_log", Properties: {axis: "z"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 0.5f, 1.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 1.5f, 1.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 2.5f, 1.5f]}}, {block_state: {Name: "minecraft:yellow_glazed_terracotta", Properties: {facing: "north"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-1.5f, 3.5f, 1.5f]}}, {block_state: {Name: "minecraft:dark_oak_fence", Properties: {east: "false", north: "false", south: "false", waterlogged: "false", west: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, -0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.9999994f, 0.9999994f, 0.99999994f], translation: [-1.5f, 2.125f, 0.99999994f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [1.5f, 0.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, -0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [-0.5f, 2.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, -0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [-0.5f, 3.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, -0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [-0.5f, 4.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [1.5f, 3.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [1.5f, 2.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [1.5f, 1.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_wool"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 4.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_wool"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 4.5f, 1.5f]}}, {block_state: {Name: "minecraft:black_carpet"}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, -0.7071068f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 0.99999994f, 1.0000002f], translation: [-0.5f, 1.5f, 1.5f]}}, {Passengers: [{block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door1Label.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 3.5f, 1.5f]}}, {Passengers: [{block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door1Label.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 2.5f, 1.5f]}}], block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door1Label.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 2.5f, 1.5f]}}, {Passengers: [{block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door1Label.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 1.5f, 1.5f]}}, {Passengers: [{block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door1Label.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [0.5f, 0.5f, 1.5f]}}], block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door1Label.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 0.5f, 1.5f]}}], block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door1Label.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 1.5f, 1.5f]}}], block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door1Label.fullName}"], transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, 3.5f, 1.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 1.0f, 0.99999994f], translation: [-1.5f, 0.5f, -1.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 1.0f, 0.99999994f], translation: [-1.5f, 0.5f, -0.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.9999999f, 1.0f, 0.9999999f], translation: [-1.5f, 3.5f, -0.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 1.0f, 0.99999994f], translation: [-1.5f, 1.5f, -1.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 1.0f, 0.99999994f], translation: [-1.5f, 1.5f, -0.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 1.0f, 0.99999994f], translation: [-1.5f, 2.5f, -0.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 1.0f, 0.99999994f], translation: [-1.5f, 2.5f, -0.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 1.0f, 0.99999994f], translation: [-1.5f, 2.5f, -1.5f]}}, {block_state: {Name: "minecraft:dark_oak_shelf", Properties: {facing: "north", powered: "false", side_chain: "unconnected", waterlogged: "false"}}, id: "minecraft:block_display", Tags: ["${CarPartLabel.fullName}", "${DoorLabel.fullName}", "${Door2Label.fullName}"], transformation: {left_rotation: [0.0f, -0.7071068f, 0.0f, 0.7071068f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.99999994f, 1.0f, 0.99999994f], translation: [-1.5f, 3.5f, -1.5f]}}], block_state: {Name: "minecraft:mushroom_stem", Properties: {down: "true", east: "true", north: "true", south: "true", up: "true", west: "true"}}, teleport_duration: ${CAR_TELEPORT_DURATION}, transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.0f, 1.0f, 1.0f], translation: [-0.5f, -0.5f, -0.5f]}}`)
+    summonElevator()
 
     fillFloorBarrier(STARTING_FLOOR)
     closeAllDoors()
@@ -385,7 +424,7 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
     for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
         const floor = FLOORS[floorIdx]
         const floorLabel = ButtonFloorLabels[floorIdx]
-        const { light, interaction } = floor.callButton
+        const { light } = floor.callButton
 
         summon('minecraft:block_display', abs(...light.pos), {
             Tags: [ButtonLabel.fullName, floorLabel.fullName, BOOTH_ENTITY_TAG],
@@ -398,30 +437,6 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
                 right_rotation: [NBT.float(0), NBT.float(0), NBT.float(0), NBT.float(1)],
                 scale: [NBT.float(light.scale[0]), NBT.float(light.scale[1]), NBT.float(light.scale[2])],
                 translation: [NBT.float(light.translation[0]), NBT.float(light.translation[1]), NBT.float(light.translation[2])],
-            },
-        })
-
-        summon('minecraft:interaction', abs(...interaction.pos), {
-            Tags: [ButtonLabel.fullName, floorLabel.fullName, BOOTH_ENTITY_TAG],
-            width: NBT.float(0.5),
-            height: NBT.float(0.5),
-            response: true,
-        })
-
-        const callAdvancement = Advancement(`elevator/call/${floorIdx}`, {
-            criteria: {
-                click: {
-                    trigger: 'minecraft:player_interacted_with_entity',
-                    conditions: {
-                        entity: { entity_type: 'minecraft:interaction', entity_tags: { all_of: [floorLabel.fullName] } },
-                    },
-                },
-            },
-            rewards: {
-                function: MCFunction(`sections/elevator/call_reward/${floorIdx}`, () => {
-                    callAdvancement.revoke('@s')
-                    callFloor(floorIdx)
-                }),
             },
         })
     }
@@ -437,7 +452,6 @@ export const killElevator = MCFunction('sections/elevator/kill', () => {
 
     kill(Car)
     kill(Selector('@e', { tag: CarPartLabel }))
-    kill(Selector('@e', { tag: ButtonLabel }))
 
     for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
         clearFloorBarrier(floorIdx)
