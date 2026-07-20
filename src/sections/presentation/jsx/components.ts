@@ -6,12 +6,19 @@ export type CommonProps = {
 	class?: string
 	id?: string
 	children?: any
+	/**
+	 * HACK: shift the element's render Y up by N blocks. Positive value
+	 * moves it up. Use sparingly to nudge individual elements on
+	 * per-slide layouts; not a general-purpose knob.
+	 */
+	'shift-up'?: number
 }
 
 export type DivProps = CommonProps
 export type PProps = CommonProps
 export type H1Props = CommonProps
 export type H2Props = CommonProps
+export type H3Props = CommonProps
 export type CenterProps = CommonProps
 export type StyleProps = { children?: string; source?: string }
 
@@ -32,6 +39,9 @@ export type StyleProps = { children?: string; source?: string }
  *   `sidePadding` — `[left, right]` chars of space inserted inside the
  *      `│` borders on every line. Default `[1, 1]`. Use `[0, 0]` for
  *      flush content.
+ *   `extra-row` — HACK. Bumps the scroll viewport by 1 code row and
+ *      shifts the entity up by 1 line height. Use sparingly to fix
+ *      per-slide layout tightness; not a general-purpose knob.
  */
 export type CodeProps = CommonProps & {
 	lang?: string
@@ -39,6 +49,7 @@ export type CodeProps = CommonProps & {
 	'line-numbers'?: boolean
 	scrolling?: boolean
 	'side-padding'?: [number, number]
+	'extra-row'?: boolean
 }
 
 /**

@@ -268,12 +268,25 @@ function runLayout(
 			// gap between the entity Y and the visible glyph bottom.
 			// Without it, the topmost element on a tightly-stacked slide
 			// renders that many blocks above the slide's top edge.
-			const entityY =
+			let entityY =
 				el.kind === 'text' && typeof el.scrollTag === 'string'
 					? cellY - TEXT_RENDER_OFFSET
 					: el.kind === 'image'
 						? cellY + el.cellH / 2
 						: cellY - TEXT_RENDER_OFFSET
+			// HACK: `extra-row` JSX prop. Shifts a scroll `<code>` entity
+			// up by 1 line height so a following paragraph can claim the
+			// freed space. Companion to the +1 viewport row in
+			// finalizeScrollCodeLayout. Only applied to scroll blocks.
+			if (el.kind === 'text' && typeof el.scrollTag === 'string' && el.extraRow) {
+				entityY -= pxToTextLineHeight(el.scalePx, el.fontId) - .75
+			}
+			// HACK: `shift-up` JSX prop. Nudges any text element up by N
+			// blocks at placement time. Positive value moves the rendered
+			// text up in altitude.
+			if (el.kind === 'text' && el.shiftUp) {
+				entityY += el.shiftUp
+			}
 
 			const entityX = origin[0] + sceneW / 2
 			onElement(el, entityX, entityY, z)
@@ -402,12 +415,24 @@ function placeRowBlocks(
 		// (scroll/prose/image each have their own anchor convention).
 		// `TEXT_RENDER_OFFSET` is applied to text elements for the same
 		// reason as in `runLayout` above.
-		const entityY =
+		let entityY =
 			child.kind === 'text' && typeof child.scrollTag === 'string'
 				? subCellY - TEXT_RENDER_OFFSET
 				: child.kind === 'image'
 					? subCellY + child.cellH / 2
 					: subCellY - TEXT_RENDER_OFFSET
+		// HACK: `extra-row` JSX prop. Shifts a scroll `<code>` entity
+		// up by 1 line height so a following paragraph can claim the
+		// freed space. Mirror of the shift in `runLayout` — both
+		// placement paths need to agree, since this slide's code blocks
+		// live inside a row block.
+		if (child.kind === 'text' && typeof child.scrollTag === 'string' && child.extraRow) {
+			entityY -= pxToTextLineHeight(child.scalePx, child.fontId) - .75
+		}
+		// HACK: `shift-up` JSX prop (see `runLayout`).
+		if (child.kind === 'text' && child.shiftUp) {
+			entityY += child.shiftUp
+		}
 		onElement(child, childCenterX, entityY, z)
 		placements.push({ el: child, x: childCenterX, y: entityY, z })
 		maybeRecordScroll(child, entityY, scrollSpecs)
@@ -462,12 +487,20 @@ function placeColumnBlocks(
 		const cellY = origin[1] + workingY - child.cellH + parityOffset(sceneH)
 		// Entity Y mirrors `runLayout`'s element-kind dispatch so a
 		// column-block text/image renders the same as a top-level one.
-		const entityY =
+		let entityY =
 			child.kind === 'text' && typeof child.scrollTag === 'string'
 				? cellY - TEXT_RENDER_OFFSET
 				: child.kind === 'image'
 					? cellY + child.cellH / 2
 					: cellY - TEXT_RENDER_OFFSET
+		// HACK: `extra-row` JSX prop shift (see `runLayout`).
+		if (child.kind === 'text' && typeof child.scrollTag === 'string' && child.extraRow) {
+			entityY -= pxToTextLineHeight(child.scalePx, child.fontId) - .75
+		}
+		// HACK: `shift-up` JSX prop (see `runLayout`).
+		if (child.kind === 'text' && child.shiftUp) {
+			entityY += child.shiftUp
+		}
 		onElement(child, centerX, entityY, z)
 		placements.push({ el: child, x: centerX, y: entityY, z })
 		maybeRecordScroll(child, entityY, scrollSpecs)
