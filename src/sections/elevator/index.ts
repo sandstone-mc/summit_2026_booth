@@ -354,11 +354,18 @@ function ringBellN(x: number, y: number, z: number, targetFloor: number) {
             [`rung_bell_${targetFloor}` as const]: {
                 trigger: 'minecraft:default_block_use',
                 conditions: {
+                    player: [{
+                        condition: 'minecraft:entity_properties',
+                        entity: 'this',
+                        predicate: {
+                            'minecraft:entity_tags': { all_of: [ 'summit.in_booth.sandstone_summit_booth' ] }
+                        }
+                    }],
                     location: [
                         {
                             condition: 'minecraft:location_check',
                             predicate: {
-                                position: { x: { min: x, max: x }, y: {min: y, max: y}, z: {min: z, max: z} },
+                                position: { y: {min: y - 2, max: y + 3} },
                                 block: { blocks: 'minecraft:bell' }
                             }
                         },
@@ -405,9 +412,9 @@ function ringBellN(x: number, y: number, z: number, targetFloor: number) {
     })
 }
 
-ringBellN(-53, 65, 50, 0)
+ringBellN(-53, 65, 50, 2)
 ringBellN(-59, 75, 47, 1)
-ringBellN(-59, 85, 48, 2)
+ringBellN(-59, 85, 48, 0)
 
 export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
     CurrentFloor.set(STARTING_FLOOR)
