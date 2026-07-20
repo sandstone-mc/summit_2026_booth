@@ -449,8 +449,7 @@ Advancement('ui_start_game', {
 		hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_START_INT) } },
 	},
 	requirements: [
-		[ 'hit' ],
-		[ 'click' ]
+		[ 'hit', 'click' ]
 	],
 	rewards: { function: onStartGame },
 })

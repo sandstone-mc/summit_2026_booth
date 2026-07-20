@@ -1,6 +1,6 @@
 import {_, abs, Advancement, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, raw, rel, say, type Score, Selector, summon, Tag, Variable } from 'sandstone'
 import { BOOTH_ENTITY_TAG, NAMESPACE } from '@shared'
-import { CarLabel, CarPartLabel, SouthInnerDoor, WestInnerDoor, summonElevator } from './summon'
+import { CarLabel, CarPartLabel, SouthInnerDoor, WestInnerDoor, summonElevator, BUTTON_INTERACTION_OFFSETS } from './summon'
 
 type Door = {
     min: {
@@ -131,7 +131,7 @@ export const STARTING_FLOOR = 2
 const Car = CarLabel(Selector('@e', { limit: 1 }))
 
 const ButtonLabel = Label('elevator.button')
-const ButtonFloorLabels = FLOORS.map((_, floorIdx) => Label(`elevator.button.${floorIdx}` as `${any}${string}`))
+export const ButtonFloorLabels = FLOORS.map((_, floorIdx) => Label(`elevator.button.${floorIdx}` as `${any}${string}`))
 
 // id for the gravity modifier given to players riding the elevator
 const GRAVITY_MODIFIER = `${NAMESPACE}:elevator_ride` as const
@@ -361,6 +361,9 @@ function beginTrip() {
 
     _.if(TargetFloor.lessThan(CurrentFloor), () => launchRidersUp())
 
+    // light the floor the car is heading to while the trip is in progress
+    _.switch(TargetFloor, FLOORS.map((_floor, idx) => ['case', idx, () => updateButtonLights(idx)] as const))
+
     ElevatorIsMoving.set(1)
 }
 
@@ -435,12 +438,47 @@ detectBell(-53, 65, 50, 2)
 detectBell(-59, 75, 47, 1)
 detectBell(-59, 85, 48, 0)
 
+function detectInsideButton(floorIdx: number) {
+    const clicked = Advancement(`sections/elevator/inside_button_${floorIdx}`, {
+        criteria: {
+            click: {
+                trigger: 'minecraft:player_interacted_with_entity',
+                conditions: {
+                    entity: { entity_type: 'minecraft:interaction', entity_tags: { all_of: [ButtonFloorLabels[floorIdx].fullName] } },
+                },
+            },
+        },
+        rewards: {
+            function: MCFunction(`sections/elevator/inside_button_reward/${floorIdx}`, () => {
+                clicked.revoke('@s')
+                requestFloor(floorIdx)
+            })
+        }
+    })
+}
+
+for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
+    detectInsideButton(floorIdx)
+}
+
 export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
     CurrentFloor.set(STARTING_FLOOR)
     TargetFloor.set(STARTING_FLOOR)
     ElevatorIsMoving.set(0)
 
     summonElevator()
+
+    for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
+        const [ox, oy, oz] = BUTTON_INTERACTION_OFFSETS[floorIdx]
+        const [ex, ey, ez] = FLOORS[STARTING_FLOOR].elevator_pos
+
+        summon('minecraft:interaction', abs(ex + ox, ey + oy, ez + oz), {
+            Tags: [ButtonFloorLabels[floorIdx].fullName, CarPartLabel.fullName, BOOTH_ENTITY_TAG],
+            width: NBT.float(0.25),
+            height: NBT.float(0.25),
+            response: true,
+        })
+    }
 
     fillFloorBarrier(STARTING_FLOOR)
     closeAllDoors()
@@ -493,6 +531,11 @@ Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [spawnEle
 Tag('function', 'summit.booth:sandstone_summit_booth/entities/kill', [killElevator], { onConflict: 'append' })
 
 MCFunction('sections/elevator/step', () => {
+    for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
+        const [ox, oy, oz] = BUTTON_INTERACTION_OFFSETS[floorIdx]
+        execute.at(Car).run.tp(Selector('@e', { tag: ButtonFloorLabels[floorIdx], type: 'minecraft:interaction', limit: 1 }), rel(ox, oy, oz))
+    }
+
     tagFootprintRiders()
 
     execute

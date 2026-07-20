@@ -1,6 +1,6 @@
 import { abs, Label, NBT, summon } from 'sandstone'
 
-import { FLOORS, CAR_TELEPORT_DURATION, STARTING_FLOOR } from '.'
+import { FLOORS, CAR_TELEPORT_DURATION, STARTING_FLOOR, ButtonFloorLabels } from '.'
 import { BOOTH_ENTITY_TAG } from '@shared'
 
 export const CarLabel = Label('elevator.car')
@@ -36,6 +36,23 @@ const transform_d = {
     ...transform,
     left_rotation: NBT.float([0, 0, 0.7071068, 0.7071068]),
 }
+
+const transform_e = {
+    ...transform,
+    left_rotation: NBT.float([0.7071068, 0, 0, 0.7071068]),
+}
+
+export const REDSTONE_TORCH_OFFSETS: readonly (readonly [number, number, number])[] = [
+    [-0.6875, 2.6875, -2.06225],
+    [-0.5, 2.5, -2.06225],
+    [-0.3125, 2.3125, -2.06225],
+]
+
+export const BUTTON_INTERACTION_OFFSETS: readonly (readonly [number, number, number])[] = [
+    [-0.1875, 2.0625, -1.56225],
+    [0, 1.875, -1.56225],
+    [0.1875, 1.6875, -1.56225],
+]
 
 // I don't feel like finishing this lol, its good enough
 const palette2 = [
@@ -91,15 +108,13 @@ export const summonElevator = () => summon(id, abs(...FLOORS[STARTING_FLOOR].ele
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-1.5, 4.5, 0.5]) }, block_state: palette2[0] },
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-1.5, 4.5, -0.5]) }, block_state: palette2[0] },
 
-        // TODO: Redstone Torches
-        // translation: NBT.float([-0.5, 0.5, 0])
-        // left_rotation: NBT.float([0.7071068, 0, 0, 0.7071068])
-        // scale: scale
-        //
-        // Ground Floor:
-        // -54.6875 65.6875 44.43775
-        // -54.5 65.5 44.43775
-        // -54.3125 65.3125 44.43775
+        // redstone_torch (floor buttons)
+        ...REDSTONE_TORCH_OFFSETS.map((offset, floorIdx) => ({
+            id,
+            Tags: [ButtonFloorLabels[floorIdx], part, BOOTH_ENTITY_TAG],
+            transformation: { ...transform_e, translation: NBT.float([...offset]) },
+            block_state: { Name: palette[8], Properties: { lit: floorIdx === STARTING_FLOOR ? 'true' : 'false' } },
+        })),
 
         // crafter
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-0.5, 1.5, -2.5]) }, block_state: { Name: palette[4], Properties: { crafting: 'false', orientation: 'up_south', triggered: 'true' } } },
