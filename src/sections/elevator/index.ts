@@ -1,7 +1,6 @@
-import {_, abs, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, raw, rel, Selector, Tag, Variable } from 'sandstone'
+import {_, abs, Advancement, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, raw, rel, Selector, sleep, summon, Tag, Variable } from 'sandstone'
 import { VectorClass } from 'sandstone/variables'
 import { NAMESPACE } from '@shared'
-import { sleep } from 'bun';
 
 type Door = {
     min: {
@@ -18,11 +17,24 @@ type Door = {
     display_door: number;
 }
 
+type CallButton = {
+    light: {
+        pos: [number, number, number];
+        rotation: [number, number, number, number];
+        scale: [number, number, number];
+        translation: [number, number, number];
+    };
+    interaction: {
+        pos: [number, number, number];
+    };
+}
+
 type Floor = {
     elevator_pos: [number, number, number],
     name: string;
     number: number;
     doors: Door[];
+    callButton: CallButton;
 }
 
 const FLOORS: Floor[] = [
@@ -45,9 +57,20 @@ const FLOORS: Floor[] = [
                 block: 'minecraft:dark_oak_shelf[facing=west]',
                 display_door: 2
             }
-        ]
+        ],
+        callButton: {
+            light: {
+                pos: [-58.25, 85.5, 47.5],
+                rotation: [0.5, -0.5, 0.5, 0.5],
+                scale: [0.9999996, 0.99999934, 0.9999995],
+                translation: [0.75, 0.5, -0.5],
+            },
+            interaction: {
+                pos: [-58.01, 85.25, 47.5],
+            },
+        },
     },
-    { 
+    {
         elevator_pos: [-55, 73.5, 46],
         name: 'Casino | Lower Level',
         number: 2,
@@ -66,9 +89,20 @@ const FLOORS: Floor[] = [
                 block: 'minecraft:dark_oak_shelf[facing=west]',
                 display_door: 2
             }
-        ]
+        ],
+        callButton: {
+            light: {
+                pos: [-58.25, 75.5, 47.5],
+                rotation: [0.5, -0.5, 0.5, 0.5],
+                scale: [0.9999996, 0.99999934, 0.9999995],
+                translation: [0.75, 0.5, -0.5],
+            },
+            interaction: {
+                pos: [-58.01, 75.25, 47.5],
+            },
+        },
     },
-    { 
+    {
         elevator_pos: [-55, 63.5, 46],
         name: 'Showcases',
         number: 1,
@@ -87,7 +121,18 @@ const FLOORS: Floor[] = [
                 block: 'minecraft:dark_oak_shelf[facing=south]',
                 display_door: 1
             }
-        ]
+        ],
+        callButton: {
+            light: {
+                pos: [-52.5, 65.5, 50.25],
+                rotation: [0.7071068, 0.0, 0.0, 0.7071068],
+                scale: [0.99999994, 0.9999999, 0.9999999],
+                translation: [-0.5, 0.5, -0.75],
+            },
+            interaction: {
+                pos: [-52.5, 65.25, 50.01],
+            },
+        },
     },
 ]
 
@@ -106,6 +151,11 @@ const CarPartLabel = Label('elevator.car_part')
 const DoorLabel = Label('elevator.door')
 const Door1Label = Label('elevator.door.1')
 const Door2Label = Label('elevator.door.2')
+
+// outside call buttons: one shared tag for bulk kill, plus one tag per floor
+// (shared by that floor's light + interaction) to target/identify them individually
+const ButtonLabel = Label('elevator.button')
+const ButtonFloorLabels = FLOORS.map((_, floorIdx) => Label(`elevator.button.${floorIdx}` as `${any}${string}`))
 
 // id for the gravity modifier given to players riding the elevator
 const GRAVITY_MODIFIER = `${NAMESPACE}:elevator_ride` as `${string}:${string}`
@@ -170,6 +220,20 @@ function setDoorDisplayScale(displayDoor: number, scale: number) {
     execute.as(Selector('@e', { tag: label })).run(() => {
         Data('entity', '@s', 'transformation.scale').set([NBT.float(scale), NBT.float(scale), NBT.float(scale)])
     })
+}
+
+// lights/unlights a single floor's call button torch
+function setButtonLight(floorIdx: number, lit: boolean) {
+    execute.as(Selector('@e', { tag: ButtonFloorLabels[floorIdx], type: 'minecraft:block_display' })).run(() => {
+        Data('entity', '@s', 'block_state.Properties.lit').set(lit ? 'true' : 'false')
+    })
+}
+
+// only `activeFloorIdx`'s call button is lit; every other floor's button goes dark
+function updateButtonLights(activeFloorIdx: number) {
+    for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
+        setButtonLight(floorIdx, floorIdx === activeFloorIdx)
+    }
 }
 
 function openFloorDoors(floorIdx: number) {
@@ -241,8 +305,7 @@ function launchRidersUp() {
     })
 }
 
-// arrives at `floorIdx`: this is always the final stop
-function arriveAt(floorIdx: number) {
+function snapToFloor(floorIdx: number) {
     // riders rest at car.y + FLOOR_TOP (the floor's walkable surface)
     const restY = FLOORS[floorIdx].elevator_pos[1] + FLOOR_TOP
 
@@ -254,7 +317,18 @@ function arriveAt(floorIdx: number) {
     execute.as(Riders).at('@s').run.tp('@s', [rel(0), abs(restY), rel(0)])
     fillFloorBarrier(floorIdx)
     releaseAllRiders()
+}
+
+// opens `floorIdx`'s doors and marks its call button as the active floor
+function openArrivalDoors(floorIdx: number) {
     openFloorDoors(floorIdx)
+    updateButtonLights(floorIdx)
+}
+
+// arrives at `floorIdx`: this is always the final stop
+function arriveAt(floorIdx: number) {
+    snapToFloor(floorIdx)
+    openArrivalDoors(floorIdx)
 }
 
 // starts a trip from CurrentFloor to TargetFloor
@@ -288,6 +362,15 @@ function requestFloor(floorIdx: number) {
     })
 }
 
+// outside call button: same mid-trip/same-floor guard as requestFloor, but the (necessarily empty) car just teleports straight to the floor, skipping the rider ride animation
+function callFloor(floorIdx: number) {
+    _.if(_.and(CurrentFloor.equalTo(TargetFloor), CurrentFloor.notEqualTo(floorIdx)), () => {
+        TargetFloor.set(floorIdx)
+        closeAllDoors()
+        arriveAt(floorIdx)
+    })
+}
+
 export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
     CurrentFloor.set(STARTING_FLOOR)
     TargetFloor.set(STARTING_FLOOR)
@@ -297,6 +380,51 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
     fillFloorBarrier(STARTING_FLOOR)
     closeAllDoors()
     openFloorDoors(STARTING_FLOOR)
+
+    // outside call buttons: one redstone_torch light + one interaction hitbox per floor
+    for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
+        const floor = FLOORS[floorIdx]
+        const floorLabel = ButtonFloorLabels[floorIdx]
+        const { light, interaction } = floor.callButton
+
+        summon('minecraft:block_display', abs(...light.pos), {
+            Tags: [ButtonLabel.fullName, floorLabel.fullName, BOOTH_ENTITY_TAG],
+            block_state: {
+                Name: 'minecraft:redstone_torch',
+                Properties: { lit: floorIdx === STARTING_FLOOR ? 'true' : 'false' },
+            },
+            transformation: {
+                left_rotation: [NBT.float(light.rotation[0]), NBT.float(light.rotation[1]), NBT.float(light.rotation[2]), NBT.float(light.rotation[3])],
+                right_rotation: [NBT.float(0), NBT.float(0), NBT.float(0), NBT.float(1)],
+                scale: [NBT.float(light.scale[0]), NBT.float(light.scale[1]), NBT.float(light.scale[2])],
+                translation: [NBT.float(light.translation[0]), NBT.float(light.translation[1]), NBT.float(light.translation[2])],
+            },
+        })
+
+        summon('minecraft:interaction', abs(...interaction.pos), {
+            Tags: [ButtonLabel.fullName, floorLabel.fullName, BOOTH_ENTITY_TAG],
+            width: NBT.float(0.5),
+            height: NBT.float(0.5),
+            response: true,
+        })
+
+        const callAdvancement = Advancement(`elevator/call/${floorIdx}`, {
+            criteria: {
+                click: {
+                    trigger: 'minecraft:player_interacted_with_entity',
+                    conditions: {
+                        entity: { entity_type: 'minecraft:interaction', entity_tags: { all_of: [floorLabel.fullName] } },
+                    },
+                },
+            },
+            rewards: {
+                function: MCFunction(`sections/elevator/call_reward/${floorIdx}`, () => {
+                    callAdvancement.revoke('@s')
+                    callFloor(floorIdx)
+                }),
+            },
+        })
+    }
 })
 
 export const killElevator = MCFunction('sections/elevator/kill', () => {
@@ -309,6 +437,7 @@ export const killElevator = MCFunction('sections/elevator/kill', () => {
 
     kill(Car)
     kill(Selector('@e', { tag: CarPartLabel }))
+    kill(Selector('@e', { tag: ButtonLabel }))
 
     for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
         clearFloorBarrier(floorIdx)

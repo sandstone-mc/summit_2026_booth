@@ -39,9 +39,9 @@ const INFO_TEXT: JSONTextComponent = [
 // }
 
 RawResource(
-    `${NAMESPACE}/structure/facade.nbt`,
+    `${NAMESPACE}/structure/magic.nbt`,
     Bun.file(
-        join(process.cwd(), 'resources', 'data', 'showcase', 'facade.nbt')
+        join(process.cwd(), 'resources', 'data', 'showcase', 'magic.nbt')
     ).arrayBuffer() as unknown as Buffer<ArrayBufferLike>,
 )
 
