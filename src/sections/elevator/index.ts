@@ -1,6 +1,6 @@
 import {_, abs, Advancement, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, raw, rel, say, type Score, Selector, summon, Tag, Variable } from 'sandstone'
 import { BOOTH_ENTITY_TAG, NAMESPACE } from '@shared'
-import { summonElevator } from './summon'
+import { CarLabel, CarPartLabel, SouthInnerDoor, WestInnerDoor, summonElevator } from './summon'
 
 type Door = {
     min: {
@@ -13,7 +13,7 @@ type Door = {
         y: number,
         z: number,
     },
-    block: string,
+    direction: 'south' | 'west'
     display_door: number,
 }
 
@@ -51,7 +51,7 @@ export const FLOORS: Floor[] = [
                     y: 86,
                     z: 46
                 },
-                block: 'minecraft:dark_oak_shelf[facing=west]',
+                direction: 'west',
                 display_door: 2
             }
         ],
@@ -80,7 +80,7 @@ export const FLOORS: Floor[] = [
                     y: 77,
                     z: 46
                 },
-                block: 'minecraft:dark_oak_shelf[facing=west]',
+                direction: 'west',
                 display_door: 2
             }
         ],
@@ -109,7 +109,7 @@ export const FLOORS: Floor[] = [
                     y: 67,
                     z: 49
                 },
-                block: 'minecraft:dark_oak_shelf[facing=south]',
+                direction: 'south',
                 display_door: 1
             }
         ],
@@ -128,13 +128,8 @@ export const FLOORS: Floor[] = [
 export const STARTING_FLOOR = 2
 
 // Elevator car selector and tag
-export const CarLabel = Label('elevator.car')
 const Car = CarLabel(Selector('@e', { limit: 1 }))
 
-const CarPartLabel = Label('elevator.car_part')
-
-const Door1Label = Label('elevator.door.1')
-const Door2Label = Label('elevator.door.2')
 const ButtonLabel = Label('elevator.button')
 const ButtonFloorLabels = FLOORS.map((_, floorIdx) => Label(`elevator.button.${floorIdx}` as `${any}${string}`))
 
@@ -180,7 +175,7 @@ const LIFTOFF_LAUNCH_SCORE = Math.round(RIDER_SPEED_BLOCKS_PER_TICK * LAUNCH_SCA
 
 const Riders = Selector('@a', { tag: RiderLabel })
 
-const ElevatorIsMoving = Variable(0)
+const ElevatorIsMoving = Variable(-1)
 
 function floorBarrierCorners(floorIdx: number) {
     const [x, yRaw, z] = FLOORS[floorIdx].elevator_pos
@@ -191,15 +186,33 @@ function floorBarrierCorners(floorIdx: number) {
 function fillFloorBarrier(floorIdx: number) {
     const [corner1, corner2] = floorBarrierCorners(floorIdx)
     fill(corner1, corner2, 'minecraft:barrier')
+
+    for (const door of FLOORS[floorIdx].doors) {
+        if (door.direction === 'south') {
+            fill(abs(door.min.x, door.min.y - 1, door.min.z - 1), abs(door.max.x, door.min.y - 1, door.max.z - 1), 'minecraft:barrier')
+        }
+        if (door.direction === 'west') {
+            fill(abs(door.min.x + 1, door.min.y - 1, door.min.z), abs(door.max.x + 1, door.min.y - 1, door.max.z), 'minecraft:barrier')
+        }
+    }
 }
 
 function clearFloorBarrier(floorIdx: number) {
     const [corner1, corner2] = floorBarrierCorners(floorIdx)
     fill(corner1, corner2, 'minecraft:air').replace('minecraft:barrier')
+
+    for (const door of FLOORS[floorIdx].doors) {
+        if (door.direction === 'south') {
+            fill(abs(door.min.x, door.min.y - 1, door.min.z - 1), abs(door.max.x, door.min.y - 1, door.max.z - 1), 'minecraft:oxidized_copper_trapdoor[open=true,facing=north]')
+        }
+        if (door.direction === 'west') {
+            fill(abs(door.min.x + 1, door.min.y - 1, door.min.z), abs(door.max.x + 1, door.min.y - 1, door.max.z), 'minecraft:oxidized_copper_trapdoor[open=true,facing=east]')
+        }
+    }
 }
 
 function setDoorDisplayScale(displayDoor: number, scale: number) {
-    const label = displayDoor === 1 ? Door1Label : Door2Label
+    const label = displayDoor === 1 ? SouthInnerDoor : WestInnerDoor
     execute.as(Selector('@e', { tag: [label] })).run(() => {
         Data('entity', '@s', 'transformation.scale').set(NBT.float([scale, scale, scale]))
     })
@@ -207,14 +220,25 @@ function setDoorDisplayScale(displayDoor: number, scale: number) {
 
 function openFloorDoors(floorIdx: number) {
     for (const door of FLOORS[floorIdx].doors) {
-        fill(abs(door.min.x, door.min.y, door.min.z), abs(door.max.x, door.max.y, door.max.z), 'minecraft:air')
+        if (door.direction === 'south') {
+            fill(abs(door.min.x, door.min.y, door.min.z - 1), abs(door.max.x, door.max.y, door.max.z), 'minecraft:air')
+        }
+        if (door.direction === 'west') {
+            fill(abs(door.min.x + 1, door.min.y, door.min.z), abs(door.max.x, door.max.y, door.max.z), 'minecraft:air')
+        }
         setDoorDisplayScale(door.display_door, 0)
     }
 }
 
 function closeFloorDoors(floorIdx: number) {
     for (const door of FLOORS[floorIdx].doors) {
-        fill(abs(door.min.x, door.min.y, door.min.z), abs(door.max.x, door.max.y, door.max.z), door.block)
+        fill(abs(door.min.x, door.min.y, door.min.z), abs(door.max.x, door.max.y, door.max.z), `minecraft:dark_oak_shelf[facing=${door.direction}]`)
+        if (door.direction === 'south') {
+            fill(abs(door.min.x, door.min.y, door.min.z - 1), abs(door.max.x, door.max.y, door.max.z - 1), `minecraft:oxidized_copper_trapdoor[open=true,facing=north]`)
+        }
+        if (door.direction === 'west') {
+            fill(abs(door.min.x + 1, door.min.y, door.min.z), abs(door.max.x + 1, door.max.y, door.max.z), `minecraft:oxidized_copper_trapdoor[open=true,facing=east]`)
+        }
         setDoorDisplayScale(door.display_door, 1)
     }
 }
@@ -336,7 +360,7 @@ function beginTrip() {
     applyRiderGravityForTrip()
 
     _.if(TargetFloor.lessThan(CurrentFloor), () => launchRidersUp())
-    
+
     ElevatorIsMoving.set(1)
 }
 
@@ -348,7 +372,7 @@ function requestFloor(floorIdx: number) {
     })
 }
 
-function ringBellN(x: number, y: number, z: number, targetFloor: number) {
+function detectBell(x: number, y: number, z: number, targetFloor: number) {
     const rungBell = Advancement(`sections/elevator/ring_bell_${targetFloor}`, {
         criteria: {
             [`rung_bell_${targetFloor}` as const]: {
@@ -365,7 +389,8 @@ function ringBellN(x: number, y: number, z: number, targetFloor: number) {
                         {
                             condition: 'minecraft:location_check',
                             predicate: {
-                                position: { y: {min: y - 2, max: y + 3} },
+                                // because of radius based checks in predicates, the context origin is in the center of the block
+                                position: { x: x + .5, y: y + .5, z: z + .5 },
                                 block: { blocks: 'minecraft:bell' }
                             }
                         },
@@ -378,10 +403,7 @@ function ringBellN(x: number, y: number, z: number, targetFloor: number) {
                                     target: { type: 'minecraft:fixed', name: CurrentFloor.target },
                                     score: CurrentFloor.objective
                                 },
-                                range: {
-                                    min: targetFloor,
-                                    max: targetFloor,
-                                }
+                                range: targetFloor
                             }
                         },
                         {
@@ -391,10 +413,7 @@ function ringBellN(x: number, y: number, z: number, targetFloor: number) {
                                 target: { type: 'minecraft:fixed', name: ElevatorIsMoving.target },
                                 score: ElevatorIsMoving.objective
                             },
-                            range: {
-                                min: 0,
-                                max: 0,
-                            }
+                            range: 0
                         }
                     ]
                 }
@@ -412,9 +431,9 @@ function ringBellN(x: number, y: number, z: number, targetFloor: number) {
     })
 }
 
-ringBellN(-53, 65, 50, 2)
-ringBellN(-59, 75, 47, 1)
-ringBellN(-59, 85, 48, 0)
+detectBell(-53, 65, 50, 2)
+detectBell(-59, 75, 47, 1)
+detectBell(-59, 85, 48, 0)
 
 export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
     CurrentFloor.set(STARTING_FLOOR)
@@ -458,13 +477,16 @@ export const killElevator = MCFunction('sections/elevator/kill', () => {
     })
 
     kill(Car)
-    kill(Selector('@e', { tag: CarPartLabel }))
+    kill(CarPartLabel('@e' as '@s'))
+    kill(ButtonLabel('@e' as '@s'))
 
     for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
         clearFloorBarrier(floorIdx)
     }
 
     closeAllDoors()
+
+    ElevatorIsMoving.set(-1)
 })
 
 Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [spawnElevator], { onConflict: 'append' })

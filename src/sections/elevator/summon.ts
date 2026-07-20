@@ -1,9 +1,13 @@
 import { abs, Label, NBT, summon } from 'sandstone'
 
-import { FLOORS, CAR_TELEPORT_DURATION, STARTING_FLOOR, CarLabel } from '.'
+import { FLOORS, CAR_TELEPORT_DURATION, STARTING_FLOOR } from '.'
 import { BOOTH_ENTITY_TAG } from '@shared'
 
+export const CarLabel = Label('elevator.car')
 const part = Label('elevator.car_part')
+export const CarPartLabel = part
+export const SouthInnerDoor = Label('elevator.door.1')
+export const WestInnerDoor = Label('elevator.door.2')
 
 const id = 'minecraft:block_display'
 
@@ -44,6 +48,7 @@ const palette2 = [
     { Name: 'black_carpet' },
     { Name: 'redstone_lamp' },
     { Name: 'redstone_torch', Properties: {lit: 'false' } },
+    { Name: 'dark_oak_shelf' }
 ] as const
 
 const palette = [
@@ -56,6 +61,7 @@ const palette = [
     'black_carpet',
     'redstone_lamp',
     'redstone_torch',
+    'dark_oak_shelf',
 ] as const
 
 export const summonElevator = () => summon(id, abs(...FLOORS[STARTING_FLOOR].elevator_pos), {
@@ -97,6 +103,24 @@ export const summonElevator = () => summon(id, abs(...FLOORS[STARTING_FLOOR].ele
 
         // crafter
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-0.5, 1.5, -2.5]) }, block_state: { Name: palette[4], Properties: { crafting: 'false', orientation: 'up_south', triggered: 'true' } } },
+
+        // dark_oak_shelf
+        { id, Tags: [SouthInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-0.5, 0.5, 1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'north' } } },
+        { id, Tags: [SouthInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([0.5, 0.5, 1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'north' } } },
+        { id, Tags: [SouthInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-0.5, 1.5, 1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'north' } } },
+        { id, Tags: [SouthInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([0.5, 1.5, 1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'north' } } },
+        { id, Tags: [SouthInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-0.5, 2.5, 1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'north' } } },
+        { id, Tags: [SouthInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([0.5, 2.5, 1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'north' } } },
+        { id, Tags: [SouthInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-0.5, 3.5, 1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'north' } } },
+        { id, Tags: [SouthInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([0.5, 3.5, 1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'north' } } },
+        { id, Tags: [WestInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, 0.5, -1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'east' } } },
+        { id, Tags: [WestInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, 0.5, -0.5]) }, block_state: { Name: palette[9], Properties: { facing: 'east' } } },
+        { id, Tags: [WestInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, 1.5, -1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'east' } } },
+        { id, Tags: [WestInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, 1.5, -0.5]) }, block_state: { Name: palette[9], Properties: { facing: 'east' } } },
+        { id, Tags: [WestInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, 2.5, -1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'east' } } },
+        { id, Tags: [WestInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, 2.5, -0.5]) }, block_state: { Name: palette[9], Properties: { facing: 'east' } } },
+        { id, Tags: [WestInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, 3.5, -1.5]) }, block_state: { Name: palette[9], Properties: { facing: 'east' } } },
+        { id, Tags: [WestInnerDoor, part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, 3.5, -0.5]) }, block_state: { Name: palette[9], Properties: { facing: 'east' } } },
 
         // black_wool
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-2.5, -0.5, -0.5]) }, block_state: { Name: palette[1] } },
