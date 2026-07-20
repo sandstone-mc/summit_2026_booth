@@ -12,8 +12,29 @@
           }
         }
       }
+    },
+    "hit": {
+      "trigger": "minecraft:player_hurt_entity",
+      "conditions": {
+        "entity": {
+          "entity_type": "minecraft:interaction",
+          "entity_tags": {
+            "all_of": [
+              "ssb.ui.set.gi"
+            ]
+          }
+        }
+      }
     }
   },
+  "requirements": [
+    [
+      "hit"
+    ],
+    [
+      "click"
+    ]
+  ],
   "rewards": {
     "function": "sandstone_summit_booth:sections/rhythm/settings/on_start"
   }

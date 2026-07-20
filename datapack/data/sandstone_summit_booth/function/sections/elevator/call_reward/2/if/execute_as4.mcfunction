@@ -1,0 +1,2 @@
+attribute @s minecraft:gravity modifier remove sandstone_summit_booth:elevator_ride
+attribute @s minecraft:safe_fall_distance modifier remove sandstone_summit_booth:elevator_ride

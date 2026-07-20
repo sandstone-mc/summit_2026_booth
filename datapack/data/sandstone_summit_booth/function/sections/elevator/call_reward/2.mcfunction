@@ -1,0 +1,2 @@
+advancement revoke @s only sandstone_summit_booth:elevator/call/2
+execute if score anon_WnYlBycD_0 __sandstone = anon_WnYlBycD_1 __sandstone unless score anon_WnYlBycD_0 __sandstone matches 2 run function sandstone_summit_booth:sections/elevator/call_reward/2/if
