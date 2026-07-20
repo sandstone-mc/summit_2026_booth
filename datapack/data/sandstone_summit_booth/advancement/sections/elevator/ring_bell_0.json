@@ -21,10 +21,9 @@
             "condition": "minecraft:location_check",
             "predicate": {
               "position": {
-                "y": {
-                  "min": 83,
-                  "max": 88
-                }
+                "x": -58.5,
+                "y": 85.5,
+                "z": 48.5
               },
               "block": {
                 "blocks": "minecraft:bell"
@@ -43,10 +42,7 @@
                 },
                 "score": "__sandstone"
               },
-              "range": {
-                "min": 0,
-                "max": 0
-              }
+              "range": 0
             }
           },
           {
@@ -59,10 +55,7 @@
               },
               "score": "__sandstone"
             },
-            "range": {
-              "min": 0,
-              "max": 0
-            }
+            "range": 0
           }
         ]
       }
