@@ -221,10 +221,10 @@ function setDoorDisplayScale(displayDoor: number, scale: number) {
 function openFloorDoors(floorIdx: number) {
     for (const door of FLOORS[floorIdx].doors) {
         if (door.direction === 'south') {
-            fill(abs(door.min.x, door.min.y, door.min.z - 1), abs(door.max.x, door.max.y, door.max.z), 'minecraft:air')
+            fill(abs(door.min.x, door.min.y, door.min.z - 1), abs(door.max.x, door.max.y, door.max.z), 'minecraft:air').strict()
         }
         if (door.direction === 'west') {
-            fill(abs(door.min.x + 1, door.min.y, door.min.z), abs(door.max.x, door.max.y, door.max.z), 'minecraft:air')
+            fill(abs(door.min.x + 1, door.min.y, door.min.z), abs(door.max.x, door.max.y, door.max.z), 'minecraft:air').strict()
         }
         setDoorDisplayScale(door.display_door, 0)
     }
