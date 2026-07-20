@@ -1,0 +1,1 @@
+execute as @a[tag=sandstone_summit_booth.elevator.rider, limit=1] run tag @s add sandstone_summit_booth.elevator.driver

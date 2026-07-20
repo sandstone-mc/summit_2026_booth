@@ -1,0 +1,1 @@
+$return run function sandstone_summit_booth:sections/elevator/inside_button_reward/0/switch5/case_$(env_0)

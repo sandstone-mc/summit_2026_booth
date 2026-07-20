@@ -29,9 +29,7 @@
   },
   "requirements": [
     [
-      "hit"
-    ],
-    [
+      "hit",
       "click"
     ]
   ],

@@ -1,0 +1,2 @@
+execute if score anon_WnYlBycD_1 __sandstone > anon_WnYlBycD_0 __sandstone run return run attribute @s minecraft:gravity modifier add sandstone_summit_booth:elevator_ride -0.95 add_multiplied_total
+attribute @s minecraft:gravity modifier add sandstone_summit_booth:elevator_ride -1.05 add_multiplied_total

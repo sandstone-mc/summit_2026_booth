@@ -13,4 +13,5 @@ execute at @e[tag=sandstone_summit_booth.elevator.car, limit=1] positioned ~-2.5
 execute unless entity @a[tag=sandstone_summit_booth.elevator.driver, limit=1] run function sandstone_summit_booth:sections/elevator/floors/2/go/if/if
 execute as @a[tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/floors/2/go/if/execute_as4
 execute if score anon_WnYlBycD_1 __sandstone < anon_WnYlBycD_0 __sandstone run function sandstone_summit_booth:sections/elevator/floors/2/go/if/if2
+function sandstone_summit_booth:sections/elevator/floors/2/go/switch5
 scoreboard players set anon_WnYlBycD_2 __sandstone 1

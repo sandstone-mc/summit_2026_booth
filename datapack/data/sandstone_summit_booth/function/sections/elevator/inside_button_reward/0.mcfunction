@@ -1,0 +1,2 @@
+advancement revoke @s only sandstone_summit_booth:sections/elevator/inside_button_0
+execute if score anon_WnYlBycD_0 __sandstone = anon_WnYlBycD_1 __sandstone unless score anon_WnYlBycD_0 __sandstone matches 0 run function sandstone_summit_booth:sections/elevator/inside_button_reward/0/if
