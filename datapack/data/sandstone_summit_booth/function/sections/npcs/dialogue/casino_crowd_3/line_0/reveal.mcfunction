@@ -1,4 +1,4 @@
-execute store result score @s sandstone_summit_booth.npc.dialogue.variant run random value 0..1 sandstone_summit_booth:dialogue_variant
+execute store result score @s sandstone_summit_booth.npc.dialogue.variant run random value 0..2 sandstone_summit_booth:dialogue_variant
 scoreboard players set @s sandstone_summit_booth.npc.dialogue.line 0
 scoreboard players set @s sandstone_summit_booth.npc.dialogue.reveal_count 0
 scoreboard players set @s sandstone_summit_booth.npc.dialogue.reveal_speed 1

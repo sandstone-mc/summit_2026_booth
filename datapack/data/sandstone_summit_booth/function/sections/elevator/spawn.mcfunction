@@ -7,14 +7,14 @@ summon minecraft:interaction -55 65.375 44.43775 {Tags:['sandstone_summit_booth.
 summon minecraft:interaction -54.8125 65.1875 44.43775 {Tags:['sandstone_summit_booth.elevator.button.2','sandstone_summit_booth.elevator.car_part','summit.booth_entity.sandstone_summit_booth'],width:0.25f,height:0.25f,response:true}
 fill -57 63 44 -53 63 48 minecraft:barrier
 fill -54 63 48 -55 63 48 minecraft:barrier
-fill -58 84 45 -58 86 46 minecraft:dark_oak_shelf[facing=west]
-fill -57 84 45 -57 86 46 minecraft:oxidized_copper_trapdoor[open=true,facing=east]
+fill -58 84 45 -58 86 46 minecraft:dark_oak_shelf[facing=west] strict
+fill -57 84 45 -57 86 46 minecraft:oxidized_copper_trapdoor[open=true,facing=east] strict
 execute as @e[tag=sandstone_summit_booth.elevator.door.2] run data modify entity @s transformation.scale set value [1f,1f,1f]
-fill -58 74 45 -58 77 46 minecraft:dark_oak_shelf[facing=west]
-fill -57 74 45 -57 77 46 minecraft:oxidized_copper_trapdoor[open=true,facing=east]
+fill -58 74 45 -58 77 46 minecraft:dark_oak_shelf[facing=west] strict
+fill -57 74 45 -57 77 46 minecraft:oxidized_copper_trapdoor[open=true,facing=east] strict
 execute as @e[tag=sandstone_summit_booth.elevator.door.2] run data modify entity @s transformation.scale set value [1f,1f,1f]
-fill -54 64 49 -55 67 49 minecraft:dark_oak_shelf[facing=south]
-fill -54 64 48 -55 67 48 minecraft:oxidized_copper_trapdoor[open=true,facing=north]
+fill -54 64 49 -55 67 49 minecraft:dark_oak_shelf[facing=south] strict
+fill -54 64 48 -55 67 48 minecraft:oxidized_copper_trapdoor[open=true,facing=north] strict
 execute as @e[tag=sandstone_summit_booth.elevator.door.1] run data modify entity @s transformation.scale set value [1f,1f,1f]
 fill -54 64 48 -55 67 49 minecraft:air strict
 execute as @e[tag=sandstone_summit_booth.elevator.door.1] run data modify entity @s transformation.scale set value [0f,0f,0f]
