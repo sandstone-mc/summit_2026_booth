@@ -4,7 +4,7 @@ scoreboard players operation #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 4
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll = #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll /= #limit sandstone_summit_booth.presentation.scroll
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 26
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 28
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll < #limit sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 0
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll > #limit sandstone_summit_booth.presentation.scroll
@@ -89,3 +89,9 @@ execute if score #limit sandstone_summit_booth.presentation.scroll matches 25 ru
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 26
 scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
 execute if score #limit sandstone_summit_booth.presentation.scroll matches 26 run function sandstone_summit_booth:presentation/slides/scroll/19/if27
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 27
+scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
+execute if score #limit sandstone_summit_booth.presentation.scroll matches 27 run function sandstone_summit_booth:presentation/slides/scroll/19/if28
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 28
+scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
+execute if score #limit sandstone_summit_booth.presentation.scroll matches 28 run function sandstone_summit_booth:presentation/slides/scroll/19/if29
