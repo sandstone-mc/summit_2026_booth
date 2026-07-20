@@ -1,2 +1,2 @@
-execute store result storage __sandstone:variable anon_WnYlBycD_87.env_0 int 1 run scoreboard players get @s sandstone_summit_booth.npc.dialogue.variant
-return run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_1/render/switch2/dispatch with storage __sandstone:variable anon_WnYlBycD_87
+execute store result storage __sandstone:variable anon_WnYlBycD_90.env_0 int 1 run scoreboard players get @s sandstone_summit_booth.npc.dialogue.variant
+return run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_1/render/switch2/dispatch with storage __sandstone:variable anon_WnYlBycD_90

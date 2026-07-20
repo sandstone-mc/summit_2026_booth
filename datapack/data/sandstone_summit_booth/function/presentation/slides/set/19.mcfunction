@@ -18,4 +18,5 @@ function sandstone_summit_booth:presentation/slides/hide/15
 function sandstone_summit_booth:presentation/slides/hide/16
 function sandstone_summit_booth:presentation/slides/hide/17
 function sandstone_summit_booth:presentation/slides/hide/18
+function sandstone_summit_booth:presentation/slides/hide/20
 function sandstone_summit_booth:presentation/slides/show/19

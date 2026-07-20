@@ -1,1 +1,1 @@
-return run function sandstone_summit_booth:sections/rhythm/songs/il_vento_d_oro___jojo/walls_stop
+return run function sandstone_summit_booth:sections/rhythm/songs/il_vento_d_oro__giorno_s_theme____jojo/walls_stop

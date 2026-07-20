@@ -1,1 +1,1 @@
-data merge entity @e[tag=ssb.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:' Love - Jamie Paig',color:'yellow',font:'sandstone_summit_booth:monospace'},{text:' - ',color:'gray'},{text:'Deathless  ',color:'light_purple'}]}
+data merge entity @e[tag=ssb.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:' - Hiiragi Magneti',color:'yellow',font:'sandstone_summit_booth:monospace'},{text:' - ',color:'gray'},{text:'Deathless  ',color:'light_purple'}]}

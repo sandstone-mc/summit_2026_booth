@@ -1,2 +1,2 @@
-execute store result storage __sandstone:variable anon_WnYlBycD_74.env_0 int 1 run scoreboard players get @s sandstone_summit_booth.npc.dialogue.line
-return run function sandstone_summit_booth:sections/npcs/dialogue/blue_tent_guide/render/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_74
+execute store result storage __sandstone:variable anon_WnYlBycD_77.env_0 int 1 run scoreboard players get @s sandstone_summit_booth.npc.dialogue.line
+return run function sandstone_summit_booth:sections/npcs/dialogue/blue_tent_guide/render/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_77

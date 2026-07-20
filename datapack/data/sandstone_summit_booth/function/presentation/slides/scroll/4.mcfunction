@@ -4,7 +4,7 @@ scoreboard players operation #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 4
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll = #elapsed sandstone_summit_booth.presentation.scroll
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll /= #limit sandstone_summit_booth.presentation.scroll
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 347
+scoreboard players set #limit sandstone_summit_booth.presentation.scroll 324
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll < #limit sandstone_summit_booth.presentation.scroll
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 0
 scoreboard players operation #offset sandstone_summit_booth.presentation.scroll > #limit sandstone_summit_booth.presentation.scroll
@@ -983,72 +983,3 @@ execute if score #limit sandstone_summit_booth.presentation.scroll matches 323 r
 scoreboard players set #limit sandstone_summit_booth.presentation.scroll 324
 scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
 execute if score #limit sandstone_summit_booth.presentation.scroll matches 324 run function sandstone_summit_booth:presentation/slides/scroll/4/if325
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 325
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 325 run function sandstone_summit_booth:presentation/slides/scroll/4/if326
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 326
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 326 run function sandstone_summit_booth:presentation/slides/scroll/4/if327
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 327
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 327 run function sandstone_summit_booth:presentation/slides/scroll/4/if328
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 328
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 328 run function sandstone_summit_booth:presentation/slides/scroll/4/if329
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 329
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 329 run function sandstone_summit_booth:presentation/slides/scroll/4/if330
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 330
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 330 run function sandstone_summit_booth:presentation/slides/scroll/4/if331
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 331
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 331 run function sandstone_summit_booth:presentation/slides/scroll/4/if332
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 332
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 332 run function sandstone_summit_booth:presentation/slides/scroll/4/if333
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 333
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 333 run function sandstone_summit_booth:presentation/slides/scroll/4/if334
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 334
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 334 run function sandstone_summit_booth:presentation/slides/scroll/4/if335
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 335
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 335 run function sandstone_summit_booth:presentation/slides/scroll/4/if336
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 336
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 336 run function sandstone_summit_booth:presentation/slides/scroll/4/if337
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 337
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 337 run function sandstone_summit_booth:presentation/slides/scroll/4/if338
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 338
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 338 run function sandstone_summit_booth:presentation/slides/scroll/4/if339
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 339
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 339 run function sandstone_summit_booth:presentation/slides/scroll/4/if340
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 340
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 340 run function sandstone_summit_booth:presentation/slides/scroll/4/if341
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 341
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 341 run function sandstone_summit_booth:presentation/slides/scroll/4/if342
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 342
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 342 run function sandstone_summit_booth:presentation/slides/scroll/4/if343
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 343
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 343 run function sandstone_summit_booth:presentation/slides/scroll/4/if344
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 344
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 344 run function sandstone_summit_booth:presentation/slides/scroll/4/if345
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 345
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 345 run function sandstone_summit_booth:presentation/slides/scroll/4/if346
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 346
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 346 run function sandstone_summit_booth:presentation/slides/scroll/4/if347
-scoreboard players set #limit sandstone_summit_booth.presentation.scroll 347
-scoreboard players operation #limit sandstone_summit_booth.presentation.scroll = #offset sandstone_summit_booth.presentation.scroll
-execute if score #limit sandstone_summit_booth.presentation.scroll matches 347 run function sandstone_summit_booth:presentation/slides/scroll/4/if348

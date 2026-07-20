@@ -1,1 +1,1 @@
-data merge entity @e[tag=ssb.ui.set.song, limit=1] {text:[{text:'  ♪ Song: ',color:'gray'},{text:"'oro - JoJo   Il V  ",color:'aqua',font:'sandstone_summit_booth:monospace'}]}
+data merge entity @e[tag=ssb.ui.set.song, limit=1] {text:[{text:'  ♪ Song: ',color:'gray'},{text:'ve - Jamie Paige    ',color:'aqua',font:'sandstone_summit_booth:monospace'}]}

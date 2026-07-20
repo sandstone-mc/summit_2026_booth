@@ -1,1 +1,1 @@
-return run function sandstone_summit_booth:sections/rhythm/songs/tetoris/walls
+return run function sandstone_summit_booth:sections/rhythm/songs/tetoris___hiiragi_magnetite/walls

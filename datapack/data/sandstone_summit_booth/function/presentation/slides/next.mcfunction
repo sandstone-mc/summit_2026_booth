@@ -20,8 +20,9 @@ schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep17
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep18
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep19
 schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep20
+schedule clear sandstone_summit_booth:presentation/slides/loop/__sleep21
 scoreboard players add #current sandstone_summit_booth.presentation.slide_idx 1
-execute if score #current sandstone_summit_booth.presentation.slide_idx matches 20.. run scoreboard players set #current sandstone_summit_booth.presentation.slide_idx 0
+execute if score #current sandstone_summit_booth.presentation.slide_idx matches 21.. run scoreboard players set #current sandstone_summit_booth.presentation.slide_idx 0
 execute store result score #shown_at sandstone_summit_booth.presentation.scroll run time query gametime
 function sandstone_summit_booth:presentation/slides/hide/0
 function sandstone_summit_booth:presentation/slides/hide/1
@@ -43,5 +44,6 @@ function sandstone_summit_booth:presentation/slides/hide/16
 function sandstone_summit_booth:presentation/slides/hide/17
 function sandstone_summit_booth:presentation/slides/hide/18
 function sandstone_summit_booth:presentation/slides/hide/19
+function sandstone_summit_booth:presentation/slides/hide/20
 execute store result storage __sandstone:variable anon_WnYlBycD_7.env_0 int 1 run scoreboard players get #current sandstone_summit_booth.presentation.slide_idx
 return run function sandstone_summit_booth:presentation/slides/next/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_7

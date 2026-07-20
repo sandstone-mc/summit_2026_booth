@@ -1,3 +1,3 @@
-function sandstone_summit_booth:sections/rhythm/songs/tetoris/stop
+function sandstone_summit_booth:sections/rhythm/songs/tetoris___hiiragi_magnetite/stop
 function sandstone_summit_booth:sections/rhythm/songs/machine_love___jamie_paige/stop
-function sandstone_summit_booth:sections/rhythm/songs/il_vento_d_oro___jojo/stop
+function sandstone_summit_booth:sections/rhythm/songs/il_vento_d_oro__giorno_s_theme____jojo/stop
