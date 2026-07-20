@@ -1,4 +1,4 @@
-import {_, abs, Advancement, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, raw, rel, say, type Score, Selector, summon, Tag, Variable } from 'sandstone'
+import {_, abs, Advancement, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, playsound, raw, rel, say, type Score, Selector, sleep, summon, Tag, Variable } from 'sandstone'
 import { BOOTH_ENTITY_TAG, NAMESPACE } from '@shared'
 import { CarLabel, CarPartLabel, SouthInnerDoor, WestInnerDoor, summonElevator, BUTTON_INTERACTION_OFFSETS } from './summon'
 
@@ -57,10 +57,10 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-58.25, 85.5, 47.5], // TODO
-                rotation: [0.5, -0.5, 0.5, 0.5],
+                pos: [-57.5, 86.6875, 46.01], // TODO
+                rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
-                translation: [0.75, 0.5, -0.5],
+                translation: [-0.5, 0.75, 0.5],
             },
         },
     },
@@ -86,10 +86,10 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-58.25, 75.5, 47.5], // TODO
-                rotation: [0.5, -0.5, 0.5, 0.5],
+                pos: [-57.5, 77.6875, 46.01], // TODO
+                rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
-                translation: [0.75, 0.5, -0.5],
+                translation: [-0.5, 0.75, 0.5],
             },
         },
     },
@@ -115,10 +115,10 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-52.5, 65.5, 50.25], // TODO
-                rotation: [0.7071068, 0.0, 0.0, 0.7071068],
+                pos: [-54.01, 67.6875, 49.5], // TODO
+                rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
-                translation: [-0.5, 0.5, -0.75],
+                translation: [-0.5, 0.75, 0.5],
             },
         },
     },
@@ -336,6 +336,8 @@ function arriveAt(floorIdx: number) {
     snapToFloor(floorIdx)
     openArrivalDoors(floorIdx)
 
+    // playsound('minecraft:block.note_block.bell', 'music', '@a', abs(...FLOORS[floorIdx].elevator_pos), 1, 0.5)
+
     ElevatorIsMoving.set(0)
 }
 
@@ -423,12 +425,23 @@ function detectBell(x: number, y: number, z: number, targetFloor: number) {
             }
         },
         rewards: {
-            function: MCFunction(`sections/elevator/call_elevator_${targetFloor}`, () => {
+            function: MCFunction(`sections/elevator/call_elevator_${targetFloor}`, async () => {
                 rungBell.revoke('@s')
 
                 TargetFloor.set(targetFloor)
-                closeAllDoors()
-                arriveAt(targetFloor)
+                ElevatorIsMoving.set(1)
+                updateButtonLights(targetFloor)
+
+                _.if(_.entity(Riders), async () => {
+                    sleep('1s')
+                    closeAllDoors()
+                    sleep('2s')
+                    arriveAt(targetFloor)
+                }).else(async () => {
+                    closeAllDoors()
+                    sleep('2s')
+                    arriveAt(targetFloor)
+                })
             })
         }
     })
@@ -497,10 +510,10 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
                 Properties: { lit: floorIdx === STARTING_FLOOR ? 'true' : 'false' },
             },
             transformation: {
-                left_rotation: [NBT.float(light.rotation[0]), NBT.float(light.rotation[1]), NBT.float(light.rotation[2]), NBT.float(light.rotation[3])],
-                right_rotation: [NBT.float(0), NBT.float(0), NBT.float(0), NBT.float(1)],
-                scale: [NBT.float(light.scale[0]), NBT.float(light.scale[1]), NBT.float(light.scale[2])],
-                translation: [NBT.float(light.translation[0]), NBT.float(light.translation[1]), NBT.float(light.translation[2])],
+                left_rotation: NBT.float(light.rotation),
+                right_rotation: NBT.float([0, 0, 0, 1]),
+                scale: NBT.float(light.scale),
+                translation: NBT.float(light.translation),
             },
         })
     }
