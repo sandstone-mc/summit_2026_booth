@@ -4,7 +4,7 @@ execute as @a[tag=sandstone_summit_booth.elevator.rider] at @s run tp @s ~ 84.03
 fill -57 83 44 -53 83 48 minecraft:barrier
 fill -57 83 45 -57 83 46 minecraft:barrier
 execute as @a[tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/step/switch/case_0/if/if/return_run/if/execute_as
-fill -57 84 45 -58 86 46 minecraft:air
+fill -57 84 45 -58 86 46 minecraft:air strict
 execute as @e[tag=sandstone_summit_booth.elevator.door.2] run data modify entity @s transformation.scale set value [0f,0f,0f]
 execute as @e[tag=sandstone_summit_booth.elevator.button.0, type=minecraft:block_display] run data modify entity @s block_state.Properties.lit set value 'true'
 execute as @e[tag=sandstone_summit_booth.elevator.button.1, type=minecraft:block_display] run data modify entity @s block_state.Properties.lit set value 'false'

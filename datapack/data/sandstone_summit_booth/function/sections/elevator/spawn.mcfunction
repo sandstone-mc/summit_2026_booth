@@ -16,7 +16,7 @@ execute as @e[tag=sandstone_summit_booth.elevator.door.2] run data modify entity
 fill -54 64 49 -55 67 49 minecraft:dark_oak_shelf[facing=south]
 fill -54 64 48 -55 67 48 minecraft:oxidized_copper_trapdoor[open=true,facing=north]
 execute as @e[tag=sandstone_summit_booth.elevator.door.1] run data modify entity @s transformation.scale set value [1f,1f,1f]
-fill -54 64 48 -55 67 49 minecraft:air
+fill -54 64 48 -55 67 49 minecraft:air strict
 execute as @e[tag=sandstone_summit_booth.elevator.door.1] run data modify entity @s transformation.scale set value [0f,0f,0f]
 summon minecraft:block_display -57.5 86.6875 46.01 {Tags:['sandstone_summit_booth.elevator.button','sandstone_summit_booth.elevator.button.0','summit.booth_entity.sandstone_summit_booth'],block_state:{Name:'minecraft:redstone_torch',Properties:{lit:'false'}},transformation:{left_rotation:[1f,0f,0f,0f],right_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],translation:[-0.5f,0.75f,0.5f]}}
 summon minecraft:block_display -57.5 77.6875 46.01 {Tags:['sandstone_summit_booth.elevator.button','sandstone_summit_booth.elevator.button.1','summit.booth_entity.sandstone_summit_booth'],block_state:{Name:'minecraft:redstone_torch',Properties:{lit:'false'}},transformation:{left_rotation:[1f,0f,0f,0f],right_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],translation:[-0.5f,0.75f,0.5f]}}
