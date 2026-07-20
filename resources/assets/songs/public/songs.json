@@ -1,18 +1,18 @@
 [
 	{
-		"file": "Tetoris.mid",
-		"name": "Tetoris",
+		"file": "hiiragi_magnetite_tetoris.mid",
+		"name": "Tetoris - Hiiragi Magnetite",
 		"difficulty": 5
 	},
 	{
-		"file": "MachineLove.mid",
+		"file": "jamiep_machine_love.mid",
 		"name": "Machine Love - Jamie Paige",
 		"difficulty": 5,
 		"audioStart": 30
 	},
 	{
-		"file": "Il Vento D'oro (The Golden Wind) _Giorno's Theme_ - JoJo's Bizarre Adventures.mid",
-		"name": "Il Vento D'oro - JoJo",
+		"file": "jojo_il_vento_doro_giornos_theme.mid",
+		"name": "Il Vento D'oro (Giorno's Theme) - JoJo",
 		"difficulty": 5
 	}
 ]

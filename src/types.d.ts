@@ -15,3 +15,8 @@ declare module '*.mcfunction' {
 	const content: string
 	export default content
 }
+
+declare module '*.log' {
+	const content: string
+	export default content
+}

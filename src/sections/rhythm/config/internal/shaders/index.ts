@@ -1,5 +1,6 @@
-import sharp from 'sharp'
 import { Texture, Model, ItemModelDefinition } from 'sandstone'
+
+import sharp from 'sharp'
 
 import sdkConfig from './sdk.toml'
 
