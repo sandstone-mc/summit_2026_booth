@@ -15,9 +15,9 @@ const CONTRIBUTORS: Contributor[] = [
     { name: 'MulverineX', role: 'Sandstone Maintainer', url: 'https://github.com/MulverineX', icon: 'summit_icons.github' },
     { name: 'Origaming_', role: 'Rhythm Showcase', url: 'https://github.com/OrigamingWasTaken', icon: 'summit_icons.github' },
     { name: 'LilSpartan904', role: 'Magic Showcase', url: 'https://github.com/Lilspartan', icon: 'summit_icons.github' },
+    { name: 'Comqote', role: 'Booth Build' },
     { name: 'Ewwwwwan', role: 'Stickers, Balloon, and Casino Build' },
-    // { name: 'Comqote', role: 'Booth Build', url: 'h' },
-    // { name: 'Meek', role: 'Rhythm Showcase Shaders', url: 'h' }
+    { name: 'Meek', role: 'Rhythm Showcase Shaders', url: 'https://github.com/Meekiavelique', icon: 'summit_icons.github' }
 ]
 
 interface ResourceLink {
@@ -40,7 +40,9 @@ function linkBody(name: string, url: string, icon?: string, glyph?: string) {
             { text: ` ${name} `, font: 'minecraft:default' },
             icon
                 ? { font: 'summit_icons:icons', translate: icon, click_event: { action: 'open_url', url } }
-                : "",
+                : glyph
+                    ? { text: glyph, click_event: { action: 'open_url', url } }
+                    : "",
         ],
     }
 }
