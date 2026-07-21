@@ -1,3 +1,4 @@
+function sandstone_summit_booth:sections/elevator/step/switch
 execute as @a[tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/step/if/execute_as
 execute unless entity @a[tag=sandstone_summit_booth.elevator.driver, gamemode=!spectator, limit=1] run function sandstone_summit_booth:sections/elevator/step/if/if
 execute if entity @a[tag=sandstone_summit_booth.elevator.driver, gamemode=!spectator, limit=1] run function sandstone_summit_booth:sections/elevator/step/if/if2

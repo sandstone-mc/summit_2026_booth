@@ -1,2 +1,2 @@
-execute store result storage __sandstone:variable anon_WnYlBycD_71.env_0 int 1 run scoreboard players get main.showcase.current_0_WnYlBycD __sandstone
-return run function sandstone_summit_booth:sections/main/showcase/swap_to_placeholder/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_71
+execute store result storage __sandstone:variable anon_WnYlBycD_87.env_0 int 1 run scoreboard players get main.showcase.current_0_WnYlBycD __sandstone
+return run function sandstone_summit_booth:sections/main/showcase/swap_to_placeholder/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_87

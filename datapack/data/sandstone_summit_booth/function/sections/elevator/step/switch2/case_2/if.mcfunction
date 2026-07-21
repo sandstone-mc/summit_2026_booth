@@ -1,0 +1,2 @@
+execute if score anon_WnYlBycD_1 __sandstone > anon_WnYlBycD_0 __sandstone run return run execute if score elevator.rider_y_0_WnYlBycD __sandstone matches ..640 run function sandstone_summit_booth:sections/elevator/step/switch2/case_2/if/if/return_run/if
+execute if score elevator.rider_y_0_WnYlBycD __sandstone matches 640.. run function sandstone_summit_booth:sections/elevator/step/switch2/case_2/if/if2

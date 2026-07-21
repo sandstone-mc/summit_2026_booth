@@ -54,10 +54,6 @@ scoreboard objectives add sandstone_summit_booth.npc.dialogue.variant dummy
 scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_cut dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.magic.spells.lightning.static_field.do_cast dummy
 scoreboard players set sandstone_summit_booth load.status 1
-scoreboard players set anon_WnYlBycD_0 __sandstone 2
-scoreboard players set anon_WnYlBycD_1 __sandstone 2
-scoreboard players set elevator.rider_y_0_WnYlBycD __sandstone 0
-scoreboard players set anon_WnYlBycD_2 __sandstone -1
 scoreboard players set anon_WnYlBycD_3 __sandstone 0
 scoreboard players set anon_WnYlBycD_4 __sandstone 0
 scoreboard players set anon_WnYlBycD_5 __sandstone 0

@@ -3,19 +3,6 @@
     "rung_bell_2": {
       "trigger": "minecraft:default_block_use",
       "conditions": {
-        "player": [
-          {
-            "condition": "minecraft:entity_properties",
-            "entity": "this",
-            "predicate": {
-              "minecraft:entity_tags": {
-                "all_of": [
-                  "summit.in_booth.sandstone_summit_booth"
-                ]
-              }
-            }
-          }
-        ],
         "location": [
           {
             "condition": "minecraft:location_check",
