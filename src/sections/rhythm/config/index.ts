@@ -97,7 +97,7 @@ const config: RhythmConfig = {
 	panels: {
 		settingsOffset: [-22, 2.5, -11],
 		settingsFacing: 90,
-		leaderboardOffset: [-18, 2, -15],
+		leaderboardOffset: [-18.001, 1.875, -15],
 		leaderboardFacing: 180,
 		maxNameLength: 18,
 		scrollSpeed: 4,
