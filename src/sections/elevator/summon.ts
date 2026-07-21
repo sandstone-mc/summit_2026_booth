@@ -184,12 +184,12 @@ export const summonElevator = () => summon(id, abs(...FLOORS[STARTING_FLOOR].ele
 
         // dark_oak_fence
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform_a, translation: NBT.float([-1.5, 2.125, -2]) }, block_state: palette2[5] },
-        { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform_a, translation: NBT.float([0.5, 2.125, -2]) }, block_state: palette2[5] },
+        { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform_a, translation: NBT.float([0.5, 2.1251, -2]) }, block_state: palette2[5] },
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform_b, translation: NBT.float([1, 2.125, -0.5]) }, block_state: palette2[5] },
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform_b, translation: NBT.float([1, 2.125, 0.5]) }, block_state: palette2[5] },
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform_b, translation: NBT.float([1, 2.125, 1.5]) }, block_state: palette2[5] },
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform_b, translation: NBT.float([-2, 2.125, 1.5]) }, block_state: palette2[5] },
-        { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { translation: NBT.float([-1.5, 2.125, 1]), left_rotation: NBT.float([0, 0, -0.7071068, 0.7071068]), right_rotation, scale }, block_state: palette2[5] },
+        { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { translation: NBT.float([-1.5, 2.1251, 1]), left_rotation: NBT.float([0, 0, -0.7071068, 0.7071068]), right_rotation, scale }, block_state: palette2[5] },
 
         // black_carpet
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform_a, translation: NBT.float([-0.5, 2.5, 1.5]) }, block_state: { Name: palette[6] } },

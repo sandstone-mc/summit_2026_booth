@@ -57,7 +57,7 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-57.5, 86.6875, 46.01], // TODO
+                pos: [-57.5, 86.6875, 46.001], // TODO
                 rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
                 translation: [-0.5, 0.75, 0.5],
@@ -86,7 +86,7 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-57.5, 77.6875, 46.01], // TODO
+                pos: [-57.5, 77.6875, 46.001], // TODO
                 rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
                 translation: [-0.5, 0.75, 0.5],
@@ -115,7 +115,7 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-54.01, 67.6875, 49.5], // TODO
+                pos: [-54.001, 67.6875, 49.5], // TODO
                 rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
                 translation: [-0.5, 0.75, 0.5],
@@ -136,10 +136,10 @@ export const ButtonFloorLabels = FLOORS.map((_, floorIdx) => Label(`elevator.but
 // id for the gravity modifier given to players riding the elevator
 const GRAVITY_MODIFIER = `${NAMESPACE}:elevator_ride` as const
 
-// where is the elevator
-const CurrentFloor = Variable(STARTING_FLOOR)
+// where is the elevator (only ever set inside spawnElevator, so a /reload doesn't reset an already-spawned car)
+const CurrentFloor = Variable()
 // where is it going
-const TargetFloor = Variable(STARTING_FLOOR)
+const TargetFloor = Variable()
 
 // Riders are anyone currently standing in the 5x5x5 volume directly above the floor, relative to the car's own position
 const FLOOR_TOP = 0.53125
@@ -159,7 +159,7 @@ export const CAR_TELEPORT_DURATION = 1
 // the car is driven by whichever rider currently holds this tag
 const DriverLabel = Label('elevator.driver')
 const RiderDriver = Selector('@a', { tag: DriverLabel, limit: 1, gamemode: "!spectator" })
-const RiderY = Variable(0, 'elevator.rider_y')
+const RiderY = Variable(undefined, 'elevator.rider_y')
 
 const RIDER_SPEED_BLOCKS_PER_TICK = 0.2
 const DEFAULT_GRAVITY = 0.08
@@ -175,7 +175,7 @@ const LIFTOFF_LAUNCH_SCORE = Math.round(RIDER_SPEED_BLOCKS_PER_TICK * LAUNCH_SCA
 
 const Riders = Selector('@a', { tag: RiderLabel })
 
-const ElevatorIsMoving = Variable(-1)
+const ElevatorIsMoving = Variable()
 
 function floorBarrierCorners(floorIdx: number) {
     const [x, yRaw, z] = FLOORS[floorIdx].elevator_pos
@@ -319,6 +319,12 @@ function setButtonLight(floorIdx: number, lit: boolean) {
     })
 }
 
+function setExteriorButtonLight(floorIdx: number, lit: boolean) {
+    execute.as(Selector('@e', { tag: [ButtonFloorLabels[floorIdx], ButtonLabel], type: 'minecraft:block_display' })).run(() => {
+        Data('entity', '@s', 'block_state.Properties.lit').set(lit ? 'true' : 'false')
+    })
+}
+
 // only `activeFloorIdx`'s call button is lit; every other floor's button goes dark
 function updateButtonLights(activeFloorIdx: number) {
     for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
@@ -328,7 +334,7 @@ function updateButtonLights(activeFloorIdx: number) {
 
 function openArrivalDoors(floorIdx: number) {
     openFloorDoors(floorIdx)
-    updateButtonLights(floorIdx)
+    setExteriorButtonLight(floorIdx, false)
 }
 
 // arrives at `floorIdx`: this is always the final stop
@@ -383,13 +389,6 @@ function detectBell(x: number, y: number, z: number, targetFloor: number) {
             [`rung_bell_${targetFloor}` as const]: {
                 trigger: 'minecraft:default_block_use',
                 conditions: {
-                    player: [{
-                        condition: 'minecraft:entity_properties',
-                        entity: 'this',
-                        predicate: {
-                            'minecraft:entity_tags': { all_of: [ 'summit.in_booth.sandstone_summit_booth' ] }
-                        }
-                    }],
                     location: [
                         {
                             condition: 'minecraft:location_check',
@@ -429,15 +428,12 @@ function detectBell(x: number, y: number, z: number, targetFloor: number) {
                 rungBell.revoke('@s')
 
                 TargetFloor.set(targetFloor)
-                ElevatorIsMoving.set(1)
-                updateButtonLights(targetFloor)
 
-                _.if(_.entity(Riders), async () => {
-                    sleep('1s')
-                    closeAllDoors()
-                    sleep('2s')
-                    arriveAt(targetFloor)
+                _.if(_.entity(Riders), () => {
+                    beginTrip()
                 }).else(async () => {
+                    ElevatorIsMoving.set(1)
+                    updateButtonLights(targetFloor)
                     closeAllDoors()
                     sleep('2s')
                     arriveAt(targetFloor)
@@ -474,7 +470,31 @@ for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
     detectInsideButton(floorIdx)
 }
 
+export const killElevator = MCFunction('sections/elevator/kill', () => {
+    execute.as(Riders).run(() => {
+        attribute('@s', GRAVITY_ATTRIBUTE).remove(GRAVITY_MODIFIER)
+        attribute('@s', SAFE_FALL_ATTRIBUTE).remove(GRAVITY_MODIFIER)
+        RiderLabel('@s').remove()
+        DriverLabel('@s').remove()
+    })
+
+    kill(Car)
+    kill(CarPartLabel('@e' as '@s'))
+    kill(ButtonLabel('@e' as '@s'))
+
+    for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
+        clearFloorBarrier(floorIdx)
+    }
+
+    closeAllDoors()
+
+    ElevatorIsMoving.set(-1)
+})
+
 export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
+    // clean up anything left over from a previous spawn so re-running this is always safe
+    killElevator()
+
     CurrentFloor.set(STARTING_FLOOR)
     TargetFloor.set(STARTING_FLOOR)
     ElevatorIsMoving.set(0)
@@ -507,7 +527,7 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
             Tags: [ButtonLabel.fullName, floorLabel.fullName, BOOTH_ENTITY_TAG],
             block_state: {
                 Name: 'minecraft:redstone_torch',
-                Properties: { lit: floorIdx === STARTING_FLOOR ? 'true' : 'false' },
+                Properties: { lit: 'false' },
             },
             transformation: {
                 left_rotation: NBT.float(light.rotation),
@@ -517,27 +537,6 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
             },
         })
     }
-})
-
-export const killElevator = MCFunction('sections/elevator/kill', () => {
-    execute.as(Riders).run(() => {
-        attribute('@s', GRAVITY_ATTRIBUTE).remove(GRAVITY_MODIFIER)
-        attribute('@s', SAFE_FALL_ATTRIBUTE).remove(GRAVITY_MODIFIER)
-        RiderLabel('@s').remove()
-        DriverLabel('@s').remove()
-    })
-
-    kill(Car)
-    kill(CarPartLabel('@e' as '@s'))
-    kill(ButtonLabel('@e' as '@s'))
-
-    for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
-        clearFloorBarrier(floorIdx)
-    }
-
-    closeAllDoors()
-
-    ElevatorIsMoving.set(-1)
 })
 
 Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [spawnElevator], { onConflict: 'append' })
@@ -564,6 +563,8 @@ MCFunction('sections/elevator/step', () => {
         })
 
     _.if(CurrentFloor.notEqualTo(TargetFloor), () => {
+        _.switch(TargetFloor, FLOORS.map((_floor, idx) => ['case', idx, () => updateButtonLights(idx)] as const))
+
         applyRiderGravityForTrip()
         ensureDriver()
 
