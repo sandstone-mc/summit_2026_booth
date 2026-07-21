@@ -88,7 +88,7 @@ const config: RhythmConfig = {
 	music: {
 		offset: [0, 0, 0],
 		volume: 1,
-		hearable: { dx: 48, dy: 24, dz: 64 },
+		hearable: { dx: 24, dy: 16, dz: 32 },
 	},
 	leaderboard: {
 		size: 10,
