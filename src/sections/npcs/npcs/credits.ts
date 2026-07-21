@@ -74,7 +74,7 @@ interface ResourceLink {
 const LINKS: ResourceLink[] = [
     { name: 'Sandstone Docs', url: 'https://sandstone.dev', glyph: '🌐' },
     { name: 'Sandstone GitHub', url: 'https://github.com/sandstone-mc/sandstone', icon: 'summit_icons.github' },
-    { name: 'JMCS Discord', url: 'https://discord.com/invite/4tzM5aXDRe', icon: 'summit_icons.discord' },
+    { name: 'Java Minecraft Scripting Discord Discord', url: 'https://discord.com/invite/4tzM5aXDRe', icon: 'summit_icons.discord' },
 ]
 
 function avatarComponent(uuid: string) {

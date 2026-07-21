@@ -26,7 +26,7 @@ Variant('painting', mascot, {
 
 Texture('item', 'balloon/primary', asset('balloon', 'primary.png'))
 Texture('item', 'balloon/secondary', asset('balloon', 'secondary.png'))
-Texture('item', 'balloon/strings', asset('balloon', 'strings.png'))
+Texture('item', 'balloon/string', asset('balloon', 'string.png'))
 
 // TODO: Sandstone bug
 Model('balloons' as 'item', 'sand_castle', balloonModel as Parameters<typeof Model>[2])
