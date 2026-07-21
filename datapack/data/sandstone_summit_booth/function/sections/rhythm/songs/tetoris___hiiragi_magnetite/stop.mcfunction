@@ -261,4 +261,4 @@ schedule clear sandstone_summit_booth:sections/rhythm/songs/shared/n246
 schedule clear sandstone_summit_booth:sections/rhythm/songs/shared/b13
 schedule clear sandstone_summit_booth:sections/rhythm/songs/shared/n247
 schedule clear sandstone_summit_booth:sections/rhythm/songs/shared/b14
-stopsound @a[x=-94, y=51, z=10, dx=48, dy=24, dz=64] master
+stopsound @a[x=-82, y=55, z=26, dx=24, dy=16, dz=32] master
