@@ -2,6 +2,7 @@ import { join } from 'path'
 import { Font, Model, NBT, Texture, Variant } from 'sandstone'
 
 import monospace from '../../../resources/assets/font/monospace/providers.json'
+import balloonModel from '../../../resources/assets/balloon/model.json'
 
 import './showcase'
 
@@ -28,7 +29,7 @@ Texture('item', 'balloon/secondary', asset('balloon', 'secondary.png'))
 Texture('item', 'balloon/strings', asset('balloon', 'strings.png'))
 
 // TODO: Sandstone bug
-Model('balloons' as 'item', 'sand_castle', asset('balloon', 'model.json'))
+Model('balloons' as 'item', 'sand_castle', balloonModel as Parameters<typeof Model>[2])
 
 // TODO: Sandstone bug
 Texture('sticker' as 'font', 'arcane_arts', asset('stickers', 'arcane_arts.png'))

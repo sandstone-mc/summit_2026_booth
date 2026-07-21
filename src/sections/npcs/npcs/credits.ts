@@ -13,7 +13,7 @@ function uuidToIntArray(uuid: string): [number, number, number, number] {
     return parts as [number, number, number, number]
 }
 
-type SocialType = 'github' | 'modrinth' | 'discord' | 'website'
+type SocialType = 'github' | 'modrinth' | 'discord' | 'website' | 'instagram'
 
 interface SocialLink {
     type: SocialType
@@ -23,6 +23,7 @@ interface SocialLink {
 interface CreditMember {
     name: string
     minecraft: string
+    role?: string
     socials?: SocialLink[]
 }
 
@@ -36,28 +37,29 @@ const CREDITS: CreditSection[] = [
     {
         section: 'Development & Leadership',
         members: [
-            { name: 'Origaming', minecraft: '75c4fe91-1f0f-4b98-b34d-0b630b2a4257', socials: [{ type: 'github', url: 'https://github.com/OrigamingWasTaken' }] },
-            { name: 'Lilspartan', minecraft: '65574243-8a4d-48e8-9341-9655db14b122', socials: [{ type: 'modrinth', url: 'https://modrinth.com/user/Lilspartan' }, { type: 'github', url: 'https://github.com/Lilspartan' }] },
-            { name: 'MulverineX', minecraft: '87f0b42b-7777-442b-9be3-d134c6727cf8', socials: [{ type: 'github', url: 'https://github.com/MulverineX' }] },
+            { name: 'Origaming', minecraft: '75c4fe91-1f0f-4b98-b34d-0b630b2a4257', socials: [{ type: 'github', url: 'https://github.com/OrigamingWasTaken' }], role: 'Rhythm showcase' },
+            { name: 'Lilspartan', minecraft: '65574243-8a4d-48e8-9341-9655db14b122', socials: [{ type: 'modrinth', url: 'https://modrinth.com/user/Lilspartan' }, { type: 'github', url: 'https://github.com/Lilspartan' }], role: 'Magic Showcase, Elevator, NPCs' },
+            { name: 'MulverineX', minecraft: '87f0b42b-7777-442b-9be3-d134c6727cf8', socials: [{type: 'modrinth', url: 'https://modrinth.com/user/MulverineX' }, { type: 'github', url: 'https://github.com/MulverineX' }], role: 'Sandstone maintainer, Presentation' },
         ],
     },
     {
         section: 'Building & Art',
         members: [
-            { name: 'Comqote', minecraft: '7b3a539b-224c-40b5-96a5-2f81835980fe' },
-            { name: 'Ewwwwwan', minecraft: '5a10b42b-926d-4b35-b282-72e6aa206e7e' },
+            { name: 'Comqote', minecraft: '7b3a539b-224c-40b5-96a5-2f81835980fe', socials: [{ type: 'instagram', url: 'https://www.instagram.com/comqote/' }], role: 'Main booth build' },
+            { name: 'Ewwwwwan', minecraft: '5a10b42b-926d-4b35-b282-72e6aa206e7e', role: 'Casino & magic showcase builds, logo, stickers, balloon' },
+            { name: 'Tofetta', minecraft: '88e07a01-5212-405a-bab6-7425f373b1c1', role: 'Rhythm showcase builds' }
         ],
     },
     {
         section: 'Shader Development',
         members: [
-            { name: 'Meek', minecraft: '8c0fd7d2-bed5-411f-91b6-eed5558f55cc', socials: [{ type: 'website', url: 'https://meekhasto.rest/' }, { type: 'github', url: 'https://github.com/Meekiavelique' }] },
+            { name: 'Meek', minecraft: '8c0fd7d2-bed5-411f-91b6-eed5558f55cc', socials: [{ type: 'website', url: 'https://meekhasto.rest/' }, { type: 'github', url: 'https://github.com/Meekiavelique' }], role: 'Skybox shaders for rhythm showcase' },
         ],
     },
     {
         section: 'Prior Art',
         members: [
-            { name: 'Snave', minecraft: '10360b5a-27d5-480f-b335-4c58e679072b', socials: [{ type: 'website', url: 'https://animated-java.dev/' }, { type: 'github', url: 'https://github.com/SnaveSutit' }] },
+            { name: 'Snave', minecraft: '10360b5a-27d5-480f-b335-4c58e679072b', socials: [{ type: 'website', url: 'https://animated-java.dev/' }, { type: 'github', url: 'https://github.com/SnaveSutit' }], role: 'Text rendering' },
         ],
     },
 ]
@@ -92,11 +94,19 @@ function sectionHeader(name: string) {
 }
 
 function memberBody(member: CreditMember) {
+    const nameText: Record<string, unknown> = { text: ` ${member.name} `, font: 'minecraft:default' }
+    if (member.role) {
+        nameText.hover_event = {
+            action: 'show_text',
+            value: { text: member.role, italic: true, color: 'gray' },
+        }
+    }
+
     return {
         type: 'minecraft:plain_message',
         contents: [
             avatarComponent(member.minecraft),
-            { text: ` ${member.name} `, font: 'minecraft:default' },
+            nameText,
             ...(member.socials ?? []).map((social) =>
                 social.type === 'website'
                     ? { text: '🌐', click_event: { action: 'open_url', url: social.url } }
