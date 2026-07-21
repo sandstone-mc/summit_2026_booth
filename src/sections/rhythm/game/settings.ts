@@ -10,6 +10,7 @@ import {
 	Selector,
 	kill,
 	tag,
+	title,
 } from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { songCount, songNames } from '@rhythm/config/internal/songs'
@@ -17,7 +18,7 @@ import { mapCount, mapNames } from '@rhythm/config/internal/maps'
 import { gameplay } from '@rhythm/config'
 import { panels } from '@rhythm/config/internal/derived'
 import { GameStatus, Tags, status, songSelect, mapSelect, interpSetting } from './state'
-import { startCalibration } from './calibration'
+import { calOffsetMs } from './calibration'
 import { startGame, cancelStart } from './start'
 import { placeMap } from './arena-map'
 import {
@@ -35,17 +36,18 @@ import { NAMESPACE } from '@shared'
 
 export const livesSetting = Variable(gameplay.lives.default)
 
-// the panel renders 11 lines; TOTAL_LINES=10 + CLICK_Y_OFFSET is the calibrated click grid
-const RENDER_LINES = 11
+// the panel renders 13 lines; TOTAL_LINES=12 + CLICK_Y_OFFSET is the calibrated click grid
+const RENDER_LINES = 13
 const SONG_LINE = 2
 const LIVES_LINE = 4
 const MAP_LINE = 6
-const CAL_LINE = 7
-const INTERP_LINE = 8
-const BUTTON_LINE = 9
+const CAL_LINE = 8
+const INTERP_LINE = 10
+const BUTTON_LINE = 11
 
-const TOTAL_LINES = 10
+const TOTAL_LINES = 12
 const CLICK_WIDTH = 3
+const CLICK_HALF_WIDTH = 1.5
 const CLICK_Y_OFFSET = 0.25
 
 const songLineSel = Selector('@e', { tag: Tags.UI_SET_SONG_TXT, limit: 1 })
@@ -104,7 +106,20 @@ const updateInterpLine = MCFunction(
 	{ lazy: true },
 )
 
-const CALIBRATE_TEXT: JSONTextComponent = { text: `${panels.padding}⧗ CALIBRATE${panels.padding}`, color: 'aqua' }
+const CALIBRATION_LINE_TEXT: JSONTextComponent = [
+	{ text: `${panels.padding}⌛ Calibration:       `, color: 'gray' },
+	{ text: `◀ ▶${panels.padding}                 `, color: 'aqua' },
+]
+
+function showMsOffset() {
+	title('@s').actionbar([
+		{ text: '⌛ Calibration: ', color: 'aqua' },
+		calOffsetMs('@s'),
+		{ text: 'ms  ', color: 'aqua' },
+		{ text: '(right-click: ±1, left-click: ±10)', color: 'gray' },
+	])
+}
+
 const CALIBRATING_TEXT: JSONTextComponent = [
 	{ text: `${panels.padding}⧗ `, color: 'aqua', bold: true },
 	{ text: `${clampName('Calibrating…')}${panels.padding}`, color: 'aqua', bold: true, font: 'sandstone_summit_booth:monospace' },
@@ -194,7 +209,7 @@ export const updateSettingsPanel = MCFunction(
 			updateLivesLine()
 			updateMapLine()
 			updateInterpLine()
-			mergeDisplayText(calLineSel, CALIBRATE_TEXT)
+			mergeDisplayText(calLineSel, CALIBRATION_LINE_TEXT)
 			_.if(status.equalTo(GameStatus.STARTING), () => {
 				mergeDisplayText(buttonLineSel, CANCEL_TEXT)
 			}).else(() => {
@@ -309,6 +324,58 @@ const onInterpCycle = MCFunction(
 			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
 		})
 		advancement.revoke('@s').only(`${NAMESPACE}:ui_interp_cycle`)
+	},
+	{ lazy: true },
+)
+
+const onMsDown = MCFunction(
+	'sections/rhythm/settings/on_ms_down',
+	() => {
+		_.if(status.equalTo(GameStatus.WAITING), () => {
+			calOffsetMs('@s').remove(1)
+			showMsOffset()
+			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
+		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_ms_down`)
+	},
+	{ lazy: true },
+)
+
+const onMsDownBig = MCFunction(
+	'sections/rhythm/settings/on_ms_down_big',
+	() => {
+		_.if(status.equalTo(GameStatus.WAITING), () => {
+			calOffsetMs('@s').remove(10)
+			showMsOffset()
+			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
+		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_ms_down_big`)
+	},
+	{ lazy: true },
+)
+
+const onMsUp = MCFunction(
+	'sections/rhythm/settings/on_ms_up',
+	() => {
+		_.if(status.equalTo(GameStatus.WAITING), () => {
+			calOffsetMs('@s').add(1)
+			showMsOffset()
+			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
+		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_ms_up`)
+	},
+	{ lazy: true },
+)
+
+const onMsUpBig = MCFunction(
+	'sections/rhythm/settings/on_ms_up_big',
+	() => {
+		_.if(status.equalTo(GameStatus.WAITING), () => {
+			calOffsetMs('@s').add(10)
+			showMsOffset()
+			execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
+		})
+		advancement.revoke('@s').only(`${NAMESPACE}:ui_ms_up_big`)
 	},
 	{ lazy: true },
 )
@@ -429,11 +496,32 @@ Advancement('ui_map_cycle_back', {
 	rewards: { function: onMapCycleBack },
 })
 
-Advancement('ui_calibrate', {
+Advancement('ui_ms_down', {
 	criteria: {
-		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_CAL_INT) } },
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_MS_DOWN_INT) } },
 	},
-	rewards: { function: startCalibration },
+	rewards: { function: onMsDown },
+})
+
+Advancement('ui_ms_down_big', {
+	criteria: {
+		hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_MS_DOWN_INT) } },
+	},
+	rewards: { function: onMsDownBig },
+})
+
+Advancement('ui_ms_up', {
+	criteria: {
+		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_MS_UP_INT) } },
+	},
+	rewards: { function: onMsUp },
+})
+
+Advancement('ui_ms_up_big', {
+	criteria: {
+		hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_MS_UP_INT) } },
+	},
+	rewards: { function: onMsUpBig },
 })
 
 Advancement('ui_interp_cycle', {
@@ -464,7 +552,10 @@ MCFunction(
 			'ui_lives_cycle_back',
 			'ui_map_cycle',
 			'ui_map_cycle_back',
-			'ui_calibrate',
+			'ui_ms_down',
+			'ui_ms_down_big',
+			'ui_ms_up',
+			'ui_ms_up_big',
 			'ui_interp_cycle',
 			'ui_start_game',
 		]) {
@@ -476,7 +567,7 @@ MCFunction(
 
 const BACKDROP_TEXT: JSONTextComponent = [
 	{ text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
-	{ text: `\n\n\n\n\n\n\n\n\n\n${panels.ruler}` },
+	{ text: `\n\n\n\n\n\n\n\n\n\n\n\n${panels.ruler}` },
 ]
 
 export const spawnSettingsPanel = MCFunction(
@@ -502,13 +593,14 @@ export const spawnSettingsPanel = MCFunction(
 		const mapY = lineY(panels.settings, TOTAL_LINES, 6)
 		spawnClick(panels.settings, 0, mapY, [Tags.UI_SETTINGS, Tags.UI_MAP_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
 
-		const calY = lineY(panels.settings, TOTAL_LINES, 7)
-		spawnClick(panels.settings, 0, calY, [Tags.UI_SETTINGS, Tags.UI_CAL_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
+		const calY = lineY(panels.settings, TOTAL_LINES, CAL_LINE)
+		spawnClick(panels.settings, 0.18, calY, [Tags.UI_SETTINGS, Tags.UI_MS_DOWN_INT], CLICK_HALF_WIDTH, CLICK_Y_OFFSET)
+		spawnClick(panels.settings, 1.68, calY, [Tags.UI_SETTINGS, Tags.UI_MS_UP_INT], CLICK_HALF_WIDTH, CLICK_Y_OFFSET)
 
-		const interpY = lineY(panels.settings, TOTAL_LINES, 8)
+		const interpY = lineY(panels.settings, TOTAL_LINES, INTERP_LINE)
 		spawnClick(panels.settings, 0, interpY, [Tags.UI_SETTINGS, Tags.UI_INTERP_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
 
-		const startY = lineY(panels.settings, TOTAL_LINES, 9)
+		const startY = lineY(panels.settings, TOTAL_LINES, BUTTON_LINE)
 		spawnClick(panels.settings, 0, startY, [Tags.UI_SETTINGS, Tags.UI_START_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
 	},
 	{ lazy: true },

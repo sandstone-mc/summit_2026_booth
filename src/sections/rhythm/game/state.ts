@@ -58,7 +58,8 @@ export enum Tags {
 
 	UI_MAP_INT = 'ssb.ui.set.mi',
 	UI_INTERP_INT = 'ssb.ui.set.ii',
-	UI_CAL_INT = 'ssb.ui.set.ci',
+	UI_MS_DOWN_INT = 'ssb.ui.set.md',
+	UI_MS_UP_INT = 'ssb.ui.set.mu',
 
 	SKYBOX = 'ssb.rhythm.skybox',
 

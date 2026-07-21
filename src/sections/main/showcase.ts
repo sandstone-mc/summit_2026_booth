@@ -166,7 +166,7 @@ export const cycleShowcase = MCFunction('sections/main/showcase/cycle', () => {
 
 const CHANGE_SHOWCASE_TAG = 'sandstone_summit_booth.showcase.change_button' as `${any}${string}`
 
-const CHANGE_SHOWCASE_POS = abs(panels.settings.x, panels.settings.y - 0.5, panels.settings.z)
+const CHANGE_SHOWCASE_POS = abs(panels.settings.x, panels.settings.y - 0.25, panels.settings.z)
 
 const CHANGE_SHOWCASE_WIDTH = 3
 const CHANGE_SHOWCASE_HEIGHT = 0.6
@@ -176,7 +176,7 @@ const settingsFacingRad = (panels.settings.facing * Math.PI) / 180
 const changeShowcaseForward = CHANGE_SHOWCASE_WIDTH / 2 - CLICK_FRONT_MARGIN
 const CHANGE_SHOWCASE_INTERACTION_POS = abs(
     panels.settings.x + Math.sin(settingsFacingRad) * changeShowcaseForward,
-    panels.settings.y - 0.5,
+    panels.settings.y - 0.25,
     panels.settings.z - Math.cos(settingsFacingRad) * changeShowcaseForward,
 )
 
