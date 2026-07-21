@@ -1,3 +1,4 @@
+import { functionCmd } from 'node_modules/sandstone/dist/_internal'
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC, type NPCOptions } from '../NPC'
 import { PLACEHOLDER_SKIN } from './skins'
@@ -31,8 +32,28 @@ const merchFiendDialogue = DialogueTree('casino_crowd_2', {
                     "There's a whole lot of words on that screen, give me another balloon!",
                     "I can't find this last sticker!"
                 ],
-            },
+            }
         ],
+        next: 'choice'
+    }, 
+    {
+        id: 'choice',
+        lines: [
+            { text: "Talk to me again and I might just let you have one of these extra balloons I got." }
+        ],
+        next: 'balloon'
+    },
+    {
+        id: 'balloon',
+        advance: 'auto',
+        lines: [
+            {
+                text: 'Here you go.',
+                onComplete: () => {
+                    functionCmd('summit.balloon:give/sandstone_summit_booth/sand_castle')
+                }
+            }
+        ]
     }],
 })
 
