@@ -1,0 +1,2 @@
+execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_2] run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_2/render/switch/case_2/if2/execute_if
+scoreboard players set @s sandstone_summit_booth.npc.dialogue.reveal_speed 1

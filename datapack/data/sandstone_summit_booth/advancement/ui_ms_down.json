@@ -7,7 +7,7 @@
           "entity_type": "minecraft:interaction",
           "entity_tags": {
             "all_of": [
-              "ssb.ui.set.ci"
+              "ssb.ui.set.md"
             ]
           }
         }
@@ -15,6 +15,6 @@
     }
   },
   "rewards": {
-    "function": "sandstone_summit_booth:sections/rhythm/calibration/start"
+    "function": "sandstone_summit_booth:sections/rhythm/settings/on_ms_down"
   }
 }

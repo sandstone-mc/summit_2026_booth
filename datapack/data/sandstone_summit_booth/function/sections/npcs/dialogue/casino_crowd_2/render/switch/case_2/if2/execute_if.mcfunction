@@ -1,0 +1,1 @@
+execute as @a[tag=sandstone_summit_booth.npc.casino_crowd_2.interactor, limit=1] run function summit.balloon:give/sandstone_summit_booth/sand_castle

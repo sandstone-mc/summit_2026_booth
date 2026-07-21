@@ -4,6 +4,9 @@ advancement revoke @a only sandstone_summit_booth:ui_lives_cycle
 advancement revoke @a only sandstone_summit_booth:ui_lives_cycle_back
 advancement revoke @a only sandstone_summit_booth:ui_map_cycle
 advancement revoke @a only sandstone_summit_booth:ui_map_cycle_back
-advancement revoke @a only sandstone_summit_booth:ui_calibrate
+advancement revoke @a only sandstone_summit_booth:ui_ms_down
+advancement revoke @a only sandstone_summit_booth:ui_ms_down_big
+advancement revoke @a only sandstone_summit_booth:ui_ms_up
+advancement revoke @a only sandstone_summit_booth:ui_ms_up_big
 advancement revoke @a only sandstone_summit_booth:ui_interp_cycle
 advancement revoke @a only sandstone_summit_booth:ui_start_game
