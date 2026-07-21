@@ -1,0 +1,1 @@
+$return run function sandstone_summit_booth:sections/magic/mana_manager/switch4/case_$(env_0)

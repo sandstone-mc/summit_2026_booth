@@ -1,0 +1,1 @@
+title @s actionbar [{"text":"✦ ","color":"yellow"},{"text":"Shockwave","color":"white","bold":true}]

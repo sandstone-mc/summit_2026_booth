@@ -45,5 +45,5 @@ function sandstone_summit_booth:presentation/slides/hide/17
 function sandstone_summit_booth:presentation/slides/hide/18
 function sandstone_summit_booth:presentation/slides/hide/19
 function sandstone_summit_booth:presentation/slides/hide/20
-execute store result storage __sandstone:variable anon_WnYlBycD_7.env_0 int 1 run scoreboard players get #current sandstone_summit_booth.presentation.slide_idx
-return run function sandstone_summit_booth:presentation/slides/next/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_7
+execute store result storage __sandstone:variable anon_WnYlBycD_5.env_0 int 1 run scoreboard players get #current sandstone_summit_booth.presentation.slide_idx
+return run function sandstone_summit_booth:presentation/slides/next/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_5

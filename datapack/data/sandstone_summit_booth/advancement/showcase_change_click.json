@@ -1,0 +1,39 @@
+{
+  "criteria": {
+    "click": {
+      "trigger": "minecraft:player_interacted_with_entity",
+      "conditions": {
+        "entity": {
+          "entity_type": "minecraft:interaction",
+          "entity_tags": {
+            "all_of": [
+              "sandstone_summit_booth.showcase.change_button"
+            ]
+          }
+        }
+      }
+    },
+    "hit": {
+      "trigger": "minecraft:player_hurt_entity",
+      "conditions": {
+        "entity": {
+          "entity_type": "minecraft:interaction",
+          "entity_tags": {
+            "all_of": [
+              "sandstone_summit_booth.showcase.change_button"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "click",
+      "hit"
+    ]
+  ],
+  "rewards": {
+    "function": "sandstone_summit_booth:sections/main/showcase/on_change_click"
+  }
+}

@@ -1,0 +1,1 @@
+title @s actionbar [{"text":"✦ ","color":"yellow"},{"text":"Vine Whip","color":"white","bold":true}]

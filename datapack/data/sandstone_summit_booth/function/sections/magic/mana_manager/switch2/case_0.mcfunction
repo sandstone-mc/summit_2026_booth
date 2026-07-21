@@ -1,0 +1,1 @@
+title @s actionbar [{"text":"✦ ","color":"yellow"},{"text":"Firebolt","color":"white","bold":true}]

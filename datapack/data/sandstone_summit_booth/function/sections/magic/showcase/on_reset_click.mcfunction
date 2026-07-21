@@ -1,0 +1,2 @@
+advancement revoke @s only sandstone_summit_booth:showcase_reset_click
+function sandstone_summit_booth:sections/magic/showcase/reset

@@ -15,13 +15,13 @@ scoreboard objectives add sandstone_summit_booth.rhythm.score dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.combo_temp dummy
 scoreboard objectives add sandstone_summit_booth.pdb.uid dummy
 scoreboard objectives add sandstone_summit_booth.set_school_trigger trigger
-scoreboard objectives add sandstone_summit_booth.set_spell_trigger trigger
 scoreboard objectives add sandstone_summit_booth.showcase.state dummy
 scoreboard objectives add sandstone_summit_booth.showcase.reset trigger
 scoreboard objectives add sandstone_summit_booth.mana dummy
 scoreboard objectives add sandstone_summit_booth.max_mana dummy
 scoreboard objectives add sandstone_summit_booth.mana_regen dummy
 scoreboard objectives add sandstone_summit_booth.mana_regen_timer dummy
+scoreboard objectives add sandstone_summit_booth.spell_display_timer dummy
 scoreboard objectives add sandstone_summit_booth.wand_cooldown dummy
 scoreboard objectives add sandstone_summit_booth.status.burning_timer dummy
 scoreboard objectives add sandstone_summit_booth.status.freezing_timer dummy
@@ -82,8 +82,6 @@ scoreboard players set anon_WnYlBycD_27 __sandstone 0
 scoreboard players set anon_WnYlBycD_28 __sandstone 0
 scoreboard players set anon_WnYlBycD_29 __sandstone 0
 scoreboard players set anon_WnYlBycD_30 __sandstone 0
-scoreboard players set anon_WnYlBycD_31 __sandstone 0
-scoreboard players set anon_WnYlBycD_32 __sandstone 0
 scoreboard players set anon_WnYlBycD_33 __sandstone 0
 scoreboard players set anon_WnYlBycD_34 __sandstone 0
 scoreboard players set anon_WnYlBycD_35 __sandstone 0
@@ -101,8 +99,10 @@ scoreboard players set anon_WnYlBycD_46 __sandstone 0
 scoreboard players set anon_WnYlBycD_47 __sandstone 0
 scoreboard players set anon_WnYlBycD_48 __sandstone 0
 scoreboard players set anon_WnYlBycD_49 __sandstone 0
-scoreboard players set anon_WnYlBycD_50 __sandstone 3
+scoreboard players set anon_WnYlBycD_50 __sandstone 0
 scoreboard players set anon_WnYlBycD_51 __sandstone 0
+scoreboard players set anon_WnYlBycD_52 __sandstone 3
+scoreboard players set anon_WnYlBycD_53 __sandstone 0
 scoreboard players set main.showcase.current_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.active_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.idle_ticks_0_WnYlBycD __sandstone 0
@@ -110,6 +110,7 @@ scoreboard players set main.showcase.change_cooldown_0_WnYlBycD __sandstone 0
 scoreboard players set 50 __sandstone 50
 scoreboard players set 20 __sandstone 20
 scoreboard players set 60 __sandstone 60
+scoreboard players set 3 __sandstone 3
 scoreboard players set 1000 __sandstone 1000
 scoreboard players set 30 __sandstone 30
 scoreboard players set 15 __sandstone 15

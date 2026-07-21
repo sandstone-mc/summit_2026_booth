@@ -1,6 +1,6 @@
 scoreboard players set anon_WnYlBycD_9 __sandstone 0
 scoreboard players set anon_WnYlBycD_10 __sandstone 0
-scoreboard players set anon_WnYlBycD_44 __sandstone 0
+scoreboard players set anon_WnYlBycD_46 __sandstone 0
 advancement revoke @a only sandstone_summit_booth:ui_lb_song
 advancement revoke @a only sandstone_summit_booth:ui_lb_song_back
 advancement revoke @a only sandstone_summit_booth:ui_lb_cat

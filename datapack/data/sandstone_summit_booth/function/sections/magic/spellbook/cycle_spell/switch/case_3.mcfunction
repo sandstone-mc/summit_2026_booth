@@ -1,0 +1,1 @@
+return run function sandstone_summit_booth:sections/magic/spellbook/cycle_spell/switch5

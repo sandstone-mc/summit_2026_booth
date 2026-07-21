@@ -1,0 +1,1 @@
+execute if score @s sandstone_summit_booth.set_school_trigger matches 0.. run function sandstone_summit_booth:sections/magic/spellbook/triggers/execute_as/if

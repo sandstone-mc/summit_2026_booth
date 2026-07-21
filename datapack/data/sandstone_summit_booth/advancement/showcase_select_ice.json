@@ -1,0 +1,39 @@
+{
+  "criteria": {
+    "click": {
+      "trigger": "minecraft:player_interacted_with_entity",
+      "conditions": {
+        "entity": {
+          "entity_type": "minecraft:interaction",
+          "entity_tags": {
+            "all_of": [
+              "sandstone_summit_booth.showcase.pedestal.ice"
+            ]
+          }
+        }
+      }
+    },
+    "hit": {
+      "trigger": "minecraft:player_hurt_entity",
+      "conditions": {
+        "entity": {
+          "entity_type": "minecraft:interaction",
+          "entity_tags": {
+            "all_of": [
+              "sandstone_summit_booth.showcase.pedestal.ice"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "click",
+      "hit"
+    ]
+  ],
+  "rewards": {
+    "function": "sandstone_summit_booth:sections/magic/showcase/selection/select/ice"
+  }
+}
