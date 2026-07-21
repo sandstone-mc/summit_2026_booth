@@ -59,7 +59,7 @@ const CREDITS: CreditSection[] = [
     {
         section: 'Prior Art',
         members: [
-            { name: 'Snave', minecraft: '10360b5a-27d5-480f-b335-4c58e679072b', socials: [{ type: 'website', url: 'https://animated-java.dev/' }, { type: 'github', url: 'https://github.com/SnaveSutit' }], role: 'Text rendering' },
+            { name: 'SnaveSutit', minecraft: '10360b5a-27d5-480f-b335-4c58e679072b', socials: [{ type: 'website', url: 'https://animated-java.dev/' }, { type: 'github', url: 'https://github.com/SnaveSutit' }], role: 'Text rendering' },
         ],
     },
 ]
