@@ -1,4 +1,4 @@
-import { _, abs, execute, fill, kill, MCFunction, NBT, place, raw, RawResource, say, Selector, summon, Tag, tp, Variable } from 'sandstone'
+import { _, abs, Advancement, advancement, execute, fill, kill, MCFunction, NBT, place, raw, RawResource, say, Selector, summon, Tag, tp, Variable } from 'sandstone'
 import { panels } from '@rhythm/config/internal/derived'
 import { Tags as RhythmTags } from '@rhythm/game/state'
 import { spawnSettingsPanel } from '@rhythm/game/settings'
@@ -198,17 +198,30 @@ const spawnChangeShowcaseButton = MCFunction('sections/main/showcase/ui/spawn_bu
     })
 
     summon('minecraft:interaction', CHANGE_SHOWCASE_INTERACTION_POS, {
-        Tags: [CHANGE_SHOWCASE_TAG, BOOTH_ENTITY_TAG, 'summit.interactable', 'summit.static'],
+        Tags: [CHANGE_SHOWCASE_TAG, BOOTH_ENTITY_TAG, 'summit.static'],
         width: NBT.float(CHANGE_SHOWCASE_WIDTH),
         height: NBT.float(CHANGE_SHOWCASE_HEIGHT / 2),
-        response: false,
-        data: {
-            summit_interactable: {
-                on_right_click: 'execute on target run function sandstone_summit_booth:sections/main/showcase/cycle',
-            },
-        },
+        response: true,
     })
 })
+
+Advancement('showcase_change_click', {
+    criteria: {
+        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: { entity_type: 'minecraft:interaction', entity_tags: { all_of: [CHANGE_SHOWCASE_TAG] } } } },
+        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: { entity_type: 'minecraft:interaction', entity_tags: { all_of: [CHANGE_SHOWCASE_TAG] } } } },
+    },
+    requirements: [['click', 'hit']],
+    rewards: {
+        function: MCFunction('sections/main/showcase/on_change_click', () => {
+            advancement.revoke('@s').only(`${NAMESPACE}:showcase_change_click`)
+            cycleShowcase()
+        })
+    }
+})
+
+MCFunction('sections/main/showcase/ui/load', () => {
+    advancement.revoke('@a').only(`${NAMESPACE}:showcase_change_click`)
+}, { runOnLoad: true })
 
 const killChangeShowcaseButton = MCFunction('sections/main/showcase/ui/kill_button', () => {
     kill(Selector('@e', { tag: CHANGE_SHOWCASE_TAG }))

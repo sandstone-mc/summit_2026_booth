@@ -1,8 +1,9 @@
-import { _, abs, execute, kill, Label, MCFunction, NBT, particle, raw, rel, Selector, summon, tellraw, title } from 'sandstone'
+import { _, abs, Advancement, advancement, execute, kill, Label, MCFunction, NBT, particle, raw, rel, Selector, summon, tellraw, title } from 'sandstone'
 import { SpellLibrary } from '../spellbook/SpellLibrary'
 import { ShowcaseMarker } from '.'
-import { STATES, GlobalState, SessionPlayer, ShowcaseMobs, startSelection } from './ShowcaseState'
+import { STATES, GlobalState, SessionPlayer, ShowcaseMobs, startSelection, spawnChangeSchoolButton, ChangeSchoolButtonEntities } from './ShowcaseState'
 import { setSchoolTrigger } from '../pack_setup'
+import { NAMESPACE } from '@shared'
 import type { Registry } from 'sandstone/arguments'
 
 interface Pedestal {
@@ -29,12 +30,22 @@ const PEDESTALS: Pedestal[] = [
 export const PedestalLabel = Label('showcase.pedestal')
 export const AllPedestals = Selector('@e', { tag: PedestalLabel })
 
-// Per-school click handlers — called by name via raw so not lazy
+function clickEntity(buttonTag: `${any}${string}`) {
+  return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [buttonTag] } }
+}
+
+const SELECT_ADVANCEMENTS = PEDESTALS.map(ped => `showcase_select_${ped.schoolId}` as const)
+
+// Per-school click handlers, one advancement (left+right click) per pedestal
 for (const ped of PEDESTALS) {
   const school = SpellLibrary[ped.schoolId]
+  const schoolTag = `sandstone_summit_booth.showcase.pedestal.${ped.schoolId}` as `${any}${string}`
+  const advancementName = `showcase_select_${ped.schoolId}` as const
 
-  MCFunction(`sections/magic/showcase/selection/select/${ped.schoolId}`, () => {
-    // @s is the player who right-clicked (via execute on target run)
+  const selectSchool = MCFunction(`sections/magic/showcase/selection/select/${ped.schoolId}`, () => {
+    // @s is the clicking player, per player_interacted_with_entity/player_hurt_entity reward semantics
+    advancement.revoke('@s').only(`${NAMESPACE}:${advancementName}`)
+
     setSchoolTrigger('@s').set(school.uid)
 
     title(SessionPlayer).title([{ text: school.name, color: ped.color, bold: true } as any])
@@ -43,6 +54,7 @@ for (const ped of PEDESTALS) {
     kill(AllPedestals)
     raw('loot give @s loot sandstone_summit_booth:items/magic_wand')
     GlobalState.set(STATES.FIGHTING)
+    spawnChangeSchoolButton()
 
     tellraw(SessionPlayer, [
       { text: '\n' },
@@ -61,7 +73,22 @@ for (const ped of PEDESTALS) {
       ]),
     ] as any)
   })
+
+  Advancement(advancementName, {
+    criteria: {
+      click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(schoolTag) } },
+      hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(schoolTag) } },
+    },
+    requirements: [['click', 'hit']],
+    rewards: { function: selectSchool },
+  })
 }
+
+MCFunction('sections/magic/showcase/selection/load', () => {
+  for (const name of SELECT_ADVANCEMENTS) {
+    advancement.revoke('@a').only(`${NAMESPACE}:${name}`)
+  }
+}, { runOnLoad: true })
 
 // Called from ShowcaseState.startSelection via raw
 MCFunction('sections/magic/showcase/selection/spawn_pedestals', () => {
@@ -100,17 +127,12 @@ MCFunction('sections/magic/showcase/selection/spawn_pedestals', () => {
         },
       })
 
-      // Clickable hitbox — Smithed API handles right-click dispatch
+      // Clickable hitbox — click detected via the showcase_select_<school> advancement
       summon('interaction', rel(ped.x, ped.y, ped.z), {
-        Tags: [commonTag, schoolTag, BOOTH_ENTITY_TAG, 'summit.interactable', 'summit.static'],
+        Tags: [commonTag, schoolTag, BOOTH_ENTITY_TAG, 'summit.static'],
         width: NBT.float(1.0),
         height: NBT.float(2.5),
-        response: false,
-        data: {
-          summit_interactable: {
-            on_right_click: `execute on target run function sandstone_summit_booth:sections/magic/showcase/selection/select/${ped.schoolId}`,
-          },
-        },
+        response: true,
       })
     }
   })
@@ -128,12 +150,13 @@ MCFunction('sections/magic/showcase/selection/tick', () => {
   })
 }, { runEveryTick: true })
 
-// Called via Smithed on_right_click — @s is the player
-MCFunction('sections/magic/showcase/selection/change_school', () => {
+// @s is the clicking player, called as the reward of showcase_change_school_click
+export const changeSchool = MCFunction('sections/magic/showcase/selection/change_school', () => {
   _.if(GlobalState.equalTo(STATES.FIGHTING), () => {
     raw('clear @s minecraft:stick[custom_data~{\'sandstone_summit_booth.id\':\'magic_wand\'}]')
     kill(ShowcaseMobs)
     kill(AllPedestals)
+    kill(ChangeSchoolButtonEntities)
     startSelection()
   })
 })
