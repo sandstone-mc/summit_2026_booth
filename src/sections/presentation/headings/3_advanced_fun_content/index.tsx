@@ -1,25 +1,9 @@
-import { join } from 'path'
-import sharp from 'sharp'
 import { Texture } from 'sandstone'
+
+import { screenshot } from '../../utils/index.ts'
 
 import rhythmCode from '../../../rhythm/game/calibration.ts' with { type: 'text' }
 import magicCode from '../../../magic/Spells/Lightning/Thunderbolt.ts' with { type: 'text' }
-
-async function screenshot(path: `${any}${string}`) {
-	const imagePath = `${join(process.cwd(), 'resources', path)}.png`
-
-	const image = await Bun.file(imagePath).arrayBuffer()
-
-	const { width = 0 } = await sharp(image).metadata()
-	const newWidth = Math.max(1, Math.round(width / 8))
-
-	const downscaled = await sharp(image)
-		.resize({ width: newWidth })
-		.png()
-		.toBuffer()
-
-	return downscaled as unknown as Buffer<ArrayBufferLike>
-}
 
 const rhythmGlamshot = Texture('item', 'presentation/rhythm', screenshot('assets/presentation/rhythm_glamshot'))
 
@@ -44,7 +28,7 @@ export const slides = [
 
 		{/* Displays code and explorer horizontally side-by-side with the code taking up as much space as possible on-screen */}
 		<div id="code-grid">
-			<code lang="typescript" src={rhythmCode} line-numbers={true} scrolling={true} />
+			<code lang="typescript" src={rhythmCode.split('\n').slice(17, -4).join('\n')} line-numbers={true} scrolling={true} />
 
 			{/* Display file/folder outline for output of above code */}
 			<explorer
@@ -61,7 +45,7 @@ export const slides = [
 
 		{/* Displays code and explorer horizontally side-by-side with the code taking up as much space as possible */}
 		<div id="code-grid">
-			<code lang="typescript" src={magicCode} line-numbers={true} scrolling={true} />
+			<code lang="typescript" src={magicCode.split('\n').slice(1, -4).join('\n')} line-numbers={true} scrolling={true} />
 
 			{/* Display file/folder outline for output of above code */}
 			<explorer

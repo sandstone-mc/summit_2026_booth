@@ -25,15 +25,26 @@ h3 {
 p {
     font-size: 10px;
     width: 95vw;
+
+    &#last-slide-p-0 {
+        margin-bottom: 1.5vh;
+    }
+    &#last-slide-p-1 {
+        margin-top: 0.5vh;
+    }
 }
 
 code {
     font-size: 8px;
     color: #d4d4d4;
     background: #1e1e1e;
-    
+
     &#shader-code {
         width: 100%;
+    }
+    &#oop-code {
+        width: 100%;
+        height: 100;
     }
 }
 
@@ -58,7 +69,13 @@ explorer {
 
 #text-grid {
     align-items: center;
-    row-gap: 2vh;
+    row-gap: 2.5vh;
+    height: 100%;
+}
+
+#compact-text-grid {
+    align-items: center;
+    row-gap: 1vh;
     height: 100%;
 }
 
@@ -67,31 +84,4 @@ explorer {
     align-items: center;
     column-gap: 2vh;
     grid-auto-flow: row;
-}
-
-// `<autocomplete>` — animated VS Code-style demo. Editor + cursor +
-// popup share the cell: the editor (uses the bordered-code pipeline),
-// a blinking cursor, and a popup composed of one text_display per row.
-// The popup has no border; the SELECTED (top) row carries `popup-bg`
-// as its background color, the remaining rows carry `popup-other-bg`,
-// all rows render text in white, and each entry is prefixed with `= `.
-// All knobs are optional; `computeAutocompleteLayout` falls back to
-// its hardcoded defaults if the LESS block is missing entirely.
-autocomplete {
-    width: 50vw;
-    height: 32vh;
-    font-size: 8px;
-    color: #d4d4d4;
-    background: #1e1e1e;
-    border-color: #6a6a6a;
-    lang-color: #4ec9b0;
-    code-color: #d4d4d4;
-    gutter-color: #858585;
-    line-numbers: true;
-    cursor-color: #ffffff;
-    // SELECTED (top) row of the popup — the highlight color.
-    popup-bg: #0078d4;
-    // Remaining rows of the popup — a dim color so the list reads as
-    // a tinted panel with a single highlighted entry.
-    popup-other-bg: #2d2d30;
 }

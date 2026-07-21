@@ -106,6 +106,21 @@ type TextElementLayout = {
 	scrolling?: boolean
 	/** Number of source (pre-wrap) lines — drives the gutter width and scroll distance. */
 	sourceLineCount?: number
+	/**
+	 * HACK (`extra-row` JSX prop). When true, the scroll viewport shows
+	 * 1 additional code row and the entity is shifted up by 1 line
+	 * height. Used to fix per-slide layout tightness without changing
+	 * the general layout engine. Mutated in-place by the summon pass
+	 * (entityY shift) and `finalizeScrollCodeLayout` (chunk count).
+	 */
+	extraRow?: boolean
+	/**
+	 * HACK (`shift-up` JSX prop). Positive value shifts the element's
+	 * rendered Y up by N blocks. Applied at placement time in
+	 * `layout/index.ts`. Stored as a number on the layout; ignored for
+	 * scroll `<code>` blocks (which have their own `extraRow` knob).
+	 */
+	shiftUp?: number
 	/** Unique tag identifying this scrolling block (set when `scrolling`). */
 	scrollTag?: string
 	/** Total scroll distance in blocks (positive; 0 when content fits). */
@@ -464,6 +479,12 @@ function computeTextLayout(
 	const scrolling =
 		(isCode || isExplorer) &&
 		(node.props?.scrolling === true || node.props?.scrolling === 'true')
+	// HACK: `extra-row` prop. Bumps scroll viewport by 1 row + shifts
+	// entity up by 1 line. Applied in finalizeScrollCodeLayout + the
+	// placement pass in layout/index.ts. Scrolling-only — ignored for
+	// non-scroll `<code>` / `<explorer>`.
+	const extraRow =
+		isCode && (node.props?.['extra-row'] === true || node.props?.['extra-row'] === 'true')
 
 	// `<code>` / `<explorer>` with no explicit width: shrink to the minimum
 	// needed to render the longest source line without wrapping. The
@@ -613,6 +634,14 @@ function computeTextLayout(
 		// cellW respects explicit LESS width (incl. `fit-content`,
 		// resolved just above) — the default is the slide width.
 		const cellW = width?.meters ?? sceneW
+		// HACK: `shift-up` JSX prop. Positive value moves the element
+		// up by N blocks at placement time. Number or numeric string.
+		const shiftUpRaw = node.props?.['shift-up']
+		const shiftUp = typeof shiftUpRaw === 'number'
+			? shiftUpRaw
+			: typeof shiftUpRaw === 'string' && shiftUpRaw !== ''
+				? Number(shiftUpRaw)
+				: 0
 		return {
 			kind: 'text',
 			node,
@@ -632,6 +661,7 @@ function computeTextLayout(
 			fontId,
 			wrapBreaksApplied,
 			styledContent,
+			shiftUp: Number.isFinite(shiftUp) ? shiftUp : 0,
 		}
 	}
 
@@ -729,6 +759,7 @@ function computeTextLayout(
 		marginBottom,
 		fontId,
 		scrolling: true,
+		extraRow,
 		sourceLineCount,
 		scrollTag,
 		scrollDistBlocks: 0,
@@ -759,7 +790,12 @@ export function finalizeScrollCodeLayout(el: ElementLayout): void {
 	// Subtracted from cellH: default-font descender + 2 line heights
 	// (top + bottom border rows of this chunk).
 	const codeAreaBlocks = Math.max(0, cellH - textDescender - 2 * lineHeightBlocks)
-	const viewportCodeRows = Math.max(1, Math.floor(codeAreaBlocks / lineHeightBlocks))
+	let viewportCodeRows = Math.max(1, Math.floor(codeAreaBlocks / lineHeightBlocks))
+	// HACK: `extra-row` adds 1 visible code row. Compresses the chunk
+	// count down by 1 (or 0 if total ≤ new viewport), so the user
+	// sees one more line of code on screen. Companion to the entity
+	// shift in layout/index.ts.
+	if (el.extraRow) viewportCodeRows += 1
 	const totalCodeRows = rows.codeRows.length
 	const chunkCount = Math.max(1, totalCodeRows - viewportCodeRows + 1)
 
