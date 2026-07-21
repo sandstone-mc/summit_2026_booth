@@ -1,6 +1,7 @@
-import { Advancement, Enchantment, MCFunction, NBTInt, Objective, _, functionCmd, raw, Dialog, data, Data } from 'sandstone'
-import { SpellLibrary } from '../../spellbook/SpellLibrary'
-import { getSelf, io } from '../../PlayerDB'
+import { Advancement, Enchantment, MCFunction, NBTInt, Objective, _, functionCmd, raw } from 'sandstone'
+import { getSelf } from '../../PlayerDB'
+import { cycleSpell } from '../../spellbook'
+import { spellDisplayTimer, SPELL_DISPLAY_TICKS } from '../../player_handler'
 
 // Left click detect
 Enchantment('input/wand_left_click', {
@@ -30,44 +31,9 @@ Enchantment('input/wand_left_click', {
     }
 })
 
-const dialogTemplate = {
-    'type': 'minecraft:multi_action',
-    'title': {
-        'text': '$() Spells'
-    },
-    'body': [],
-    'inputs': [],
-    'columns': 1,
-    'actions': [
-        
-    ]
-}
-
-// Build a dialog per school at compile time
-for (const [schoolKey, school] of Object.entries(SpellLibrary)) {
-  const actions = Object.values(school.spells).map(spellValue => ({
-    label: spellValue.name as `${string}:${string}`,
-    action: {
-      type: 'minecraft:run_command' as `${string}:${string}`,
-      command: `trigger sandstone_summit_booth.set_spell_trigger set ${spellValue.uid}`
-    }
-  }))
-
-  dialogTemplate.title.text = `${school.name} Spells`
-
-  // Register Dialog keyed by school
-  Dialog(`spell_select_${schoolKey}`, { ...dialogTemplate, actions })
-}
-
-const _openSchoolDialog = MCFunction('sections/magic/input/_open_school_dialog', () => {
-  raw('$dialog show @s sandstone_summit_booth:spell_select_$(school)')
-}, { lazy: true })
-
 MCFunction('sections/magic/input/on_wand_left_click', () => {
-    getSelf()
-    data.modify(Data('storage', 'sandstone_summit_booth:macro').select('school')).set.from(io.select('current_school'))
-
-    functionCmd(_openSchoolDialog, 'with', 'storage', 'sandstone_summit_booth:macro')
+    cycleSpell()
+    spellDisplayTimer('@s').set(SPELL_DISPLAY_TICKS)
 })
 
 // Right click detect

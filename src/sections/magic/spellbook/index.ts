@@ -1,43 +1,53 @@
 // spellbook/index.ts
-import { MCFunction, _, execute, scoreboard, Macro, raw, Score, functionCmd } from 'sandstone'
-import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
+import { MCFunction, _, execute, scoreboard, Score, Variable, NBT } from 'sandstone'
+import { setSchoolTrigger } from '../pack_setup'
 
 import { getSelf, io, saveSelf } from '../PlayerDB'
 import { SessionPlayer } from '../SummitShowcase/ShowcaseState'
-      
-const SetSchool = MCFunction('sections/magic/spellbook/set_school', [], (_loop: any, newSchool: Score) => {
-  raw(`$data modify storage sandstone_summit_booth:io ${io.select('current_school').path} set from storage sandstone_summit_booth:ids schools.$(param_0).name`)
-  raw(`$data modify storage sandstone_summit_booth:io ${io.select('current_school_uid').path} set value $(param_0)`)
-  raw(`$data modify storage sandstone_summit_booth:io ${io.select('selected_spell').path} set from storage sandstone_summit_booth:ids schools.$(param_0).spells.0`)
-})
+import { SpellLibrary } from './SpellLibrary'
 
-const $ = Macro
-const SetSpell = MCFunction('sections/magic/spellbook/set_spell', [], (_loop: any, newSpell: Score) => {
-  raw(`$data modify storage sandstone_summit_booth:temps macro.spellID set value $(param_0)`)
-  raw(`data modify storage sandstone_summit_booth:temps macro.schoolID set from storage sandstone_summit_booth:io data.current_school_uid`)
-  
-  functionCmd(MCFunction('sections/magic/spellbook/set_spell/macro', [], () => {
-    raw(`$data modify storage sandstone_summit_booth:io ${io.select('selected_spell').path} set from storage sandstone_summit_booth:ids schools.$(schoolID).spells.$(spellID)`)
-  }), 'with', 'storage', 'sandstone_summit_booth:temps', 'macro')
-})
+const SPELLS_PER_SCHOOL = 3
 
+function applySchool(schoolUid: Score) {
+  _.switch(schoolUid, Object.values(SpellLibrary).map(school => ['case', school.uid, () => {
+    const firstSpell = Object.values(school.spells).find(spell => spell.uid === 0)!
+    io.select('current_school').set(school.id)
+    io.select('current_school_uid').set(NBT.int(school.uid))
+    io.select('selected_spell').set(firstSpell.id)
+    io.select('selected_spell_uid').set(NBT.int(0))
+  }] as const))
+}
+
+const CycleSchoolUid = Variable()
+const CycleSpellUid = Variable()
+
+export const cycleSpell = MCFunction('sections/magic/spellbook/cycle_spell', () => {
+  getSelf()
+
+  CycleSchoolUid.set(io.select('current_school_uid'))
+  CycleSpellUid.set(io.select('selected_spell_uid'))
+  CycleSpellUid.add(1)
+  const wrappedSpellUid = CycleSpellUid.moduloBy(SPELLS_PER_SCHOOL)
+
+  _.switch(CycleSchoolUid, Object.values(SpellLibrary).map(school => ['case', school.uid, () => {
+    _.switch(wrappedSpellUid, Object.values(school.spells).map(spell => ['case', spell.uid, () => {
+      io.select('selected_spell').set(spell.id)
+      io.select('selected_spell_uid').set(NBT.int(spell.uid))
+    }] as const))
+  }] as const))
+
+  saveSelf()
+})
 
 MCFunction('sections/magic/spellbook/triggers', () => {
   execute.as(SessionPlayer).run(() => {
     _.if(setSchoolTrigger('@s').greaterThanOrEqualTo(0), () => {
       getSelf()
-      SetSchool(setSchoolTrigger('@s'))
+      applySchool(setSchoolTrigger('@s'))
       saveSelf()
 
       setSchoolTrigger('@s').set(-1)
       scoreboard.players.enable('@s', setSchoolTrigger)
-    }).elseIf(setSpellTrigger('@s').greaterThanOrEqualTo(0), () => {
-      getSelf()
-      SetSpell(setSpellTrigger('@s'))
-      saveSelf()
-
-      setSpellTrigger('@s').set(-1)
-      scoreboard.players.enable('@s', setSpellTrigger)
     })
   })
 }, {

@@ -1,5 +1,3 @@
-import { Data, MCFunction } from 'sandstone'
-
 export interface Spell {
     id: string
     uid: number
@@ -170,19 +168,3 @@ export const SpellLibrary: SpellLibraryType = {
     }
 }
 
-export const SpellIDS = Data('storage', 'sandstone_summit_booth:ids')
-
-MCFunction('sections/magic/spellbook/load_spells', () => {
-    const schools = SpellIDS.select('schools')
-
-    for (const [ key, value ] of Object.entries(SpellLibrary)) {
-        const currentSchool = schools.select(`${value.uid}`)
-        currentSchool.select('name').set(key)
-
-        for (const [ spellKey, spellValue ] of Object.entries(value.spells)) {
-            currentSchool.select(`spells.${spellValue.uid}`).set(spellKey)
-        }
-    }
-}, {
-    runOnLoad: true
-})

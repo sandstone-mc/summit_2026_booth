@@ -1,12 +1,13 @@
-import { Label, NBT, Objective, rel, fill, MCFunction, execute, Selector, summon, tp, abs, kill, _, raw, scoreboard, Tag, clear, ItemPredicate } from 'sandstone'
+import { Label, NBT, Objective, rel, fill, MCFunction, execute, Selector, summon, tp, abs, kill, _, raw, scoreboard, Tag, clear, ItemPredicate, Advancement, advancement } from 'sandstone'
+import { NAMESPACE } from '@shared'
 
 import { ShowcaseMarker } from '.'
 import { clearSelf, getSelf, saveSelf, io } from '../PlayerDB'
 import { mana, maxMana, manaRegen } from '../player_handler'
-import { setSchoolTrigger, setSpellTrigger } from '../pack_setup'
+import { setSchoolTrigger } from '../pack_setup'
 import { SymbolEntity } from 'sandstone/arguments';
 import { endShowcaseSession, PlayersInShowcase, startShowcaseSession } from 'src/sections/main/showcase'
-import { AllPedestals } from './Selection';
+import { AllPedestals, changeSchool } from './Selection';
 
 export const State = Objective.create('showcase.state', 'dummy')
 export const GlobalState = State('#global')
@@ -69,6 +70,14 @@ const RESET_POS = rel(9, 0, 27)
 // session UI buttons (exit + change school) — spawned on entry, killed on reset
 const ButtonLabel = Label('showcase.button')
 const ShowcaseButtons = Selector('@e', { tag: ButtonLabel })
+
+const ResetButtonTag = Label('showcase.button.reset')
+const ChangeSchoolButtonTag = Label('showcase.button.change_school')
+export const ChangeSchoolButtonEntities = Selector('@e', { tag: ChangeSchoolButtonTag })
+
+function clickEntity(buttonTag: { fullName: string }) {
+    return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [buttonTag.fullName] } }
+}
 
 // showcase mobs
 const ShowcaseMobLabel = Label('showcase.mob')
@@ -211,16 +220,24 @@ const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
             },
             brightness: { sky: NBT.int(15), block: NBT.int(15) },
         })
-        summon('interaction', rel(9.5, 0, 26), {
+        summon('text_display', rel(9.5, 1.15, 26.5), {
             Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
+            text: [{ text: '(click to leave)', color: 'gray', italic: true }],
+            alignment: 'center',
+            billboard: 'fixed',
+            transformation: {
+                translation: [NBT.float(0), NBT.float(0), NBT.float(0)],
+                left_rotation: { axis: [NBT.float(0), NBT.float(1), NBT.float(0)], angle: NBT.float(Math.PI) },
+                right_rotation: { axis: [NBT.float(0), NBT.float(1), NBT.float(0)], angle: NBT.float(0) },
+                scale: [NBT.float(0.6), NBT.float(0.6), NBT.float(0.6)],
+            },
+            brightness: { sky: NBT.int(15), block: NBT.int(15) },
+        })
+        summon('interaction', rel(9.5, 0, 26), {
+            Tags: [buttonTag, ResetButtonTag.fullName, BOOTH_ENTITY_TAG],
             width: NBT.float(2.5),
             height: NBT.float(3.0),
-            response: false,
-            data: {
-                summit_interactable: {
-                    on_right_click: 'execute on target run function sandstone_summit_booth:sections/magic/showcase/reset',
-                },
-            },
+            response: true,
         })
 
 
@@ -231,34 +248,64 @@ const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
             billboard: 'fixed',
             brightness: { sky: NBT.int(15), block: NBT.int(15) },
         })
+    })
+}, { lazy: true })
 
-        // Change School button — back of room behind the pedestals
-        summon('text_display', rel(9.5, 0.2, 19), {
-            Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
+const CENTER_PEDESTAL_POS = rel(9.5, 0, 20.5)
+
+export const spawnChangeSchoolButton = MCFunction('sections/magic/showcase/spawn_change_school_button', () => {
+    execute.as(ShowcaseMarker).at('@s').run(() => {
+        const buttonTag = `sandstone_summit_booth.${ButtonLabel.name}` as `${any}${string}`
+
+        summon('text_display', rel(9.5, 2.2, 20.5), {
+            Tags: [buttonTag, ChangeSchoolButtonTag.fullName, BOOTH_ENTITY_TAG],
             text: [{ text: '✦ ', color: 'yellow' }, { text: 'Change School', color: 'white', bold: true }],
             alignment: 'center',
-            billboard: 'fixed',
+            billboard: 'center',
+            brightness: { sky: NBT.int(15), block: NBT.int(15) },
             transformation: {
                 translation: [NBT.float(0), NBT.float(0), NBT.float(0)],
-                left_rotation: { axis: [NBT.float(0), NBT.float(1), NBT.float(0)], angle: NBT.float(Math.PI) },
-                right_rotation: { axis: [NBT.float(0), NBT.float(1), NBT.float(0)], angle: NBT.float(0) },
-                scale: [NBT.float(1), NBT.float(1), NBT.float(1)],
+                left_rotation: [NBT.float(0), NBT.float(0), NBT.float(0), NBT.float(1)],
+                right_rotation: [NBT.float(0), NBT.float(0), NBT.float(0), NBT.float(1)],
+                scale: [NBT.float(2), NBT.float(2), NBT.float(2)],
             },
-            brightness: { sky: NBT.int(15), block: NBT.int(15) },
         })
-        summon('interaction', rel(9.5, 0, 19.95), {
-            Tags: [buttonTag, BOOTH_ENTITY_TAG, 'summit.interactable'],
-            width: NBT.float(2.7),
-            height: NBT.float(0.5),
-            response: false,
-            data: {
-                summit_interactable: {
-                    on_right_click: 'execute on target run function sandstone_summit_booth:sections/magic/showcase/selection/change_school',
-                },
-            },
+        summon('interaction', CENTER_PEDESTAL_POS, {
+            Tags: [buttonTag, ChangeSchoolButtonTag.fullName, BOOTH_ENTITY_TAG],
+            width: NBT.float(2.5),
+            height: NBT.float(3.0),
+            response: true,
         })
     })
 }, { lazy: true })
+
+Advancement('showcase_reset_click', {
+    criteria: {
+        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(ResetButtonTag) } },
+        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(ResetButtonTag) } },
+    },
+    requirements: [['click', 'hit']],
+    rewards: {
+        function: MCFunction('sections/magic/showcase/on_reset_click', () => {
+            advancement.revoke('@s').only(`${NAMESPACE}:showcase_reset_click`)
+            reset()
+        })
+    }
+})
+
+Advancement('showcase_change_school_click', {
+    criteria: {
+        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(ChangeSchoolButtonTag) } },
+        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(ChangeSchoolButtonTag) } },
+    },
+    requirements: [['click', 'hit']],
+    rewards: {
+        function: MCFunction('sections/magic/showcase/on_change_school_click', () => {
+            advancement.revoke('@s').only(`${NAMESPACE}:showcase_change_school_click`)
+            changeSchool()
+        })
+    }
+})
 
 const intro = MCFunction('sections/magic/showcase/intro', () => {
     GlobalState.set(STATES.INTRO)
@@ -285,15 +332,14 @@ export const startSession = MCFunction('sections/magic/showcase/session/start', 
         // Init player state fresh for each showcase run
         clearSelf()
         getSelf()
-        io.merge({ current_school: 'fire', selected_spell: 'firebolt' })
+        io.merge({ current_school: 'fire', selected_spell: 'firebolt', selected_spell_uid: 0 })
         saveSelf()
         mana('@s').set(100)
         maxMana('@s').set(100)
         manaRegen('@s').set(20)
 
-        // Ensure spell/school triggers are enabled
+        // Ensure the school trigger is enabled
         scoreboard.players.enable('@s', setSchoolTrigger)
-        scoreboard.players.enable('@s', setSpellTrigger)
 
         intro()
     })
@@ -379,6 +425,9 @@ MCFunction('sections/magic/showcase/tick', () => {
 MCFunction('sections/magic/showcase/load', () => {
     GlobalState.set(STATES.IDLE)
     scoreboard.players.enable('@s', resetTrigger)
+
+    advancement.revoke('@a').only(`${NAMESPACE}:showcase_reset_click`)
+    advancement.revoke('@a').only(`${NAMESPACE}:showcase_change_school_click`)
 }, { runOnLoad: true })
 
 // Summit compliance: kill all booth entities (ShowcaseMarker, mobs, buttons, pedestals)
