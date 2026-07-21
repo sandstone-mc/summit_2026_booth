@@ -262,7 +262,7 @@ function tagFootprintRiders() {
 
 function ensureDriver() {
     _.if(_.not(_.entity(RiderDriver)), () => {
-        execute.as(Selector('@a', { tag: RiderLabel, limit: 1 })).run(() => {
+        execute.as(RiderLabel(Selector('@a', { limit: 1 }))).run(() => {
             DriverLabel('@s').add()
         })
     })
@@ -363,7 +363,6 @@ function beginTrip() {
         }] as const))
     }] as const))
 
-    tagFootprintRiders()
     ensureDriver()
     applyRiderGravityForTrip()
 
@@ -460,7 +459,10 @@ function detectInsideButton(floorIdx: number) {
         rewards: {
             function: MCFunction(`sections/elevator/inside_button_reward/${floorIdx}`, () => {
                 clicked.revoke('@s')
-                requestFloor(floorIdx)
+
+                tagFootprintRiders()
+
+                _.if(_.entity(Riders), () => requestFloor(floorIdx))
             })
         }
     })
@@ -542,6 +544,10 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
 Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [spawnElevator], { onConflict: 'append' })
 Tag('function', 'summit.booth:sandstone_summit_booth/entities/kill', [killElevator], { onConflict: 'append' })
 
+const previousYCoordinate = Variable(0)
+
+const ticksStill = Variable(0)
+
 MCFunction('sections/elevator/step', () => {
     for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
         const [ox, oy, oz] = BUTTON_INTERACTION_OFFSETS[floorIdx]
@@ -573,6 +579,16 @@ MCFunction('sections/elevator/step', () => {
 
             execute.as(RiderDriver).run(() => {
                 RiderY.set(Data('entity', '@s', 'Pos[1]'), 10)
+            })
+            
+            _.if(RiderY['=='](previousYCoordinate), () => {
+                ticksStill['+='](1)
+            }).else(() => {
+                ticksStill['='](0)
+            })
+            previousYCoordinate.set(RiderY)
+            _.if(ticksStill['>'](20), () => {
+                execute.at(Car).positioned('~ ~2 ~').run.tp(RiderDriver, '~ ~ ~')
             })
 
             // has the driver actually reached the target floor yet?

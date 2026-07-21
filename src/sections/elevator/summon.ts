@@ -1,4 +1,5 @@
 import { abs, Label, NBT, summon } from 'sandstone'
+import { SymbolEntity } from 'sandstone/arguments'
 
 import { FLOORS, CAR_TELEPORT_DURATION, STARTING_FLOOR, ButtonFloorLabels } from '.'
 import { BOOTH_ENTITY_TAG } from '@shared'
@@ -109,12 +110,12 @@ export const summonElevator = () => summon(id, abs(...FLOORS[STARTING_FLOOR].ele
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-1.5, 4.5, -0.5]) }, block_state: palette2[0] },
 
         // redstone_torch (floor buttons)
-        ...REDSTONE_TORCH_OFFSETS.map((offset, floorIdx) => ({
+        ...(REDSTONE_TORCH_OFFSETS.map((offset, floorIdx) => ({
             id,
             Tags: [ButtonFloorLabels[floorIdx], part, BOOTH_ENTITY_TAG],
             transformation: { ...transform_e, translation: NBT.float([...offset]) },
             block_state: { Name: palette[8], Properties: { lit: floorIdx === STARTING_FLOOR ? 'true' : 'false' } },
-        })),
+        })) as NonNullable<SymbolEntity[typeof id]['Passengers']>),
 
         // crafter
         { id, Tags: [part, BOOTH_ENTITY_TAG], transformation: { ...transform, translation: NBT.float([-0.5, 1.5, -2.5]) }, block_state: { Name: palette[4], Properties: { crafting: 'false', orientation: 'up_south', triggered: 'true' } } },
