@@ -1,0 +1,1 @@
+execute as @a[tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/inside_button_reward/0/if/if/if2/execute_as

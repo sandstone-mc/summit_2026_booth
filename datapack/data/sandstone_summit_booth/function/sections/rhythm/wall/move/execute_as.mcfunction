@@ -1,7 +1,7 @@
 scoreboard players operation @s sandstone_summit_booth.rhythm.wall.temp = @s sandstone_summit_booth.rhythm.wall.age
-execute if score @s sandstone_summit_booth.rhythm.wall.temp > anon_WnYlBycD_21 __sandstone run scoreboard players operation @s sandstone_summit_booth.rhythm.wall.temp = anon_WnYlBycD_21 __sandstone
-scoreboard players operation @s sandstone_summit_booth.rhythm.wall.temp *= anon_WnYlBycD_20 __sandstone
-scoreboard players operation @s sandstone_summit_booth.rhythm.wall.temp /= anon_WnYlBycD_21 __sandstone
+execute if score @s sandstone_summit_booth.rhythm.wall.temp > anon_WnYlBycD_23 __sandstone run scoreboard players operation @s sandstone_summit_booth.rhythm.wall.temp = anon_WnYlBycD_23 __sandstone
+scoreboard players operation @s sandstone_summit_booth.rhythm.wall.temp *= anon_WnYlBycD_22 __sandstone
+scoreboard players operation @s sandstone_summit_booth.rhythm.wall.temp /= anon_WnYlBycD_23 __sandstone
 scoreboard players set @s sandstone_summit_booth.rhythm.wall.pos 22000
 scoreboard players operation @s sandstone_summit_booth.rhythm.wall.pos += @s sandstone_summit_booth.rhythm.wall.temp
 scoreboard players operation @s sandstone_summit_booth.rhythm.wall.pos += @s sandstone_summit_booth.rhythm.wall.depth

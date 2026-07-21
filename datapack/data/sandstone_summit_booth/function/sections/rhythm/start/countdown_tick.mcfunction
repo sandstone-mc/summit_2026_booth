@@ -1,1 +1,1 @@
-execute if score anon_WnYlBycD_3 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/start/countdown_tick/if/if
+execute if score anon_WnYlBycD_5 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/start/countdown_tick/if/if

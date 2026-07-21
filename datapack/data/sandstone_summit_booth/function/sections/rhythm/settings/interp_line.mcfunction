@@ -1,2 +1,2 @@
-execute if score anon_WnYlBycD_6 __sandstone matches 0 run return run data merge entity @e[tag=ssb.ui.set.interp, limit=1] {text:[{text:'  ✥ Motion: ',color:'gray'},{text:'   Client-side      ',color:'aqua',font:'sandstone_summit_booth:monospace'}]}
+execute if score anon_WnYlBycD_8 __sandstone matches 0 run return run data merge entity @e[tag=ssb.ui.set.interp, limit=1] {text:[{text:'  ✥ Motion: ',color:'gray'},{text:'   Client-side      ',color:'aqua',font:'sandstone_summit_booth:monospace'}]}
 data merge entity @e[tag=ssb.ui.set.interp, limit=1] {text:[{text:'  ✥ Motion: ',color:'gray'},{text:'   Server-side      ',color:'yellow',font:'sandstone_summit_booth:monospace'}]}

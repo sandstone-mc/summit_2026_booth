@@ -1,3 +1,3 @@
-scoreboard players set anon_WnYlBycD_28 __sandstone 0
+scoreboard players set anon_WnYlBycD_30 __sandstone 0
 schedule clear sandstone_summit_booth:sections/rhythm/tick_loop
 tellraw @s {"text":"Rhythm pack ticking: OFF","color":"red"}

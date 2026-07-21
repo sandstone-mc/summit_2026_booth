@@ -1,1 +1,1 @@
-execute if score anon_WnYlBycD_3 __sandstone matches 4 run function sandstone_summit_booth:sections/rhythm/calibration/tick/if
+execute if score anon_WnYlBycD_5 __sandstone matches 4 run function sandstone_summit_booth:sections/rhythm/calibration/tick/if

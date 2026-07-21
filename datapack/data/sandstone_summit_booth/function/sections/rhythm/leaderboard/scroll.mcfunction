@@ -1,3 +1,3 @@
-execute if score anon_WnYlBycD_7 __sandstone matches 0 run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if
-execute if score anon_WnYlBycD_7 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if2
-execute if score anon_WnYlBycD_7 __sandstone matches 2 run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if3
+execute if score anon_WnYlBycD_9 __sandstone matches 0 run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if
+execute if score anon_WnYlBycD_9 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if2
+execute if score anon_WnYlBycD_9 __sandstone matches 2 run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/if3

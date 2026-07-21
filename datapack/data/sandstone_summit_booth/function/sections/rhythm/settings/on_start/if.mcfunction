@@ -1,2 +1,2 @@
-execute if score anon_WnYlBycD_3 __sandstone matches 0 run return run function sandstone_summit_booth:sections/rhythm/settings/on_start/if/0_if/return_run
-execute if score anon_WnYlBycD_3 __sandstone matches 1 run return run function sandstone_summit_booth:sections/rhythm/settings/on_start/if/1_elseif/return_run
+execute if score anon_WnYlBycD_5 __sandstone matches 0 run return run function sandstone_summit_booth:sections/rhythm/settings/on_start/if/0_if/return_run
+execute if score anon_WnYlBycD_5 __sandstone matches 1 run return run function sandstone_summit_booth:sections/rhythm/settings/on_start/if/1_elseif/return_run

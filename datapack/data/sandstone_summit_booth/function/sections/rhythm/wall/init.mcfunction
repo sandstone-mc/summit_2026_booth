@@ -1,1 +1,1 @@
-execute if score anon_WnYlBycD_6 __sandstone matches 0 run function sandstone_summit_booth:sections/rhythm/wall/init/if
+execute if score anon_WnYlBycD_8 __sandstone matches 0 run function sandstone_summit_booth:sections/rhythm/wall/init/if

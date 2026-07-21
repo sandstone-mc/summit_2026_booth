@@ -1,2 +1,3 @@
 advancement revoke @s only sandstone_summit_booth:sections/elevator/inside_button_1
-execute if score anon_WnYlBycD_0 __sandstone = anon_WnYlBycD_1 __sandstone unless score anon_WnYlBycD_0 __sandstone matches 1 run function sandstone_summit_booth:sections/elevator/inside_button_reward/1/if
+execute at @e[tag=sandstone_summit_booth.elevator.car, limit=1] positioned ~-2.5 ~0.53125 ~-2.5 as @a[tag=!sandstone_summit_booth.elevator.rider, dx=5, dy=5, dz=5] run tag @s add sandstone_summit_booth.elevator.rider
+execute if entity @a[tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/inside_button_reward/1/if

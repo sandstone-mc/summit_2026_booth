@@ -1,2 +1,2 @@
-execute if score anon_WnYlBycD_3 __sandstone matches 4 run return run data merge entity @e[tag=ssb.ui.set.lives, limit=1] {text:[{text:'  ⧗ ',color:'aqua',bold:true},{text:'   Calibrating…     ',color:'aqua',bold:true,font:'sandstone_summit_booth:monospace'}]}
+execute if score anon_WnYlBycD_5 __sandstone matches 4 run return run data merge entity @e[tag=ssb.ui.set.lives, limit=1] {text:[{text:'  ⧗ ',color:'aqua',bold:true},{text:'   Calibrating…     ',color:'aqua',bold:true,font:'sandstone_summit_booth:monospace'}]}
 data merge entity @e[tag=ssb.ui.set.lives, limit=1] {text:[{text:'  🎵 ',color:'gold',bold:true},{text:'Match in progress   ',color:'gold',bold:true,font:'sandstone_summit_booth:monospace'}]}

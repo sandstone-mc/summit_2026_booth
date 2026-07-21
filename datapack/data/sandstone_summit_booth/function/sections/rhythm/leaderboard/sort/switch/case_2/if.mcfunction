@@ -1,2 +1,2 @@
-execute if score anon_WnYlBycD_8 __sandstone matches 0 run return run execute as @a run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/switch/case_2/if/if/return_run/execute_as
+execute if score anon_WnYlBycD_10 __sandstone matches 0 run return run execute as @a run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/switch/case_2/if/if/return_run/execute_as
 execute as @a run function sandstone_summit_booth:sections/rhythm/leaderboard/sort/switch/case_2/if/execute_as

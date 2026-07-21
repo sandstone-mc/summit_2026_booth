@@ -1,0 +1,2 @@
+execute if score elevator.rider_y_0_WnYlBycD __sandstone = anon_WnYlBycD_3 __sandstone run return run scoreboard players add anon_WnYlBycD_4 __sandstone 1
+scoreboard players set anon_WnYlBycD_4 __sandstone 0
