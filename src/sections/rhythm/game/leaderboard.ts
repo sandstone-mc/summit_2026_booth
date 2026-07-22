@@ -346,7 +346,7 @@ const onMyScore = MCFunction(
  * No per-tick polling needed - the reward runs as/at the clicking player and revokes itself.
  */
 function clickEntity(buttonTag: Tags) {
-	return { entity_type: 'minecraft:interaction' as const, nbt: `{Tags:["${buttonTag}"]}` }
+	return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [`${buttonTag}`] } }
 }
 
 Advancement('ui_lb_song', {
