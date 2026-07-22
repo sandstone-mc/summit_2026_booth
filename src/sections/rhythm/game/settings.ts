@@ -18,7 +18,7 @@ import { mapCount, mapNames } from '@rhythm/config/internal/maps'
 import { gameplay } from '@rhythm/config'
 import { panels } from '@rhythm/config/internal/derived'
 import { GameStatus, Tags, status, songSelect, mapSelect, interpSetting } from './state'
-import { calOffsetMs } from './calibration'
+import { calOffsetMs } from '@rhythm/index'
 import { startGame, cancelStart } from './start'
 import { placeMap } from './arena-map'
 import {

@@ -5,8 +5,6 @@ import { SelectorProperties } from 'sandstone/variables'
 import { ticking } from './shared'
 import './version'
 
-import './sections/presentation/index'
-
 if (!(Bun.env.DISABLE_SHOWCASE === undefined ? false : Bun.env.DISABLE_SHOWCASE === 'true')) {
     await import('./sections/elevator')
     await import('./sections/main')

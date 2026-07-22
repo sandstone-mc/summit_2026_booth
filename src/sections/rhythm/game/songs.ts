@@ -289,3 +289,7 @@ export const stopAllWalls = MCFunction(
 	},
 	{ lazy: true },
 )
+
+const placeholder = 'placeholder'
+
+export default placeholder

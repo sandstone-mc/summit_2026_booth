@@ -1,8 +1,8 @@
 import { join } from 'path'
 import { abs, Advancement, Data, dialog, execute, kill, Label, type LabelClass, MCFunction, NBT, say, schedule, Selector, sleep, summon, Texture } from 'sandstone'
-import { ImageDisplayModel } from '../utils'
+import { ImageDisplayModel } from './utils'
 import { BOOTH_ENTITY_TAG, fmt } from '@shared'
-import { mount, nextSlide, unmount } from '..'
+import { mount, nextSlide, unmount } from '.'
 import { argb, rgb } from 'src/sections/rhythm/config/internal/colors';
 import { creditsDialog, creditsPageContent, CREDITS } from 'src/sections/npcs/npcs/credits';
 

@@ -14,7 +14,6 @@ import {
 	Variable,
 } from 'sandstone'
 import { collisions, walls } from '@rhythm/config'
-import { calibrationDepth } from './calibration'
 import { wallMovement } from '@rhythm/config/internal/derived'
 import {
 	PARKOUR_BONUS,
@@ -31,6 +30,7 @@ import { points, combo } from './scoring'
 import { GameStatus, Tags, boothTags, gamePlayer, status } from './state'
 import { scoreSwitch } from '@rhythm/flow'
 import { ticking } from '@shared'
+import { calibrationDepth } from '..'
 
 const PARKOUR_IMMUNITY_TICKS = 61
 

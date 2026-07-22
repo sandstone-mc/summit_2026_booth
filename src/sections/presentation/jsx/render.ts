@@ -143,15 +143,15 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 	// src so the summon pass can reference them via `minecraft:item_model`.
 	const imgResources = await prepareImgResources([tree])
 
-	const mount = MCFunction('presentation/mount', () => {
+	const mount = MCFunction('sections/presentation/mount', () => {
 		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [], undefined, codePrecomputed, imgResources, SCENE_TAG, rowFlexWidths, explorerPrecomputed)
 	})
 
-	const tick = MCFunction('presentation/tick', () => {
+	const tick = MCFunction('sections/presentation/tick', () => {
 		// no-op
 	}, { runEveryTick: true })
 
-	const unmount = MCFunction('presentation/unmount', () => {
+	const unmount = MCFunction('sections/presentation/unmount', () => {
 		execute.run.kill(Selector('@e', { tag: SCENE_TAG }))
 	})
 

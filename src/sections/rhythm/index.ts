@@ -1,13 +1,15 @@
-import { _, abs, execute, fill, kill, MCFunction, Selector } from 'sandstone'
+import { _, abs, execute, fill, kill, MCFunction, Objective, Selector, Variable } from 'sandstone'
 import { arena } from './config/internal/arena'
 import { killSkybox, placeMap } from './game/arena-map'
-import { cancelCalibration } from './game/calibration'
 import { endGame, resetGame, resetPlayer } from './game/end'
 import { laneTeamsInit, spawnLaneBorder } from './game/lane-effects'
 import { spawnLeaderboardPanel } from './game/leaderboard'
 import { spawnSettingsPanel } from './game/settings'
 import { cancelStart } from './game/start'
 import { GameStatus, Tags, status } from './game/state'
+
+export const calibrationDepth = Variable(0)
+export const calOffsetMs = Objective.create('rhythm.cal', 'dummy')
 
 import './game/state'
 import './game/tick'
@@ -65,9 +67,6 @@ MCFunction('sections/rhythm/clean_player', () => {
 		}).elseIf(status.equalTo(GameStatus.STARTING), () => {
 			cancelStart()
 		})
-	})
-	execute.if.entity(Selector('@s', { tag: Tags.CALIBRATOR })).run(() => {
-		cancelCalibration()
 	})
 	resetPlayer()
 })

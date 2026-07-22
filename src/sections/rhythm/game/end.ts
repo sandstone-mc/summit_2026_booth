@@ -1,5 +1,4 @@
 import { _, abs, advancement, attribute, effect, execute, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
-import { cancelCalibration } from './calibration'
 import { GameStatus, Tags, gamePlayer, boothListeners, status, songSelect } from './state'
 import { clearWalls } from './walls/spawning'
 import { stopAllSongs, stopAllWalls, stopSong, stopWalls } from './songs'
@@ -73,7 +72,6 @@ export const resetGame = MCFunction(
 		clearWalls()
 		parkourCleanup()
 		clearLaneShulkers()
-		cancelCalibration()
 		stopsound(boothListeners, 'master')
 
 		const [x, y, z] = boothReturn

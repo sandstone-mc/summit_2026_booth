@@ -4,7 +4,6 @@ import { collisionTick } from './walls/collision'
 import { wallTick } from './walls/ticking'
 import { scoringTick } from './scoring'
 import { parkourTick } from './parkour'
-import { calibrationTick } from './calibration'
 import { timerTick } from './end'
 
 MCFunction(
@@ -14,7 +13,6 @@ MCFunction(
 		wallTick()
 		scoringTick()
 		parkourTick()
-		calibrationTick()
 		timerTick()
 	},
 	{ tags: [ticking] },

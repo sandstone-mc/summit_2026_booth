@@ -595,7 +595,7 @@ export class SlideShow {
 
 		// `slideLoop` is assigned in the next expression and is defined
 		// before `nextSlide` / `mount` / `unmount` need it.
-		this.slideLoop = MCFunction('presentation/slides/loop', () => {
+		this.slideLoop = MCFunction('sections/presentation/slides/loop', () => {
 			// Last slide has no timer — display it, then park. The end
 			// hook fires inside `setSlideFns[last]`, so the loop doesn't
 			// need to fire it again. No reschedule — the consumer drives
@@ -609,7 +609,7 @@ export class SlideShow {
 			}
 		})
 
-		this.nextSlide = MCFunction('presentation/slides/next', () => {
+		this.nextSlide = MCFunction('sections/presentation/slides/next', () => {
 			const loopName = this.slideLoop.name
 			schedule.clear(loopName)
 			schedule.clear(`${loopName}/schedule`)
@@ -642,7 +642,7 @@ export class SlideShow {
 			_.switch(this.currentSlide, cases)
 		})
 
-		this.mount = MCFunction('presentation/mount', () => {
+		this.mount = MCFunction('sections/presentation/mount', () => {
 			// Reset the visible-slide tracker so the first nextSlide
 			// after mount advances from a clean state (-1 + 1 = 0).
 			this.currentSlide.set(-1)
@@ -666,7 +666,7 @@ export class SlideShow {
 			schedule.function(this.slideLoop, '1t', 'replace')
 		})
 
-		this.tick = MCFunction('presentation/tick', () => {
+		this.tick = MCFunction('sections/presentation/tick', () => {
 			// Per-slide tick is gated on `currentSlide`. Runs every
 			// game tick; the `_.if` chain only fires the matching slide's
 			// tick MCFunctions (others are skipped). Scroll and autocomplete
@@ -680,7 +680,7 @@ export class SlideShow {
 			}
 		}, { runEveryTick: true })
 
-		this.unmount = MCFunction('presentation/unmount', () => {
+		this.unmount = MCFunction('sections/presentation/unmount', () => {
 			// Cancel every pending loop run — main entry, the
 			// __sleep chain, and the schedule wrapper that restarts.
 			const loopName = this.slideLoop.name
@@ -701,7 +701,7 @@ export class SlideShow {
 		// chunk). Slides with no animations are unaffected — the stamp
 		// is harmless when no tick consumes it.
 		this.resetCurrentSlideAnimations = MCFunction(
-			'presentation/slides/reset_current',
+			'sections/presentation/slides/reset_current',
 			() => {
 				execute.store.result
 					.score(this.slideShownAt)

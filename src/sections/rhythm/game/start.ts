@@ -10,7 +10,7 @@ import {
 	type MCFunctionClass,
 	Variable,
 } from 'sandstone'
-import { calOffsetMs, calibrationDepth } from './calibration'
+import { calOffsetMs, calibrationDepth } from '@rhythm/index'
 import { GameStatus, Tags, status, gamePlayer } from './state'
 import { setActive } from './active'
 

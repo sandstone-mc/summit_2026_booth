@@ -3,7 +3,7 @@ import { MCFunction } from 'sandstone'
 import { renderSlides } from './jsx/render'
 import styles from './styles.less' with { type: 'text' }
 
-import './menu/index'
+import './menu'
 
 import * as h01 from './headings/1_what_is_a_pre_compiler'
 import * as h02 from './headings/2_hello_world'
