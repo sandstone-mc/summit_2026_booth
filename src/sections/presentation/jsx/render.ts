@@ -172,6 +172,15 @@ export async function renderSlides(
 	trees: VNode[],
 	options: RenderOptions,
 	timing?: SlidesTiming,
+	/**
+	 * Optional MCFunction fired AFTER the final slide's display duration,
+	 * in place of the default cycle-back reschedule. The loop does NOT
+	 * restart itself when this is set — it stays parked on the last slide
+	 * and the consumer is responsible for any follow-up (typically `unmount`
+	 * or a transition to the next scene). `currentSlide` is left at
+	 * `totalSlides - 1`.
+	 */
+	onPresentationEnd?: MCFunctionClass<undefined, undefined>,
 ): Promise<SlideScene> {
 	if (trees.length === 0) throw new Error('renderSlides: at least one slide required')
 
@@ -290,6 +299,7 @@ export async function renderSlides(
 		imgResources,
 		rowFlexWidths,
 		explorerPrecomputed,
+		onPresentationEnd,
 	})
 
 	return {

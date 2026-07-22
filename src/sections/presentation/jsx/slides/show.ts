@@ -8,6 +8,7 @@ import {
 	Selector,
 	NBT,
 	execute,
+	returnCmd,
 	sleep,
 	schedule,
 	Objective,
@@ -57,6 +58,16 @@ export interface SlideShowInput {
 	rowFlexWidths?: WeakMap<VNode, RowFlexWidth>
 	/** Pre-walked `<explorer>` trees (per-source-line color segments + wraps). */
 	explorerPrecomputed?: CodePrecomputedMap
+	/**
+	 * Optional hook fired AFTER the last slide's full display duration,
+	 * in place of the default cycle-back reschedule. Use this when the
+	 * consumer wants to drive the post-presentation state themselves
+	 * (e.g. unmount + transition to the next scene). When set, the loop
+	 * does NOT reschedule itself — the presentation stays on its last
+	 * slide until the consumer takes over. `currentSlide` is left at
+	 * `totalSlides - 1` so downstream code can read it.
+	 */
+	onPresentationEnd?: MCFunctionClass<undefined, undefined>
 }
 
 export class SlideShow {
@@ -94,6 +105,7 @@ export class SlideShow {
 	private readonly codePrecomputed: CodePrecomputedMap
 	private readonly explorerPrecomputed: CodePrecomputedMap
 	private readonly rowFlexWidths: WeakMap<VNode, RowFlexWidth>
+	private readonly onPresentationEnd: MCFunctionClass<undefined, undefined> | undefined
 	private readonly slideLoop: MCFunctionClass<undefined, undefined>
 	readonly nextSlide: MCFunctionClass<undefined, undefined>
 	readonly mount: MCFunctionClass<undefined, undefined>
@@ -111,6 +123,7 @@ export class SlideShow {
 		this.explorerPrecomputed = input.explorerPrecomputed ?? new WeakMap()
 		this.imgResources = input.imgResources ?? new Map()
 		this.rowFlexWidths = input.rowFlexWidths ?? new WeakMap()
+		this.onPresentationEnd = input.onPresentationEnd
 		this.durations = computeDurationsSeconds(input.slideTexts, input.timing)
 		this.slideVisibles =
 			input.slideVisibles ??
@@ -191,6 +204,11 @@ export class SlideShow {
 						if (s !== index) this.hideSlide[s]()
 					}
 					this.showSlide[index]()
+					// Entering the final slide fires the end hook the
+					// moment it appears — no extra `next` press required.
+					if (index === this.totalSlides - 1 && this.onPresentationEnd) {
+						this.onPresentationEnd()
+					}
 				}),
 			)
 		}
@@ -578,13 +596,17 @@ export class SlideShow {
 		// `slideLoop` is assigned in the next expression and is defined
 		// before `nextSlide` / `mount` / `unmount` need it.
 		this.slideLoop = MCFunction('presentation/slides/loop', () => {
+			// Last slide has no timer — display it, then park. The end
+			// hook fires inside `setSlideFns[last]`, so the loop doesn't
+			// need to fire it again. No reschedule — the consumer drives
+			// the post-presentation state.
 			for (let s = 0; s < this.totalSlides; s++) {
 				this.currentSlide.set(s)
 				this.setSlideFns[s]()
-				sleep(`${this.durations[s]}s`)
+				if (s < this.totalSlides - 1) {
+					sleep(`${this.durations[s]}s`)
+				}
 			}
-			// After the last slide's sleep, schedule a fresh loop run.
-			schedule.function(this.slideLoop, '1t', 'replace')
 		})
 
 		this.nextSlide = MCFunction('presentation/slides/next', () => {
@@ -594,10 +616,13 @@ export class SlideShow {
 			for (let i = 1; i <= this.totalSlides; i++) {
 				schedule.clear(`${loopName}/${i === 1 ? '__sleep' : `__sleep${i}`}`)
 			}
-			this.currentSlide.add(1)
-			_.if(this.currentSlide.greaterThanOrEqualTo(this.totalSlides), () => {
-				this.currentSlide.set(0)
+			// On the final slide: abort. No wrap-to-0 — nextSlide past
+			// the last slide is a no-op. The end hook already fired
+			// inside `setSlideFns[last]` when we entered this slide.
+			_.if(this.currentSlide.equalTo(this.totalSlides - 1), () => {
+				returnCmd()
 			})
+			this.currentSlide.add(1)
 			// Re-stamp shown-at so the next slide's scroll starts from 0.
 			execute.store.result
 				.score(this.slideShownAt)
@@ -608,7 +633,10 @@ export class SlideShow {
 			const cases: StaticCase<number>[] = []
 
 			for (let s = 0; s < this.totalSlides; s++) {
-				cases.push(['case', s, () => this.showSlide[s]()])
+				// Dispatch through `setSlideFns` (not `showSlide` directly)
+				// so the end-hook side effect in `setSlideFns[last]` runs
+				// when transitioning into the final slide.
+				cases.push(['case', s, () => this.setSlideFns[s]()])
 			}
 
 			_.switch(this.currentSlide, cases)

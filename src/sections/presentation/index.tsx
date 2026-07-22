@@ -1,3 +1,5 @@
+import { MCFunction } from 'sandstone'
+
 import { renderSlides } from './jsx/render'
 import styles from './styles.less' with { type: 'text' }
 
@@ -41,6 +43,7 @@ const scene = await renderSlides(
 	},
 	// Reading-speed timing. Override here if needed.
 	{ wpm: 200, bufferSeconds: 3, minSeconds: 6, maxSeconds: 25 },
+	MCFunction('sections/presentation/end', () => {}, { onConflict: 'append' })
 )
 
 export const { mount, nextSlide, tick, unmount } = scene
