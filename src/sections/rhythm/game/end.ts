@@ -15,8 +15,6 @@ import { timer } from './active'
 
 export const resetPlayer = MCFunction('sections/rhythm/reset_player', () => {
 	effect.clear('@s')
-	attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
-	attribute('@s', 'minecraft:fall_damage_multiplier').baseSet(1)
 	tag('@s').remove(Tags.PLAYER)
 	tag('@s').remove(Tags.WALL_HIT_COOLDOWN)
 })

@@ -12,9 +12,6 @@ const spawnStorm = MCFunction(`sections/magic/${spellPath}/spawn_bolt`, () => {
         execute.summon('minecraft:marker').run(() => {
             Storm('@s').add()
             Lifetime('@s').set(200)
-            data.modify(Data('entity', '@s').select('data.owner')).set.from(Data('entity', Selector('@n', {
-                tag: Caster
-            })).select('UUID'))
         })
 
         Caster('@s').remove()

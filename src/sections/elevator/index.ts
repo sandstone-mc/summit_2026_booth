@@ -128,7 +128,7 @@ export const FLOORS: Floor[] = [
 export const STARTING_FLOOR = 2
 
 // Elevator car selector and tag
-const Car = CarLabel(Selector('@e', { limit: 1 }))
+const Car = CarLabel(Selector('@e', { type: 'minecraft:block_display', limit: 1 }))
 
 const ButtonLabel = Label('elevator.button')
 export const ButtonFloorLabels = FLOORS.map((_, floorIdx) => Label(`elevator.button.${floorIdx}` as `${any}${string}`))
@@ -213,7 +213,7 @@ function clearFloorBarrier(floorIdx: number) {
 
 function setDoorDisplayScale(displayDoor: number, scale: number) {
     const label = displayDoor === 1 ? SouthInnerDoor : WestInnerDoor
-    execute.as(Selector('@e', { tag: [label] })).run(() => {
+    execute.as(Selector('@e', { type: 'minecraft:block_display', tag: [label] })).run(() => {
         Data('entity', '@s', 'transformation.scale').set(NBT.float([scale, scale, scale]))
     })
 }

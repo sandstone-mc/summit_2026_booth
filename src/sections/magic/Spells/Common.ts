@@ -144,9 +144,6 @@ export function spawnSingleBolt(
     projectileTag('@s').add()
     tp('@s', offset, rel(0, 0))
     Lifetime('@s').set(lifetime)
-    data.modify(Data('entity', '@s').select('data.owner')).set.from(
-      Data('entity', Selector('@n', { tag: Caster })).select('UUID')
-    )
   })
 }
 
@@ -162,9 +159,6 @@ export function spawnRingOfBolts(
       projectileTag('@s').add()
       Lifetime('@s').set(lifetime)
       rotate('@s', abs(angle, 0))
-      data.modify(Data('entity', '@s').select('data.owner')).set.from(
-        Data('entity', Selector('@n', { tag: Caster })).select('UUID')
-      )
     })
   }
 }
@@ -183,9 +177,6 @@ export function spawnConeOfBolts(
         execute.summon('minecraft:marker').run(() => {
             projectileTag('@s').add()
             Lifetime('@s').set(lifetime)
-            data.modify(Data('entity', '@s').select('data.owner')).set.from(
-                Data('entity', Selector('@n', { tag: Caster })).select('UUID')
-            )
 
             rotate('@s', rel(yaw, 0))
             tp('@s', rel(0, 1.6, 0))

@@ -21,8 +21,6 @@ export const setActive = MCFunction(
 
 			execute.at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
 
-			attribute('@s', 'minecraft:fall_damage_multiplier').baseSet(0)
-			attribute('@s', 'minecraft:movement_speed').baseSet(0.1)
 			wallLives('@s').set(livesSetting)
 			hitsTaken('@s').set(0)
 			effect.give('@s', 'minecraft:instant_health', 1, 126, true)
