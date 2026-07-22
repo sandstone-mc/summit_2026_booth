@@ -10,15 +10,15 @@ fill -57 63 44 -53 63 48 minecraft:barrier
 fill -54 63 48 -55 63 48 minecraft:barrier
 fill -58 84 45 -58 86 46 minecraft:dark_oak_shelf[facing=west] strict
 fill -57 84 45 -57 86 46 minecraft:oxidized_copper_trapdoor[open=true,facing=east] strict
-execute as @e[tag=sandstone_summit_booth.elevator.door.2] run data modify entity @s transformation.scale set value [1f,1f,1f]
+execute as @e[tag=sandstone_summit_booth.elevator.door.2, type=minecraft:block_display] run data modify entity @s transformation.scale set value [1f,1f,1f]
 fill -58 74 45 -58 77 46 minecraft:dark_oak_shelf[facing=west] strict
 fill -57 74 45 -57 77 46 minecraft:oxidized_copper_trapdoor[open=true,facing=east] strict
-execute as @e[tag=sandstone_summit_booth.elevator.door.2] run data modify entity @s transformation.scale set value [1f,1f,1f]
+execute as @e[tag=sandstone_summit_booth.elevator.door.2, type=minecraft:block_display] run data modify entity @s transformation.scale set value [1f,1f,1f]
 fill -54 64 49 -55 67 49 minecraft:dark_oak_shelf[facing=south] strict
 fill -54 64 48 -55 67 48 minecraft:oxidized_copper_trapdoor[open=true,facing=north] strict
-execute as @e[tag=sandstone_summit_booth.elevator.door.1] run data modify entity @s transformation.scale set value [1f,1f,1f]
+execute as @e[tag=sandstone_summit_booth.elevator.door.1, type=minecraft:block_display] run data modify entity @s transformation.scale set value [1f,1f,1f]
 fill -54 64 48 -55 67 49 minecraft:air strict
-execute as @e[tag=sandstone_summit_booth.elevator.door.1] run data modify entity @s transformation.scale set value [0f,0f,0f]
+execute as @e[tag=sandstone_summit_booth.elevator.door.1, type=minecraft:block_display] run data modify entity @s transformation.scale set value [0f,0f,0f]
 summon minecraft:block_display -57.5 86.6875 46.001 {Tags:['sandstone_summit_booth.elevator.button','sandstone_summit_booth.elevator.button.0','summit.booth_entity.sandstone_summit_booth'],block_state:{Name:'minecraft:redstone_torch',Properties:{lit:'false'}},transformation:{left_rotation:[1f,0f,0f,0f],right_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],translation:[-0.5f,0.75f,0.5f]}}
 summon minecraft:block_display -57.5 77.6875 46.001 {Tags:['sandstone_summit_booth.elevator.button','sandstone_summit_booth.elevator.button.1','summit.booth_entity.sandstone_summit_booth'],block_state:{Name:'minecraft:redstone_torch',Properties:{lit:'false'}},transformation:{left_rotation:[1f,0f,0f,0f],right_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],translation:[-0.5f,0.75f,0.5f]}}
 summon minecraft:block_display -54.001 67.6875 49.5 {Tags:['sandstone_summit_booth.elevator.button','sandstone_summit_booth.elevator.button.2','summit.booth_entity.sandstone_summit_booth'],block_state:{Name:'minecraft:redstone_torch',Properties:{lit:'false'}},transformation:{left_rotation:[1f,0f,0f,0f],right_rotation:[0f,0f,0f,1f],scale:[1f,1f,1f],translation:[-0.5f,0.75f,0.5f]}}

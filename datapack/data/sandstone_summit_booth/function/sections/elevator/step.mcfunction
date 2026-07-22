@@ -1,6 +1,6 @@
-execute at @e[tag=sandstone_summit_booth.elevator.car, limit=1] run tp @e[tag=sandstone_summit_booth.elevator.button.0, type=minecraft:interaction, limit=1] ~-0.1875 ~2.0625 ~-1.56225
-execute at @e[tag=sandstone_summit_booth.elevator.car, limit=1] run tp @e[tag=sandstone_summit_booth.elevator.button.1, type=minecraft:interaction, limit=1] ~ ~1.875 ~-1.56225
-execute at @e[tag=sandstone_summit_booth.elevator.car, limit=1] run tp @e[tag=sandstone_summit_booth.elevator.button.2, type=minecraft:interaction, limit=1] ~0.1875 ~1.6875 ~-1.56225
-execute at @e[tag=sandstone_summit_booth.elevator.car, limit=1] positioned ~-2.5 ~0.53125 ~-2.5 as @a[tag=!sandstone_summit_booth.elevator.rider, dx=5, dy=5, dz=5] run tag @s add sandstone_summit_booth.elevator.rider
-execute as @a[tag=sandstone_summit_booth.elevator.rider] at @e[tag=sandstone_summit_booth.elevator.car, limit=1] positioned ~-2.5 ~0.53125 ~-2.5 unless entity @s[dx=5, dy=5, dz=5] run function sandstone_summit_booth:sections/elevator/step/execute_as
+execute at @e[tag=sandstone_summit_booth.elevator.car, type=minecraft:block_display, limit=1] run tp @e[tag=sandstone_summit_booth.elevator.button.0, type=minecraft:interaction, limit=1] ~-0.1875 ~2.0625 ~-1.56225
+execute at @e[tag=sandstone_summit_booth.elevator.car, type=minecraft:block_display, limit=1] run tp @e[tag=sandstone_summit_booth.elevator.button.1, type=minecraft:interaction, limit=1] ~ ~1.875 ~-1.56225
+execute at @e[tag=sandstone_summit_booth.elevator.car, type=minecraft:block_display, limit=1] run tp @e[tag=sandstone_summit_booth.elevator.button.2, type=minecraft:interaction, limit=1] ~0.1875 ~1.6875 ~-1.56225
+execute at @e[tag=sandstone_summit_booth.elevator.car, type=minecraft:block_display, limit=1] positioned ~-2.5 ~0.53125 ~-2.5 as @a[tag=!sandstone_summit_booth.elevator.rider, dx=5, dy=5, dz=5] run tag @s add sandstone_summit_booth.elevator.rider
+execute as @a[tag=sandstone_summit_booth.elevator.rider] at @e[tag=sandstone_summit_booth.elevator.car, type=minecraft:block_display, limit=1] positioned ~-2.5 ~0.53125 ~-2.5 unless entity @s[dx=5, dy=5, dz=5] run function sandstone_summit_booth:sections/elevator/step/execute_as
 execute unless score anon_WnYlBycD_0 __sandstone = anon_WnYlBycD_1 __sandstone run function sandstone_summit_booth:sections/elevator/step/if
