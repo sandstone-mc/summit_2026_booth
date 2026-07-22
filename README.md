@@ -49,7 +49,54 @@ coordinate: the gold line.
 
 ## The magic showcase
 
-<placeholder>
+<img src="resources/assets/presentation/magic_glamshot.png" alt="Walls approaching the gold line" align="left" height="200" hspace="14">
+
+The magic showcase consists of 5 different schools of magic, each with 3 simple spells created using shared helper functions to handle common logic like creating projectiles, custom status effects, managing spells with lifetimes, etc. The showcase itself is limited to one person at a time, using its own state machine to manage the player experience, from walking in, selecting a school, to eventually exiting after fighting monsters with their spells.
+
+
+<details>
+  <summary>Example of how shared logic is handled, here is the entire definition for the Firebolt spell</summary>
+
+  ```ts
+  // SpellLibrary.ts
+  export const SpellLibrary: SpellLibraryType = {
+    'fire': {
+      id: 'fire',
+      uid: 0,
+      name: 'Fire',
+      description: 'Scorching magic that burns and blasts',
+      spells: {
+          'firebolt': {
+              id: 'firebolt',
+              uid: 0,
+              mana_cost: 10,
+              name: 'Firebolt',
+              description: 'A blazing bolt that deals 2 damage and ignites the target'
+          },
+          // ...
+      }
+    },
+    // ...
+  }
+
+  // Firebolt.ts
+  createProjectileSpell({
+    schoolId: 'fire', spellId: 'firebolt',
+    spawn: (tag) => spawnSingleBolt(tag, 50),
+    projectile: {
+      lifetime: 50,
+      destroyOnHit: true,
+      blockCollision: true,
+      move: () => tp('@s', loc(0, 0, 1.2)),
+      particles: () => particle('flame', rel(0, 0, 0), abs(0.1, 0.1, 0.1), 0.01, 5, 'force', ParticleViewerSelector),
+      onHit: () => { 
+        damage('@s', 2, 'on_fire')
+        Burning.apply(Variable(2)) // Custom status effect!
+      },
+    }
+  })
+  ```
+</details>
 
 ## Building
 
