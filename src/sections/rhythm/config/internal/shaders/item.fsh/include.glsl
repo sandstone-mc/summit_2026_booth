@@ -326,10 +326,10 @@ float snd_rs_getCornerDot(vec2 corner, vec2 pixel, int seed) {
 }
 float snd_rs_noise2D(vec2 pixel, int seed) {
     vec2 bl = floor(pixel);
-    vec2 tr = ceil(pixel);
+    vec2 tr = bl + 1.0;
     vec2 tl = vec2(bl.x, tr.y);
     vec2 br = vec2(tr.x, bl.y);
-    vec2 offset = smoothstep(0.0, 1.0, fract(pixel));
+    vec2 offset = smoothstep(0.0, 1.0, pixel - bl);
     float blD = snd_rs_getCornerDot(bl, pixel, seed);
     float brD = snd_rs_getCornerDot(br, pixel, seed);
     float tlD = snd_rs_getCornerDot(tl, pixel, seed);
@@ -340,28 +340,31 @@ float snd_rs_noise2D(vec2 pixel, int seed) {
 }
 float snd_rs_voronoi2D(vec2 grid, int seed) {
     vec2 centerPos = floor(grid);
-    float minDist = 1.0;
+    float minDistSq = 1.0;
     for (int x = 0; x <= 2; x++) {
         for (int y = 0; y <= 2; y++) {
             vec2 gridPos = centerPos + vec2(x, y);
             vec2 randOffset = vec2(snd_rs_random(gridPos, seed), snd_rs_random(gridPos, seed + 1));
-            float dist = length(grid - gridPos + randOffset);
-            if (dist < minDist) minDist = dist;
+            vec2 delta = grid - gridPos + randOffset;
+            float distSq = dot(delta, delta);
+            minDistSq = min(minDistSq, distSq);
         }
     }
-    return minDist;
+    return sqrt(minDistSq);
 }
 float snd_rs_smax0(float a, float b, float k) {
     return log(exp(k * a) + exp(k * b)) / k;
 }
 float snd_rs_map(vec3 pos) {
+    float grain = snd_rs_noise2D(pos.xz * 0.34 + SND_RS_WHITE.xy, 3);
+    float grainSq = grain * grain;
     return pos.y
     - snd_rs_noise2D(pos.xz, 0) * 0.1
     - snd_rs_smax0(snd_rs_voronoi2D(pos.xz * vec2(0.2, 0.1) * 1.6, 2), 0.5, 6.0)
-    - pow(snd_rs_noise2D(pos.xz * 0.02, 7), 1.0) * 40.0
+    - snd_rs_noise2D(pos.xz * 0.02, 7) * 40.0
     + 25.0
     - snd_rs_noise2D(pos.xz * 0.07 + SND_RS_WHITE.xy, 3) * 10.0
-    - pow(snd_rs_noise2D(pos.xz * 0.34 + SND_RS_WHITE.xy, 3), 6.0) * 1.0
+    - grainSq * grainSq * grainSq
     - snd_rs_noise2D(pos.xz * 0.01, 10) * 40.0 + 20.0
     - snd_rs_noise2D(pos.xz * 0.0004, 12) * 40.0 + 15.0
     + 8.8;
@@ -403,13 +406,13 @@ vec3 snd_skyRainbowsSunshines(vec3 dir) {
 
     float totalDist = 0.0;
     vec3 currentPos = camPos;
-    for (int i = 0; i < 96 && totalDist < SND_RS_MAX_DIST; i++) {
+    for (int i = 0; i < 64 && totalDist < SND_RS_MAX_DIST; i++) {
         if (currentPos.y > 64.0 && rayForward.y > 0.0) {
             totalDist = SND_RS_MAX_DIST;
             break;
         }
         float sdf = snd_rs_map(currentPos);
-        if (sdf < 0.04) {
+        if (sdf < 0.04 + totalDist * 0.0025) {
             vec3 normal = snd_rs_calcMapNormal(currentPos, sdf);
             float dotWithSun = dot(normal, SND_RS_SUN_DIRECTION);
             float brightness = mix(0.3, 0.6, dotWithSun);
