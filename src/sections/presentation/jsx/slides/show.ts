@@ -257,7 +257,7 @@ export class SlideShow {
 						scoreboard.players.operation(this.tempOffset, '>', this.tempLimit)
 						// Now `tempOffset` holds the index of the visible chunk.
 						const entitySel = Selector('@e', {
-							tag: [spec.scrollTag as `${any}${string}`, slideTag(idx)],
+							tag: [spec.scrollTag, slideTag(idx)],
 						})
 						for (let ci = 0; ci < chunkCount; ci++) {
 							const chunkValue = buildTextJson(

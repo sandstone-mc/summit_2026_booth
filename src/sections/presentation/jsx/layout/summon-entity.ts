@@ -10,7 +10,7 @@ import { Z_VISUAL_OFFSET } from './constants'
 import { KIND_TEXT_TAG } from '../slides/tags'
 import type { ElementLayout } from './element'
 import type { StyledSegment } from '../render'
-import { fmt } from '@shared'
+import { BOOTH_ENTITY_TAG, fmt } from '@shared'
 
 const ROTATION_QUATERNION = NBT.float([0, 0, 0, 1])
 const ZERO_TRANSLATION = NBT.float([0, 0, 0])
@@ -26,8 +26,8 @@ export function summonTextEntity(
 	initialOpacity: number | undefined,
 ): void {
 	if (el.chunks && el.chunks.length > 0 && el.scrollTag) {
-		const tags: (`${any}${string}` | LabelClass)[] = [sceneTag, ...extraTags]
-		tags.push(el.scrollTag as `${any}${string}`)
+		const tags: (`${any}${string}` | LabelClass)[] = [BOOTH_ENTITY_TAG, sceneTag, ...extraTags]
+		tags.push(el.scrollTag)
 		const nbt: SymbolEntity['text_display'] = {
 			Tags: tags,
 			text: buildTextJson(el.chunks[0].content, el.declarations, el.type),
@@ -60,7 +60,7 @@ export function summonTextEntity(
 
 	// Single entity (non-scroll, or scroll with no chunks).
 	const tags: (`${any}${string}` | LabelClass)[] = [sceneTag, ...extraTags]
-	if (el.scrollTag) tags.push(el.scrollTag as `${any}${string}`)
+	if (el.scrollTag) tags.push(el.scrollTag)
 
 	// Inline-formatted prose (`<p>` / `<h*>` with `**bold**` etc.):
 	// the layout pass already parsed the segments and stored them
@@ -121,7 +121,7 @@ export function summonImageEntity(
 	// `entityY` is the vertical center of the image cell — the layout
 	// computed it (cellY + cellH/2) before calling here.
 	const imgNbt: SymbolEntity['item_display'] = {
-		Tags: [sceneTag, ...extraTags],
+		Tags: [BOOTH_ENTITY_TAG, sceneTag, ...extraTags],
 		item: {
 			id: 'minecraft:paper',
 			count: NBT.int(1),
@@ -170,7 +170,7 @@ export function summonAutocompleteEntities(
 	initialOpacity: number | undefined,
 ): void {
 	const autoId = el.autoId
-	const tags = [sceneTag, ...extraTags, KIND_TEXT_TAG] as (`${any}${string}` | LabelClass)[]
+	const tags = [sceneTag, ...extraTags, KIND_TEXT_TAG, BOOTH_ENTITY_TAG] as (`${any}${string}` | LabelClass)[]
 
 	// Stage-0 state — what the entity shows before the tick MCFunction
 	// gets a chance to update it.

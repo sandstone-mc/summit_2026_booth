@@ -66,7 +66,7 @@ const myRank = Variable(0)
 const scrollPos = Variable(0)
 
 const LB_SEL = Tags.LB_SELECTION
-const RANK_TAGS = Array.from({ length: leaderboardConfig.size }, (_, i) => `ssb.lb.r${i + 1}`)
+const RANK_TAGS = Array.from({ length: leaderboardConfig.size }, (_, i) => `snd.lb.r${i + 1}`)
 
 // the viewed objective is copied here so one shared selection sort covers every song and category
 const sortScratch = Objective.create('rlb.sort', 'dummy')

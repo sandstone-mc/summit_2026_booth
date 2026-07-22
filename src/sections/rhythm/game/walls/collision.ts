@@ -35,7 +35,7 @@ export const hitsTaken = Objective.create('rhythm.hits', 'dummy')
 export const hitTick = Variable(0)
 export const wallHitCooldown = Objective.create('rhythm.wall.hit_cooldown', 'dummy')
 
-const flashPhase = Objective.create('ssb.flash_phase')
+const flashPhase = Objective.create('snd.flash_phase')
 
 const breakNearbyWall = MCFunction(
 	'sections/rhythm/collision/break_wall',

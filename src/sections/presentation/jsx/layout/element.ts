@@ -28,7 +28,7 @@ import {
 	parseInlineFormatting,
 } from '../tree/extract'
 import type { RowFlexWidth } from '../prepare/row-flex'
-import { summon, type ItemModelDefinitionClass } from 'sandstone'
+import { Label, LabelClass, summon, type ItemModelDefinitionClass } from 'sandstone'
 
 const codeBorders = new CodeBorders()
 
@@ -122,7 +122,7 @@ type TextElementLayout = {
 	 */
 	shiftUp?: number
 	/** Unique tag identifying this scrolling block (set when `scrolling`). */
-	scrollTag?: string
+	scrollTag?: LabelClass
 	/** Total scroll distance in blocks (positive; 0 when content fits). */
 	scrollDistBlocks?: number
 	/** Visual-line count of the bordered content (used by the scroll math). */
@@ -738,7 +738,7 @@ function computeTextLayout(
 	// cascading in from a parent like `#code-grid { height: 100% }`)
 	// would lock the block at the wrong size and make the layout engine's
 	// "fill remaining space" math collapse.
-	const scrollTag = `code_scroll_${nextScrollId++}`
+	const scrollTag = Label(`code_scroll_${nextScrollId++}`)
 	const placeholderCellH = 0
 
 	return {

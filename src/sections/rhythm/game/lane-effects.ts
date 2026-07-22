@@ -23,16 +23,16 @@ import { scoreSwitch } from '@rhythm/flow'
 
 const GLOW_DURATION = 1
 
-const glowPick = Objective.create('ssb.glow_pick', 'dummy')
+const glowPick = Objective.create('snd.glow_pick', 'dummy')
 const glowColorScore = glowPick('$glow')
 
 export const laneTeamsInit = MCFunction(
 	'sections/rhythm/lane/teams_init',
 	() => {
 		for (const color of visuals.glowColors) {
-			team.add(`ssb_glow_${color}`)
-			team.modify(`ssb_glow_${color}`, 'color', color as any)
-			team.modify(`ssb_glow_${color}`, 'seeFriendlyInvisibles', false)
+			team.add(`snd_glow_${color}`)
+			team.modify(`snd_glow_${color}`, 'color', color as any)
+			team.modify(`snd_glow_${color}`, 'seeFriendlyInvisibles', false)
 		}
 	},
 	{ lazy: true },
@@ -150,7 +150,7 @@ const BORDER_COLOR_MAP: Record<string, number> = {
 }
 
 function borderStripTag(i: number) {
-	return `ssb.lane.border.${i}`
+	return `snd.lane.border.${i}`
 }
 
 const BORDER_TEXT = ' '.repeat(BORDER_CHARS)
@@ -268,7 +268,7 @@ export const spawnLaneBorder = MCFunction(
 	{ lazy: true },
 )
 
-const borderRippleCounter = Objective.create('ssb.border_ripple', 'dummy')
+const borderRippleCounter = Objective.create('snd.border_ripple', 'dummy')
 const borderColorIndex = borderRippleCounter('$color')
 
 const borderColorFns = visuals.glowColors.map((color, ci) => {
@@ -328,7 +328,7 @@ const colorFns = visuals.glowColors.map((color) =>
 	MCFunction(
 		`sections/rhythm/lane/glow_${color}`,
 		() => {
-			team.join(`ssb_glow_${color}`, laneSelector)
+			team.join(`snd_glow_${color}`, laneSelector)
 			execute.as(laneSelector).run(() => {
 				effect.give('@s', 'minecraft:glowing', GLOW_DURATION, 0, true)
 			})

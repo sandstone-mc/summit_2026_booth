@@ -28,7 +28,7 @@ export type CodePrecomputedMap = WeakMap<VNode, Precomputed>
 /** Spec captured during layout, consumed by the slide's scroll-tick. */
 export type ScrollSpec = {
 	/** Unique tag set on the (single) scroll entity at summon time. */
-	scrollTag: string
+	scrollTag: LabelClass
 	/** Entity's initial Y in world blocks (cellY - 1). */
 	startY: number
 	/** Total scroll distance in world blocks (positive). */

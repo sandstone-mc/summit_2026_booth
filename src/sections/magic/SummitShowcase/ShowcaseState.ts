@@ -434,7 +434,7 @@ MCFunction('sections/magic/showcase/load', () => {
 const killAllBoothEntities = MCFunction('sections/magic/showcase/kill_all', () => {
     kill(Selector('@e', { tag: BOOTH_ENTITY_TAG }))
 })
-Tag('function', 'summit.booth:sandstone_summit_booth/entities/kill', [killAllBoothEntities])
+Tag('function', 'summit.booth:sandstone_summit_booth/entities/kill', [killAllBoothEntities], { onConflict: 'append' })
 
 // Summit compliance: reset_player is called AS the player leaving the booth
 const resetPlayer = MCFunction('sections/magic/showcase/reset_player', () => {
