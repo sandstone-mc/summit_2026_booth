@@ -1,0 +1,2 @@
+playsound block.note_block.basedrum master @s ~ ~ ~ 1 1
+playsound block.note_block.flute master @s ~ ~ ~ 1 0.7491535384383408

@@ -1,0 +1,2 @@
+playsound block.note_block.hat master @s ~ ~ ~ 1 1
+playsound block.note_block.pling master @s ~ ~ ~ 1 0.8408964152537145

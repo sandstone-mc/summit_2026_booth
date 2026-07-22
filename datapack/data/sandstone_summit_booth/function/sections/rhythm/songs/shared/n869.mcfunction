@@ -1,10 +1,1 @@
-execute as @a[x=-82, y=55, z=26, dx=24, dy=16, dz=32] run tag @s add sandstone_summit_booth.rhythm.showcase.listener
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.flute master @s ~ ~ ~ 1 1.2599210498948732
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.harp master @s ~ ~ ~ 1 1.2599210498948732
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.harp master @s ~ ~ ~ 1 1.2599210498948732
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.harp master @s ~ ~ ~ 1 1.2599210498948732
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.harp master @s ~ ~ ~ 1 1.3348398541700344
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.harp master @s ~ ~ ~ 1 1.4983070768766815
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.harp master @s ~ ~ ~ 1 1.8877486253633868
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] at @s run playsound block.note_block.pling master @s ~ ~ ~ 1 0.5297315471796477
-execute as @a[tag=sandstone_summit_booth.rhythm.showcase.listener] run tag @s remove sandstone_summit_booth.rhythm.showcase.listener
+execute as @a[tag=summit.in_booth.sandstone_summit_booth, predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range] at @s run function sandstone_summit_booth:sections/rhythm/songs/shared/n869/execute_as
