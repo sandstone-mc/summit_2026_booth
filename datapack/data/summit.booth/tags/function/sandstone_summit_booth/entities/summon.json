@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "sandstone_summit_booth:sections/npcs/spawn",
+    "sandstone_summit_booth:sections/presentation/menu/spawn",
     "sandstone_summit_booth:sections/elevator/spawn",
     "sandstone_summit_booth:sections/main/showcase/ui/spawn"
   ]
