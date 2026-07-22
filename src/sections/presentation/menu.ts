@@ -239,7 +239,7 @@ const credits_display_entity = Label('sections.presentation.menu.credits_display
 const credits_loop = MCFunction('sections/presentation/menu/credits_loop', () => {
     for (let i = 0; i < PAGE_COUNT; i++) {
         data.modify
-            .entity(credits_display_entity('@e' as '@s'), 'text')
+            .entity(credits_display_entity(Selector('@e', { limit: 1 })), 'text')
             .set.value(creditsPageContent(i))
         sleep(`${PAGE_SECONDS}s`)
     }

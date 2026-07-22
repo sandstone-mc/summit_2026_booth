@@ -1,5 +1,7 @@
 import { join } from 'path'
 
+import loadTag from '.sandstone/output/datapack/data/load/tags/function/load.json'
+
 const outputDir = join(import.meta.dirname, '../.sandstone/output/resourcepack')
 
 const glob = new Bun.Glob('**/*.{json,mcmeta}')
@@ -32,4 +34,12 @@ if (pngs.length > 0) {
 		process.exit(1)
 	}
 	console.log(`[minify] Optimized ${pngs.length} PNGs`)
+}
+
+const editedLoadTag = loadTag
+
+editedLoadTag.values.splice(editedLoadTag.values.findIndex(func => func === '__sandstone:ticked/start/wnylbycd'), 1)
+
+if (process.env.SUMMIT_PROD === 'true') {
+	Bun.file(join(import.meta.dirname, '../.sandstone/output/datapack/data/load/tags/function/load.json')).write(JSON.stringify(editedLoadTag))
 }
