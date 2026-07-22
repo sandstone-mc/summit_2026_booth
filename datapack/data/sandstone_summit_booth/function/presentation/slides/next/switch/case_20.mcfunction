@@ -1,1 +1,1 @@
-return run function sandstone_summit_booth:presentation/slides/show/20
+return run function sandstone_summit_booth:presentation/slides/set/20

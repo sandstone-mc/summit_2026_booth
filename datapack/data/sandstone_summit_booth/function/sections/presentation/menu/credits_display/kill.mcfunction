@@ -1,0 +1,8 @@
+kill @e[tag=sandstone_summit_booth.sections.presentation.menu.credits_display]
+schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop
+schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/schedule
+schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep
+schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep2
+schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep3
+schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep4
+schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep5

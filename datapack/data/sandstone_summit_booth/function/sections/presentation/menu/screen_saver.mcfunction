@@ -1,3 +1,3 @@
 function sandstone_summit_booth:presentation/unmount
 kill @e[tag=sandstone_summit_booth.presentation.menu.screen_saver]
-summon item_display -74.0 84.625 42.197 {item:{id:'paper',count:1i,components:{"minecraft:item_model":'sandstone_summit_booth:presentation/large_logo'}},transformation:{scale:[11.75f,7.5f,0.25f],translation:[0f,0f,0f],left_rotation:[0f,1f,0f,0f],right_rotation:[0f,0f,0f,1f]},brightness:{sky:15i,block:15i},Tags:['summit.booth_entity.sandstone_summit_booth','sandstone_summit_booth.presentation.menu.screen_saver']}
+summon item_display -74.01 84.625 42.197 {item:{id:'paper',count:1i,components:{"minecraft:item_model":'sandstone_summit_booth:presentation/large_logo'}},transformation:{scale:[11.75f,7.5f,0.25f],translation:[0f,0f,0f],left_rotation:[0f,1f,0f,0f],right_rotation:[0f,0f,0f,1f]},brightness:{sky:15i,block:15i},Tags:['summit.booth_entity.sandstone_summit_booth','sandstone_summit_booth.presentation.menu.screen_saver']}

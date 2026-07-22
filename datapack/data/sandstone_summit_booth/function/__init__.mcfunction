@@ -1,5 +1,14 @@
 scoreboard objectives add load.status dummy
 scoreboard objectives add __sandstone dummy [{"text":"Sandstone","color":"gold"}," internals"]
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.line dummy
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_count dummy
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_delay dummy
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_speed dummy
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_total dummy
+scoreboard objectives add sandstone_summit_booth.npc.interact_cooldown dummy
+scoreboard objectives add sandstone_summit_booth.npc.tick_counter dummy
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.variant dummy
+scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_cut dummy
 scoreboard objectives add sandstone_summit_booth.presentation.slide_idx dummy
 scoreboard objectives add sandstone_summit_booth.presentation.scroll dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.cal dummy
@@ -43,15 +52,6 @@ scoreboard objectives add sandstone_summit_booth.rhythm.wall.lives dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.hits dummy
 scoreboard objectives add sandstone_summit_booth.rhythm.wall.hit_cooldown dummy
 scoreboard objectives add sandstone_summit_booth.ssb.flash_phase dummy
-scoreboard objectives add sandstone_summit_booth.npc.dialogue.line dummy
-scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_count dummy
-scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_delay dummy
-scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_speed dummy
-scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_total dummy
-scoreboard objectives add sandstone_summit_booth.npc.interact_cooldown dummy
-scoreboard objectives add sandstone_summit_booth.npc.tick_counter dummy
-scoreboard objectives add sandstone_summit_booth.npc.dialogue.variant dummy
-scoreboard objectives add sandstone_summit_booth.npc.dialogue.reveal_cut dummy
 scoreboard objectives add __sandstone.asyncTimer.sandstone_summit_booth.sections.magic.spells.lightning.static_field.do_cast dummy
 scoreboard players set sandstone_summit_booth load.status 1
 scoreboard players set anon_WnYlBycD_3 __sandstone 0
@@ -107,6 +107,7 @@ scoreboard players set main.showcase.current_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.active_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.idle_ticks_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.change_cooldown_0_WnYlBycD __sandstone 0
+scoreboard players set 5 __sandstone 5
 scoreboard players set 50 __sandstone 50
 scoreboard players set 20 __sandstone 20
 scoreboard players set 60 __sandstone 60
@@ -116,4 +117,3 @@ scoreboard players set 30 __sandstone 30
 scoreboard players set 15 __sandstone 15
 scoreboard players set 10 __sandstone 10
 scoreboard players set 6 __sandstone 6
-scoreboard players set 5 __sandstone 5

@@ -1,3 +1,4 @@
+function sandstone_summit_booth:sections/npcs/tick
 function sandstone_summit_booth:presentation/tick
 function sandstone_summit_booth:sections/elevator/step
 function sandstone_summit_booth:sections/rhythm/tick_loop
@@ -20,4 +21,3 @@ function sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/u
 function sandstone_summit_booth:sections/magic/spells/nature/thorn_volley/update
 function sandstone_summit_booth:sections/magic/spells/nature/entangle/update
 function sandstone_summit_booth:sections/main/showcase/tick
-function sandstone_summit_booth:sections/npcs/tick
