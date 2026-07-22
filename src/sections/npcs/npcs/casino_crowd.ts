@@ -30,12 +30,13 @@ const merchFiendDialogue = DialogueTree('casino_crowd_2', {
                     "I don't understand any of what is going on here, this whole island confuses me",
                     "I came to the Sandstone booth and all I got was this shirt.\n\nAnd I couldn't be happier",
                     "There's a whole lot of words on that screen, give me another balloon!",
-                    "I can't find this last sticker!"
+                    "I can't find this last sticker!",
+                    "I got lost in the jungle for a little bit earlier, but I'm not too worried because I got a sick banner out of it!"
                 ],
             }
         ],
         next: 'choice'
-    }, 
+    },
     {
         id: 'choice',
         lines: [
@@ -73,15 +74,41 @@ const gamblerDialogue = DialogueTree('casino_crowd_3', {
     }],
 })
 
+const balloonBundleHeldItem = {
+    id: 'minecraft:bundle',
+    count: 1,
+    components: {
+        '"minecraft:item_model"': 'summit_balloons:balloon_bundle',
+        '"minecraft:custom_model_data"': {
+            floats: [3],
+            strings: [
+                'sandstone_summit_booth.sand_castle',
+                'sandstone_summit_booth.sand_castle',
+                'sandstone_summit_booth.sand_castle',
+            ],
+        },
+        '"minecraft:custom_data"': {
+            summit: {
+                balloon: {
+                    stamp: '00c50030-a86a-490c-8134-aebc531cbe84',
+                    bundle: 1,
+                    count: 3,
+                },
+            },
+        },
+    },
+}
+
 const CROWD: (Omit<NPCOptions, 'name'> & { id: string })[] = [
     { id: 'casino_crowd_1', position: [-85, 84.5, 55], rotation: [210, 0], pose: 'sitting', dialogue: presentationWatcherDialogue, lookAt: 'interactor', skin: {
         properties: {
             value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTUyOGViMmQ3ZjczZWVkN2JlYjY2NWMxNzliYjJiM2VkNjUzM2Y0NTljNTM5YTJhYzZlMjRhNDRlNDRmZWRhYiJ9fX0="
         }
     } },
+
     { id: 'casino_crowd_2', position: [-55, 85, 62], rotation: [90, 0], pose: 'standing', dialogue: merchFiendDialogue, lookAt: 'interactor', skin: { properties: {
         value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTJmN2Y1YmQwM2IyZTIyYzQ4MzJlNzVkZTY1MzhiNWY1ZjcyNGIxOTZkMjAxZTM0ZWFhZGFkMzg4ZmRkZGEwYiJ9fX0="
-    }, model: 'slim' } },
+    }, model: 'slim' }, mainHand: balloonBundleHeldItem },
     { id: 'casino_crowd_3', position: [-74, 74, 53], rotation: [180, 0], pose: 'crouching', dialogue: gamblerDialogue, lookAt: 'none', mainHand: 'minecraft:diamond', skin: PLACEHOLDER_SKIN },
 ]
 

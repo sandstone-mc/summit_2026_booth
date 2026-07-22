@@ -1,4 +1,4 @@
-import { _, abs, Advancement, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon, Tag } from 'sandstone'
+import { _, abs, Advancement, Data, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon, Tag } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
 import type { DialogueTree } from './DialogueTree'
 
@@ -64,6 +64,14 @@ export type LookAtMode = 'nearest' | 'interactor' | 'none'
 // 'sitting' is faked by mounting the mannequin on an invisible zero-height interaction seat
 export type NPCPose = 'standing' | 'crouching' | 'sleeping' | 'sitting'
 
+export interface NPCItemStack {
+    id: string
+    count?: any
+    components?: Record<string, any>
+}
+
+export type NPCHeldItem = string | NPCItemStack
+
 export interface NPCOptions {
     name: string
     skin: NPCSkin
@@ -74,8 +82,8 @@ export interface NPCOptions {
     lookAt?: LookAtMode
     // Defaults to 'standing'
     pose?: NPCPose
-    mainHand?: string
-    offHand?: string
+    mainHand?: NPCHeldItem
+    offHand?: NPCHeldItem
     // Omit for a purely decorative NPC, no click detection gets set up for it
     dialogue?: DialogueTree
 }
@@ -125,8 +133,8 @@ const spawnNpcs = MCFunction('sections/npcs/spawn', () => {
             profile: profileFor(npc.skin),
             pose: npc.pose === 'sitting' ? 'standing' : (npc.pose ?? 'standing'),
             equipment: {
-                ...(npc.mainHand ? { mainhand: { id: npc.mainHand as any, count: NBT.int(1) } } : {}),
-                ...(npc.offHand ? { offhand: { id: npc.offHand as any, count: NBT.int(1) } } : {}),
+                ...(typeof npc.mainHand === 'string' ? { mainhand: { id: npc.mainHand as any, count: NBT.int(1) } } : {}),
+                ...(typeof npc.offHand === 'string' ? { offhand: { id: npc.offHand as any, count: NBT.int(1) } } : {}),
             },
             Passengers: [
                 {
@@ -150,6 +158,17 @@ const spawnNpcs = MCFunction('sections/npcs/spawn', () => {
         }
 
         summon('minecraft:mannequin', abs(x, y, z), mannequinNbt)
+
+        if (typeof npc.mainHand === 'object' || typeof npc.offHand === 'object') {
+            execute.as(Selector('@e', { tag: npc.instanceTag, type: 'minecraft:mannequin', limit: 1 })).run(() => {
+                if (typeof npc.mainHand === 'object') {
+                    Data('entity', '@s', 'equipment.mainhand').set(npc.mainHand as any)
+                }
+                if (typeof npc.offHand === 'object') {
+                    Data('entity', '@s', 'equipment.offhand').set(npc.offHand as any)
+                }
+            })
+        }
 
         if (npc.pose === 'sitting') {
             summon('minecraft:interaction', abs(x, y, z), {
