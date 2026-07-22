@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { abs, Advancement, Data, dialog, execute, kill, Label, type LabelClass, MCFunction, NBT, say, schedule, Selector, sleep, summon, Texture } from 'sandstone'
+import { abs, Advancement, data, Data, dialog, execute, kill, Label, type LabelClass, MCFunction, NBT, say, schedule, Selector, sleep, summon, Tag, Texture } from 'sandstone'
 import { ImageDisplayModel } from './utils'
 import { BOOTH_ENTITY_TAG, fmt } from '@shared'
 import { mount, nextSlide, unmount } from '.'
@@ -238,21 +238,25 @@ const credits_display_entity = Label('sections.presentation.menu.credits_display
 
 const credits_loop = MCFunction('sections/presentation/menu/credits_loop', () => {
     for (let i = 0; i < PAGE_COUNT; i++) {
-        execute.as(credits_display_entity('@e' as '@s')).run.data.modify
-            .entity('@s', 'text')
+        data.modify
+            .entity(credits_display_entity('@e' as '@s'), 'text')
             .set.value(creditsPageContent(i))
         sleep(`${PAGE_SECONDS}s`)
     }
     schedule.function(credits_loop, '1t', 'replace')
 })
 
-const spawn_credits_display = MCFunction('sections/presentation/menu/credits_display/spawn', () => {
+const kill_credits_display = MCFunction('sections/presentation/menu/credits_display/kill', () => {
     kill(credits_display_entity('@e' as '@s'))
     schedule.clear(credits_loop.name)
     schedule.clear(`${credits_loop.name}/schedule`)
     for (let i = 1; i <= PAGE_COUNT; i++) {
         schedule.clear(`${credits_loop.name}/${i === 1 ? '__sleep' : `__sleep${i}`}`)
     }
+})
+
+const spawn_credits_display = MCFunction('sections/presentation/menu/credits_display/spawn', () => {
+    kill_credits_display()
     summon('text_display', point(2, 0.4), {
         Tags: [BOOTH_ENTITY_TAG, credits_display_entity],
         text: creditsPageContent(0),
@@ -267,15 +271,6 @@ const spawn_credits_display = MCFunction('sections/presentation/menu/credits_dis
         },
     })
     schedule.function(credits_loop, '1t', 'replace')
-})
-
-const kill_credits_display = MCFunction('sections/presentation/menu/credits_display/kill', () => {
-    execute.run.kill(Selector('@e', { tag: credits_display_entity }))
-    schedule.clear(credits_loop.name)
-    schedule.clear(`${credits_loop.name}/schedule`)
-    for (let i = 1; i <= PAGE_COUNT; i++) {
-        schedule.clear(`${credits_loop.name}/${i === 1 ? '__sleep' : `__sleep${i}`}`)
-    }
 })
 
 const credits_button = Advancement('sections/presentation/menu/credits_button', {
@@ -304,7 +299,21 @@ MCFunction('sections/presentation/end', () => {
     }, `${60 * 5}s`)
 }, { onConflict: 'append' })
 
-export const spawnPresentation = MCFunction('sections/presentation/menu/spawn', () => {
-    spawn_0()
-    screen_saver()
-})
+Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [
+    MCFunction('sections/presentation/menu/spawn', () => {
+        spawn_0()
+        screen_saver()
+    })
+], { onConflict: 'append' })
+
+Tag('function', 'summit.booth:sandstone_summit_booth/entities/kill', [
+    MCFunction('sections/presentation/menu/kill', () => {
+        kill_0()
+        kill_1()
+        kill_2()
+        kill_credits_display()
+        kill(small_logo_entity('@e' as '@s'))
+        kill(screen_saver_entity('@e' as '@s'))
+        unmount()
+    })
+], { onConflict: 'append' })
