@@ -2,7 +2,6 @@
   "replace": false,
   "values": [
     "sandstone_summit_booth:__init__",
-    "sandstone_summit_booth:version_check",
     "__sandstone:ticked/start/wnylbycd",
     "sandstone_summit_booth:sections/rhythm/scoring/init",
     "sandstone_summit_booth:sections/magic/playerdb/load",

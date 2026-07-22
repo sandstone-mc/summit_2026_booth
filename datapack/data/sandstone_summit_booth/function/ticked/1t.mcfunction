@@ -1,3 +1,4 @@
+function #sandstone_summit_booth:ticking
 function sandstone_summit_booth:sections/npcs/tick
 function sandstone_summit_booth:sections/presentation/tick
 function sandstone_summit_booth:sections/elevator/step
