@@ -47,7 +47,7 @@ export type ScrollSpec = {
 
 /**
  * Spec captured during layout for a `<autocomplete>` element.
- * Consumed by `presentation/slides/autocomplete/<idx>` to drive the
+ * Consumed by `sections/presentation/slides/autocomplete/<idx>` to drive the
  * editor text swap + cursor translation/blink + popup text+visibility
  * per typing stage.
  */

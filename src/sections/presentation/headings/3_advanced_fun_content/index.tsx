@@ -32,9 +32,10 @@ export const slides = [
 			<explorer
 				width="35vw"
 				path-start={3}
-				root=".sandstone/output/datapack/data/sandstone_summit_booth/function/sections/rhythm/calibration"
+				root=".sandstone/output/datapack/data/sandstone_summit_booth/function/sections/rhythm/songs"
 				scrolling={true}
 				no-dash={true}
+				exclude={['shared']}
 			/>
 		</div>
 	</>),

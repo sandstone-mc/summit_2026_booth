@@ -75,6 +75,12 @@ export type CodeProps = CommonProps & {
  *   `no-dash` — render connectors as just `├` and `└` (no `─`), so
  *      each entry takes 1 fewer char of horizontal space. Default
  *      `false`. Ancestor columns (`│ ` / `  `) are unchanged.
+ *   `exclude` — folder names (basenames) whose contents should be
+ *      hidden. The folder itself still renders as a row, but the
+ *      walker doesn't descend into it. Useful for dropping
+ *      "shared" / "common" / "internal" sibling directories that
+ *      aren't relevant to the slide's story. Match is exact,
+ *      case-sensitive, against the entry's basename (not the path).
  */
 export type ExplorerProps = CommonProps & {
 	root: string
@@ -83,6 +89,7 @@ export type ExplorerProps = CommonProps & {
 	scrolling?: boolean
 	'side-padding'?: [number, number]
 	'no-dash'?: boolean
+	exclude?: string[]
 }
 
 /**

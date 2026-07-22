@@ -191,7 +191,7 @@ type ImageElementLayout = {
  * into three text_display entities (editor, cursor, popup) at the same
  * XZ. The `stages[]` array describes what each of the three entities
  * renders at every typing stage; the per-slide tick MCFunction
- * (`presentation/slides/autocomplete/<idx>`) drives all three per stage.
+ * (`sections/presentation/slides/autocomplete/<idx>`) drives all three per stage.
  */
 type AutocompleteElementLayout = {
 	kind: 'autocomplete'

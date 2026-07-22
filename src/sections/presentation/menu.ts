@@ -3,8 +3,8 @@ import { abs, Advancement, Data, dialog, execute, kill, Label, type LabelClass, 
 import { ImageDisplayModel } from './utils'
 import { BOOTH_ENTITY_TAG, fmt } from '@shared'
 import { mount, nextSlide, unmount } from '.'
-import { argb, rgb } from 'src/sections/rhythm/config/internal/colors';
-import { creditsDialog, creditsPageContent, CREDITS } from 'src/sections/npcs/npcs/credits';
+import { argb, rgb } from 'src/sections/rhythm/config/internal/colors'
+import { creditsDialog, creditsPageContent, CREDITS } from 'src/sections/npcs/npcs/credits'
 
 const ORIGIN = [-76, 76, 42] as const
 
@@ -13,6 +13,37 @@ const point = (x: number, y: number, z?: number) => `${fmt(ORIGIN[0] + x - 0.01)
 function click_entity(buttonTag: `${any}${string}` | LabelClass) {
 	return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [`${buttonTag}`] } }
 }
+
+const large_logo = ImageDisplayModel(Texture('item', 'presentation/large_logo',
+    await Bun.file(join(process.cwd(), 'resources', 'assets', 'large_logo.png')).arrayBuffer() as unknown as Buffer<ArrayBufferLike>
+))
+
+const screen_saver_entity = Label('presentation.menu.screen_saver')
+
+const screen_saver = MCFunction('sections/presentation/menu/screen_saver', () => {
+    unmount()
+
+    kill(screen_saver_entity('@e' as '@s'))
+
+    summon('item_display', point(2, 8.625, -0.195), {
+        item: {
+            id: 'paper',
+            count: NBT.int(1),
+            components: {
+                /* @ts-ignore */
+                '"minecraft:item_model"': `${large_logo}`
+            }
+        },
+        transformation: {
+			scale: NBT.float([47 / 4, 30 / 4, 1 / 4]),
+			translation: NBT.float([0, 0, 0]),
+			left_rotation: NBT.float([0, 1, 0, 0]),
+			right_rotation: NBT.float([0, 0, 0, 1]),
+		},
+		brightness: { sky: NBT.int(15), block: NBT.int(15) },
+        Tags: [ BOOTH_ENTITY_TAG, screen_saver_entity ],
+    })
+})
 
 const start_button_text = Label('sections.presentation.menu.start_text')
 const start_button_entity = Label('sections.presentation.menu.start_button')
@@ -71,6 +102,12 @@ const spawn_0 = MCFunction('sections/presentation/menu/spawn_0', () => {
     })
 })
 
+const small_logo_entity = Label('presentation.menu.small_logo')
+
+const small_logo = ImageDisplayModel(Texture('item', 'presentation/small_logo',
+    await Bun.file(join(process.cwd(), 'resources', 'assets', 'small_logo.png')).arrayBuffer() as unknown as Buffer<ArrayBufferLike>
+))
+
 const start_button = Advancement('sections/presentation/menu/start_button', {
 	criteria: {
 		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(start_button_entity) } },
@@ -80,42 +117,30 @@ const start_button = Advancement('sections/presentation/menu/start_button', {
 
         mount()
 
+        summon('item_display', point(-6.25, 13.5, -0.195), {
+            item: {
+                id: 'paper',
+                count: NBT.int(1),
+                components: {
+                    /* @ts-ignore */
+                    '"minecraft:item_model"': `${small_logo}`
+                }
+            },
+            transformation: {
+                scale: NBT.float([23 / 20, 13 / 20, 1 / 4]),
+                translation: NBT.float([0, 0, 0]),
+                left_rotation: NBT.float([0, 1, 0, 0]),
+                right_rotation: NBT.float([0, 0, 0, 1]),
+            },
+            brightness: { sky: NBT.int(15), block: NBT.int(15) },
+            Tags: [ BOOTH_ENTITY_TAG, small_logo_entity ],
+        })
+
         kill(screen_saver_entity('@e' as '@s'))
         kill_0()
 
         spawn_1()
     }) }
-})
-
-const Logo = ImageDisplayModel(Texture('item', 'presentation/large_logo',
-    await Bun.file(join(process.cwd(), 'resources', 'assets', 'large_logo.png')).arrayBuffer() as unknown as Buffer<ArrayBufferLike>
-))
-
-const screen_saver_entity = Label('presentation.menu.screen_saver')
-
-const screen_saver = MCFunction('sections/presentation/menu/screen_saver', () => {
-    unmount()
-
-    kill(screen_saver_entity('@e' as '@s'))
-
-    summon('item_display', point(2, 8.625), {
-        item: {
-            id: 'paper',
-            count: NBT.int(1),
-            components: {
-                /* @ts-ignore */
-                '"minecraft:item_model"': `${Logo}`
-            }
-        },
-        transformation: {
-			scale: NBT.float([47 / 4, 30 / 4, 1 / 4]),
-			translation: NBT.float([0, 0, 0]),
-			left_rotation: NBT.float([0, 1, 0, 0]),
-			right_rotation: NBT.float([0, 0, 0, 1]),
-		},
-		brightness: { sky: NBT.int(15), block: NBT.int(15) },
-        Tags: [ BOOTH_ENTITY_TAG, screen_saver_entity ],
-    })
 })
 
 const next_button_text = Label('sections.presentation.menu.next_text')
@@ -272,6 +297,7 @@ MCFunction('sections/presentation/end', () => {
     schedule.function(() => {
         kill_2()
         kill_credits_display()
+        kill(small_logo_entity('@e' as '@s'))
 
         spawn_0()
         screen_saver()

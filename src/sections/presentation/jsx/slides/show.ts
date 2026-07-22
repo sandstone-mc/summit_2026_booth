@@ -169,7 +169,7 @@ export class SlideShow {
 			// so this selector must hit every slide entity — that includes
 			// images, which carry `slide_<n>` but not `kind.text`.
 			this.showSlide.push(
-				MCFunction(`presentation/slides/show/${s}`, () => {
+				MCFunction(`sections/presentation/slides/show/${s}`, () => {
 					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG] })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(-1))
@@ -179,7 +179,7 @@ export class SlideShow {
 				}),
 			)
 			this.hideSlide.push(
-				MCFunction(`presentation/slides/hide/${s}`, () => {
+				MCFunction(`sections/presentation/slides/hide/${s}`, () => {
 					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG] })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(0))
@@ -194,7 +194,7 @@ export class SlideShow {
 		for (let i = 0; i < this.totalSlides; i++) {
 			const index = i
 			this.setSlideFns.push(
-				MCFunction(`presentation/slides/set/${index}`, () => {
+				MCFunction(`sections/presentation/slides/set/${index}`, () => {
 					// Stamp the moment this slide became visible so the
 					// scroll-tick can derive elapsed time per-tick.
 					execute.store.result
@@ -226,12 +226,12 @@ export class SlideShow {
 			const specs = this.scrollSpecsPerSlide[idx]
 			if (specs.length === 0) {
 				this.scrollTickFns.push(
-					MCFunction(`presentation/slides/scroll/${idx}`, () => {}),
+					MCFunction(`sections/presentation/slides/scroll/${idx}`, () => {}),
 				)
 				continue
 			}
 			this.scrollTickFns.push(
-				MCFunction(`presentation/slides/scroll/${idx}`, () => {
+				MCFunction(`sections/presentation/slides/scroll/${idx}`, () => {
 					execute.store.result
 						.score(this.tempCurrentTime)
 						.run.time.query('gametime')
@@ -300,12 +300,12 @@ export class SlideShow {
 			const specs = this.autocompleteSpecsPerSlide[idx]
 			if (specs.length === 0) {
 				this.autocompleteTickFns.push(
-					MCFunction(`presentation/slides/autocomplete/${idx}`, () => {}),
+					MCFunction(`sections/presentation/slides/autocomplete/${idx}`, () => {}),
 				)
 				continue
 			}
 			this.autocompleteTickFns.push(
-				MCFunction(`presentation/slides/autocomplete/${idx}`, () => {
+				MCFunction(`sections/presentation/slides/autocomplete/${idx}`, () => {
 					// Read elapsed time once per tick.
 					execute.store.result
 						.score(this.tempCurrentTime)
@@ -722,7 +722,7 @@ export class SlideShow {
 			throw new Error(`rerenderSlide: index ${index} out of range (0..${this.totalSlides - 1})`)
 		}
 		const visible = flatWalk(tree).filter(({ node }) => isVisibleType(node.type))
-		return MCFunction(`presentation/slides/rerender/${index}`, () => {
+		return MCFunction(`sections/presentation/slides/rerender/${index}`, () => {
 			execute.run.kill(Selector('@e', { tag: slideTag(index) }))
 			summonVisibleElements(
 				visible,

@@ -114,6 +114,12 @@ type TruncationOpts = {
 		folder: `#${string}`
 		file: `#${string}`
 	}
+	/**
+	 * Folder basenames whose contents should be hidden. The folder
+	 * itself still renders as a row, but the walker does not descend
+	 * into it. Built once per `<explorer>` from the JSX `exclude` prop.
+	 */
+	exclude?: Set<string>
 }
 
 export async function prepareExplorerTrees(
@@ -159,6 +165,14 @@ export async function prepareExplorerTrees(
 			// as just `├` / `└`.
 			const sidePadding = parseSidePadding(node.props?.['side-padding'])
 			const noDash = node.props?.['no-dash'] === true
+			// `exclude` accepts a `string[]` of folder basenames. Filter
+			// to non-empty strings so a stray `['', 'shared']` doesn't
+			// match every folder. Built once per `<explorer>` and reused
+			// by every recursive descent into the tree.
+			const excludeRaw = node.props?.exclude
+			const exclude = Array.isArray(excludeRaw)
+				? new Set(excludeRaw.filter((x): x is string => typeof x === 'string' && x.length > 0))
+				: undefined
 			// JSX `width` prop wins over LESS — matches `<img>` /
 			// `<code>`'s resolution order.
 			const widthRaw =
@@ -188,6 +202,7 @@ export async function prepareExplorerTrees(
 				const fitOpts: TruncationOpts = {
 					budget: Number.POSITIVE_INFINITY,
 					noDash,
+					exclude,
 					colors: {
 						prefix: DEFAULT_CODE_BORDER_COLOR as `#${string}`,
 						folder: DEFAULT_EXPLORER_FOLDER_COLOR,
@@ -263,6 +278,7 @@ export async function prepareExplorerTrees(
 			const opts: TruncationOpts = {
 				budget: maxCodeChars,
 				noDash,
+				exclude,
 				colors: {
 					prefix: DEFAULT_CODE_BORDER_COLOR as `#${string}`,
 					folder: DEFAULT_EXPLORER_FOLDER_COLOR,
@@ -347,6 +363,10 @@ function walk(
 		const prefix = makeTreePrefix(ancestorsMore, isLast, opts?.noDash)
 		const row = buildRow(prefix, e.name, e.isFolder, ancestorsMore, isLast, opts)
 		out.push(row)
+		// Skip recursion into folders named in `exclude`. The folder
+		// row already rendered above; we just don't enumerate its
+		// children. Cheap match (Set lookup) — happens once per dir.
+		if (e.isFolder && opts?.exclude?.has(e.name)) continue
 		if (e.isFolder) walk(path.join(dirAbs, e.name), depth + 1, [...ancestorsMore, !isLast], opts, out)
 	}
 }
