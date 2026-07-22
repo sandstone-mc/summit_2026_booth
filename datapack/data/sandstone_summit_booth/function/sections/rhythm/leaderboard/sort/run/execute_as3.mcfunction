@@ -1,1 +1,1 @@
-execute if score @s sandstone_summit_booth.rlb.sort > anon_WnYlBycD_43 __sandstone run scoreboard players operation anon_WnYlBycD_43 __sandstone = @s sandstone_summit_booth.rlb.sort
+execute if score @s sandstone_summit_booth.rlb.sort > anon_WnYlBycD_36 __sandstone run scoreboard players operation anon_WnYlBycD_36 __sandstone = @s sandstone_summit_booth.rlb.sort

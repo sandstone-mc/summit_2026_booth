@@ -1,2 +1,2 @@
-execute store result storage __sandstone:variable anon_WnYlBycD_71.env_0 int 1 run scoreboard players get anon_WnYlBycD_31 __sandstone
-return run function sandstone_summit_booth:sections/magic/spellbook/cycle_spell/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_71
+execute store result storage __sandstone:variable anon_WnYlBycD_68.env_0 int 1 run scoreboard players get anon_WnYlBycD_24 __sandstone
+return run function sandstone_summit_booth:sections/magic/spellbook/cycle_spell/switch/dispatch with storage __sandstone:variable anon_WnYlBycD_68

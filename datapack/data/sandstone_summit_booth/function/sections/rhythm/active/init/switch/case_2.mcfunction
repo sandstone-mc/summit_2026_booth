@@ -1,1 +1,1 @@
-scoreboard players set anon_WnYlBycD_48 __sandstone 5700
+scoreboard players set anon_WnYlBycD_40 __sandstone 5700

@@ -1,2 +1,0 @@
-execute if score anon_WnYlBycD_16 __sandstone matches 8.. run return run function sandstone_summit_booth:sections/rhythm/calibration/finish/if/if/0_if/return_run
-tellraw @a[tag=ssb.rhythm.cal.player, limit=1] [{"text":"⧗ ","color":"aqua"},{"text":"Not enough taps, calibration discarded.","color":"gray"}]

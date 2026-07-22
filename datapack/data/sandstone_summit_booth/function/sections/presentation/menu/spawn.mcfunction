@@ -1,2 +1,0 @@
-function sandstone_summit_booth:sections/presentation/menu/spawn_0
-function sandstone_summit_booth:sections/presentation/menu/screen_saver

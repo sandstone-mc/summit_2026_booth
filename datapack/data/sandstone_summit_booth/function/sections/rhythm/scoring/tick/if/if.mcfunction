@@ -1,3 +1,3 @@
-scoreboard players set anon_WnYlBycD_24 __sandstone 0
+scoreboard players set anon_WnYlBycD_16 __sandstone 0
 function sandstone_summit_booth:sections/rhythm/lane/beat
-execute if score anon_WnYlBycD_47 __sandstone matches 0 as @a[tag=ssb.rhythm.player] at @s run function sandstone_summit_booth:sections/rhythm/scoring/tick/if/if/execute_if
+execute if score anon_WnYlBycD_17 __sandstone matches 0 as @a[tag=ssb.rhythm.player] at @s run function sandstone_summit_booth:sections/rhythm/scoring/tick/if/if/execute_if

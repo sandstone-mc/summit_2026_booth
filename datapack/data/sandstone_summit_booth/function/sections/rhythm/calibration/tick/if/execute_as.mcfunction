@@ -1,2 +1,0 @@
-execute if data entity @s attack run function sandstone_summit_booth:sections/rhythm/calibration/tick/if/execute_as/execute_if
-execute if data entity @s interaction run function sandstone_summit_booth:sections/rhythm/calibration/tick/if/execute_as/execute_if2

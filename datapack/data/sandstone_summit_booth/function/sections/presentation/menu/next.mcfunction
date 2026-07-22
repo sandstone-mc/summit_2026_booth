@@ -1,2 +1,0 @@
-advancement revoke @s only sandstone_summit_booth:sections/presentation/menu/next_button
-function sandstone_summit_booth:presentation/slides/next

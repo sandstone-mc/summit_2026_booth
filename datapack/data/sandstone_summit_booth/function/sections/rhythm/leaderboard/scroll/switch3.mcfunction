@@ -1,2 +1,2 @@
-execute store result storage __sandstone:variable anon_WnYlBycD_86.env_0 int 1 run scoreboard players get anon_WnYlBycD_46 __sandstone
-return run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/switch3/dispatch with storage __sandstone:variable anon_WnYlBycD_86
+execute store result storage __sandstone:variable anon_WnYlBycD_83.env_0 int 1 run scoreboard players get anon_WnYlBycD_39 __sandstone
+return run function sandstone_summit_booth:sections/rhythm/leaderboard/scroll/switch3/dispatch with storage __sandstone:variable anon_WnYlBycD_83

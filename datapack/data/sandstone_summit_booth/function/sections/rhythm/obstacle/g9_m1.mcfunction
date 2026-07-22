@@ -4,4 +4,4 @@ summon minecraft:interaction -70 65 22 {Tags:['summit.booth_entity.sandstone_sum
 summon minecraft:interaction -70 66 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new'],width:0.5f,height:1f}
 summon minecraft:interaction -70 67 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new'],width:0.5f,height:1f}
 summon minecraft:happy_ghast -70 68 22 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','ssb.rhythm.wall','ssb.rhythm.wall.hit','ssb.rhythm.wall.new'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,attributes:[{id:'minecraft:scale',base:0.25d}],active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}
-scoreboard players set anon_WnYlBycD_20 __sandstone 10
+scoreboard players set anon_WnYlBycD_12 __sandstone 10

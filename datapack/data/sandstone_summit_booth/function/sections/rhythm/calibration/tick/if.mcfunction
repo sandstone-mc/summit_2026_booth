@@ -1,1 +1,0 @@
-execute as @e[tag=ssb.rhythm.cal.pad, type=minecraft:interaction] run function sandstone_summit_booth:sections/rhythm/calibration/tick/if/execute_as
