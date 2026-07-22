@@ -67,7 +67,7 @@ const gamblerDialogue = DialogueTree('casino_crowd_3', {
                 variants: [
                     "All in on red!",
                     "I keep betting but this wheel never spins...",
-                    "let it ride!!!!"
+                    "Let it ride!!!!"
                 ],
             },
         ],
@@ -109,7 +109,9 @@ const CROWD: (Omit<NPCOptions, 'name'> & { id: string })[] = [
     { id: 'casino_crowd_2', position: [-55, 85, 62], rotation: [90, 0], pose: 'standing', dialogue: merchFiendDialogue, lookAt: 'interactor', skin: { properties: {
         value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTJmN2Y1YmQwM2IyZTIyYzQ4MzJlNzVkZTY1MzhiNWY1ZjcyNGIxOTZkMjAxZTM0ZWFhZGFkMzg4ZmRkZGEwYiJ9fX0="
     }, model: 'slim' }, mainHand: balloonBundleHeldItem },
-    { id: 'casino_crowd_3', position: [-74, 74, 53], rotation: [180, 0], pose: 'crouching', dialogue: gamblerDialogue, lookAt: 'none', mainHand: 'minecraft:diamond', skin: PLACEHOLDER_SKIN },
+    { id: 'casino_crowd_3', position: [-74, 74, 53], rotation: [180, 0], pose: 'crouching', dialogue: gamblerDialogue, lookAt: 'none', mainHand: 'minecraft:diamond', skin: { properties: {
+        value: "e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTk4OTI4MDAxNTU2ODEwMDM0ZmEyZmE4YmI3NzQ1M2U4ZDEwNzJjNTNmM2UwYmZhOTM1MjcyNjE2ODVkZjFhNyJ9fX0="
+    }, model: 'slim'} },
 ]
 
 for (const { id, ...options } of CROWD) {

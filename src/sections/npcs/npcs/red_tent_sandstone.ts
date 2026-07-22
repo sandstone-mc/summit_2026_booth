@@ -22,7 +22,11 @@ const redTentDialogue = DialogueTree('red_tent_sandstone', {
 
 CreateNPC('red_tent_sandstone', {
     name: 'James',
-    skin: PLACEHOLDER_SKIN,
+    skin: {
+        properties: {
+            value: "e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWQwZmEyZWVhNjlmZDNjNWE4NmIyZTM1ODBmY2E4MzJmOTRkYjkyZDM2YmFjMjY2NWJjNWJjNjc0NzQ1N2Y0OCJ9fX0="
+        }
+    },
     position: [-68, 93, 54],
     lookAt: 'nearest',
     dialogue: redTentDialogue,
