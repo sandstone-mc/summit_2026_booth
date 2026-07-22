@@ -1,5 +1,5 @@
-scoreboard players operation anon_WnYlBycD_72 __sandstone = @s sandstone_summit_booth.lifetime
-scoreboard players operation anon_WnYlBycD_72 __sandstone %= 10 __sandstone
+scoreboard players operation anon_WnYlBycD_79 __sandstone = @s sandstone_summit_booth.lifetime
+scoreboard players operation anon_WnYlBycD_79 __sandstone %= 10 __sandstone
 function sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/update/execute_as/if
 tp @s ^ ^ ^0.1
 scoreboard players remove @s sandstone_summit_booth.lifetime 1

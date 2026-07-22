@@ -1,0 +1,5 @@
+kill @e[tag=sandstone_summit_booth.sections.presentation.menu.credits]
+function sandstone_summit_booth:sections/presentation/menu/credits_display/kill
+kill @e[tag=sandstone_summit_booth.presentation.menu.small_logo]
+function sandstone_summit_booth:sections/presentation/menu/spawn_0
+return run function sandstone_summit_booth:sections/presentation/menu/screen_saver

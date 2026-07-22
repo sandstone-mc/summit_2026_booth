@@ -1,0 +1,2 @@
+function sandstone_summit_booth:sections/presentation/slides/scroll/0
+return run function sandstone_summit_booth:sections/presentation/slides/autocomplete/0

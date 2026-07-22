@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
+    "sandstone_summit_booth:sections/npcs/tick",
+    "sandstone_summit_booth:sections/presentation/tick",
     "sandstone_summit_booth:sections/elevator/step",
     "sandstone_summit_booth:sections/rhythm/tick_loop",
     "sandstone_summit_booth:sections/magic/playerdb/tick",
@@ -21,7 +23,6 @@
     "sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/update",
     "sandstone_summit_booth:sections/magic/spells/nature/thorn_volley/update",
     "sandstone_summit_booth:sections/magic/spells/nature/entangle/update",
-    "sandstone_summit_booth:sections/main/showcase/tick",
-    "sandstone_summit_booth:sections/npcs/tick"
+    "sandstone_summit_booth:sections/main/showcase/tick"
   ]
 }

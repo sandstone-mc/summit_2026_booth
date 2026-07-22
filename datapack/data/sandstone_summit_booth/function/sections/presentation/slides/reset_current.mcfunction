@@ -1,0 +1,1 @@
+execute store result score #shown_at sandstone_summit_booth.presentation.scroll run time query gametime
