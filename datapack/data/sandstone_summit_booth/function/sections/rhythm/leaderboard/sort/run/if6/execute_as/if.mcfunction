@@ -1,2 +1,2 @@
-tag @s add ssb.lb.sel
-tag @s add ssb.lb.r6
+tag @s add snd.lb.sel
+tag @s add snd.lb.r6

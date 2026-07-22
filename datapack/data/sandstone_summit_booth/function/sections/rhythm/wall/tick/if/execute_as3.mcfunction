@@ -1,2 +1,2 @@
-tag @s add ssb.rhythm.wall.init
-tag @s remove ssb.rhythm.wall.wait
+tag @s add snd.rhythm.wall.init
+tag @s remove snd.rhythm.wall.wait

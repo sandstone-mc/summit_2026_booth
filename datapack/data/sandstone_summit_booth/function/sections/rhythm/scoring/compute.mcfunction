@@ -1,1 +1,1 @@
-execute as @a[tag=ssb.rhythm.player] run function sandstone_summit_booth:sections/rhythm/scoring/compute/execute_as
+execute as @a[tag=snd.rhythm.player] run function sandstone_summit_booth:sections/rhythm/scoring/compute/execute_as

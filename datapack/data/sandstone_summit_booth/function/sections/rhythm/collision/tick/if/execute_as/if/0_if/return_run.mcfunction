@@ -1,2 +1,2 @@
-tag @s remove ssb.rhythm.wall.cd
+tag @s remove snd.rhythm.wall.cd
 effect clear @s minecraft:invisibility

@@ -1,2 +1,2 @@
-team join ssb_glow_aqua @e[tag=ssb.rhythm.lane]
-execute as @e[tag=ssb.rhythm.lane] run effect give @s minecraft:glowing 1 0 true
+team join snd_glow_aqua @e[tag=snd.rhythm.lane]
+execute as @e[tag=snd.rhythm.lane] run effect give @s minecraft:glowing 1 0 true

@@ -1,1 +1,1 @@
-data merge entity @e[tag=ssb.ui.set.map, limit=1] {text:[{text:'  🗺 Map: ',color:'gray'},{text:'  Crimson Ember     ',color:'green',font:'sandstone_summit_booth:monospace'}]}
+data merge entity @e[tag=snd.ui.set.map, limit=1] {text:[{text:'  🗺 Map: ',color:'gray'},{text:'  Crimson Ember     ',color:'green',font:'sandstone_summit_booth:monospace'}]}

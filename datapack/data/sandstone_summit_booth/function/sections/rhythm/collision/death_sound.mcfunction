@@ -1,1 +1,1 @@
-execute as @a[tag=ssb.rhythm.player] at @s run playsound minecraft:entity.player.hurt master @s ~ ~ ~ 1 0.5
+execute as @a[tag=snd.rhythm.player] at @s run playsound minecraft:entity.player.hurt master @s ~ ~ ~ 1 0.5

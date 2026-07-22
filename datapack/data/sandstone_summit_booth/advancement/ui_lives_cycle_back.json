@@ -7,7 +7,7 @@
           "entity_type": "minecraft:interaction",
           "entity_tags": {
             "all_of": [
-              "ssb.ui.set.li"
+              "snd.ui.set.li"
             ]
           }
         }
