@@ -9,6 +9,8 @@
 
   <p>The <a href="https://sandstone.dev">Sandstone</a> booth for <a href="https://smithed.net/summit">Smithed Summit 2026</a>,<br>
   written entirely in TypeScript.</p>
+
+  <a href="https://smithed.net/summit"><img src=".github/compact-plural-smithed-summit-2026_46h.png" alt="Summit badge" align="center" width="240" hspace="14" vspace="6"></a>
 </div>
 
 ## The booth
