@@ -12,3 +12,4 @@ resources/assets/songs/private/*
 # never publish summit internals
 resources/datapack_dependencies/*do-not-share*
 resources/datapack_dependencies/summit-dp-core*
+resources/scl

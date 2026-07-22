@@ -10,16 +10,11 @@ import { Z_VISUAL_OFFSET } from './constants'
 import { KIND_TEXT_TAG } from '../slides/tags'
 import type { ElementLayout } from './element'
 import type { StyledSegment } from '../render'
+import { fmt } from '@shared'
 
 const ROTATION_QUATERNION = NBT.float([0, 0, 0, 1])
 const ZERO_TRANSLATION = NBT.float([0, 0, 0])
 const FULL_BRIGHTNESS = { sky: NBT.int(15), block: NBT.int(15) } as const
-
-// Format a number with `.0` suffix so NBT parser doesn't choke when
-// downstream float contexts expect a decimal.
-function fmt(v: number): string {
-	return `${v}${Number.isInteger(v) ? '.0' : ''}`
-}
 
 export function summonTextEntity(
 	el: Extract<ElementLayout, { kind: 'text' }>,

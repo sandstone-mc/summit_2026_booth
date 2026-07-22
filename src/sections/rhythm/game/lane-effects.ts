@@ -15,7 +15,7 @@ import {
 	tp,
 } from 'sandstone'
 import type { SymbolEntity } from 'sandstone/arguments'
-import { rgb } from '@rhythm/config/internal/colors'
+import { argb, rgb } from '@rhythm/config/internal/colors'
 import { arena } from '@rhythm/config/internal/arena'
 import { pattern, visuals } from '@rhythm/config'
 import { Tags, boothTags, voidPark } from './state'
@@ -122,10 +122,6 @@ export const spawnLaneShulkers = MCFunction(
 	},
 	{ lazy: true },
 )
-
-function argb(alpha: number, color: number) {
-	return ((alpha & 0xff) << 24) | color | 0
-}
 
 const TD_PX_PER_BLOCK = 36
 const TD_SPACE_PX = 4

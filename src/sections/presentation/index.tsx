@@ -1,6 +1,8 @@
 import { renderSlides } from './jsx/render'
 import styles from './styles.less' with { type: 'text' }
 
+import './menu/index'
+
 import * as h01 from './headings/1_what_is_a_pre_compiler'
 import * as h02 from './headings/2_hello_world'
 import * as h03 from './headings/3_advanced_fun_content'
@@ -41,4 +43,4 @@ const scene = await renderSlides(
 	{ wpm: 200, bufferSeconds: 3, minSeconds: 6, maxSeconds: 25 },
 )
 
-export const { mount, tick, unmount } = scene
+export const { mount, nextSlide, tick, unmount } = scene
