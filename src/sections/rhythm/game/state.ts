@@ -1,4 +1,4 @@
-import { Selector, Variable } from 'sandstone'
+import { NBT, Predicate, Selector, Variable } from 'sandstone'
 import { NAMESPACE } from '@shared'
 import { music } from '@rhythm/config'
 import { arena } from '@rhythm/config/internal/arena'
@@ -81,13 +81,17 @@ export const leaderboardCategoryView = Variable(0)
 
 export const gamePlayer = Selector('@a', { tag: Tags.PLAYER })
 
-export const boothListeners = Selector('@a', {
-	x: arena.musicPosition[0] - music.hearable.dx / 2,
-	y: arena.musicPosition[1] - music.hearable.dy / 2,
-	z: arena.musicPosition[2] - music.hearable.dz / 2,
-	dx: music.hearable.dx,
-	dy: music.hearable.dy,
-	dz: music.hearable.dz,
+const boothListenerRange = Predicate('sections/rhythm/booth_listener_range', {
+	condition: 'minecraft:location_check',
+	predicate: {
+		position: {
+			x: { min: NBT.float(arena.musicPosition[0] - music.hearable.dx / 2), max: NBT.float(arena.musicPosition[0] + music.hearable.dx / 2) },
+			y: { min: NBT.float(arena.musicPosition[1] - music.hearable.dy / 2), max: NBT.float(arena.musicPosition[1] + music.hearable.dy / 2) },
+			z: { min: NBT.float(arena.musicPosition[2] - music.hearable.dz / 2), max: NBT.float(arena.musicPosition[2] + music.hearable.dz / 2) },
+		},
+	},
 })
+
+export const boothListeners = Selector('@a', { predicate: boothListenerRange, tag: 'summit.in_booth.sandstone_summit_booth' })
 
 export const voidPark: [number, number, number] = [boothReturn[0], -64, boothReturn[2]]
