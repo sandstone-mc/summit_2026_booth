@@ -29,7 +29,7 @@ Texture('item', 'balloon/string', asset('balloon', 'string.png'))
 
 Model('balloons' as 'item', 'sand_castle',
     // Specifically not using ESM import due to Sandstone's strict types, WAI
-    await Bun.file('../../../resources/assets/model/balloon.json').json()
+    await Bun.file('../../../resources/assets/balloon/model.json').json()
 )
 
 // TODO: Sandstone bug
