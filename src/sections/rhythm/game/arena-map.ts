@@ -50,9 +50,12 @@ const skyboxCenter: [number, number, number] = [
 	(arena.mapOrigin[2] + arena.mapEnd[2]) / 2,
 ]
 
-function skyboxNbt(model: ItemModelDefinitionClass): SymbolEntity['item_display'] {
+function skyboxNbt(model: ItemModelDefinitionClass, map: number): SymbolEntity['item_display'] {
 	return {
-		Tags: boothTags(Tags.SKYBOX),
+		// `map` is a tag suffix so each map's summon body is byte-distinct
+		// even when two maps share the same skybox import — otherwise the
+		// if/elseIf chain dedups identical bodies and the second skybox vanishes.
+		Tags: boothTags(Tags.SKYBOX, `map${map}`),
 		brightness: { sky: NBT.int(15), block: NBT.int(15) },
 		transformation: {
 			left_rotation: NBT.float(arena.wallRotation),
@@ -79,14 +82,18 @@ export const spawnSkybox = MCFunction(
 		if (mapCount === 0) return
 		const [cx, cy, cz] = skyboxCenter
 		
-		const summonDisplay = (map: number) => summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(mapList[map].skybox))
+		const summonDisplay = (map: number) => summon('minecraft:item_display', abs(cx, cy, cz), skyboxNbt(mapList[map].skybox, map))
 		if (mapCount === 1) {
 			summonDisplay(0)
 		} else {
-			const ifStatement = _.if(mapSelect.equalTo(0), () => summonDisplay(0))
+			// elseIf returns a *new* IfStatement that links via nextFlowNode.
+		// The for loop must reassign each iteration, otherwise the previous
+		// link gets overwritten by the last iteration's return value and
+		// every intermediate elseIf is orphaned (silently dropped from output).
+		let ifStatement = _.if(mapSelect.equalTo(0), () => summonDisplay(0))
 
 			for (let i = 1; i < mapCount; i++) {
-				ifStatement.elseIf(mapSelect.equalTo(i), () => summonDisplay(i))
+				ifStatement = ifStatement.elseIf(mapSelect.equalTo(i), () => summonDisplay(i))
 			}
 		}
 	},
