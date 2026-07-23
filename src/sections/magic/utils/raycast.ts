@@ -55,10 +55,10 @@ export function fireRaycast(
     const raycast = createRaycast(path, opts)
 
     return MCFunction(`sections/magic/${path}/fire_raycast`, () => {
-        execute.anchored('eyes').rotated.as('@s').run(() => {
+        execute.anchored('eyes').rotated().as('@s').run(() => {
             const CasterRef = Label(`${path.replaceAll('/', '.')}.ray_caster`)
             CasterRef('@s').add()
-            
+
         execute.summon('minecraft:marker').run(() => {
             const RayActive = Label(`${path.replaceAll('/', '.')}.ray_active`)
             RayActive('@s').add()
