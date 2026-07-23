@@ -1,4 +1,4 @@
-import { Texture, Model, ItemModelDefinition } from 'sandstone'
+import { Texture, Model, ItemModelDefinition, NBT } from 'sandstone'
 
 import sharp from 'sharp'
 
@@ -44,13 +44,13 @@ export const [skybox_rainbows, skybox_neon, skybox_void ] = [
 				),
 			},
 			elements: [{
-				from: [0.001, -0.35875, 0.2867],
-				to: [15.999, 14.99, 16.2847],
+				from: NBT.float([0.001, -0.35875, 0.2867]),
+				to: NBT.float([15.999, 14.99, 16.2847]),
 				faces: {
-					north: { uv: [0.5, 0.5, 0.5, 0.5], texture: '#0' },
-					east: { uv: [0.5, 0.5, 0.5, 0.5], texture: '#0' },
-					west: { uv: [0.5, 0.5, 0.5, 0.5], texture: '#0' },
-					down: { uv: [0.5, 0.5, 0.5, 0.0], texture: '#0' },
+					north: { uv: NBT.float([0.5, 0.5, 0.5, 0.5]), texture: '#0' },
+					east: { uv: NBT.float([0.5, 0.5, 0.5, 0.5]), texture: '#0' },
+					west: { uv: NBT.float([0.5, 0.5, 0.5, 0.5]), texture: '#0' },
+					down: { uv: NBT.float([0.5, 0.5, 0.5, 0.0]), texture: '#0' },
 				},
 			}],
 		}),

@@ -5,10 +5,12 @@ import { BOOTH_ENTITY_TAG, fmt } from '@shared'
 import { mount, nextSlide, unmount } from '.'
 import { argb, rgb } from 'src/sections/rhythm/config/internal/colors'
 import { creditsDialog, creditsPageContent, CREDITS } from 'src/sections/npcs/npcs/credits'
+import { VectorClass } from 'sandstone/variables'
 
 const ORIGIN = [-76, 76, 42] as const
 
-const point = (x: number, y: number, z?: number) => `${fmt(ORIGIN[0] + x - 0.01)} ${fmt(ORIGIN[1] + y)} ${fmt(ORIGIN[2] + 0.197 + (z ?? 0))}`
+// TODO: Sandstone bug, complexity
+const point = (x: number, y: number, z?: number) => new VectorClass<[string, string, string]>([`${fmt(ORIGIN[0] + x - 0.01)}`, `${fmt(ORIGIN[1] + y)}`, `${fmt(ORIGIN[2] + 0.197 + (z ?? 0))}`])
 
 function click_entity(buttonTag: `${any}${string}` | LabelClass) {
 	return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [`${buttonTag}`] } }

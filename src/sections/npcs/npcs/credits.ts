@@ -1,8 +1,8 @@
 import { dialog, NBT } from 'sandstone'
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC } from '../NPC'
-import { PLACEHOLDER_SKIN } from './skins'
-import { SymbolEntity } from 'sandstone/arguments';
+import { JSONTextComponent } from 'sandstone/arguments'
+import { DialogClassArguments } from 'sandstone/core';
 
 function uuidToIntArray(uuid: string): [number, number, number, number] {
     const hex = uuid.replace(/-/g, '')
@@ -145,18 +145,20 @@ function linkBody(name: string, url: string, icon?: string, glyph?: string) {
  *  link line composition from the dialog. */
 export { linkBody }
 
-export const creditsDialog = (title: NonNullable<SymbolEntity['text_display']['text']>) => ({
-    type: 'minecraft:notice',
-    title,
-    body: [
-        ...CREDITS.flatMap((section) => [
-            sectionHeader(section.section),
-            ...section.members.map(memberBody),
-        ]),
-        { type: 'minecraft:plain_message', contents: { text: ' ' } },
-        ...LINKS.map((l) => linkBody(l.name, l.url, l.icon, l.glyph)),
-    ] as any,
-})
+export function creditsDialog(title: JSONTextComponent): DialogClassArguments['json'] {
+    return {
+        type: 'minecraft:notice',
+        title,
+        body: [
+            ...CREDITS.flatMap((section) => [
+                sectionHeader(section.section),
+                ...section.members.map(memberBody),
+            ]),
+            { type: 'minecraft:plain_message', contents: { text: ' ' } },
+            ...LINKS.map((l) => linkBody(l.name, l.url, l.icon, l.glyph)),
+        ],
+    }
+}
 
 /**
  * Build a single-page text component for the mini-screen credits

@@ -17,7 +17,7 @@ function rpFile(path: string, file: ReturnType<typeof Bun.file>) {
 	RawResource(
 		sandstonePack.resourcePack(),
 		path,
-		file.arrayBuffer() as unknown as Promise<Buffer<ArrayBufferLike>>, // TODO: Sandstone bug
+		file.arrayBuffer(),
 	)
 }
 

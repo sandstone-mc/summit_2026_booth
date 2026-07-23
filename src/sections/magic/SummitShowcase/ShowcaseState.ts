@@ -154,8 +154,7 @@ export const reset = MCFunction('sections/magic/showcase/reset', () => {
         fill(rel(ENTRANCE_X, ENTRANCE_Y, ENTRANCE_Z), rel(ENTRANCE_X + (ENTRANCE_DX - 1), ENTRANCE_Y + (ENTRANCE_DY - 1), ENTRANCE_Z + (ENTRANCE_DZ - 1)), 'minecraft:air')
 
         execute.positioned(RESET_POS).run(() => {
-            // TODO: sandstone bug, replace with clear('@s', ItemPredicate(...)) once the types for it work
-            const clearWand = () => clear('@s', 'minecraft:stick[custom_data~{\'sandstone_summit_booth.id\':\'magic_wand\'}]')
+            const clearWand = () => clear('@s', ItemPredicate('stick').match('custom_data', { 'sandstone_summit_booth.id': 'magic_wand' }))
 
             // teleport all players in the booth out (handles both session player and extras)
             execute.as(InBoothPlayer).run(() => {

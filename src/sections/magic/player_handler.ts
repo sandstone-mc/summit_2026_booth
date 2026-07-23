@@ -61,6 +61,5 @@ MCFunction('sections/magic/mana_manager', () => {
         })
     })
 }, {
-    // TODO
     runEveryTick: true
 })

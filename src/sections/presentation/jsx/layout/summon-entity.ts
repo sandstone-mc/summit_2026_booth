@@ -11,6 +11,7 @@ import { KIND_TEXT_TAG } from '../slides/tags'
 import type { ElementLayout } from './element'
 import type { StyledSegment } from '../render'
 import { BOOTH_ENTITY_TAG, fmt } from '@shared'
+import { VectorClass } from 'sandstone/variables'
 
 const ROTATION_QUATERNION = NBT.float([0, 0, 0, 1])
 const ZERO_TRANSLATION = NBT.float([0, 0, 0])
@@ -52,7 +53,8 @@ export function summonTextEntity(
 		nbt.text_opacity = NBT.int(-1)
 		summon(
 			'text_display',
-			`${fmt(entityX)} ${fmt(entityY)} ${fmt(z)}`,
+			// TODO: Sandstone bug, complexity
+			new VectorClass<[string, string, string]>([`${fmt(entityX)}`, `${fmt(entityY)}`, `${fmt(z)}`]),
 			nbt,
 		)
 		return
@@ -104,7 +106,12 @@ export function summonTextEntity(
 		nbt.text_opacity = NBT.int(Math.round((parseFloat(opacityStr) / 100) * 255) - 256)
 	}
 
-	summon('text_display', `${fmt(entityX)} ${fmt(entityY)} ${fmt(z)}`, nbt)
+	summon(
+		'text_display',
+		// TODO: Sandstone bug, complexity
+		new VectorClass<[string, string, string]>([`${fmt(entityX)}`, `${fmt(entityY)}`, `${fmt(z)}`]),
+		nbt,
+	)
 }
 
 export function summonImageEntity(
@@ -142,7 +149,12 @@ export function summonImageEntity(
 		brightness: FULL_BRIGHTNESS,
 	}
 	if (initialOpacity === 0) imgNbt.view_range = NBT.float(0.0)
-	summon('minecraft:item_display', `${fmt(entityX)} ${fmt(entityY)} ${fmt(z)}`, imgNbt)
+	summon(
+		'item_display',
+		// TODO: Sandstone bug, complexity
+		new VectorClass<[string, string, string]>([`${fmt(entityX)}`, `${fmt(entityY)}`, `${fmt(z)}`]),
+		imgNbt,
+	)
 }
 
 // Emit the layered text_display entities for a `<autocomplete>`
@@ -194,7 +206,8 @@ export function summonAutocompleteEntities(
 	editorNbt.text_opacity = NBT.int(-1)
 	summon(
 		'text_display',
-		`${fmt(entityX)} ${fmt(entityY)} ${fmt(z)}`,
+		// TODO: Sandstone bug, complexity
+		new VectorClass<[string, string, string]>([`${fmt(entityX)}`, `${fmt(entityY)}`, `${fmt(z)}`]),
 		editorNbt,
 	)
 
@@ -218,7 +231,8 @@ export function summonAutocompleteEntities(
 	}
 	summon(
 		'text_display',
-		`${fmt(entityX)} ${fmt(entityY)} ${fmt(z)}`,
+		// TODO: Sandstone bug, complexity
+		new VectorClass<[string, string, string]>([`${fmt(entityX)}`, `${fmt(entityY)}`, `${fmt(z)}`]),
 		cursorNbt,
 	)
 
@@ -281,7 +295,8 @@ export function summonAutocompleteEntities(
 		// view angles.
 		summon(
 			'text_display',
-			`${fmt(entityX)} ${fmt(entityY)} ${fmt(z + 0.04)}`,
+			// TODO: Sandstone bug, complexity
+			new VectorClass<[string, string, string]>([`${fmt(entityX)}`, `${fmt(entityY)}`, `${fmt(z + 0.04)}`]),
 			segNbt,
 		)
 	}

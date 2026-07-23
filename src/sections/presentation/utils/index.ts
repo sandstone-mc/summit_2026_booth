@@ -23,7 +23,7 @@ export async function screenshot(path: `${any}${string}`, ratio = 8) {
 export function ImageDisplayModel(texture: TextureClass<'item'> | string) {
 	const src = typeof texture === 'string' ? texture : texture.name
 
-	const [ namespace, modelType, ...modelPath ] = src.split('/').flatMap((part, i) => {
+	const [ namespace, modelType, ...modelPath ] = src.split('/').flatMap((part: string, i: number) => {
 		if (i === 0) {
 			const colonI = part.indexOf(':')
 

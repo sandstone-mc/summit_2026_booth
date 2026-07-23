@@ -58,13 +58,13 @@ export function fireRaycast(
         execute.anchored('eyes').rotated.as('@s').run(() => {
             const CasterRef = Label(`${path.replaceAll('/', '.')}.ray_caster`)
             CasterRef('@s').add()
-            
+
         execute.summon('minecraft:marker').run(() => {
             const RayActive = Label(`${path.replaceAll('/', '.')}.ray_active`)
             RayActive('@s').add()
 
             execute.as(Selector('@e', {tag: `sandstone_summit_booth.${CasterRef.name}`, limit: 1 })).at('@s')
-                .anchored('eyes').rotated().as('@s').run.rotate(Selector('@n', { tag: `sandstone_summit_booth.${RayActive.name}` }), '~ ~')
+                .anchored('eyes').rotated.as('@s').run.rotate(Selector('@n', { tag: `sandstone_summit_booth.${RayActive.name}` }), ['~', '~'])
 
             opts.onStart?.()
             

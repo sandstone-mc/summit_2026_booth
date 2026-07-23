@@ -2,8 +2,6 @@ import flowUsage from './snippets/flow_usage' with { type: 'text' }
 import asyncContext from './snippets/async_context' with { type: 'text' }
 import asyncContextLog from './snippets/async_context.log' with { type: 'text' }
 
-// TODO: Come up with a good Flow example
-
 export const slides = [
 	(<>
 		<h2 id="header">What can Sandstone's features do for me?</h2>

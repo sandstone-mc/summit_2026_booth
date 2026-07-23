@@ -27,17 +27,6 @@ const INFO_TEXT: JSONTextComponent = [
     { text: 'Step inside to begin!', color: 'yellow' },
 ]
 
-// TODO: use a booth bounding box for player detection
-// "showcase": {
-//     "position": {
-//         "x": {"min": -79, "max": -61},
-//         "y": {"min": 62, "max": 69},
-//         "z": {"min": 23, "max": 50}
-//     },
-//     "on_player_enter": "sandstone_summit_booth:sections/main/enter_showcase",
-//     "on_player_exit": "sandstone_summit_booth:sections/main/exit_showcase"
-// }
-
 RawResource(
     `${NAMESPACE}/structure/magic.nbt`,
     Bun.file(

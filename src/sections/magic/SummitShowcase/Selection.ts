@@ -4,15 +4,14 @@ import { ShowcaseMarker } from '.'
 import { STATES, GlobalState, SessionPlayer, ShowcaseMobs, startSelection, spawnChangeSchoolButton, ChangeSchoolButtonEntities } from './ShowcaseState'
 import { setSchoolTrigger } from '../pack_setup'
 import { NAMESPACE } from '@shared'
-import type { Registry } from 'sandstone/arguments'
+import type { BASIC_COLORS, Registry } from 'sandstone/arguments'
 
 interface Pedestal {
   schoolId: keyof typeof SpellLibrary
   x: number
   y: number
   z: number
-  // TODO: TextColor once its exported
-  color: any
+  color: BASIC_COLORS
   particleType: string
   item: Registry['minecraft:item']
 }
