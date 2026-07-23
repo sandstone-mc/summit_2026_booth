@@ -1140,7 +1140,6 @@ function computeAutocompleteLayout(
 
 		const charWidthBlocks = 0.375
 		const CURSOR_HORIZONTAL_OFFSET_CHARS = 12
-		// TODO: unrelated to this but the autocomplete demo element is causing console error spam on the server, figure out the slopcode causing that
 		const CURSOR_DRIFT_PER_CHAR = 0.07
 		const paddingLeftBlocks = (sidePadding[0] + (lineNumbers ? gutterChars + 3 : 0) + 1) * charWidthBlocks
 		// Cursor visual CENTER positioned at the typed-text end of the

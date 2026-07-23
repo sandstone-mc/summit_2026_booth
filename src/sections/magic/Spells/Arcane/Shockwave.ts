@@ -20,7 +20,7 @@ createProjectileSpell({
         onHit: () => {
             raw(`rotate @s facing entity @a[tag=sandstone_summit_booth.showcase.player,limit=1] feet`)
             raw(`rotate @s ~ -60`)
-            execute.rotated().as('@s').run(() => {
+            execute.rotated.as('@s').run(() => {
                 raw("scoreboard players set $strength player_motion.api.launch 15000")
                 functionCmd('player_motion:api/launch_looking')
             })

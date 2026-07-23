@@ -30,7 +30,7 @@
     "@tonejs/midi": "^2.0.28",
     "less": "^4.6.7",
     "postcss-selector-parser": "^7.1.4",
-    "sandstone": "^1.1.1",
+    "sandstone": "resources/sandstone-1.1.2.tgz",
     "sharp": "^0.35.3",
     "socket.io-client": "^4.8.3",
     "web-tree-sitter": "^0.26.7"

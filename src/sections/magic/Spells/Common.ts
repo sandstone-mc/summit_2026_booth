@@ -189,8 +189,6 @@ export function castSpell(spellId: string, schoolId: SchoolID, fn: () => void) {
   _.if(player.mana('@s').greaterThanOrEqualTo(spell.mana_cost), () => {
     player.mana('@s').remove(spell.mana_cost)
 
-    // TODO: uncomment when stickers work
-    // grant the sticker advancement
     advancement.grant('@s').only('summit.sticker_book:sandstone_summit_booth/arcane_arts') 
 
     fn()

@@ -55,7 +55,7 @@ export function fireRaycast(
     const raycast = createRaycast(path, opts)
 
     return MCFunction(`sections/magic/${path}/fire_raycast`, () => {
-        execute.anchored('eyes').rotated().as('@s').run(() => {
+        execute.anchored('eyes').rotated.as('@s').run(() => {
             const CasterRef = Label(`${path.replaceAll('/', '.')}.ray_caster`)
             CasterRef('@s').add()
 
@@ -64,7 +64,7 @@ export function fireRaycast(
             RayActive('@s').add()
 
             execute.as(Selector('@e', {tag: `sandstone_summit_booth.${CasterRef.name}`, limit: 1 })).at('@s')
-                .anchored('eyes').rotated().as('@s').run.rotate(Selector('@n', { tag: `sandstone_summit_booth.${RayActive.name}` }), '~ ~')
+                .anchored('eyes').rotated.as('@s').run.rotate(Selector('@n', { tag: `sandstone_summit_booth.${RayActive.name}` }), ['~', '~'])
 
             opts.onStart?.()
             

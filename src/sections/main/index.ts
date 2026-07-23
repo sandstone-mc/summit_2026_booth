@@ -2,13 +2,12 @@ import { join } from 'path'
 import { Font, Model, NBT, Texture, Variant } from 'sandstone'
 
 import monospace from '../../../resources/assets/font/monospace/providers.json'
-import balloonModel from '../../../resources/assets/balloon/model.json'
 
 import './showcase'
 
 const asset = (...path: string[]) => Bun.file(
     join(process.cwd(), 'resources', 'assets', ...path)
-).arrayBuffer() as unknown as Promise<Buffer<ArrayBufferLike>> // TODO: Sandstone bug
+).arrayBuffer()
 
 Texture('font', 'monospace/ascii', asset('font', 'monospace', 'ascii.png'))
 
@@ -28,8 +27,10 @@ Texture('item', 'balloon/primary', asset('balloon', 'primary.png'))
 Texture('item', 'balloon/secondary', asset('balloon', 'secondary.png'))
 Texture('item', 'balloon/string', asset('balloon', 'string.png'))
 
-// TODO: Sandstone bug
-Model('balloons' as 'item', 'sand_castle', balloonModel as Parameters<typeof Model>[2])
+Model('balloons' as 'item', 'sand_castle',
+    // Specifically not using ESM import due to Sandstone's strict types, WAI
+    await Bun.file('../../../resources/assets/model/balloon.json').json()
+)
 
 // TODO: Sandstone bug
 Texture('sticker' as 'font', 'arcane_arts', asset('stickers', 'arcane_arts.png'))

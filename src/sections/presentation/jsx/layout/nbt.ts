@@ -3,10 +3,14 @@
 // summon command emits.
 
 import { NBT, NBTInt } from 'sandstone'
-import type { SymbolEntity } from 'sandstone/arguments'
+import type { JSONTextComponent, SymbolEntity } from 'sandstone/arguments'
 import { DEFAULT_FONT_ID } from '../text-metrics'
 import type { StyledSegment } from '../render'
 import { parseColorInt } from './color'
+import { ComponentClass } from 'sandstone/variables'
+
+// TODO: Sandstone bug, why is this Exclude producing a `never`??
+type TextComponent = any // Exclude<JSONTextComponent, ComponentClass>
 
 /** Default text color for segments without an explicit override. */
 const DEFAULT_TEXT_COLOR = '#ffffff' as const
@@ -22,7 +26,7 @@ export function buildTextJson(
 	if (Array.isArray(content)) {
 		return content.map((seg) => buildSegment(seg, declarations, type)) as SymbolEntity['text_display']['text']
 	}
-	const out: SymbolEntity['text_display']['text'] = { text: content }
+	const out: TextComponent = { text: content }
 	if (declarations.color) out.color = declarations.color as `#${string}`
 	if (declarations.bold === 'true') out.bold = true
 	if (declarations.italic === 'true') out.italic = true
@@ -39,8 +43,8 @@ function buildSegment(
 	seg: StyledSegment,
 	declarations: Record<string, string>,
 	type: string,
-): NonNullable<SymbolEntity['text_display']['text']> {
-	const out: NonNullable<SymbolEntity['text_display']['text']> = { text: seg.text }
+): TextComponent {
+	const out: TextComponent = { text: seg.text }
 	// Color, bold, italic, font are ALL set explicitly on every
 	// segment. Minecraft's text component system merges sibling styles
 	// when a later segment leaves a field unset — the field carries

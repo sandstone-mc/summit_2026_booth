@@ -1,6 +1,7 @@
 import {_, abs, Advancement, attribute, Data, execute, fill, functionCmd, kill, Label, MCFunction, NBT, playsound, raw, rel, say, type Score, Selector, sleep, summon, Tag, Variable } from 'sandstone'
 import { BOOTH_ENTITY_TAG, NAMESPACE } from '@shared'
 import { CarLabel, CarPartLabel, SouthInnerDoor, WestInnerDoor, summonElevator, BUTTON_INTERACTION_OFFSETS } from './summon'
+import { VectorClass } from 'sandstone/variables'
 
 type Door = {
     min: {
@@ -57,7 +58,7 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-57.5, 86.6875, 46.001], // TODO
+                pos: [-57.5, 86.6875, 46.001],
                 rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
                 translation: [-0.5, 0.75, 0.5],
@@ -86,7 +87,7 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-57.5, 77.6875, 46.001], // TODO
+                pos: [-57.5, 77.6875, 46.001],
                 rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
                 translation: [-0.5, 0.75, 0.5],
@@ -115,7 +116,7 @@ export const FLOORS: Floor[] = [
         ],
         callButton: {
             light: {
-                pos: [-54.001, 67.6875, 49.5], // TODO
+                pos: [-54.001, 67.6875, 49.5],
                 rotation: [1, 0, 0, 0],
                 scale: [1, 1, 1],
                 translation: [-0.5, 0.75, 0.5],
@@ -307,7 +308,10 @@ function snapToFloor(floorIdx: number) {
     CurrentFloor.set(floorIdx)
 
     // snap the player just in case
-    execute.as(Riders).at('@s').run.tp('@s', [rel(0), abs(restY), rel(0)])
+    execute.as(Riders).at('@s').run.tp('@s',
+        // TODO: Sandstone bug, complexity
+        new VectorClass<[string, string, string]>([rel(0), abs(restY), rel(0)])
+    )
     fillFloorBarrier(floorIdx)
     releaseAllRiders()
 }
@@ -575,7 +579,10 @@ MCFunction('sections/elevator/step', () => {
         ensureDriver()
 
         _.if(_.entity(RiderDriver), () => {
-            execute.as(Car).at(RiderDriver).run.tp('@s', [abs(SHAFT_X), rel(-0.5), abs(SHAFT_Z)])
+            execute.as(Car).at(RiderDriver).run.tp('@s',
+                // TODO: Sandstone bug, complexity
+                new VectorClass<[string, string, string]>([abs(SHAFT_X), rel(-0.5), abs(SHAFT_Z)])
+            )
 
             execute.as(RiderDriver).run(() => {
                 RiderY.set(Data('entity', '@s', 'Pos[1]'), 10)

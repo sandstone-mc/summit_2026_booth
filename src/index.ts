@@ -16,7 +16,7 @@ if (!(Bun.env.DISABLE_SHOWCASE === undefined ? false : Bun.env.DISABLE_SHOWCASE 
 import './ticked_functions'
 
 MCFunction('init_player', () => {
-    const player = Selector('@s')
+    const player = Selector('@s', { type: 'minecraft:player' })
 
     // grant the visit sticker advancement
     advancement.grant(player).only('summit.sticker_book:sandstone_summit_booth/enter_booth')

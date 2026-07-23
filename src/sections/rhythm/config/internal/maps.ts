@@ -14,12 +14,12 @@ const configuredMaps: MapConfig[] = [
   {
     structure: 'rhythm_sandstone_garden',
     name: 'Sandstone Garden',
-    skybox: skybox_neon // TODO: skybox_rainbows
+    skybox: skybox_rainbows,
   },
   {
     structure: 'rhythm_frostbound_garden',
     name: 'Frostbound Garden',
-    skybox: skybox_neon
+    skybox: skybox_neon,
   },
   {
     structure: 'rhythm_crimson_garden',

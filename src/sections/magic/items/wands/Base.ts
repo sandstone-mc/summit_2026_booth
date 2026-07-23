@@ -19,10 +19,11 @@ Enchantment('input/wand_left_click', {
         base: new NBTInt(0),
         per_level_above_first: new NBTInt(0)
     },
-    effects: {
+    /* @ts-ignore */
+    effects: { // TODO: Sandstone bug, I really don't understand why this isn't working :not_like_shift:
         'minecraft:post_piercing_attack': [
             {
-                'effect': {
+                effect: {
                     type: 'run_function',
                     function: 'sandstone_summit_booth:sections/magic/input/on_wand_left_click'
                 }
