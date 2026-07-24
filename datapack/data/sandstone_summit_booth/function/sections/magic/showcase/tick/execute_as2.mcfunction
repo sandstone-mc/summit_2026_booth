@@ -1,1 +1,1 @@
-execute as @a[dx=19, dy=5, dz=26, gamemode=!spectator, gamemode=!spectator] run tag @s add sandstone_summit_booth.showcase.in_magic_showcase
+execute as @a[dx=19, dy=5, dz=26, gamemode=!spectator] run tag @s add sandstone_summit_booth.showcase.in_magic_showcase

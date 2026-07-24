@@ -1,1 +1,1 @@
-execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.spell.lightning.ball_lightning.projectile, tag=sandstone_summit_booth.spell.lightning.ball_lightning.projectile] at @s run function sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/update/execute_as
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.spell.lightning.ball_lightning.projectile] at @s run function sandstone_summit_booth:sections/magic/spells/lightning/ball_lightning/update/execute_as

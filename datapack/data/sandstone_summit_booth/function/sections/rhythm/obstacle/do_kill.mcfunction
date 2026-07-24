@@ -1,1 +1,1 @@
-kill @e[tag=snd.rhythm.wall, tag=snd.rhythm.wall]
+kill @e[tag=snd.rhythm.wall]

@@ -1,3 +1,3 @@
-execute as @e[type=minecraft:block_display, tag=sandstone_summit_booth.elevator.button.0, tag=sandstone_summit_booth.elevator.button.0] run data modify entity @s block_state.Properties.lit set value 'false'
-execute as @e[type=minecraft:block_display, tag=sandstone_summit_booth.elevator.button.1, tag=sandstone_summit_booth.elevator.button.1] run data modify entity @s block_state.Properties.lit set value 'true'
-execute as @e[type=minecraft:block_display, tag=sandstone_summit_booth.elevator.button.2, tag=sandstone_summit_booth.elevator.button.2] run data modify entity @s block_state.Properties.lit set value 'false'
+execute as @e[type=minecraft:block_display, tag=sandstone_summit_booth.elevator.button.0] run data modify entity @s block_state.Properties.lit set value 'false'
+execute as @e[type=minecraft:block_display, tag=sandstone_summit_booth.elevator.button.1] run data modify entity @s block_state.Properties.lit set value 'true'
+execute as @e[type=minecraft:block_display, tag=sandstone_summit_booth.elevator.button.2] run data modify entity @s block_state.Properties.lit set value 'false'

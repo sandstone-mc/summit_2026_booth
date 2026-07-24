@@ -1,1 +1,1 @@
-execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker, tag=sandstone_summit_booth.showcase.marker] at @s run fill ~8 ~ ~27 ~10 ~2 ~27 minecraft:oxidized_copper_trapdoor[open=true]
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker] at @s run fill ~8 ~ ~27 ~10 ~2 ~27 minecraft:oxidized_copper_trapdoor[open=true]

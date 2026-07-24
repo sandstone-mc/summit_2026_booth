@@ -1,1 +1,1 @@
-kill @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker, tag=sandstone_summit_booth.showcase.marker]
+kill @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker]

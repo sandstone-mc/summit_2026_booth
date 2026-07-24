@@ -1,1 +1,1 @@
-execute as @e[type=minecraft:text_display, tag=sandstone_summit_booth.npc.display, tag=sandstone_summit_booth.npc.display, distance=0..2, distance=0,2] run data modify entity @s text set from storage sandstone_summit_booth:npcs_reveal runs
+execute as @e[type=minecraft:text_display, tag=sandstone_summit_booth.npc.display, distance=0..2] run data modify entity @s text set from storage sandstone_summit_booth:npcs_reveal runs

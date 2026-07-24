@@ -1,1 +1,1 @@
-kill @e[tag=snd.ui.lb, tag=snd.ui.lb]
+kill @e[tag=snd.ui.lb]

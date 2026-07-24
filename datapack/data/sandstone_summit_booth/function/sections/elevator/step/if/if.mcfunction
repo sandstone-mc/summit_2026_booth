@@ -1,1 +1,1 @@
-execute as @a[limit=1, tag=sandstone_summit_booth.elevator.rider, tag=sandstone_summit_booth.elevator.rider] run tag @s add sandstone_summit_booth.elevator.driver
+execute as @a[limit=1, tag=sandstone_summit_booth.elevator.rider] run tag @s add sandstone_summit_booth.elevator.driver

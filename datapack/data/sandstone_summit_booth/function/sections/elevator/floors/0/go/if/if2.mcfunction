@@ -1,1 +1,1 @@
-execute as @a[tag=sandstone_summit_booth.elevator.rider, tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/floors/0/go/if/if2/execute_as
+execute as @a[tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/floors/0/go/if/if2/execute_as

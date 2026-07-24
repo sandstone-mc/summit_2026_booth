@@ -1,1 +1,1 @@
-execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.spell.ice.blizzard.storm, tag=sandstone_summit_booth.spell.ice.blizzard.storm] at @s run function sandstone_summit_booth:sections/magic/spells/ice/blizzard/update_storms/execute_as
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.spell.ice.blizzard.storm] at @s run function sandstone_summit_booth:sections/magic/spells/ice/blizzard/update_storms/execute_as

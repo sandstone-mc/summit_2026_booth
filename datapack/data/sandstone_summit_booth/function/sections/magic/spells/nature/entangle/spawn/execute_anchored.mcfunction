@@ -11,5 +11,5 @@ execute summon minecraft:marker run function sandstone_summit_booth:sections/mag
 execute summon minecraft:marker run function sandstone_summit_booth:sections/magic/spells/nature/entangle/spawn/execute_anchored/execute_summon10
 execute summon minecraft:marker run function sandstone_summit_booth:sections/magic/spells/nature/entangle/spawn/execute_anchored/execute_summon11
 execute summon minecraft:marker run function sandstone_summit_booth:sections/magic/spells/nature/entangle/spawn/execute_anchored/execute_summon12
-execute as @e[tag=sandstone_summit_booth.spell.nature.entangle.projectile, tag=sandstone_summit_booth.spell.nature.entangle.projectile, distance=0..1, distance=0,1] run function sandstone_summit_booth:sections/magic/spells/nature/entangle/spawn/execute_anchored/execute_as
+execute as @e[tag=sandstone_summit_booth.spell.nature.entangle.projectile, distance=0..1] run function sandstone_summit_booth:sections/magic/spells/nature/entangle/spawn/execute_anchored/execute_as
 tag @s remove sandstone_summit_booth.spell.caster

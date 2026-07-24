@@ -1,3 +1,3 @@
-execute as @e[tag=snd.rhythm.wall, tag=snd.rhythm.wall, distance=0..1.5, distance=0,1.5] run function sandstone_summit_booth:sections/rhythm/collision/break_wall/execute_at/execute_as
-playsound minecraft:block.glass.break master @a[predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range, predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range, tag=summit.in_booth.sandstone_summit_booth, tag=summit.in_booth.sandstone_summit_booth] ~ ~ ~ 2 1
+execute as @e[tag=snd.rhythm.wall, distance=0..1.5] run function sandstone_summit_booth:sections/rhythm/collision/break_wall/execute_at/execute_as
+playsound minecraft:block.glass.break master @a[predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range, tag=summit.in_booth.sandstone_summit_booth] ~ ~ ~ 2 1
 particle minecraft:block{block_state:"minecraft:white_stained_glass"} ~ ~0.5 ~ 0.5 0.5 0.5 0.1 20 normal

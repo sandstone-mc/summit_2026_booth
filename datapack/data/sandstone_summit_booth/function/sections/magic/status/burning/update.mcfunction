@@ -1,1 +1,1 @@
-execute as @e[tag=sandstone_summit_booth.status.burning, tag=sandstone_summit_booth.status.burning] at @s run function sandstone_summit_booth:sections/magic/status/burning/update/execute_as
+execute as @e[tag=sandstone_summit_booth.status.burning] at @s run function sandstone_summit_booth:sections/magic/status/burning/update/execute_as

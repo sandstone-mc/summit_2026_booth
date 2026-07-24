@@ -21,4 +21,4 @@ schedule clear sandstone_summit_booth:sections/presentation/slides/loop/__sleep1
 schedule clear sandstone_summit_booth:sections/presentation/slides/loop/__sleep19
 schedule clear sandstone_summit_booth:sections/presentation/slides/loop/__sleep20
 schedule clear sandstone_summit_booth:sections/presentation/slides/loop/__sleep21
-kill @e[tag=sandstone_summit_booth.presentation, tag=sandstone_summit_booth.presentation]
+kill @e[tag=sandstone_summit_booth.presentation]

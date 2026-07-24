@@ -1,4 +1,4 @@
-kill @e[tag=snd.ui.set, tag=snd.ui.set]
+kill @e[tag=snd.ui.set]
 summon minecraft:text_display -50.05 65.5 53 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.ui.set','snd.ui.set.txt'],text:[{text:'SETTINGS  ',color:'white',bold:true},{text:'\n\n\n\n\n\n\n\n\n\n\n\n                                   '}],billboard:'fixed',Rotation:[90f,0f],shadow:true,background:0i,line_width:400i,view_range:1f,text_opacity:-1b,see_through:false}
 summon minecraft:text_display -50.05 68 53 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.ui.set','snd.ui.set.song'],text:' ',billboard:'fixed',Rotation:[90f,0f],shadow:true,background:0i,line_width:400i,view_range:1f,text_opacity:-1b,see_through:false}
 summon minecraft:text_display -50.05 67.5 53 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.ui.set','snd.ui.set.lives'],text:' ',billboard:'fixed',Rotation:[90f,0f],shadow:true,background:0i,line_width:400i,view_range:1f,text_opacity:-1b,see_through:false}

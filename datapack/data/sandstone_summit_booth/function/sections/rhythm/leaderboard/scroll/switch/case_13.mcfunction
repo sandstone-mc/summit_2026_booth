@@ -1,1 +1,1 @@
-data merge entity @e[tag=snd.ui.lb.song, tag=snd.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:'ragi Magnetite   T',color:'yellow',font:'sandstone_summit_booth:monospace'},{text:' - ',color:'gray'},{text:'Best Score  ',color:'gold'}]}
+data merge entity @e[tag=snd.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:'ragi Magnetite   T',color:'yellow',font:'sandstone_summit_booth:monospace'},{text:' - ',color:'gray'},{text:'Best Score  ',color:'gold'}]}

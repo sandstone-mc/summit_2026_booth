@@ -1,1 +1,1 @@
-execute at @e[type=minecraft:block_display, limit=1, tag=sandstone_summit_booth.elevator.car, tag=sandstone_summit_booth.elevator.car] positioned ~ ~2 ~ run tp @a[tag=sandstone_summit_booth.elevator.driver, tag=sandstone_summit_booth.elevator.driver, limit=1, gamemode=!spectator, gamemode=!spectator] ~ ~ ~
+execute at @e[type=minecraft:block_display, limit=1, tag=sandstone_summit_booth.elevator.car] positioned ~ ~2 ~ run tp @a[tag=sandstone_summit_booth.elevator.driver, limit=1, gamemode=!spectator] ~ ~ ~

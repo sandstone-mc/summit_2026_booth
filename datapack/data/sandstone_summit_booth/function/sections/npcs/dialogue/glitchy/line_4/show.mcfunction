@@ -1,1 +1,1 @@
-execute if entity @s[tag=sandstone_summit_booth.npc.glitchy, tag=sandstone_summit_booth.npc.glitchy] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if
+execute if entity @s[tag=sandstone_summit_booth.npc.glitchy] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/line_4/show/execute_if

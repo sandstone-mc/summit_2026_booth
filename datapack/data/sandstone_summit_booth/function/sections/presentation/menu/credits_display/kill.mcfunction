@@ -1,4 +1,4 @@
-kill @e[tag=sandstone_summit_booth.sections.presentation.menu.credits_display, tag=sandstone_summit_booth.sections.presentation.menu.credits_display]
+kill @e[tag=sandstone_summit_booth.sections.presentation.menu.credits_display]
 schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop
 schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/schedule
 schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep

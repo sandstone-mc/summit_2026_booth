@@ -1,1 +1,1 @@
-execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.spell.arcane.magic_missile.projectile, tag=sandstone_summit_booth.spell.arcane.magic_missile.projectile] at @s run function sandstone_summit_booth:sections/magic/spells/arcane/magic_missile/update/execute_as
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.spell.arcane.magic_missile.projectile] at @s run function sandstone_summit_booth:sections/magic/spells/arcane/magic_missile/update/execute_as

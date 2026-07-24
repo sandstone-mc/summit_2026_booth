@@ -1,3 +1,3 @@
 scoreboard players set #mob_count sandstone_summit_booth.showcase.state 0
-execute as @e[type=#sandstone_summit_booth:targetable, tag=sandstone_summit_booth.showcase.mob, tag=sandstone_summit_booth.showcase.mob] run scoreboard players add #mob_count sandstone_summit_booth.showcase.state 1
-execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker, tag=sandstone_summit_booth.showcase.marker] at @s run function sandstone_summit_booth:sections/magic/showcase/tick/if2/execute_as2
+execute as @e[type=#sandstone_summit_booth:targetable, tag=sandstone_summit_booth.showcase.mob] run scoreboard players add #mob_count sandstone_summit_booth.showcase.state 1
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker] at @s run function sandstone_summit_booth:sections/magic/showcase/tick/if2/execute_as2

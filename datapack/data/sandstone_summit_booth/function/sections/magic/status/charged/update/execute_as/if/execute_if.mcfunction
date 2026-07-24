@@ -1,3 +1,3 @@
 function sandstone_summit_booth:sections/magic/status/charged/arc_to_target
-execute as @e[type=#sandstone_summit_booth:targetable, tag=!sandstone_summit_booth.status.charged, tag=!sandstone_summit_booth.status.charged, distance=0..8, distance=0,8, limit=1, sort=nearest] run function sandstone_summit_booth:sections/magic/status/charged/update/execute_as/if/execute_if/execute_as
+execute as @e[type=#sandstone_summit_booth:targetable, tag=!sandstone_summit_booth.status.charged, distance=0..8, limit=1, sort=nearest] run function sandstone_summit_booth:sections/magic/status/charged/update/execute_as/if/execute_if/execute_as
 damage @s 1 lightning_bolt

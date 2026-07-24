@@ -1,4 +1,4 @@
 scoreboard players set #global sandstone_summit_booth.showcase.state 1
 function sandstone_summit_booth:sections/magic/showcase/door/close
 function sandstone_summit_booth:sections/magic/showcase/spawn_buttons
-execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker, tag=sandstone_summit_booth.showcase.marker] at @s run function sandstone_summit_booth:sections/magic/showcase/selection/start
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker] at @s run function sandstone_summit_booth:sections/magic/showcase/selection/start
