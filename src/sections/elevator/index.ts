@@ -389,7 +389,7 @@ function requestFloor(floorIdx: number) {
 function detectBell(x: number, y: number, z: number, targetFloor: number) {
     const rungBell = Advancement(`sections/elevator/ring_bell_${targetFloor}`, {
         criteria: {
-            [`rung_bell_${targetFloor}` as const]: {
+            [`rung_bell_${targetFloor}`]: {
                 trigger: 'minecraft:default_block_use',
                 conditions: {
                     location: [

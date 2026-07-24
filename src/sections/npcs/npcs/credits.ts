@@ -145,7 +145,7 @@ function linkBody(name: string, url: string, icon?: string, glyph?: string) {
  *  link line composition from the dialog. */
 export { linkBody }
 
-export function creditsDialog(title: JSONTextComponent): DialogClassArguments['json'] {
+export function creditsDialog(title: JSONTextComponent): any /* DialogClassArguments['json'] */ { // TODO: Sandstone bug
     return {
         type: 'minecraft:notice',
         title,

@@ -126,10 +126,6 @@ const sortLeaderboard = MCFunction(
 	{ lazy: true },
 )
 
-function scoreComponent(score: Score): JSONTextComponent {
-	return { score: { name: `${score.target}`, objective: score.objective.name } }
-}
-
 const BLANK_LINE: JSONTextComponent = { text: ' ' }
 
 function songCatLineText(songI: number, catI: number, nameOverride?: string): JSONTextComponent {
@@ -151,16 +147,16 @@ const ROWS_TEXT: JSONTextComponent = rankSlots.flatMap((slot, i): JSONTextCompon
 		{ text: `${panels.padding}#${i + 1} `, color },
 		{ selector: `@a[tag=${RANK_TAGS[i]},limit=1]`, color: 'white' },
 		{ text: ' ' },
-		scoreComponent(slot),
+		slot,
 		{ text: panels.padding },
 	]
 })
 
 const YOU_TEXT: JSONTextComponent = [
 	{ text: `${panels.padding}You: `, color: 'green' },
-	scoreComponent(myScore),
+	myScore,
 	{ text: ' | #', color: 'gray' },
-	scoreComponent(myRank),
+	myRank,
 	{ text: panels.padding },
 ]
 

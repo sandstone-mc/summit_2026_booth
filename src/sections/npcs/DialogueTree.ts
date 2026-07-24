@@ -2,6 +2,7 @@ import { _, data, Data, execute, functionCmd, MCFunction, type MCFunctionClass, 
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { NAMESPACE } from '@shared'
 import { DialogueLineIndex, NpcDisplayLabel, registry, RevealCount, RevealDelay, RevealingLabel, RevealSpeed, RevealTotal } from './NPC'
+import { DataComponentClass, JSONTextComponentClass } from 'sandstone/variables';
 
 // ticks per revealed character
 const DEFAULT_SPEED = 1
@@ -86,9 +87,13 @@ function withDisplay(callback: () => void) {
 }
 
 // merges text onto the NPC text display
-function mergeDisplayText(text: string | JSONTextComponent[]) {
+function mergeDisplayText(text: JSONTextComponent) {
     withDisplay(() => {
-        data.merge.entity('@s', { text })
+        data.merge.entity('@s',
+            // TODO: Sandstone bug
+            /* @ts-ignore */
+            { text }
+        )
     })
 }
 

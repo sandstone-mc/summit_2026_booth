@@ -14,12 +14,16 @@ export const checkHit = (opts: HitboxOptions) => {
     const type = opts.type || Targetable
 
     execute.positioned(rel(-w, -h / 2, -w)).run(() => {
-        execute.as(Selector('@e', {
-            type,
-            dx: w * 2,
-            dy: h,
-            dz: w * 2
-        })).if.entity('@s').run(() => {
+        execute.as(
+            // TODO: Sandstone bug
+            /* @ts-ignore */
+            Selector('@e', {
+                type,
+                dx: w * 2,
+                dy: h,
+                dz: w * 2
+            })
+        ).if.entity('@s').run(() => {
             opts.onHit()
         })
     })

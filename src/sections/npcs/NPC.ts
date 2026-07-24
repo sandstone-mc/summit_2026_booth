@@ -1,5 +1,5 @@
 import { _, abs, Advancement, Data, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon, Tag } from 'sandstone'
-import type { SymbolEntity } from 'sandstone/arguments'
+import type { MCDocToJSON, SymbolEntity } from 'sandstone/arguments'
 import type { DialogueTree } from './DialogueTree'
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth' as `${any}${string}`
@@ -64,13 +64,9 @@ export type LookAtMode = 'nearest' | 'interactor' | 'none'
 // 'sitting' is faked by mounting the mannequin on an invisible zero-height interaction seat
 export type NPCPose = 'standing' | 'crouching' | 'sleeping' | 'sitting'
 
-export interface NPCItemStack {
-    id: string
-    count?: any
-    components?: Record<string, any>
-}
+export type NPCHeldItemWithComponents = MCDocToJSON<NonNullable<SymbolEntity['item_display']['item']>>
 
-export type NPCHeldItem = string | NPCItemStack
+export type NPCHeldItem = string | NPCHeldItemWithComponents
 
 export interface NPCOptions {
     name: string
