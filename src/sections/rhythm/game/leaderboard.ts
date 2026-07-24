@@ -19,7 +19,7 @@ import { type JSONTextComponent } from 'sandstone/arguments'
 import { songCount, songNames } from '@rhythm/config/internal/songs'
 import { leaderboard as leaderboardConfig } from '@rhythm/config'
 import { panels } from '@rhythm/config/internal/derived'
-import { GameStatus, Tags, status, songSelect, leaderboardSongView, leaderboardCategoryView, gamePlayer } from './state'
+import { GameStatus, Tags, UIPanelEntityType, status, songSelect, leaderboardSongView, leaderboardCategoryView, gamePlayer } from './state'
 import { finalScore } from './scoring'
 import { hitsTaken } from './walls/collision'
 import {
@@ -51,9 +51,9 @@ const YOU_LINE = 12
 const TOTAL_LINES = 15
 const CLICK_Y_OFFSET = 0.25
 
-const songCatLineSel = Selector('@e', { tag: Tags.UI_LB_SONG_TXT, limit: 1 })
-const rowsSel = Selector('@e', { tag: Tags.UI_LB_ROWS_TXT, limit: 1 })
-const youLineSel = Selector('@e', { tag: Tags.UI_LB_YOU_TXT, limit: 1 })
+const songCatLineSel = Selector('@e', { tag: Tags.UI_LB_SONG_TXT, type: 'minecraft:text_display', limit: 1 })
+const rowsSel = Selector('@e', { tag: Tags.UI_LB_ROWS_TXT, type: 'minecraft:text_display', limit: 1 })
+const youLineSel = Selector('@e', { tag: Tags.UI_LB_YOU_TXT, type: 'minecraft:text_display', limit: 1 })
 
 const rankSlots: Score[] = []
 for (let i = 0; i < leaderboardConfig.size; i++) {
@@ -457,7 +457,7 @@ export const spawnLeaderboardPanel = MCFunction(
 	'sections/rhythm/leaderboard/spawn',
 	() => {
 		if (Bun.env.DEV_HELPERS === 'true') {
-			kill(Selector('@e', { tag: Tags.UI_LEADERBOARD }))
+			kill(Selector('@e', { tag: Tags.UI_LEADERBOARD, type: UIPanelEntityType }))
 		}
 
 		spawnPanel(panels.leaderboard, [Tags.UI_LEADERBOARD, Tags.UI_LB_TXT], BACKDROP_TEXT, 0)

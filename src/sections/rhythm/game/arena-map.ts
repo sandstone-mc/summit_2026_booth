@@ -103,7 +103,7 @@ export const spawnSkybox = MCFunction(
 export const killSkybox = MCFunction(
 	'sections/rhythm/arena/kill_skybox',
 	() => {
-		kill(Selector('@e', { tag: Tags.SKYBOX }))
+		kill(Selector('@e', { tag: Tags.SKYBOX, type: 'minecraft:item_display' }))
 	},
 	{ lazy: true },
 )

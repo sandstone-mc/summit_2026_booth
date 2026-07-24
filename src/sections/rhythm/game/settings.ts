@@ -17,7 +17,7 @@ import { songCount, songNames } from '@rhythm/config/internal/songs'
 import { mapCount, mapNames } from '@rhythm/config/internal/maps'
 import { gameplay } from '@rhythm/config'
 import { panels } from '@rhythm/config/internal/derived'
-import { GameStatus, Tags, status, songSelect, mapSelect, interpSetting } from './state'
+import { GameStatus, Tags, UIPanelEntityType, status, songSelect, mapSelect, interpSetting } from './state'
 import { calOffsetMs } from '@rhythm/index'
 import { startGame, cancelStart } from './start'
 import { placeMap } from './arena-map'
@@ -50,12 +50,12 @@ const CLICK_WIDTH = 3
 const CLICK_HALF_WIDTH = 1.5
 const CLICK_Y_OFFSET = 0.25
 
-const songLineSel = Selector('@e', { tag: Tags.UI_SET_SONG_TXT, limit: 1 })
-const livesLineSel = Selector('@e', { tag: Tags.UI_SET_LIVES_TXT, limit: 1 })
-const mapLineSel = Selector('@e', { tag: Tags.UI_SET_MAP_TXT, limit: 1 })
-const interpLineSel = Selector('@e', { tag: Tags.UI_SET_INTERP_TXT, limit: 1 })
-const calLineSel = Selector('@e', { tag: Tags.UI_SET_CAL_TXT, limit: 1 })
-const buttonLineSel = Selector('@e', { tag: Tags.UI_SET_BTN_TXT, limit: 1 })
+const songLineSel = Selector('@e', { tag: Tags.UI_SET_SONG_TXT, type: 'minecraft:text_display', limit: 1 })
+const livesLineSel = Selector('@e', { tag: Tags.UI_SET_LIVES_TXT, type: 'minecraft:text_display', limit: 1 })
+const mapLineSel = Selector('@e', { tag: Tags.UI_SET_MAP_TXT, type: 'minecraft:text_display', limit: 1 })
+const interpLineSel = Selector('@e', { tag: Tags.UI_SET_INTERP_TXT, type: 'minecraft:text_display', limit: 1 })
+const calLineSel = Selector('@e', { tag: Tags.UI_SET_CAL_TXT, type: 'minecraft:text_display', limit: 1 })
+const buttonLineSel = Selector('@e', { tag: Tags.UI_SET_BTN_TXT, type: 'minecraft:text_display', limit: 1 })
 
 const scrollPos = Variable(0)
 
@@ -574,7 +574,7 @@ export const spawnSettingsPanel = MCFunction(
 	'sections/rhythm/settings/spawn',
 	() => {
 		if (Bun.env.DEV_HELPERS === 'true') {
-			kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
+			kill(Selector('@e', { tag: Tags.UI_SETTINGS, type: UIPanelEntityType }))
 		}
 		
 		spawnPanel(panels.settings, [Tags.UI_SETTINGS, Tags.UI_SETTINGS_TXT], BACKDROP_TEXT, 0)

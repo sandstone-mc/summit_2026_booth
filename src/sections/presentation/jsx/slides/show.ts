@@ -170,7 +170,7 @@ export class SlideShow {
 			// images, which carry `slide_<n>` but not `kind.text`.
 			this.showSlide.push(
 				MCFunction(`sections/presentation/slides/show/${s}`, () => {
-					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG] })).run.data.modify
+					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG], type: 'minecraft:text_display' })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(-1))
 					execute.as(Selector('@e', { tag })).run.data.modify

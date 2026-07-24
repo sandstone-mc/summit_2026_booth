@@ -6,7 +6,7 @@ import { hitsTaken, wallLives } from './walls/collision'
 import { points, combo, finalScore } from './scoring'
 import { livesSetting, updateSettingsPanel } from './settings'
 import { playSong, scheduleWalls } from './songs'
-import { spawnLaneShulkers, spawnLaneBorder } from './lane-effects'
+import { spawnLaneHighlight, spawnLaneBorder } from './lane-effects'
 
 export const timer = Variable(0)
 
@@ -41,7 +41,7 @@ export const setActive = MCFunction(
 			)
 		}
 
-		spawnLaneShulkers()
+		spawnLaneHighlight()
 		spawnLaneBorder()
 		playSong()
 		scheduleWalls()

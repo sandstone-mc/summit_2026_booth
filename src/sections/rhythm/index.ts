@@ -2,7 +2,7 @@ import { _, abs, execute, fill, kill, MCFunction, Objective, Selector, Variable 
 import { arena } from './config/internal/arena'
 import { killSkybox, placeMap } from './game/arena-map'
 import { endGame, resetGame, resetPlayer } from './game/end'
-import { laneTeamsInit, spawnLaneBorder } from './game/lane-effects'
+import { spawnLaneBorder } from './game/lane-effects'
 import { spawnLeaderboardPanel } from './game/leaderboard'
 import { spawnSettingsPanel } from './game/settings'
 import { cancelStart } from './game/start'
@@ -32,7 +32,6 @@ import './dev'
 export const setup = MCFunction(
 	'sections/rhythm/setup',
 	() => {
-		laneTeamsInit()
 		placeMap()
 		spawnLaneBorder()
 		spawnSettingsPanel()
@@ -46,8 +45,9 @@ export const cleanup = MCFunction(
 	'sections/rhythm/clear',
 	() => {
 		resetGame()
-		kill(Selector('@e', { tag: Tags.LANE_BORDER }))
-		kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
+		kill(Selector('@e', { tag: Tags.LANE_BORDER, type: 'minecraft:text_display' }))
+		kill(Selector('@e', { tag: Tags.UI_SETTINGS, type: 'minecraft:text_display' }))
+		kill(Selector('@e', { tag: Tags.UI_SETTINGS, type: 'minecraft:interaction' }))
 		killSkybox()
 		// fill(abs(...arena.mapOrigin), abs(...arena.mapEnd), 'minecraft:air').strict()
 	},

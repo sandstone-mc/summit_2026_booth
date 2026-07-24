@@ -20,7 +20,7 @@ import { wallAge } from './spawning'
 import { wallMovement } from '@rhythm/config/internal/derived'
 import { combo } from '@rhythm/game/scoring'
 import { endGame } from '@rhythm/game/end'
-import { GameStatus, Tags, gamePlayer, boothListeners, status, voidPark } from '@rhythm/game/state'
+import { GameStatus, Tags, WallEntityType, gamePlayer, boothListeners, status, voidPark } from '@rhythm/game/state'
 import { ticking } from '@shared'
 import { boothReturn } from '@rhythm/config/internal/derived'
 
@@ -41,7 +41,7 @@ const breakNearbyWall = MCFunction(
 	'sections/rhythm/collision/break_wall',
 	() => {
 		execute.at('@s').run(() => {
-			execute.as(Selector('@e', { tag: Tags.WALL, distance: [0, walls.breakRadius] })).run(() => {
+			execute.as(Selector('@e', { tag: Tags.WALL, type: WallEntityType, distance: [0, walls.breakRadius] })).run(() => {
 				wallAge('@s').set(wallMovement.lifetime + 1)
 				tp('@s', abs(...voidPark))
 			})
@@ -117,7 +117,7 @@ export const collisionTick = MCFunction(
 					_.if(
 						_.and(
 							_.not(_.entity(Selector('@s', { tag: Tags.WALL_HIT_COOLDOWN }))),
-							_.entity(Selector('@e', { tag: [Tags.WALL_HIT, `!${Tags.PARKOUR}`], distance: [0, walls.hitRadius] })),
+							_.entity(Selector('@e', { tag: [Tags.WALL_HIT, `!${Tags.PARKOUR}`], type: WallEntityType, distance: [0, walls.hitRadius] })),
 						),
 						() => {
 							onHit()
@@ -134,7 +134,7 @@ export const collisionTick = MCFunction(
 				.at('@s')
 				.unless.predicate(isSneaking)
 				.positioned(rel(0, 1, 0))
-				.if.entity(Selector('@e', { tag: [Tags.WALL_HIT, `!${Tags.PARKOUR}`], distance: [0, walls.hitRadius] }))
+				.if.entity(Selector('@e', { tag: [Tags.WALL_HIT, `!${Tags.PARKOUR}`], type: WallEntityType, distance: [0, walls.hitRadius] }))
 				.run(() => {
 					onHit()
 				})

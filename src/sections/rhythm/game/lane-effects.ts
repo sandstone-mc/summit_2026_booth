@@ -1,9 +1,7 @@
 import {
-	team,
 	_,
 	abs,
 	data,
-	effect,
 	execute,
 	kill,
 	MCFunction,
@@ -26,22 +24,9 @@ const GLOW_DURATION = 1
 const glowPick = Objective.create('snd.glow_pick', 'dummy')
 const glowColorScore = glowPick('$glow')
 
-export const laneTeamsInit = MCFunction(
-	'sections/rhythm/lane/teams_init',
-	() => {
-		for (const color of visuals.glowColors) {
-			team.add(`snd_glow_${color}`)
-			team.modify(`snd_glow_${color}`, 'color', color as any)
-			team.modify(`snd_glow_${color}`, 'seeFriendlyInvisibles', false)
-		}
-	},
-	{ lazy: true },
-)
-
-const laneSelector = Selector('@e', { tag: Tags.LANE })
-const fragmentSelector = Selector('@e', { tag: Tags.LANE_FRAGMENT })
-const borderSelector = Selector('@e', { tag: Tags.LANE_BORDER })
-const mountSelector = Selector('@e', { tag: Tags.LANE_MOUNT })
+const laneSelector = Selector('@e', { tag: Tags.LANE, type: 'minecraft:block_display' })
+const fragmentSelector = Selector('@e', { tag: Tags.LANE_FRAGMENT, type: 'minecraft:block_display' })
+const borderSelector = Selector('@e', { tag: Tags.LANE_BORDER, type: 'minecraft:text_display' })
 
 const baseY = arena.laneFloorY
 const lane = arena.lane
@@ -77,29 +62,29 @@ const FRAGMENTS: Fragment[] = [
 	{ pos: [-3.5, 4.0, 6.0], scale: [0.15, 0.15, 0.3], rotation: [-0.1, 0.1, -0.2, 0.97] },
 ]
 
-export const spawnLaneShulkers = MCFunction(
+
+const HIGHLIGHT_BLOCK = 'minecraft:stone'
+const HIGHLIGHT_BURY_DEPTH = 1.001
+
+export const spawnLaneHighlight = MCFunction(
 	'sections/rhythm/lane/spawn',
 	() => {
 		kill(laneSelector)
-		kill(mountSelector)
 		kill(fragmentSelector)
-		for (let i = 0; i < pattern.width; i++) {
-			const pos = lane.pos(i, 0, 0)
-			summon('minecraft:item_display', abs(pos[0], baseY - 1 / 120, pos[2]), {
-				Tags: boothTags(Tags.LANE_MOUNT),
-				Passengers: [
-					{
-						id: 'minecraft:shulker',
-						Tags: boothTags(Tags.LANE),
-						NoAI: true,
-						NoGravity: true,
-						Invulnerable: true,
-						Silent: true,
-						active_effects: [{ id: 'minecraft:invisibility', duration: NBT.int(-1), show_particles: false }],
-					},
-				],
-			} as Parameters<typeof summon>[2])
-		}
+
+		const pos = lane.pos(0, baseY + 1, 0)
+		summon('minecraft:block_display', abs(pos[0], pos[1], pos[2]), {
+			Tags: boothTags(Tags.LANE),
+			block_state: { Name: HIGHLIGHT_BLOCK },
+			Glowing: false,
+			view_range: NBT.float(0.25),
+			transformation: {
+				left_rotation: NBT.float([0, 0, 0, 1]),
+				right_rotation: NBT.float([0, 0, 0, 1]),
+				translation: NBT.float([-0.5, -HIGHLIGHT_BURY_DEPTH, -0.5]),
+				scale: NBT.float([pattern.width, 1, 1]),
+			},
+		})
 
 		for (let i = 0; i < FRAGMENTS.length; i++) {
 			const frag = FRAGMENTS[i]
@@ -278,7 +263,7 @@ const borderColorFns = visuals.glowColors.map((color, ci) => {
 		() => {
 			for (let si = 0; si < visuals.border.stripCount; si++) {
 				const bg = argb(BORDER_ALPHAS[si], stripColor)
-				const sel = Selector('@e', { tag: [Tags.LANE_BORDER, borderStripTag(si)] })
+				const sel = Selector('@e', { tag: [Tags.LANE_BORDER, borderStripTag(si)], type: 'minecraft:text_display' })
 				execute.as(sel).run.data.merge.entity('@s', { background: NBT.int(bg) })
 			}
 		},
@@ -306,17 +291,16 @@ const doKillLane = MCFunction(
 	'sections/rhythm/lane/do_kill',
 	() => {
 		kill(laneSelector)
-		kill(mountSelector)
 		kill(fragmentSelector)
 	},
 	{ lazy: true },
 )
 
-export const clearLaneShulkers = MCFunction(
+export const clearLaneHighlight = MCFunction(
 	'sections/rhythm/lane/clear',
 	() => {
 		// park out of sight for a tick so the kill isn't visible
-		tp(mountSelector, abs(...voidPark))
+		tp(laneSelector, abs(...voidPark))
 		tp(fragmentSelector, abs(...voidPark))
 
 		doKillLane.schedule.function('1t', 'replace')
@@ -324,18 +308,30 @@ export const clearLaneShulkers = MCFunction(
 	{ lazy: true },
 )
 
-const colorFns = visuals.glowColors.map((color) =>
-	MCFunction(
+// Displays don't accept potion effects, so the glow toggle has to be a direct
+// NBT write (Glowing) rather than `effect give minecraft:glowing`.
+const laneGlowOff = MCFunction(
+	'sections/rhythm/lane/glow_off',
+	() => {
+		execute.as(laneSelector).run.data.merge.entity('@s', { Glowing: false })
+	},
+	{ lazy: true },
+)
+
+const colorFns = visuals.glowColors.map((color) => {
+	const glowColor = BORDER_COLOR_MAP[color]
+	return MCFunction(
 		`sections/rhythm/lane/glow_${color}`,
 		() => {
-			team.join(`snd_glow_${color}`, laneSelector)
-			execute.as(laneSelector).run(() => {
-				effect.give('@s', 'minecraft:glowing', GLOW_DURATION, 0, true)
+			execute.as(laneSelector).run.data.merge.entity('@s', {
+				Glowing: true,
+				glow_color_override: NBT.int(glowColor),
 			})
+			laneGlowOff.schedule.function(`${GLOW_DURATION}s`, 'replace')
 		},
 		{ lazy: true },
-	),
-)
+	)
+})
 
 const pulseDown = MCFunction(
 	'sections/rhythm/lane/pulse_down',

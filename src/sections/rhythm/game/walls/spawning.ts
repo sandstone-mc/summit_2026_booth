@@ -3,7 +3,7 @@ import { pattern, walls, collisions, Difficulty } from '@rhythm/config'
 import { wallMovement, wallTintColor } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { singles, groups, type Cell, type Obstacle } from '@rhythm/config/obstacles'
-import { Tags, boothTags, voidPark } from '@rhythm/game/state'
+import { Tags, WallEntityType, boothTags, voidPark } from '@rhythm/game/state'
 import { scoreSwitch } from '@rhythm/flow'
 
 import { wallModelNames } from '@rhythm/config/internal/generate-wall-models'
@@ -65,6 +65,7 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string, groupIdx: number
 				interpolation_duration: NBT.int(wallMovement.travelTicks),
 				item_display: 'none',
 				brightness: { sky: NBT.int(15), block: NBT.int(15) },
+				view_range: NBT.float(0.75),
 				transformation: {
 					translation: NBT.float([0, 0, 0]),
 					left_rotation: NBT.float(arena.wallRotation),
@@ -305,7 +306,7 @@ export const spawnForDifficulty = [
 const doKillWalls = MCFunction(
 	'sections/rhythm/obstacle/do_kill',
 	() => {
-		kill(Selector('@e', { tag: Tags.WALL }))
+		kill(Selector('@e', { tag: Tags.WALL, type: WallEntityType }))
 	},
 	{ lazy: true },
 )
@@ -313,7 +314,7 @@ const doKillWalls = MCFunction(
 export const clearWalls = MCFunction(
 	'sections/rhythm/obstacle/clear',
 	() => {
-		tp(Selector('@e', { tag: Tags.WALL }), abs(...voidPark))
+		tp(Selector('@e', { tag: Tags.WALL, type: WallEntityType }), abs(...voidPark))
 		doKillWalls.schedule.function('1t', 'replace')
 		lastGroupId.set(0)
 	},

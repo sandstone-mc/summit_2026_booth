@@ -1,11 +1,11 @@
 import { _, abs, advancement, attribute, effect, execute, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
-import { GameStatus, Tags, gamePlayer, boothListeners, status, songSelect } from './state'
+import { GameStatus, Tags, WallEntityType, gamePlayer, boothListeners, status, songSelect } from './state'
 import { clearWalls } from './walls/spawning'
 import { stopAllSongs, stopAllWalls, stopSong, stopWalls } from './songs'
 import { computeScores } from './scoring'
 import { wallLives } from './walls/collision'
 import { parkourCleanup } from './parkour'
-import { clearLaneShulkers } from './lane-effects'
+import { clearLaneHighlight } from './lane-effects'
 import { saveLeaderboard } from './leaderboard'
 import { updateSettingsPanel } from './settings'
 import { ticking } from '@shared'
@@ -24,7 +24,7 @@ const cleanup = MCFunction(
 	() => {
 		clearWalls()
 		parkourCleanup()
-		clearLaneShulkers()
+		clearLaneHighlight()
 
 		const [x, y, z] = boothReturn
 		tp(gamePlayer, abs(x, y, z))
@@ -69,7 +69,7 @@ export const resetGame = MCFunction(
 		stopAllWalls()
 		clearWalls()
 		parkourCleanup()
-		clearLaneShulkers()
+		clearLaneHighlight()
 		stopsound(boothListeners, 'master')
 
 		const [x, y, z] = boothReturn
@@ -95,7 +95,7 @@ export const timerTick = MCFunction(
 			})
 			timer.remove(1)
 			// once the song is over, wait for the last walls to leave the lane
-			_.if(_.and(timer.lessThanOrEqualTo(0), _.not(_.entity(Selector('@e', { tag: Tags.WALL })))), () => {
+			_.if(_.and(timer.lessThanOrEqualTo(0), _.not(_.entity(Selector('@e', { tag: Tags.WALL, type: WallEntityType })))), () => {
 				endGame()
 			})
 		})

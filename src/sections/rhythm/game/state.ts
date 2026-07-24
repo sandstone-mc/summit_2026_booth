@@ -1,8 +1,20 @@
-import { NBT, Predicate, Selector, Variable } from 'sandstone'
+import { NBT, Predicate, Selector, Tag, Variable } from 'sandstone'
 import { NAMESPACE } from '@shared'
 import { music } from '@rhythm/config'
 import { arena } from '@rhythm/config/internal/arena'
 import { boothReturn } from '@rhythm/config/internal/derived'
+
+export const WallEntityType = Tag('entity_type', 'sandstone_summit_booth:rhythm_wall', [
+	'minecraft:item_display',
+	'minecraft:block_display',
+	'minecraft:happy_ghast',
+	'minecraft:interaction',
+])
+
+export const UIPanelEntityType = Tag('entity_type', 'sandstone_summit_booth:rhythm_ui_panel', [
+	'minecraft:text_display',
+	'minecraft:interaction',
+])
 
 export enum GameStatus {
 	WAITING,
@@ -31,7 +43,6 @@ export enum Tags {
 	PARKOUR_TRIGGER = 'snd.rhythm.pk.trigger',
 
 	LANE = 'snd.rhythm.lane',
-	LANE_MOUNT = 'snd.rhythm.lane.mount',
 	LANE_FRAGMENT = 'snd.rhythm.lane.frag',
 	LANE_BORDER = 'snd.rhythm.lane.border',
 
