@@ -2,6 +2,8 @@ import { functionCmd } from 'node_modules/sandstone/dist/_internal'
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC, type NPCOptions } from '../NPC'
 import { PLACEHOLDER_SKIN } from './skins'
+import { SymbolEntity } from 'sandstone/arguments'
+import { NBT } from 'sandstone'
 
 const presentationWatcherDialogue = DialogueTree('casino_crowd_1', {
     nodes: [{
@@ -74,12 +76,13 @@ const gamblerDialogue = DialogueTree('casino_crowd_3', {
     }],
 })
 
-const balloonBundleHeldItem = {
+const balloonBundleHeldItem: NonNullable<SymbolEntity['item_display']['item']> = {
     id: 'minecraft:bundle',
-    count: 1,
+    count: NBT.int(1),
+    // TODO: Shouldn't be `any`, working on it.
     components: {
-        '"minecraft:item_model"': 'summit_balloons:balloon_bundle',
-        '"minecraft:custom_model_data"': {
+        'minecraft:item_model': 'summit_balloons:balloon_bundle',
+        'minecraft:custom_model_data': {
             floats: [3],
             strings: [
                 'sandstone_summit_booth.sand_castle',
@@ -87,12 +90,12 @@ const balloonBundleHeldItem = {
                 'sandstone_summit_booth.sand_castle',
             ],
         },
-        '"minecraft:custom_data"': {
+        'minecraft:custom_data': {
             summit: {
                 balloon: {
                     stamp: '00c50030-a86a-490c-8134-aebc531cbe84',
-                    bundle: 1,
-                    count: 3,
+                    bundle: true,
+                    count: NBT.int(3),
                 },
             },
         },

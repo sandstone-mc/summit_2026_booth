@@ -70,7 +70,7 @@ export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMa
 				itemModel: ItemModelDefinition(modelPath.join('/'), {
 					model: {
 						type: 'minecraft:model',
-						model: Model(modelType as 'item', modelPath.join('/'), {
+						model: Model(modelType as `${any}${string}`, modelPath.join('/'), {
 							parent: 'minecraft:item/generated',
 							textures: { layer0: `${namespace}:${modelType}/${modelPath.join('/')}` },
 						})
