@@ -26,13 +26,12 @@ Variant('painting', mascot, {
 Texture('item', 'balloon/primary', asset('balloon', 'primary.png'))
 Texture('item', 'balloon/secondary', asset('balloon', 'secondary.png'))
 
-Model('balloons' as 'item', 'sand_castle',
+Model('balloons', 'sand_castle',
     // Specifically not using ESM import due to Sandstone's strict types, WAI
     await Bun.file(join(process.cwd(), 'resources/assets/balloon/model.json')).json()
 )
 
-// TODO: Sandstone bug
-Texture('sticker' as 'font', 'arcane_arts', asset('stickers', 'arcane_arts.png'))
-Texture('sticker' as 'font', 'enter_booth', asset('stickers', 'enter_booth.png'))
-Texture('sticker' as 'font', 'hidden', asset('stickers', 'hidden.png'))
-Texture('sticker' as 'font', 'rhythm', asset('stickers', 'rhythm.png'))
+Texture('sticker', 'arcane_arts', asset('stickers', 'arcane_arts.png'))
+Texture('sticker', 'enter_booth', asset('stickers', 'enter_booth.png'))
+Texture('sticker', 'hidden', asset('stickers', 'hidden.png'))
+Texture('sticker', 'rhythm', asset('stickers', 'rhythm.png'))

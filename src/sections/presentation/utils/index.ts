@@ -38,7 +38,7 @@ export function ImageDisplayModel(texture: TextureClass<'item'> | string) {
 	return ItemModelDefinition(modelPath.join('/'), {
 		model: {
 			type: 'minecraft:model',
-			model: Model(modelType as 'item', modelPath.join('/'), {
+			model: Model(modelType as `${any}${string}`, modelPath.join('/'), {
 				parent: 'minecraft:item/generated',
 				textures: { layer0: `${namespace}:${modelType}/${modelPath.join('/')}` },
 			})
