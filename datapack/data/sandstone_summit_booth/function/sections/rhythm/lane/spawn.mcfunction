@@ -1,6 +1,6 @@
-kill @e[tag=snd.rhythm.lane]
-kill @e[tag=snd.rhythm.lane.mount]
-kill @e[tag=snd.rhythm.lane.frag]
+kill @e[tag=snd.rhythm.lane, tag=snd.rhythm.lane]
+kill @e[tag=snd.rhythm.lane.mount, tag=snd.rhythm.lane.mount]
+kill @e[tag=snd.rhythm.lane.frag, tag=snd.rhythm.lane.frag]
 summon minecraft:item_display -72 62.99166666666667 43 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.rhythm.lane.mount'],Passengers:[{id:'minecraft:shulker',Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.rhythm.lane'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}]}
 summon minecraft:item_display -71 62.99166666666667 43 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.rhythm.lane.mount'],Passengers:[{id:'minecraft:shulker',Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.rhythm.lane'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}]}
 summon minecraft:item_display -70 62.99166666666667 43 {Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.rhythm.lane.mount'],Passengers:[{id:'minecraft:shulker',Tags:['summit.booth_entity.sandstone_summit_booth','summit.dynamic','snd.rhythm.lane'],NoAI:true,NoGravity:true,Invulnerable:true,Silent:true,active_effects:[{id:'minecraft:invisibility',duration:-1i,show_particles:false}]}]}

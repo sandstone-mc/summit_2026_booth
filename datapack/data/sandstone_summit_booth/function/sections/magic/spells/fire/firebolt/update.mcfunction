@@ -1,1 +1,1 @@
-execute as @e[tag=sandstone_summit_booth.spell.fire.firebolt.projectile, type=minecraft:marker] at @s run function sandstone_summit_booth:sections/magic/spells/fire/firebolt/update/execute_as
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.spell.fire.firebolt.projectile, tag=sandstone_summit_booth.spell.fire.firebolt.projectile] at @s run function sandstone_summit_booth:sections/magic/spells/fire/firebolt/update/execute_as

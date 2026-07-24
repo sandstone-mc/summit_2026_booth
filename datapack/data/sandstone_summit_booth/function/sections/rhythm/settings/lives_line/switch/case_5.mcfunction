@@ -1,1 +1,1 @@
-data merge entity @e[tag=snd.ui.set.lives, limit=1] {text:[{text:'    Lives: ',color:'gray'},{text:'     ❤❤❤❤❤ 5        ',color:'red',font:'sandstone_summit_booth:monospace'}]}
+data merge entity @e[tag=snd.ui.set.lives, tag=snd.ui.set.lives, limit=1] {text:[{text:'    Lives: ',color:'gray'},{text:'     ❤❤❤❤❤ 5        ',color:'red',font:'sandstone_summit_booth:monospace'}]}

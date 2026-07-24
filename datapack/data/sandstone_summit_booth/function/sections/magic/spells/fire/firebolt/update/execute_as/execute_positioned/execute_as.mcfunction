@@ -3,4 +3,4 @@ scoreboard players set anon_WnYlBycD_72 __sandstone 2
 data modify storage __sandstone:variable anon_WnYlBycD_0 set value {}
 execute store result storage __sandstone:variable anon_WnYlBycD_0.param_0 int 1 run scoreboard players get anon_WnYlBycD_72 __sandstone
 function sandstone_summit_booth:sections/magic/status/burning/apply with storage __sandstone:variable anon_WnYlBycD_0
-execute as @e[tag=sandstone_summit_booth.spell.fire.firebolt.projectile, distance=0..2] run kill @s
+execute as @e[distance=0..2, distance=0,2, tag=sandstone_summit_booth.spell.fire.firebolt.projectile, tag=sandstone_summit_booth.spell.fire.firebolt.projectile] run kill @s

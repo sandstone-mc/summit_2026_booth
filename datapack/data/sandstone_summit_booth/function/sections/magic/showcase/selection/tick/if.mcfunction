@@ -1,1 +1,1 @@
-execute as @e[tag=sandstone_summit_booth.showcase.marker, type=minecraft:marker] at @s run function sandstone_summit_booth:sections/magic/showcase/selection/tick/if/execute_as
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.showcase.marker, tag=sandstone_summit_booth.showcase.marker] at @s run function sandstone_summit_booth:sections/magic/showcase/selection/tick/if/execute_as

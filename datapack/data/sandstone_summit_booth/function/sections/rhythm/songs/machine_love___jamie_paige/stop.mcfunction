@@ -176,4 +176,4 @@ schedule clear sandstone_summit_booth:sections/rhythm/songs/shared/b35
 schedule clear sandstone_summit_booth:sections/rhythm/songs/shared/n402
 schedule clear sandstone_summit_booth:sections/rhythm/songs/shared/n403
 schedule clear sandstone_summit_booth:sections/rhythm/songs/shared/b36
-stopsound @a[tag=summit.in_booth.sandstone_summit_booth, predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range] master
+stopsound @a[predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range, predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range, tag=summit.in_booth.sandstone_summit_booth, tag=summit.in_booth.sandstone_summit_booth] master

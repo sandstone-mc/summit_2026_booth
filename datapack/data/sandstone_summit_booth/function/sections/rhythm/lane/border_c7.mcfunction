@@ -1,10 +1,10 @@
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.0] run data merge entity @s {background:-1258291201i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.1] run data merge entity @s {background:-2030043137i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.2] run data merge entity @s {background:1627389951i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.3] run data merge entity @s {background:1107296255i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.4] run data merge entity @s {background:704643071i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.5] run data merge entity @s {background:419430399i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.6] run data merge entity @s {background:218103807i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.7] run data merge entity @s {background:83886079i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.8] run data merge entity @s {background:33554431i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.9] run data merge entity @s {background:100663295i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.0, tag=snd.rhythm.lane.border,snd.lane.border.0] run data merge entity @s {background:-1258291201i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.1, tag=snd.rhythm.lane.border,snd.lane.border.1] run data merge entity @s {background:-2030043137i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.2, tag=snd.rhythm.lane.border,snd.lane.border.2] run data merge entity @s {background:1627389951i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.3, tag=snd.rhythm.lane.border,snd.lane.border.3] run data merge entity @s {background:1107296255i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.4, tag=snd.rhythm.lane.border,snd.lane.border.4] run data merge entity @s {background:704643071i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.5, tag=snd.rhythm.lane.border,snd.lane.border.5] run data merge entity @s {background:419430399i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.6, tag=snd.rhythm.lane.border,snd.lane.border.6] run data merge entity @s {background:218103807i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.7, tag=snd.rhythm.lane.border,snd.lane.border.7] run data merge entity @s {background:83886079i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.8, tag=snd.rhythm.lane.border,snd.lane.border.8] run data merge entity @s {background:33554431i}
+execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.9, tag=snd.rhythm.lane.border,snd.lane.border.9] run data merge entity @s {background:100663295i}

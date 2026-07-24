@@ -1,1 +1,1 @@
-kill @e[tag=snd.rhythm.skybox]
+kill @e[tag=snd.rhythm.skybox, tag=snd.rhythm.skybox]

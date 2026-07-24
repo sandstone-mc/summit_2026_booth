@@ -1,1 +1,1 @@
-execute as @e[tag=sandstone_summit_booth.spell.fire.heatwave.projectile, type=minecraft:marker] at @s run function sandstone_summit_booth:sections/magic/spells/fire/heatwave/update/execute_as
+execute as @e[type=minecraft:marker, tag=sandstone_summit_booth.spell.fire.heatwave.projectile, tag=sandstone_summit_booth.spell.fire.heatwave.projectile] at @s run function sandstone_summit_booth:sections/magic/spells/fire/heatwave/update/execute_as

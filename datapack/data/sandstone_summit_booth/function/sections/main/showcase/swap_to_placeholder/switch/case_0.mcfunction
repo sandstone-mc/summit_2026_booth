@@ -1,1 +1,1 @@
-kill @e[tag=sandstone_summit_booth.showcase.placeholder]
+kill @e[tag=sandstone_summit_booth.showcase.placeholder, tag=sandstone_summit_booth.showcase.placeholder]

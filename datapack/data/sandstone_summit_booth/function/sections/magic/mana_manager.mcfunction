@@ -1,1 +1,1 @@
-execute as @a[tag=sandstone_summit_booth.showcase.player] run function sandstone_summit_booth:sections/magic/mana_manager/execute_as
+execute as @a[tag=sandstone_summit_booth.showcase.player, tag=sandstone_summit_booth.showcase.player] run function sandstone_summit_booth:sections/magic/mana_manager/execute_as

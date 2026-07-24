@@ -1,3 +1,3 @@
 scoreboard players set loop_iterator_2_WnYlBycD __sandstone 0
 execute if score loop_iterator_2_WnYlBycD __sandstone matches ..60 run function sandstone_summit_booth:sections/magic/spells/lightning/thunderbolt/raycast/loop
-execute if entity @s[tag=sandstone_summit_booth.spells.lightning.thunderbolt.ray_active] run function sandstone_summit_booth:sections/magic/spells/lightning/thunderbolt/raycast/if
+execute if entity @s[tag=sandstone_summit_booth.spells.lightning.thunderbolt.ray_active, tag=sandstone_summit_booth.spells.lightning.thunderbolt.ray_active] run function sandstone_summit_booth:sections/magic/spells/lightning/thunderbolt/raycast/if

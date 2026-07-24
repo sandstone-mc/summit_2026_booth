@@ -1,2 +1,2 @@
-execute if entity @s[tag=sandstone_summit_booth.npc.glitchy] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/render/switch/case_4/if2/execute_if
+execute if entity @s[tag=sandstone_summit_booth.npc.glitchy, tag=sandstone_summit_booth.npc.glitchy] run function sandstone_summit_booth:sections/npcs/dialogue/glitchy/render/switch/case_4/if2/execute_if
 tag @s remove sandstone_summit_booth.npc.dialogue.revealing

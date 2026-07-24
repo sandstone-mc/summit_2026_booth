@@ -1,1 +1,1 @@
-kill @e[tag=summit.booth_entity.sandstone_summit_booth]
+kill @e[tag=summit.booth_entity.sandstone_summit_booth, tag=summit.booth_entity.sandstone_summit_booth]

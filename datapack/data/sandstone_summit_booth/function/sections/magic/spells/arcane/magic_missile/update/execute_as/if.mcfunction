@@ -1,2 +1,2 @@
-execute as @e[tag=sandstone_summit_booth.spell.arcane.magic_missile.target, type=#sandstone_summit_booth:targetable, limit=1, sort=nearest] run tag @s remove sandstone_summit_booth.spell.arcane.magic_missile.target
+execute as @e[type=#sandstone_summit_booth:targetable, limit=1, sort=nearest, tag=sandstone_summit_booth.spell.arcane.magic_missile.target, tag=sandstone_summit_booth.spell.arcane.magic_missile.target] run tag @s remove sandstone_summit_booth.spell.arcane.magic_missile.target
 kill @s

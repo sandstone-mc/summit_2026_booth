@@ -1,7 +1,7 @@
 schedule clear sandstone_summit_booth:sections/rhythm/settings/scroll_loop
-data merge entity @e[tag=snd.ui.set.song, limit=1] {text:{text:' '}}
+data merge entity @e[tag=snd.ui.set.song, tag=snd.ui.set.song, limit=1] {text:{text:' '}}
 function sandstone_summit_booth:sections/rhythm/settings/update/0_if/return_run/if
-data merge entity @e[tag=snd.ui.set.map, limit=1] {text:{text:' '}}
-data merge entity @e[tag=snd.ui.set.interp, limit=1] {text:{text:' '}}
-data merge entity @e[tag=snd.ui.set.cal, limit=1] {text:{text:' '}}
-data merge entity @e[tag=snd.ui.set.btn, limit=1] {text:{text:' '}}
+data merge entity @e[tag=snd.ui.set.map, tag=snd.ui.set.map, limit=1] {text:{text:' '}}
+data merge entity @e[tag=snd.ui.set.interp, tag=snd.ui.set.interp, limit=1] {text:{text:' '}}
+data merge entity @e[tag=snd.ui.set.cal, tag=snd.ui.set.cal, limit=1] {text:{text:' '}}
+data merge entity @e[tag=snd.ui.set.btn, tag=snd.ui.set.btn, limit=1] {text:{text:' '}}
