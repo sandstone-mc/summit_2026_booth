@@ -229,11 +229,11 @@ function runLayout(
 	for (const block of blocks0) {
 		const blockScrollEls =
 			block.kind === 'element'
-				? block.el.kind === 'text' && typeof block.el.scrollTag === 'string'
+				? block.el.kind === 'text' && block.el.scrollTag !== undefined
 					? [block.el]
 					: []
 				: block.children.filter(
-						(c) => c.kind === 'text' && typeof c.scrollTag === 'string',
+						(c) => c.kind === 'text' && c.scrollTag !== undefined,
 				  )
 		if (blockScrollEls.length === 0) continue
 		// Every scroll in this block gets the full available height —
@@ -269,7 +269,7 @@ function runLayout(
 			// Without it, the topmost element on a tightly-stacked slide
 			// renders that many blocks above the slide's top edge.
 			let entityY =
-				el.kind === 'text' && typeof el.scrollTag === 'string'
+				el.kind === 'text' && el.scrollTag !== undefined
 					? cellY - TEXT_RENDER_OFFSET
 					: el.kind === 'image'
 						? cellY + el.cellH / 2
@@ -278,7 +278,7 @@ function runLayout(
 			// up by 1 line height so a following paragraph can claim the
 			// freed space. Companion to the +1 viewport row in
 			// finalizeScrollCodeLayout. Only applied to scroll blocks.
-			if (el.kind === 'text' && typeof el.scrollTag === 'string' && el.extraRow) {
+			if (el.kind === 'text' && el.scrollTag !== undefined && el.extraRow) {
 				entityY -= pxToTextLineHeight(el.scalePx, el.fontId) - .75
 			}
 			// HACK: `shift-up` JSX prop. Nudges any text element up by N
@@ -416,7 +416,7 @@ function placeRowBlocks(
 		// `TEXT_RENDER_OFFSET` is applied to text elements for the same
 		// reason as in `runLayout` above.
 		let entityY =
-			child.kind === 'text' && typeof child.scrollTag === 'string'
+			child.kind === 'text' && child.scrollTag !== undefined
 				? subCellY - TEXT_RENDER_OFFSET
 				: child.kind === 'image'
 					? subCellY + child.cellH / 2
@@ -426,7 +426,7 @@ function placeRowBlocks(
 		// freed space. Mirror of the shift in `runLayout` — both
 		// placement paths need to agree, since this slide's code blocks
 		// live inside a row block.
-		if (child.kind === 'text' && typeof child.scrollTag === 'string' && child.extraRow) {
+		if (child.kind === 'text' && child.scrollTag !== undefined && child.extraRow) {
 			entityY -= pxToTextLineHeight(child.scalePx, child.fontId) - .75
 		}
 		// HACK: `shift-up` JSX prop (see `runLayout`).
@@ -488,13 +488,13 @@ function placeColumnBlocks(
 		// Entity Y mirrors `runLayout`'s element-kind dispatch so a
 		// column-block text/image renders the same as a top-level one.
 		let entityY =
-			child.kind === 'text' && typeof child.scrollTag === 'string'
+			child.kind === 'text' && child.scrollTag !== undefined
 				? cellY - TEXT_RENDER_OFFSET
 				: child.kind === 'image'
 					? cellY + child.cellH / 2
 					: cellY - TEXT_RENDER_OFFSET
 		// HACK: `extra-row` JSX prop shift (see `runLayout`).
-		if (child.kind === 'text' && typeof child.scrollTag === 'string' && child.extraRow) {
+		if (child.kind === 'text' && child.scrollTag !== undefined && child.extraRow) {
 			entityY -= pxToTextLineHeight(child.scalePx, child.fontId) - .75
 		}
 		// HACK: `shift-up` JSX prop (see `runLayout`).
@@ -564,7 +564,7 @@ function maybeRecordScroll(
 	scrollSpecs: ScrollSpec[],
 ): void {
 	if (el.kind !== 'text') return
-	if (!el.scrollTag || !el.scrollDistBlocks || el.scrollDistBlocks <= 0) return
+	if (el.scrollTag === undefined || el.scrollDistBlocks === undefined) return
 	scrollSpecs.push({
 		scrollTag: el.scrollTag,
 		startY,

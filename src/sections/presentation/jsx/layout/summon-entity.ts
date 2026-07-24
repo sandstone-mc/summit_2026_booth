@@ -26,7 +26,7 @@ export function summonTextEntity(
 	sceneTag: LabelClass,
 	initialOpacity: number | undefined,
 ): void {
-	if (el.chunks && el.chunks.length > 0 && el.scrollTag) {
+	if (el.chunks && el.chunks.length > 0 && el.scrollTag !== undefined) {
 		const tags: (`${any}${string}` | LabelClass)[] = [BOOTH_ENTITY_TAG, sceneTag, ...extraTags]
 		tags.push(el.scrollTag)
 		const nbt: SymbolEntity['text_display'] = {
@@ -62,7 +62,7 @@ export function summonTextEntity(
 
 	// Single entity (non-scroll, or scroll with no chunks).
 	const tags: (`${any}${string}` | LabelClass)[] = [sceneTag, ...extraTags]
-	if (el.scrollTag) tags.push(el.scrollTag)
+	if (el.scrollTag !== undefined) tags.push(el.scrollTag)
 
 	// Inline-formatted prose (`<p>` / `<h*>` with `**bold**` etc.):
 	// the layout pass already parsed the segments and stored them
