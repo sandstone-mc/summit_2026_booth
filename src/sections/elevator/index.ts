@@ -485,8 +485,18 @@ export const killElevator = MCFunction('sections/elevator/kill', () => {
     })
 
     kill(Car)
-    kill(CarPartLabel('@e' as '@s'))
-    kill(ButtonLabel('@e' as '@s'))
+    kill(Selector('@e', {
+        type: 'minecraft:block_display',
+        tag: CarPartLabel
+    }))
+    kill(Selector('@e', {
+        type: 'minecraft:interaction',
+        tag: CarPartLabel
+    }))
+    kill(Selector('@e', {
+        type: 'minecraft:block_display',
+        tag: ButtonLabel
+    }))
 
     for (let floorIdx = 0; floorIdx < FLOORS.length; floorIdx++) {
         clearFloorBarrier(floorIdx)
@@ -498,8 +508,10 @@ export const killElevator = MCFunction('sections/elevator/kill', () => {
 })
 
 export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
-    // clean up anything left over from a previous spawn so re-running this is always safe
-    killElevator()
+    if (Bun.env.DEV_HELPERS === 'true') {
+        // clean up anything left over from a previous spawn so re-running this is always safe
+        killElevator()
+    }
 
     CurrentFloor.set(STARTING_FLOOR)
     TargetFloor.set(STARTING_FLOOR)

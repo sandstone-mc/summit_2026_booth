@@ -573,8 +573,10 @@ const BACKDROP_TEXT: JSONTextComponent = [
 export const spawnSettingsPanel = MCFunction(
 	'sections/rhythm/settings/spawn',
 	() => {
-		kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
-
+		if (Bun.env.DEV_HELPERS === 'true') {
+			kill(Selector('@e', { tag: Tags.UI_SETTINGS }))
+		}
+		
 		spawnPanel(panels.settings, [Tags.UI_SETTINGS, Tags.UI_SETTINGS_TXT], BACKDROP_TEXT, 0)
 		spawnPanelLines(panels.settings, [Tags.UI_SETTINGS, Tags.UI_SET_SONG_TXT], RENDER_LINES, SONG_LINE)
 		spawnPanelLines(panels.settings, [Tags.UI_SETTINGS, Tags.UI_SET_LIVES_TXT], RENDER_LINES, LIVES_LINE)

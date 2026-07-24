@@ -120,9 +120,11 @@ const spawnNpcs = MCFunction('sections/npcs/spawn', () => {
     for (const npc of registry) {
         const seatTag = `${npc.instanceTag}.seat` as `${any}${string}`
 
-        kill(Selector('@e', { tag: npc.instanceTag }))
-        kill(Selector('@e', { tag: seatTag }))
-
+        if (Bun.env.DEV_HELPERS === 'true') {
+            kill(Selector('@e', { tag: npc.instanceTag }))
+            kill(Selector('@e', { tag: seatTag }))
+        }
+        
         const [x, y, z] = npc.position
         const [yaw, pitch] = npc.rotation ?? [0, 0]
 

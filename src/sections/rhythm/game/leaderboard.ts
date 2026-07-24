@@ -456,7 +456,9 @@ const BACKDROP_TEXT: JSONTextComponent = [
 export const spawnLeaderboardPanel = MCFunction(
 	'sections/rhythm/leaderboard/spawn',
 	() => {
-		kill(Selector('@e', { tag: Tags.UI_LEADERBOARD }))
+		if (Bun.env.DEV_HELPERS === 'true') {
+			kill(Selector('@e', { tag: Tags.UI_LEADERBOARD }))
+		}
 
 		spawnPanel(panels.leaderboard, [Tags.UI_LEADERBOARD, Tags.UI_LB_TXT], BACKDROP_TEXT, 0)
 		spawnPanelLines(panels.leaderboard, [Tags.UI_LEADERBOARD, Tags.UI_LB_SONG_TXT], RENDER_LINES, SONGCAT_LINE)
