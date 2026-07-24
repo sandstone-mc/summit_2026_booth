@@ -1,9 +1,7 @@
-import { functionCmd } from 'node_modules/sandstone/dist/_internal'
 import { DialogueTree } from '../DialogueTree'
-import { CreateNPC, type NPCOptions } from '../NPC'
+import { CreateNPC, NPCHeldItemWithComponents, type NPCOptions } from '../NPC'
 import { PLACEHOLDER_SKIN } from './skins'
-import { SymbolEntity } from 'sandstone/arguments'
-import { NBT } from 'sandstone'
+import { functionCmd, NBT } from 'sandstone'
 
 const presentationWatcherDialogue = DialogueTree('casino_crowd_1', {
     nodes: [{
@@ -76,7 +74,7 @@ const gamblerDialogue = DialogueTree('casino_crowd_3', {
     }],
 })
 
-const balloonBundleHeldItem: NonNullable<SymbolEntity['item_display']['item']> = {
+const balloonBundleHeldItem: NPCHeldItemWithComponents = {
     id: 'minecraft:bundle',
     count: NBT.int(1),
     // TODO: Shouldn't be `any`, working on it.
