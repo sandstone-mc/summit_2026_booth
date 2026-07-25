@@ -1,0 +1,1 @@
+execute as @e[type=minecraft:block_display, tag=snd.rhythm.lane] run data merge entity @s {Glowing:false}

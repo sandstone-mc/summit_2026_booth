@@ -1,2 +1,2 @@
-team join snd_glow_blue @e[tag=snd.rhythm.lane]
-execute as @e[tag=snd.rhythm.lane] run effect give @s minecraft:glowing 1 0 true
+execute as @e[type=minecraft:block_display, tag=snd.rhythm.lane] run data merge entity @s {Glowing:true,glow_color_override:5592575i}
+schedule function sandstone_summit_booth:sections/rhythm/lane/glow_off 1s replace

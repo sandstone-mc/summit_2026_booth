@@ -1,7 +1,8 @@
 execute as @a[tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/kill/execute_as
 kill @e[type=minecraft:block_display, limit=1, tag=sandstone_summit_booth.elevator.car]
-kill @e[tag=sandstone_summit_booth.elevator.car_part]
-kill @e[tag=sandstone_summit_booth.elevator.button]
+kill @e[type=minecraft:block_display, tag=sandstone_summit_booth.elevator.car_part]
+kill @e[type=minecraft:interaction, tag=sandstone_summit_booth.elevator.car_part]
+kill @e[type=minecraft:block_display, tag=sandstone_summit_booth.elevator.button]
 fill -57 83 44 -53 83 48 minecraft:air replace minecraft:barrier
 fill -57 83 45 -57 83 46 minecraft:oxidized_copper_trapdoor[open=true,facing=east]
 fill -57 73 44 -53 73 48 minecraft:air replace minecraft:barrier

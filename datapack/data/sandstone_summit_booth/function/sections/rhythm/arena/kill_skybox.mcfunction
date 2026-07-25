@@ -1,1 +1,1 @@
-kill @e[tag=snd.rhythm.skybox]
+kill @e[type=minecraft:item_display, tag=snd.rhythm.skybox]

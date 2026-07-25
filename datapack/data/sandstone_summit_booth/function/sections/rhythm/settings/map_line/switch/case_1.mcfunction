@@ -1,1 +1,1 @@
-data merge entity @e[tag=snd.ui.set.map, limit=1] {text:[{text:'  🗺 Map: ',color:'gray'},{text:'Frostbound Garden   ',color:'green',font:'sandstone_summit_booth:monospace'}]}
+data merge entity @e[type=minecraft:text_display, tag=snd.ui.set.map, limit=1] {text:[{text:'  🗺 Map: ',color:'gray'},{text:'Frostbound Garden   ',color:'green',font:'sandstone_summit_booth:monospace'}]}

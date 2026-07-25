@@ -1,10 +1,10 @@
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.0] run data merge entity @s {background:-1258291371i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.1] run data merge entity @s {background:-2030043307i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.2] run data merge entity @s {background:1627389781i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.3] run data merge entity @s {background:1107296085i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.4] run data merge entity @s {background:704642901i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.5] run data merge entity @s {background:419430229i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.6] run data merge entity @s {background:218103637i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.7] run data merge entity @s {background:83885909i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.8] run data merge entity @s {background:33554261i}
-execute as @e[tag=snd.rhythm.lane.border, tag=snd.lane.border.9] run data merge entity @s {background:100663125i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.0] run data merge entity @s {background:-1258291371i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.1] run data merge entity @s {background:-2030043307i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.2] run data merge entity @s {background:1627389781i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.3] run data merge entity @s {background:1107296085i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.4] run data merge entity @s {background:704642901i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.5] run data merge entity @s {background:419430229i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.6] run data merge entity @s {background:218103637i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.7] run data merge entity @s {background:83885909i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.8] run data merge entity @s {background:33554261i}
+execute as @e[type=minecraft:text_display, tag=snd.rhythm.lane.border, tag=snd.lane.border.9] run data merge entity @s {background:100663125i}

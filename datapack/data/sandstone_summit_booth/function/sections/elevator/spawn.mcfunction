@@ -1,4 +1,3 @@
-function sandstone_summit_booth:sections/elevator/kill
 scoreboard players set anon_WnYlBycD_0 __sandstone 2
 scoreboard players set anon_WnYlBycD_1 __sandstone 2
 scoreboard players set anon_WnYlBycD_2 __sandstone 0

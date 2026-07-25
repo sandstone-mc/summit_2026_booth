@@ -1,1 +1,1 @@
-kill @e[tag=snd.rhythm.wall]
+kill @e[type=#sandstone_summit_booth:rhythm_wall, tag=snd.rhythm.wall]

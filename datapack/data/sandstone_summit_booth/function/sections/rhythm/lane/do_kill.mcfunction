@@ -1,3 +1,2 @@
-kill @e[tag=snd.rhythm.lane]
-kill @e[tag=snd.rhythm.lane.mount]
-kill @e[tag=snd.rhythm.lane.frag]
+kill @e[type=minecraft:block_display, tag=snd.rhythm.lane]
+kill @e[type=minecraft:block_display, tag=snd.rhythm.lane.frag]
