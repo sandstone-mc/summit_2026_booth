@@ -35,9 +35,8 @@ export const [skybox_rainbows, skybox_neon, skybox_void ] = [
 		type: 'minecraft:model',
 		model: Model('item', `rhythm/skybox_${variant}`, {
 			textures: {
-				// TODO: Sandstone bug
-				/* @ts-ignore */
-				'0': Texture('item', `rhythm/skybox_${variant}`,
+				// TODO: Sandstone bug, should not need the `as`
+				'0': Texture('item' as 'block', `rhythm/skybox_${variant}`,
 					shaderTarget([
 						[0, 0, [1, 2, 3, 255]],
 						[1, 0, id],

@@ -7,9 +7,9 @@ import type { JSONTextComponent, SymbolEntity } from 'sandstone/arguments'
 import { DEFAULT_FONT_ID } from '../text-metrics'
 import type { StyledSegment } from '../render'
 import { parseColorInt } from './color'
-import { DataComponentClass } from 'sandstone/variables'
+import { TextComponentClass } from 'sandstone/variables'
 
-type TextComponent = Exclude<JSONTextComponent, DataComponentClass>
+type TextComponent = Exclude<JSONTextComponent, TextComponentClass>
 
 /** Default text color for segments without an explicit override. */
 const DEFAULT_TEXT_COLOR = '#ffffff' as const

@@ -1,6 +1,6 @@
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC } from '../NPC'
-import { PLACEHOLDER_SKIN } from './skins'
+import { ProfileProperties } from './skins'
 
 const blueTentDialogue = DialogueTree('blue_tent_guide', {
     nodes: [{
@@ -18,9 +18,8 @@ const blueTentDialogue = DialogueTree('blue_tent_guide', {
 CreateNPC('blue_tent_guide', {
     name: 'Greg',
     skin: {
-        properties: {
-            value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvY2E3MTdmNzVlNGQ2YTlhMDM0ZTMxOGUwZDZiMTI5OTRkNTc1Y2IzODdiYmRhZDk3ZWJjYWFjMmI2NTMzMTZhNCJ9fX0="
-        }, model: 'slim'
+        properties: ProfileProperties('ca717f75e4d6a9a034e318e0d6b12994d575cb387bbdad97ebcaac2b653316a4'),
+        model: 'slim'
     },
     position: [-60, 93, 59],
     lookAt: 'nearest',

@@ -1,6 +1,6 @@
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC, NPCHeldItemWithComponents, type NPCOptions } from '../NPC'
-import { PLACEHOLDER_SKIN } from './skins'
+import { ProfileProperties } from './skins'
 import { functionCmd, NBT } from 'sandstone'
 
 const presentationWatcherDialogue = DialogueTree('casino_crowd_1', {
@@ -101,17 +101,16 @@ const balloonBundleHeldItem: NPCHeldItemWithComponents = {
 
 const CROWD: (Omit<NPCOptions, 'name'> & { id: string })[] = [
     { id: 'casino_crowd_1', position: [-85, 84.5, 55], rotation: [210, 0], pose: 'sitting', dialogue: presentationWatcherDialogue, lookAt: 'interactor', skin: {
-        properties: {
-            value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTUyOGViMmQ3ZjczZWVkN2JlYjY2NWMxNzliYjJiM2VkNjUzM2Y0NTljNTM5YTJhYzZlMjRhNDRlNDRmZWRhYiJ9fX0="
-        }
-    } },
-
-    { id: 'casino_crowd_2', position: [-55, 85, 62], rotation: [90, 0], pose: 'standing', dialogue: merchFiendDialogue, lookAt: 'interactor', skin: { properties: {
-        value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMTJmN2Y1YmQwM2IyZTIyYzQ4MzJlNzVkZTY1MzhiNWY1ZjcyNGIxOTZkMjAxZTM0ZWFhZGFkMzg4ZmRkZGEwYiJ9fX0="
-    }, model: 'slim' }, mainHand: balloonBundleHeldItem },
-    { id: 'casino_crowd_3', position: [-74, 74, 53], rotation: [180, 0], pose: 'crouching', dialogue: gamblerDialogue, lookAt: 'none', mainHand: 'minecraft:diamond', skin: { properties: {
-        value: "e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTk4OTI4MDAxNTU2ODEwMDM0ZmEyZmE4YmI3NzQ1M2U4ZDEwNzJjNTNmM2UwYmZhOTM1MjcyNjE2ODVkZjFhNyJ9fX0="
-    }, model: 'slim'} },
+        properties: ProfileProperties('e528eb2d7f73eed7beb665c179bb2b3ed6533f459c539a2ac6e24a44e44fedab'),
+    }},
+    { id: 'casino_crowd_2', position: [-55, 85, 62], rotation: [90, 0], pose: 'standing', dialogue: merchFiendDialogue, lookAt: 'interactor', mainHand: balloonBundleHeldItem, skin: {
+        properties: ProfileProperties('12f7f5bd03b2e22c4832e75de6538b5f5f724b196d201e34eaadad388fddda0b'),
+        model: 'slim',
+    }},
+    { id: 'casino_crowd_3', position: [-74, 74, 53], rotation: [180, 0], pose: 'crouching', dialogue: gamblerDialogue, lookAt: 'none', mainHand: 'minecraft:diamond', skin: {
+        properties: ProfileProperties('e98928001556810034fa2fa8bb77453e8d1072c53f3e0bfa93527261685df1a7'),
+        model: 'slim',
+    }},
 ]
 
 for (const { id, ...options } of CROWD) {

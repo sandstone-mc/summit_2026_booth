@@ -1,8 +1,8 @@
 import { _, data, Data, execute, functionCmd, MCFunction, type MCFunctionClass, Objective, raw, Selector, type Condition } from 'sandstone'
-import { type JSONTextComponent } from 'sandstone/arguments'
+import { TextObject, type JSONTextComponent } from 'sandstone/arguments'
 import { NAMESPACE } from '@shared'
 import { DialogueLineIndex, NpcDisplayLabel, registry, RevealCount, RevealDelay, RevealingLabel, RevealSpeed, RevealTotal } from './NPC'
-import { DataComponentClass } from 'sandstone/variables'
+import { JSONTextComponentClass, TextComponentClass } from 'sandstone/variables';
 
 // ticks per revealed character
 const DEFAULT_SPEED = 1
@@ -29,10 +29,10 @@ const _computeRevealCut = MCFunction('sections/npcs/dialogue/_compute_reveal_cut
 
 export interface DialogueLine {
     // Static text. Ignored if `variants` is set
-    text?: string | JSONTextComponent[]
+    text?: JSONTextComponent
     
     // Pick one at random each time this line plays
-    variants?: (string | JSONTextComponent[])[]
+    variants?: JSONTextComponent
     
     // Skip this line (falls through to whatever comes next) if this evaluates false
     condition?: Condition
@@ -90,25 +90,24 @@ function withDisplay(callback: () => void) {
 function mergeDisplayText(text: JSONTextComponent) {
     withDisplay(() => {
         data.merge.entity('@s',
-            // TODO: Sandstone bug
-            /* @ts-ignore */
             { text }
         )
     })
 }
 
-function normalizeRuns(text: JSONTextComponent): JSONTextComponent {
+function normalizeRuns(text: JSONTextComponent): TextObject[] {
     if (typeof text === 'string') return [{ text }]
-    if (!Array.isArray(text)) {
-        throw new Error()
+    if (text instanceof JSONTextComponentClass) return normalizeRuns(text.toJSON())
+    if (text instanceof TextComponentClass) {
+        return normalizeRuns((text as any)._toChatComponent())
     }
-    return text.map((component) => (typeof component === 'string' ? { text: component } : component))
+    if (Array.isArray(text)) {
+        return text.map(normalizeRuns).flat()
+    }
+    return [text]
 }
 
-function plainLength(runs: JSONTextComponent): number {
-    if (!Array.isArray(runs)) {
-        throw new Error()
-    }
+function plainLength(runs: TextObject[]): number {
     return runs.reduce((sum, run) => {
         if (typeof run === 'string' || !('text' in run)) {
             throw new Error()
@@ -120,15 +119,12 @@ function plainLength(runs: JSONTextComponent): number {
 // character offset each run starts at, so render() can tell which run a
 // given RevealCount falls into
 interface RunBound {
-    run: JSONTextComponent
+    run: TextObject
     offset: number
     length: number
 }
 
-function runBoundaries(runs: JSONTextComponent): RunBound[] {
-    if (!Array.isArray(runs)) {
-        throw new Error()
-    }
+function runBoundaries(runs: TextObject[]): RunBound[] {
     let offset = 0
     return runs.map((run) => {
         if (typeof run === 'string' || !('text' in run)) {
@@ -235,7 +231,7 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
             const advanceMode = f.node.advance ?? 'click'
             const autoDelay = f.node.autoDelay ?? DEFAULT_AUTO_DELAY
 
-            function renderRuns(runs: JSONTextComponent) {
+            function renderRuns(runs: TextObject[]) {
                 const bounds = runBoundaries(runs)
                 const total = plainLength(runs)
 
@@ -255,7 +251,6 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
                         execute.store.result.storage(REVEAL_STORAGE, 'end', 'int', 1).run.scoreboard.players.get('@s', RevealCutObjective.name)
                         functionCmd(_computeRevealCut, 'with', 'storage', REVEAL_STORAGE)
                         // prior runs shown in full, active run's text left blank until patched below
-                        /* @ts-ignore */ // TODO: Sandstone bug
                         revealRuns.set([...bounds.slice(0, i).map((b) => b.run), { ...run, text: '' }])
                         Data('storage', REVEAL_STORAGE, `runs[${i}].text`).set(revealCut)
                         withDisplay(() => {
@@ -284,7 +279,7 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
                 }
             }
 
-            if (line.variants && line.variants.length > 0) {
+            if (Array.isArray(line.variants) && line.variants.length > 0) {
                 _.switch(VariantPick, line.variants.map((variant, vi) => ['case', vi, () => renderRuns(normalizeRuns(variant))] as const))
             } else {
                 renderRuns(normalizeRuns(line.text ?? ''))
@@ -303,7 +298,7 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
             RevealDelay('@s').set(speed)
             RevealingLabel('@s').add()
             mergeDisplayText('')
-            if (line.variants && line.variants.length > 0) {
+            if (Array.isArray(line.variants) && line.variants.length > 0) {
                 _.switch(VariantPick, line.variants.map((variant, vi) => ['case', vi, () => {
                     RevealTotal('@s').set(plainLength(normalizeRuns(variant)))
                 }] as const))
@@ -318,11 +313,11 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
         }
 
         let revealFn: () => void
-        if (line.variants && line.variants.length > 0) {
+        if (Array.isArray(line.variants) && line.variants.length > 0) {
             // pick a variant into VariantPick; render() reads it back via the switch above
             const dispatch = MCFunction(`sections/npcs/dialogue/${id}/line_${globalIndex}/reveal`, () => {
                 execute.store.result.score(VariantPick.target, VariantPick.objective)
-                    .run.random.value([0, line.variants!.length - 1], 'dialogue_variant')
+                    .run.random.value([0, (line.variants! as TextObject[]).length - 1], 'dialogue_variant')
                 setupReveal()
             }, { lazy: true })
             revealFn = () => dispatch()

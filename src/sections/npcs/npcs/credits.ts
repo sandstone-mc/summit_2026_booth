@@ -2,7 +2,8 @@ import { dialog, NBT } from 'sandstone'
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC } from '../NPC'
 import { JSONTextComponent } from 'sandstone/arguments'
-import { DialogClassArguments } from 'sandstone/core';
+import { DialogClassArguments } from 'sandstone/core'
+import { ProfileProperties } from './skins'
 
 function uuidToIntArray(uuid: string): [number, number, number, number] {
     const hex = uuid.replace(/-/g, '')
@@ -145,8 +146,8 @@ function linkBody(name: string, url: string, icon?: string, glyph?: string) {
  *  link line composition from the dialog. */
 export { linkBody }
 
-export function creditsDialog(title: JSONTextComponent): any /* DialogClassArguments['json'] */ { // TODO: Sandstone bug
-    return {
+export function creditsDialog(title: JSONTextComponent) {
+    const notice: any = {
         type: 'minecraft:notice',
         title,
         body: [
@@ -158,6 +159,8 @@ export function creditsDialog(title: JSONTextComponent): any /* DialogClassArgum
             ...LINKS.map((l) => linkBody(l.name, l.url, l.icon, l.glyph)),
         ],
     }
+    // TODO: Sandstone bug
+    return notice as unknown as DialogClassArguments['json']
 }
 
 /**
@@ -205,7 +208,7 @@ const creditsDialogue = DialogueTree('credits', {
             id: 'main',
             advance: 'click',
             lines: [
-                { text: "This whole thing didn't build itself, you know." },
+                { text: 'This whole thing didn\'t build itself, you know.' },
                 { text: 'A bunch of people poured lots time into making this booth happen.' },
                 { text: 'Click me again and I\'ll tell you about them.' },
             ],
@@ -225,9 +228,7 @@ const creditsDialogue = DialogueTree('credits', {
 CreateNPC('credits', {
     name: 'Carl',
     skin: {
-        properties: {
-            value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWRmZjRiYWJlN2Y3YzY0NzhjNzI3NTAwMDNjODE1MjMwNzA0ZjM1NjAyNTMwYzFlZWMwNzNhMTk4MzRiNjUxYSJ9fX0="
-        }
+        properties: ProfileProperties('adff4babe7f7c6478c72750003c815230704f35602530c1eec073a19834b651a')
     },
     position: [-75, 93, 63],
     lookAt: 'nearest',

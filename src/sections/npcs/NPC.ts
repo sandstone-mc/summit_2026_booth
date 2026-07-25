@@ -1,5 +1,5 @@
 import { _, abs, Advancement, Data, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon, Tag } from 'sandstone'
-import type { MCDocToJSON, SymbolEntity } from 'sandstone/arguments'
+import type { MCDocToJSON, SymbolDataComponent, SymbolEntity } from 'sandstone/arguments'
 import type { DialogueTree } from './DialogueTree'
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth' as `${any}${string}`
@@ -40,23 +40,6 @@ const THROTTLE_TICKS = 5
 // blocks above the mannequin head the display sits at
 const HEAD_HEIGHT = 0.2
 
-// Pick NPC skin via a player profile lookup, a signed skin property, and/or
-// direct resource-pack texture overrides
-export interface NPCSkin {
-    // Resolves a player's profile (skin/cape/elytra) from Mojang's servers by username
-    username?: string
-
-    // Signed skin texture property (base64 texture JSON + signature), overriding username
-    properties?: { value: string; signature?: string }
-
-    // Namespaced texture resource locations, overriding whatever username/properties resolved
-    texture?: string
-    cape?: string
-    elytra?: string
-
-    model?: 'wide' | 'slim'
-}
-
 // 'interactor' faces whoever's currently talking to this NPC, and looks back
 // to the spawn rotation once nobody is (only meaningful with `dialogue` set)
 export type LookAtMode = 'nearest' | 'interactor' | 'none'
@@ -70,7 +53,7 @@ export type NPCHeldItem = string | NPCHeldItemWithComponents
 
 export interface NPCOptions {
     name: string
-    skin: NPCSkin
+    skin: SymbolDataComponent['minecraft:profile']
     position: [number, number, number]
     // Initial [yaw, pitch]. Defaults to facing south
     rotation?: [number, number]
@@ -91,17 +74,6 @@ export interface RegisteredNPC extends NPCOptions {
 }
 
 export const registry: RegisteredNPC[] = []
-
-function profileFor(skin: NPCSkin) {
-    return {
-        ...(skin.username ? { name: skin.username } : {}),
-        ...(skin.properties ? { properties: [{ name: 'textures', value: skin.properties.value, ...(skin.properties.signature ? { signature: skin.properties.signature } : {}) }] } : {}),
-        ...(skin.texture ? { texture: skin.texture as any } : {}),
-        ...(skin.cape ? { cape: skin.cape as any } : {}),
-        ...(skin.elytra ? { elytra: skin.elytra as any } : {}),
-        ...(skin.model ? { model: skin.model } : {}),
-    }
-}
 
 export function CreateNPC(id: string, options: NPCOptions) {
     registry.push({
@@ -126,7 +98,7 @@ const spawnNpcs = MCFunction('sections/npcs/spawn', () => {
             Tags: [npc.instanceTag, BOOTH_ENTITY_TAG],
             Rotation: NBT.float([yaw, pitch]),
             immovable: true,
-            profile: profileFor(npc.skin),
+            profile: npc.skin,
             pose: npc.pose === 'sitting' ? 'standing' : (npc.pose ?? 'standing'),
             equipment: {
                 ...(typeof npc.mainHand === 'string' ? { mainhand: { id: npc.mainHand as any, count: NBT.int(1) } } : {}),
