@@ -1,1 +1,1 @@
-execute as @a[predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range, tag=summit.in_booth.sandstone_summit_booth] at @s run playsound block.note_block.flute master @s ~ ~ ~ 1 1.4983070768766815
+execute as @a[tag=summit.in_booth.sandstone_summit_booth, predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range] at @s run playsound block.note_block.flute master @s ~ ~ ~ 1 1.4983070768766815

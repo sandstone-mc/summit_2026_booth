@@ -1,1 +1,1 @@
-execute as @a[predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range, tag=summit.in_booth.sandstone_summit_booth] at @s run function sandstone_summit_booth:sections/rhythm/songs/shared/n210/execute_as
+execute as @a[tag=summit.in_booth.sandstone_summit_booth, predicate=sandstone_summit_booth:sections/rhythm/booth_listener_range] at @s run function sandstone_summit_booth:sections/rhythm/songs/shared/n210/execute_as
