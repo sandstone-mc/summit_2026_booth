@@ -4,14 +4,11 @@
 // .scm files on first build — no separate setup script.
 //
 // On a missing parser dir this will:
-//   1. Clone the mcfunction grammar into `resources/cache/jsx/parser/tree-sitter-mcfunction/`
-//      (override via `mcfunction.repoUrl`)
-//   2. `bun install` + `bun run build` the grammar to emit the wasm
-//   3. Copy the wasm + `queries/highlights.scm` into the parser dir
-//   4. Download the upstream TypeScript + JSON wasm straight into the
-//      parser dir (override via `typescript.wasmUrl` / `json.wasmUrl`)
-//   5. Pull each language's `queries/highlights.scm` via the GitHub API
-//   6. Copy the VS Code Dark Modern theme JSON for `Theme` to load
+//   1. Download each language's prebuilt wasm straight into the parser
+//      dir from its GitHub releases (override via `*.wasmUrl`)
+//   2. Fetch each language's `queries/highlights.scm` from raw github
+//      (override via `*.queryUrl` / `*.queryUrls`)
+//   3. Copy the VS Code Dark Modern theme JSON for `Theme` to load
 //
 // Source of truth for what's fetched lives in ARTIFACTS below; the
 // matching consumer-side registry (`GRAMMARS` in `layout/constants.ts`)
@@ -25,29 +22,30 @@
 
 import { $ } from 'bun'
 import { existsSync } from 'fs'
-import { mkdir, copyFile, writeFile, stat } from 'fs/promises'
+import { mkdir, writeFile, stat } from 'fs/promises'
 import path from 'path'
 
 const ROOT = process.cwd()
 const TARGET_DIR = path.join(ROOT, 'resources', 'cache', 'jsx', 'parser')
 
-const MCF_GRAMMAR_DIR = path.join(TARGET_DIR, 'tree-sitter-mcfunction')
-
 // Where to fetch each artifact if not already on disk. Add a new language
 // by appending an entry here + adding a row to GRAMMARS in layout/constants.ts.
 const ARTIFACTS = {
 	mcfunction: {
-		// Built locally from the cloned grammar repo.
-		wasm: path.join(MCF_GRAMMAR_DIR, 'build', 'tree-sitter-mcfunction.wasm'),
-		query: path.join(MCF_GRAMMAR_DIR, 'src', 'queries', 'highlights.scm'),
-		repoUrl: 'https://github.com/MulverineX/tree-sitter-mcfunction.git',
+		wasm: path.join(TARGET_DIR, 'tree-sitter-mcfunction.wasm'),
+		wasmUrl:
+			'https://github.com/MulverineX/tree-sitter-mcfunction/releases/latest/download/tree-sitter-mcfunction.wasm',
+		query: path.join(TARGET_DIR, 'mcfunction.highlights.scm'),
+		queryUrl:
+			'https://raw.githubusercontent.com/MulverineX/tree-sitter-mcfunction/main/src/queries/highlights.scm',
 	},
 	typescript: {
 		// Downloaded straight into the parser dir (no staging). The wasm on
 		// GitHub ships as a TypeScript+JS combo.
 		wasm: path.join(TARGET_DIR, 'tree-sitter-typescript.wasm'),
-		wasmUrl: 'https://github.com/tree-sitter/tree-sitter-typescript/releases/latest/download/tree-sitter-typescript.wasm',
-		query: null,
+		wasmUrl:
+			'https://github.com/tree-sitter/tree-sitter-typescript/releases/latest/download/tree-sitter-typescript.wasm',
+		query: path.join(TARGET_DIR, 'typescript.highlights.scm'),
 		// TS-specific patterns. The root `queries/highlights.scm` in
 		// `tree-sitter-typescript` is just the TS-specific overrides — the
 		// JS base (for `const`, `import`, strings, comments, …) lives in
@@ -65,29 +63,12 @@ const ARTIFACTS = {
 		// `tree-sitter-json` ships a single prebuilt wasm per release.
 		wasm: path.join(TARGET_DIR, 'tree-sitter-json.wasm'),
 		wasmUrl: 'https://github.com/tree-sitter/tree-sitter-json/releases/latest/download/tree-sitter-json.wasm',
-		query: null,
-		queryUrls: [
-			'https://raw.githubusercontent.com/tree-sitter/tree-sitter-json/master/queries/highlights.scm',
-		],
+		query: path.join(TARGET_DIR, 'json.highlights.scm'),
+		queryUrl: 'https://raw.githubusercontent.com/tree-sitter/tree-sitter-json/master/queries/highlights.scm',
 	},
 } as const
 
 type LangName = keyof typeof ARTIFACTS
-
-const OUTPUTS: Record<LangName, { wasm: string; query: string }> = {
-	mcfunction: {
-		wasm: path.join(TARGET_DIR, 'tree-sitter-mcfunction.wasm'),
-		query: path.join(TARGET_DIR, 'mcfunction.highlights.scm'),
-	},
-	typescript: {
-		wasm: path.join(TARGET_DIR, 'tree-sitter-typescript.wasm'),
-		query: path.join(TARGET_DIR, 'typescript.highlights.scm'),
-	},
-	json: {
-		wasm: path.join(TARGET_DIR, 'tree-sitter-json.wasm'),
-		query: path.join(TARGET_DIR, 'json.highlights.scm'),
-	},
-}
 
 // Upstream VS Code Dark Modern theme — the canonical source the
 // `SCOPE_COLOR` map in `highlight/theme.ts` is hand-maintained from.
@@ -106,39 +87,6 @@ async function fileSize(p: string): Promise<string> {
 	}
 }
 
-async function ensureMcfunctionGrammarRepo(): Promise<void> {
-	if (existsSync(MCF_GRAMMAR_DIR)) {
-		console.log(`  mcfunction grammar already at ${path.relative(ROOT, MCF_GRAMMAR_DIR)}`)
-		return
-	}
-	console.log(`  cloning ${ARTIFACTS.mcfunction.repoUrl} → ${path.relative(ROOT, MCF_GRAMMAR_DIR)}`)
-	await mkdir(MCF_GRAMMAR_DIR, { recursive: true })
-	await $`git clone --depth 1 ${ARTIFACTS.mcfunction.repoUrl} ${MCF_GRAMMAR_DIR}`.quiet()
-}
-
-async function buildMcfunctionWasm(): Promise<void> {
-	await ensureMcfunctionGrammarRepo()
-	const builtWasm = ARTIFACTS.mcfunction.wasm
-	if (existsSync(builtWasm)) {
-		console.log(`  mcfunction wasm already built at ${path.relative(ROOT, builtWasm)}`)
-		return
-	}
-	console.log(`  installing deps + building mcfunction wasm in ${path.relative(ROOT, MCF_GRAMMAR_DIR)}`)
-	await $`cd ${MCF_GRAMMAR_DIR} && bun install --silent`.quiet()
-	await $`cd ${MCF_GRAMMAR_DIR} && bun run build`.quiet()
-	if (!existsSync(builtWasm)) {
-		throw new Error(`build succeeded but ${path.relative(ROOT, builtWasm)} was not produced`)
-	}
-}
-
-async function ensureMcfunctionAssets(): Promise<void> {
-	const { wasm, query } = OUTPUTS.mcfunction
-	const alreadyHave = existsSync(wasm) && existsSync(query)
-	if (!alreadyHave) await buildMcfunctionWasm()
-	if (!existsSync(wasm)) await copyFile(ARTIFACTS.mcfunction.wasm, wasm)
-	if (!existsSync(query)) await copyFile(ARTIFACTS.mcfunction.query, query)
-}
-
 async function downloadToFile(url: string, dest: string): Promise<void> {
 	console.log(`  downloading ${url}`)
 	const res = await fetch(url, { redirect: 'follow' })
@@ -147,14 +95,20 @@ async function downloadToFile(url: string, dest: string): Promise<void> {
 	await writeFile(dest, buf)
 }
 
+async function ensureMcfunctionAssets(): Promise<void> {
+	const { wasm, wasmUrl, query, queryUrl } = ARTIFACTS.mcfunction
+	if (!existsSync(wasm)) await downloadToFile(wasmUrl, wasm)
+	if (!existsSync(query)) await writeFile(query, await fetchText(queryUrl))
+}
+
 async function ensureTypescriptAssets(): Promise<void> {
-	const { wasm, query } = OUTPUTS.typescript
+	const { wasm, wasmUrl, query, queryUrls } = ARTIFACTS.typescript
 	// TS wasm path is its final output path (no staging). Download directly
 	// to `dest` if missing.
-	if (!existsSync(wasm)) await downloadToFile(ARTIFACTS.typescript.wasmUrl, wasm)
+	if (!existsSync(wasm)) await downloadToFile(wasmUrl, wasm)
 	if (!existsSync(query)) {
 		const parts: string[] = []
-		for (const u of ARTIFACTS.typescript.queryUrls) parts.push(await fetchText(u))
+		for (const u of queryUrls) parts.push(await fetchText(u))
 		await writeFile(query, parts.join('\n\n'))
 	}
 }
@@ -165,13 +119,9 @@ async function ensureTypescriptAssets(): Promise<void> {
 // JSON-specific URL set lives in one place and the typescript helper
 // doesn't grow an unrelated branch.
 async function ensureJsonAssets(): Promise<void> {
-	const { wasm, query } = OUTPUTS.json
-	if (!existsSync(wasm)) await downloadToFile(ARTIFACTS.json.wasmUrl, wasm)
-	if (!existsSync(query)) {
-		const parts: string[] = []
-		for (const u of ARTIFACTS.json.queryUrls) parts.push(await fetchText(u))
-		await writeFile(query, parts.join('\n\n'))
-	}
+	const { wasm, wasmUrl, query, queryUrl } = ARTIFACTS.json
+	if (!existsSync(wasm)) await downloadToFile(wasmUrl, wasm)
+	if (!existsSync(query)) await writeFile(query, await fetchText(queryUrl))
 }
 
 async function ensureTheme(): Promise<void> {
@@ -186,8 +136,17 @@ async function fetchText(url: string): Promise<string> {
 		const tail = url.slice('https://raw.githubusercontent.com/'.length)
 		const [owner, repo, ref, ...rest] = tail.split('/')
 		const apiPath = `repos/${owner}/${repo}/contents/${rest.join('/')}?ref=${ref}`
-		const body = (await $`gh api ${apiPath} --jq .content`.text()).trim()
-		return Buffer.from(body, 'base64').toString('utf8')
+		try {
+			const body = (await $`gh api ${apiPath} --jq .content`.text()).trim()
+			return Buffer.from(body, 'base64').toString('utf8')
+		} catch (err) {
+			// `gh` missing or unauthenticated. The raw URL returns the file
+			// directly (no base64) so it works without any tooling.
+			console.warn(`  [sandstone-jsx] gh fetch failed (${err instanceof Error ? err.message : err}); falling back to raw URL`)
+			const res = await fetch(url)
+			if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`)
+			return await res.text()
+		}
 	}
 	const res = await fetch(url)
 	if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`)
@@ -216,8 +175,8 @@ async function ensureGrammarsImpl(): Promise<void> {
 		await ensureTheme()
 
 		console.log('[sandstone-jsx] parser assets ready:')
-		for (const lang of Object.keys(OUTPUTS) as LangName[]) {
-			const { wasm, query } = OUTPUTS[lang]
+		for (const lang of Object.keys(ARTIFACTS) as LangName[]) {
+			const { wasm, query } = ARTIFACTS[lang]
 			const ws = await fileSize(wasm)
 			const qs = await fileSize(query)
 			console.log(`  ${lang.padEnd(11)} wasm=${ws.padStart(10)}  query=${qs}`)

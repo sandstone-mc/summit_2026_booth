@@ -2,7 +2,7 @@ import { _, data, Data, execute, functionCmd, MCFunction, type MCFunctionClass, 
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { NAMESPACE } from '@shared'
 import { DialogueLineIndex, NpcDisplayLabel, registry, RevealCount, RevealDelay, RevealingLabel, RevealSpeed, RevealTotal } from './NPC'
-import { DataComponentClass, JSONTextComponentClass } from 'sandstone/variables';
+import { DataComponentClass } from 'sandstone/variables'
 
 // ticks per revealed character
 const DEFAULT_SPEED = 1
@@ -97,27 +97,43 @@ function mergeDisplayText(text: JSONTextComponent) {
     })
 }
 
-type TextRun = { text: string } & Record<string, unknown>
-function normalizeRuns(text: string | JSONTextComponent[]): TextRun[] {
+function normalizeRuns(text: JSONTextComponent): JSONTextComponent {
     if (typeof text === 'string') return [{ text }]
-    return text.map((component) => (typeof component === 'string' ? { text: component } : component as TextRun))
+    if (!Array.isArray(text)) {
+        throw new Error()
+    }
+    return text.map((component) => (typeof component === 'string' ? { text: component } : component))
 }
 
-function plainLength(runs: TextRun[]): number {
-    return runs.reduce((sum, run) => sum + run.text.length, 0)
+function plainLength(runs: JSONTextComponent): number {
+    if (!Array.isArray(runs)) {
+        throw new Error()
+    }
+    return runs.reduce((sum, run) => {
+        if (typeof run === 'string' || !('text' in run)) {
+            throw new Error()
+        }
+        return sum + run.text.length
+    }, 0)
 }
 
 // character offset each run starts at, so render() can tell which run a
 // given RevealCount falls into
 interface RunBound {
-    run: TextRun
+    run: JSONTextComponent
     offset: number
     length: number
 }
 
-function runBoundaries(runs: TextRun[]): RunBound[] {
+function runBoundaries(runs: JSONTextComponent): RunBound[] {
+    if (!Array.isArray(runs)) {
+        throw new Error()
+    }
     let offset = 0
     return runs.map((run) => {
+        if (typeof run === 'string' || !('text' in run)) {
+            throw new Error()
+        }
         const bound: RunBound = { run, offset, length: run.text.length }
         offset += run.text.length
         return bound
@@ -219,7 +235,7 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
             const advanceMode = f.node.advance ?? 'click'
             const autoDelay = f.node.autoDelay ?? DEFAULT_AUTO_DELAY
 
-            function renderRuns(runs: TextRun[]) {
+            function renderRuns(runs: JSONTextComponent) {
                 const bounds = runBoundaries(runs)
                 const total = plainLength(runs)
 
@@ -232,10 +248,14 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
                         if (offset > 0) {
                             RevealCutObjective('@s').remove(offset)
                         }
+                        if (typeof run === 'string' || !('text' in run)) {
+                            throw new Error()
+                        }
                         revealFull.set(run.text)
                         execute.store.result.storage(REVEAL_STORAGE, 'end', 'int', 1).run.scoreboard.players.get('@s', RevealCutObjective.name)
                         functionCmd(_computeRevealCut, 'with', 'storage', REVEAL_STORAGE)
                         // prior runs shown in full, active run's text left blank until patched below
+                        /* @ts-ignore */ // TODO: Sandstone bug
                         revealRuns.set([...bounds.slice(0, i).map((b) => b.run), { ...run, text: '' }])
                         Data('storage', REVEAL_STORAGE, `runs[${i}].text`).set(revealCut)
                         withDisplay(() => {

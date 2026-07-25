@@ -1,0 +1,69 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Color Tuning",
+	"description": "Opt-in pngquant pass for the resourcepack minify pipeline. Only pngs whose cache key matches at least one entry in `include` get quantized; everything else is left as-is. All quantized files use the same `defaults` settings — there is no per-rule override.",
+	"type": "object",
+	"properties": {
+		"defaults": {
+			"description": "Settings applied to every png that gets quantized (used uniformly across all included files).",
+			"$ref": "#/definitions/settings"
+		},
+		"include": {
+			"type": "array",
+			"description": "Glob patterns matched against the cache key (includes the `resourcepack/` prefix). A png is quantized iff it matches at least one pattern here. Each entry is a bare glob string, not an object.",
+			"items": {
+				"type": "string",
+				"description": "Glob pattern evaluated against the cache key.",
+				"examples": [
+					"resourcepack/assets/sandstone_summit_booth/textures/item/**/*.png",
+					"resourcepack/assets/minecraft/textures/block/**/*.png"
+				]
+			}
+		}
+	},
+	"definitions": {
+		"settings": {
+			"type": "object",
+			"properties": {
+				"minQuality": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100,
+					"default": 85,
+					"description": "pngquant `--quality` lower bound (perceived-quality floor)."
+				},
+				"maxQuality": {
+					"type": "integer",
+					"minimum": 0,
+					"maximum": 100,
+					"default": 100,
+					"description": "pngquant `--quality` upper bound (compression ceiling)."
+				},
+				"maxColors": {
+					"type": "integer",
+					"minimum": 2,
+					"maximum": 256,
+					"default": 256,
+					"description": "Maximum palette size. 256 = full palette; lower for icons / limited palettes."
+				},
+				"speed": {
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 10,
+					"default": 1,
+					"description": "pngquant `--speed`. 1 = best quality (slow), 10 = fastest (lower quality)."
+				},
+				"skipIfLarger": {
+					"type": "boolean",
+					"default": true,
+					"description": "Only write output when smaller than input (`--skip-if-larger`)."
+				},
+				"force": {
+					"type": "boolean",
+					"default": true,
+					"description": "Overwrite existing output files in place (`--force`)."
+				}
+			}
+		}
+	}
+}

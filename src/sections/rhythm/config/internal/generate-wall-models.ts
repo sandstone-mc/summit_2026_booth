@@ -243,7 +243,7 @@ function getAllObstacles(): Obstacle[] {
 	return all
 }
 
-export const wallModelNames = new Map<string, string>()
+export const wallModelNames = new Map<string, `${string}:${string}`>()
 
 const obstacles = getAllObstacles()
 

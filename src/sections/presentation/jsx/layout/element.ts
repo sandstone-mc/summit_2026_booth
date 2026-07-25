@@ -3,7 +3,6 @@
 
 import { parseLength, pxToTextScale, pxToTextLineHeight } from '../length'
 import { wrapLines, wrapSegmentedLines, textWidth, charWidth } from '../text-metrics'
-import { resolveImgSrc } from '../prepare/img-resources'
 import { DEFAULT_FONT_ID } from '../text-metrics/font-loader'
 import type { CssDeclarations } from '../less/types'
 import type { VNode, StyledSegment } from '../render'
@@ -373,7 +372,7 @@ function computeImgLayout(
 	sceneH: number,
 	imgResources: ImgResourceMap,
 ): ElementLayout {
-	const src = resolveImgSrc(node.props?.src)
+	const src = `${node.props?.src}`
 	const resource = imgResources.get(src)
 	if (!resource) {
 		throw new Error(

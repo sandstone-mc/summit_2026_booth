@@ -34,10 +34,7 @@ const screen_saver = MCFunction('sections/presentation/menu/screen_saver', () =>
         item: {
             id: 'paper',
             count: NBT.int(1),
-            components: {
-                /* @ts-ignore */
-                '"minecraft:item_model"': `${large_logo}`
-            }
+            components: { 'minecraft:item_model': large_logo }
         },
         transformation: {
 			scale: NBT.float([47 / 4, 30 / 4, 1 / 4]),
@@ -127,8 +124,7 @@ const start_button = Advancement('sections/presentation/menu/start_button', {
                 id: 'paper',
                 count: NBT.int(1),
                 components: {
-                    /* @ts-ignore */
-                    '"minecraft:item_model"': `${small_logo}`
+                    'minecraft:item_model': small_logo
                 }
             },
             transformation: {

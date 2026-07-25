@@ -191,7 +191,7 @@ export interface RhythmConfig {
 		/** Number of entries shown. */
 		size: number
 		/** Colors used for the top ranks. */
-		rankColors: readonly (TextColor | 'reset')[]
+		rankColors: readonly TextColor[]
 	}
 
 	/** Booth UI panels. Offsets are relative to the gold line. */

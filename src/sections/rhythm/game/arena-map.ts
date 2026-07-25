@@ -66,11 +66,7 @@ function skyboxNbt(model: ItemModelDefinitionClass, map: number): SymbolEntity['
 		item: {
 			id: 'minecraft:leather_horse_armor',
 			count: NBT.int(1),
-			components: {
-				// @ts-ignore
-				// keys containing ':' must be pre-quoted for snbt
-				'"minecraft:item_model"': `${model}`,
-			},
+			components: { 'minecraft:item_model': model },
 		},
 	}
 }
