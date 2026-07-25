@@ -17,7 +17,7 @@ import {
 import { wallMovement } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { wallAge, wallDepth } from './spawning'
-import { GameStatus, Tags, gamePlayer, interpSetting, status, voidPark } from '@rhythm/game/state'
+import { GameStatus, Tags, WallEntityType, gamePlayer, interpSetting, status, voidPark } from '@rhythm/game/state'
 import { NAMESPACE, ticking } from '@shared'
 import { calibrationDepth } from '../..';
 
@@ -34,7 +34,12 @@ const initWalls = MCFunction(
 	() => {
 		_.if(interpSetting.equalTo(0), () => {
 			execute
-				.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.WALL_HIT}`, `!${Tags.PARKOUR}`] }))
+				.as(
+					Selector('@e', {
+						tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.WALL_HIT}`, `!${Tags.PARKOUR}`],
+						type: WallEntityType,
+					}),
+				)
 				.run(() => {
 					data.merge.entity('@s', {
 						interpolation_duration: NBT.int(wallMovement.travelTicks),
@@ -47,7 +52,7 @@ const initWalls = MCFunction(
 						start_interpolation: NBT.int(-2),
 					})
 				})
-			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, Tags.PARKOUR] })).run(() => {
+			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, Tags.PARKOUR], type: WallEntityType })).run(() => {
 				const pkTrans: [number, number, number] = [-0.5, 0, -0.5 + wallMovement.totalDistance]
 				data.merge.entity('@s', {
 					interpolation_duration: NBT.int(wallMovement.travelTicks),
@@ -87,12 +92,22 @@ const moveWalls = MCFunction(
 			raw(`function ${tpWall.name} with storage ${TEMP_STORAGE}`)
 		}
 		execute
-			.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_HIT, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] }))
+			.as(
+				Selector('@e', {
+					tag: [Tags.WALL, Tags.WALL_HIT, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`],
+					type: WallEntityType,
+				}),
+			)
 			.at('@s')
 			.run(moveBody)
 		_.if(interpSetting.equalTo(1), () => {
 			execute
-				.as(Selector('@e', { tag: [Tags.WALL, `!${Tags.WALL_HIT}`, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] }))
+				.as(
+					Selector('@e', {
+						tag: [Tags.WALL, `!${Tags.WALL_HIT}`, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`],
+						type: WallEntityType,
+					}),
+				)
 				.at('@s')
 				.run(moveBody)
 		})
@@ -107,27 +122,27 @@ export const wallTick = MCFunction(
 		_.if(status.equalTo(GameStatus.ACTIVE), () => {
 			initWalls()
 
-			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.PARKOUR}`] })).run(() => {
+			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT, `!${Tags.PARKOUR}`], type: WallEntityType })).run(() => {
 				wallDepth('@s').set(calibrationDepth)
 			})
-			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT] })).run(() => {
+			execute.as(Selector('@e', { tag: [Tags.WALL, Tags.WALL_INIT], type: WallEntityType })).run(() => {
 				wallAge('@s').set(2)
 				tag('@s').remove(Tags.WALL_INIT)
 			})
 
-			execute.as(Selector('@e', { tag: Tags.WALL_WAIT })).run(() => {
+			execute.as(Selector('@e', { tag: Tags.WALL_WAIT, type: WallEntityType })).run(() => {
 				tag('@s').add(Tags.WALL_INIT)
 				tag('@s').remove(Tags.WALL_WAIT)
 			})
 
-			execute.as(Selector('@e', { tag: Tags.WALL_NEW })).run(() => {
+			execute.as(Selector('@e', { tag: Tags.WALL_NEW, type: WallEntityType })).run(() => {
 				tag('@s').add(Tags.WALL_WAIT)
 				tag('@s').remove(Tags.WALL_NEW)
 			})
 
 			moveWalls()
 
-			execute.as(Selector('@e', { tag: [Tags.WALL, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`] })).run(() => {
+			execute.as(Selector('@e', { tag: [Tags.WALL, `!${Tags.WALL_INIT}`, `!${Tags.WALL_WAIT}`], type: WallEntityType })).run(() => {
 				wallAge('@s').add(1)
 			})
 
@@ -135,6 +150,7 @@ export const wallTick = MCFunction(
 				_.entity(
 					Selector('@e', {
 						tag: Tags.WALL,
+						type: WallEntityType,
 						scores: { [wallAge.name]: [wallMovement.beatReachTicks, wallMovement.beatReachTicks] },
 					}),
 				),
@@ -147,13 +163,20 @@ export const wallTick = MCFunction(
 				.as(
 					Selector('@e', {
 						tag: Tags.WALL,
+						type: WallEntityType,
 						scores: { [wallAge.name]: [wallMovement.lifetime, wallMovement.lifetime] },
 					}),
 				)
 				.run(() => {
 					tp('@s', abs(...voidPark))
 				})
-			kill(Selector('@e', { tag: Tags.WALL, scores: { [wallAge.name]: [wallMovement.lifetime + 1, Infinity] } }))
+			kill(
+				Selector('@e', {
+					tag: Tags.WALL,
+					type: WallEntityType,
+					scores: { [wallAge.name]: [wallMovement.lifetime + 1, Infinity] },
+				}),
+			)
 		})
 	},
 	{ lazy: true },

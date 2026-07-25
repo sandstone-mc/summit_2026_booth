@@ -25,7 +25,10 @@ const screen_saver_entity = Label('presentation.menu.screen_saver')
 const screen_saver = MCFunction('sections/presentation/menu/screen_saver', () => {
     unmount()
 
-    kill(screen_saver_entity('@e' as '@s'))
+    kill(Selector('@e', {
+        type: 'minecraft:item_display',
+        tag: screen_saver_entity
+    }))
 
     summon('item_display', point(2, 8.625, -0.195), {
         item: {

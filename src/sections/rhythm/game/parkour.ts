@@ -27,7 +27,7 @@ import { arena } from '@rhythm/config/internal/arena'
 import { wallAge, wallDepth } from './walls/spawning'
 import { wallLives, wallHitCooldown } from './walls/collision'
 import { points, combo } from './scoring'
-import { GameStatus, Tags, boothTags, gamePlayer, status } from './state'
+import { GameStatus, Tags, WallEntityType, boothTags, gamePlayer, status } from './state'
 import { scoreSwitch } from '@rhythm/flow'
 import { ticking } from '@shared'
 import { calibrationDepth } from '..'
@@ -100,9 +100,9 @@ export const stepDispatchFns = Array.from({ length: PARKOUR_STEP_COUNT }, (_v, s
 
 					const spacingAge = i * 2 - platLen + 2 + collisions.parkourLead * 2
 					const depthOffset = Math.round((spacingAge * wallMovement.moveNumerator) / wallMovement.travelTicks)
-					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).set(depthOffset)
-					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, limit: 1, sort: 'nearest' })).add(calibrationDepth)
-					tag(Selector('@e', { tag: Tags.PARKOUR_FRESH })).remove(Tags.PARKOUR_FRESH)
+					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, type: 'minecraft:happy_ghast', limit: 1, sort: 'nearest' })).set(depthOffset)
+					wallDepth(Selector('@e', { tag: Tags.PARKOUR_FRESH, type: 'minecraft:happy_ghast', limit: 1, sort: 'nearest' })).add(calibrationDepth)
+					tag(Selector('@e', { tag: Tags.PARKOUR_FRESH, type: 'minecraft:happy_ghast' })).remove(Tags.PARKOUR_FRESH)
 				}
 			}
 
@@ -119,7 +119,7 @@ export const parkourCleanup = MCFunction(
 	'sections/rhythm/parkour/cleanup',
 	() => {
 		parkourRunning.set(0)
-		kill(Selector('@e', { tag: Tags.PARKOUR }))
+		kill(Selector('@e', { tag: Tags.PARKOUR, type: WallEntityType }))
 		pkDone.set(0)
 	},
 	{ lazy: true },
@@ -134,6 +134,7 @@ export const parkourTick = MCFunction(
 				_.entity(
 					Selector('@e', {
 						tag: Tags.PARKOUR_TRIGGER,
+						type: 'minecraft:happy_ghast',
 						scores: { [wallAge.name]: [reach, reach] },
 					}),
 				),
@@ -151,7 +152,7 @@ export const parkourTick = MCFunction(
 					_.if(
 						_.and(
 							playerY.greaterThanOrEqualTo(rewardY),
-							_.entity(Selector('@e', { tag: Tags.PARKOUR_REWARD, distance: [0, 2.5] })),
+							_.entity(Selector('@e', { tag: Tags.PARKOUR_REWARD, type: 'minecraft:happy_ghast', distance: [0, 2.5] })),
 						),
 						() => {
 							wallLives('@s').add(1)

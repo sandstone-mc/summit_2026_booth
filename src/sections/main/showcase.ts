@@ -182,8 +182,10 @@ const CHANGE_SHOWCASE_INTERACTION_POS = abs(
 
 // always present regardless of which showcase is active
 const spawnChangeShowcaseButton = MCFunction('sections/main/showcase/ui/spawn_button', () => {
-    kill(Selector('@e', { tag: CHANGE_SHOWCASE_TAG }))
-
+    if (Bun.env.DEV_HELPERS === 'true') {
+        kill(Selector('@e', { tag: CHANGE_SHOWCASE_TAG }))
+    }
+    
     summon('minecraft:text_display', CHANGE_SHOWCASE_POS, {
         Tags: [CHANGE_SHOWCASE_TAG, BOOTH_ENTITY_TAG, 'summit.interactable', 'summit.static'],
         text: [

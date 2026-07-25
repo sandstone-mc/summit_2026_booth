@@ -58,5 +58,5 @@ export const setup = MCFunction('sections/magic/setup', () => {
 // Clean up when swapping out magic game
 export const cleanup = MCFunction('sections/magic/cleanup', () => {
     killMarker()
-    kill(Selector('@e', { tag: INFO_PANEL_TAG }))
+    kill(Selector('@e', { tag: INFO_PANEL_TAG, type: 'minecraft:text_display' }))
 })

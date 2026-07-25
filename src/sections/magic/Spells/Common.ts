@@ -80,7 +80,8 @@ export function createProjectileUpdater(
             if (opts.destroyOnHit) {
               execute.as(Selector('@e', {
                 distance: [0, 2],
-                tag: opts.tag
+                tag: opts.tag,
+                type: 'minecraft:marker'
               })).run(() => {
                 opts.onExpire?.()
                 kill('@s')
