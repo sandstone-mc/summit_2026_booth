@@ -77,7 +77,6 @@ const gamblerDialogue = DialogueTree('casino_crowd_3', {
 const balloonBundleHeldItem: NPCHeldItemWithComponents = {
     id: 'minecraft:bundle',
     count: NBT.int(1),
-    // TODO: Shouldn't be `any`, working on it.
     components: {
         'minecraft:item_model': 'summit_balloons:balloon_bundle',
         'minecraft:custom_model_data': {

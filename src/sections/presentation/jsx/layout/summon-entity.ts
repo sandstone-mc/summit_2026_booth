@@ -132,12 +132,7 @@ export function summonImageEntity(
 		item: {
 			id: 'minecraft:paper',
 			count: NBT.int(1),
-			components: {
-				// SNBT keys with `:` must be pre-quoted to dodge the parser
-				// treating the colon as a type-tag.
-				/* @ts-ignore — // TODO: Sandstone bug: both the key and the value here are jank */
-				'"minecraft:item_model"': `${el.imgItemModel!}`,
-			},
+			components: { 'minecraft:item_model': el.imgItemModel },
 		},
 		item_display: 'fixed',
 		transformation: {

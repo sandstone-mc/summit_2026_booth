@@ -11,11 +11,6 @@ import { isImgType } from '../layout/element'
 import type { ImgResourceMap } from '../layout/element'
 import { NAMESPACE } from '@shared'
 
-export function resolveImgSrc(src: string | TextureClass): string {
-	if (typeof src === 'string') return src
-	return `${src.path[0]}:${src.path.slice(2).join('/')}`
-}
-
 export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMap> {
 	const seen = new Set<string>()
 	const out: ImgResourceMap = new Map()
@@ -26,8 +21,7 @@ export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMa
 			if (!isImgType(node.type)) continue
 			const rawSrc: undefined | string | TextureClass = node.props?.src
 			if (rawSrc === undefined) continue
-			// TODO: Sandstone bug, replace with `${rawSrc}` once its fixed
-			const src = resolveImgSrc(rawSrc)
+			const src = `${rawSrc}`
 			if (!src || seen.has(src)) continue
 			seen.add(src)
 

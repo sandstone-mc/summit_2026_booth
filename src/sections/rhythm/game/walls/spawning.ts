@@ -75,10 +75,8 @@ function buildObstacleSpawn(obstacle: Obstacle, fnName: string, groupIdx: number
 					id: 'minecraft:leather_horse_armor',
 					count: NBT.int(1),
 					components: {
-						// @ts-ignore
-						// keys containing ':' must be pre-quoted for snbt
-						'"minecraft:item_model"': modelName,
-						'"minecraft:dyed_color"': NBT.int(tint),
+						'minecraft:item_model': modelName,
+						'minecraft:dyed_color': NBT.int(tint),
 					},
 				},
 			})
