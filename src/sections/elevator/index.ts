@@ -308,10 +308,7 @@ function snapToFloor(floorIdx: number) {
     CurrentFloor.set(floorIdx)
 
     // snap the player just in case
-    execute.as(Riders).at('@s').run.tp('@s',
-        // TODO: Sandstone bug, complexity
-        new VectorClass<[string, string, string]>([rel(0), abs(restY), rel(0)])
-    )
+    execute.as(Riders).at('@s').run.tp('@s', ['~', abs(restY), '~'])
     fillFloorBarrier(floorIdx)
     releaseAllRiders()
 }
@@ -591,10 +588,7 @@ MCFunction('sections/elevator/step', () => {
         ensureDriver()
 
         _.if(_.entity(RiderDriver), () => {
-            execute.as(Car).at(RiderDriver).run.tp('@s',
-                // TODO: Sandstone bug, complexity
-                new VectorClass<[string, string, string]>([abs(SHAFT_X), rel(-0.5), abs(SHAFT_Z)])
-            )
+            execute.as(Car).at(RiderDriver).run.tp('@s', [abs(SHAFT_X), rel(-0.5), abs(SHAFT_Z)])
 
             execute.as(RiderDriver).run(() => {
                 RiderY.set(Data('entity', '@s', 'Pos[1]'), 10)

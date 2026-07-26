@@ -5,10 +5,10 @@ import { RawResource, sandstonePack } from 'sandstone'
 import { NAMESPACE, PROJECT_ROOT } from '@shared'
 import { rendering } from '..'
 
-const FFMPEG = process.env.FFMPEG_PATH ?? 'ffmpeg'
-const FFPROBE = process.env.FFPROBE_PATH ?? 'ffprobe'
+const FFMPEG = Bun.env.FFMPEG_PATH ?? 'ffmpeg'
+const FFPROBE = Bun.env.FFPROBE_PATH ?? 'ffprobe'
 
-const SOUNDFONT = process.env.SOUNDFONT ?? '/usr/share/soundfonts/FluidR3_GM.sf2'
+const SOUNDFONT = Bun.env.SOUNDFONT ?? '/usr/share/soundfonts/FluidR3_GM.sf2'
 const CACHE_DIR = join(PROJECT_ROOT, 'resources/cache/sounds')
 
 const soundEvents: Record<string, { sounds: { name: string; stream: boolean }[] }> = {}
@@ -224,7 +224,7 @@ export interface SongRenderInput {
 	audioOffset?: number
 }
 
-const FORCE_RENDER = process.env.FORCE_RENDER === '1' || process.env.FORCE_RENDER === 'true'
+const FORCE_RENDER = Bun.env.FORCE_RENDER === '1' || Bun.env.FORCE_RENDER === 'true'
 const CONFIG_INDEX = join(PROJECT_ROOT, 'src/sections/rhythm/config/index.ts')
 
 function fileSig(path: string): string {

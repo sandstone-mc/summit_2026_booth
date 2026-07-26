@@ -5,12 +5,10 @@ import { BOOTH_ENTITY_TAG, fmt } from '@shared'
 import { mount, nextSlide, unmount } from '.'
 import { argb, rgb } from 'src/sections/rhythm/config/internal/colors'
 import { creditsDialog, creditsPageContent, CREDITS } from 'src/sections/npcs/npcs/credits'
-import { VectorClass } from 'sandstone/variables'
 
 const ORIGIN = [-76, 76, 42] as const
 
-// TODO: Sandstone bug, complexity
-const point = (x: number, y: number, z?: number) => new VectorClass<[string, string, string]>([`${fmt(ORIGIN[0] + x - 0.01)}`, `${fmt(ORIGIN[1] + y)}`, `${fmt(ORIGIN[2] + 0.197 + (z ?? 0))}`])
+const point = (x: number, y: number, z?: number) => [fmt(ORIGIN[0] + x - 0.01), fmt(ORIGIN[1] + y), fmt(ORIGIN[2] + 0.197 + (z ?? 0))] as const
 
 function click_entity(buttonTag: `${any}${string}` | LabelClass) {
 	return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [`${buttonTag}`] } }
@@ -56,7 +54,9 @@ function kill_0 () {
 }
 
 const spawn_0 = MCFunction('sections/presentation/menu/spawn_0', () => {
-    kill_0()
+    if (Bun.env.DEV_HELPERS === 'true') {
+        kill_0()
+    }
     summon('text_display', point(2, .85), {
         Tags: [BOOTH_ENTITY_TAG, start_button_text],
         text: {
@@ -153,7 +153,9 @@ function kill_1 () {
 }
 
 const spawn_1 = MCFunction('sections/presentation/menu/spawn_1', () => {
-    kill_1()
+    if (Bun.env.DEV_HELPERS === 'true') {
+        kill_1()
+    }
     summon('text_display', point(2, .65), {
         Tags: [BOOTH_ENTITY_TAG, next_button_text],
         text: {
@@ -219,7 +221,9 @@ function kill_2() {
 }
 
 const spawn_2 = MCFunction('sections/presentation/menu/spawn_2', () => {
-    kill_2()
+    if (Bun.env.DEV_HELPERS === 'true') {
+        kill_2()
+    }
     summon('interaction', point(2, 0.4, -2), {
         Tags: [ BOOTH_ENTITY_TAG, credits_button_entity ],
         interaction: {},

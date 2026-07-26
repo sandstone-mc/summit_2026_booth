@@ -233,7 +233,7 @@ export async function renderSlides(
 		const result = diagnosePlacements(placements, i, options.origin[0], options.origin[1], sceneW, sceneH)
 		allIssues.push(...result.issues)
 		excludedBySlide.push(result.excludedVNodes)
-		if (process.env.DEBUG_JSX_LAYOUT) {
+		if (Bun.env.DEBUG_JSX_LAYOUT) {
 			const sceneBottom = options.origin[1]
 			const sceneTop = options.origin[1] + sceneH
 			console.log(`[jsx-debug] slide=${i} sceneY=[${sceneBottom}, ${sceneTop}]`)
@@ -250,7 +250,7 @@ export async function renderSlides(
 				)
 				// Wrap-detail dump for header-type elements so the user can
 				// see exactly where the engine expects MC to break lines.
-				if (process.env.DEBUG_JSX_WRAP && el.kind === 'text' && /^h[123]$/.test(el.type)) {
+				if (Bun.env.DEBUG_JSX_WRAP && el.kind === 'text' && /^h[123]$/.test(el.type)) {
 					const { wrapToLines } = await import('./text-metrics')
 					const wrapWidthPx =
 						(el.width?.px ?? Number.POSITIVE_INFINITY) * el.widthCompensation

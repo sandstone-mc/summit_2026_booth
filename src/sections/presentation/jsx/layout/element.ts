@@ -1013,7 +1013,7 @@ function computeAutocompleteLayout(
 	)
 	const widestEntityRowPx = textWidth(widestEntityRow, false, popupFontId)
 	const widestNbtRowPx = textWidth(widestNbtRow, false, popupFontId)
-	if (process.env.DEBUG_AUTOCOMPLETE) {
+	if (Bun.env.DEBUG_AUTOCOMPLETE) {
 		console.log(
 			`[autocomplete-debug] popupFontId=${popupFontId} ` +
 			`widestEntityRow=${JSON.stringify(widestEntityRow)}(${widestEntityRow.length - 2}ch) ` +

@@ -380,7 +380,7 @@ function placeRowBlocks(
 	} else {
 		workingY -= containerCellH
 	}
-	if (process.env.DEBUG_JSX_ROW) {
+	if (Bun.env.DEBUG_JSX_ROW) {
 		console.log(
 			`[row-debug] accY=${accY} marginTop=${firstChild.marginTop} containerCellH=${containerCellH} ` +
 			`bottomAnchored=${bottomAnchored} columnGap=${columnGap} children=${block.children.length} ` +

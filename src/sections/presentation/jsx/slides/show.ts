@@ -340,7 +340,7 @@ export class SlideShow {
 						// set). Stage index is computed at compile time
 						// (fixed per spec); the runtime op only clamps
 						// upward.
-						const freezeAtStage = process.env.DEBUG_AUTOCOMPLETE_FREEZE
+						const freezeAtStage = Bun.env.DEBUG_AUTOCOMPLETE_FREEZE
 							? spec.nbtStageStart
 							: -1
 						if (freezeAtStage > 0) {

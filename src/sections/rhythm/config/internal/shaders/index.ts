@@ -1,4 +1,4 @@
-import { Texture, Model, ItemModelDefinition, NBT } from 'sandstone'
+import { Texture, Model, ItemModelDefinition } from 'sandstone'
 
 import sharp from 'sharp'
 
@@ -35,8 +35,7 @@ export const [skybox_rainbows, skybox_neon, skybox_void ] = [
 		type: 'minecraft:model',
 		model: Model('item', `rhythm/skybox_${variant}`, {
 			textures: {
-				// TODO: Sandstone bug, should not need the `as`
-				'0': Texture('item' as 'block', `rhythm/skybox_${variant}`,
+				'0': Texture('item', `rhythm/skybox_${variant}`,
 					shaderTarget([
 						[0, 0, [1, 2, 3, 255]],
 						[1, 0, id],
@@ -45,13 +44,13 @@ export const [skybox_rainbows, skybox_neon, skybox_void ] = [
 				),
 			},
 			elements: [{
-				from: NBT.float([0.001, -0.35875, 0.2867]),
-				to: NBT.float([15.999, 14.99, 16.2847]),
+				from: [0.001, -0.35875, 0.2867],
+				to: [15.999, 14.99, 16.2847],
 				faces: {
-					north: { uv: NBT.float([0.5, 0.5, 0.5, 0.5]), texture: '#0' },
-					east: { uv: NBT.float([0.5, 0.5, 0.5, 0.5]), texture: '#0' },
-					west: { uv: NBT.float([0.5, 0.5, 0.5, 0.5]), texture: '#0' },
-					down: { uv: NBT.float([0.5, 0.5, 0.5, 0.0]), texture: '#0' },
+					north: { uv: [0.5, 0.5, 0.5, 0.5], texture: '#0' },
+					east: { uv: [0.5, 0.5, 0.5, 0.5], texture: '#0' },
+					west: { uv: [0.5, 0.5, 0.5, 0.5], texture: '#0' },
+					down: { uv: [0.5, 0.5, 0.5, 0.0], texture: '#0' },
 				},
 			}],
 		}),
