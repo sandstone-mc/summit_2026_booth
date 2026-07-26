@@ -14,3 +14,4 @@ resources/datapack_dependencies/*do-not-share*
 resources/datapack_dependencies/summit-dp-core*
 resources/scl
 log.txt
+*.schem
