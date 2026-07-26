@@ -302,9 +302,6 @@ vec3 snd_skyAlienPlanet(vec3 dir) {
     return col;
 }
 
-#ifndef RS_PI2
-#define RS_PI2 6.28318530718
-#endif
 const vec3 SND_RS_UP = vec3(0.0, 1.0, 0.0);
 const vec3 SND_RS_WHITE = vec3(1.0, 1.0, 1.0);
 const float SND_RS_CAMERA_UPWARD = 7.0;
@@ -322,7 +319,7 @@ float snd_rs_random(vec2 st, int seed) {
     return fract(sin(dot((st.xy + float(seed)), vec2(12.9898, 78.233))) * 43758.5453123);
 }
 float snd_rs_getCornerDot(vec2 corner, vec2 pixel, int seed) {
-    float angle = RS_PI2 * snd_rs_random(corner, seed);
+    float angle = 6.28318530718 * snd_rs_random(corner, seed);
     vec2 v = vec2(cos(angle), sin(angle));
     return dot(v, pixel - corner) * 0.5 + 0.5;
 }
@@ -358,18 +355,11 @@ float snd_rs_smax0(float a, float b, float k) {
     return log(exp(k * a) + exp(k * b)) / k;
 }
 float snd_rs_map(vec3 pos) {
-    float grain = snd_rs_noise2D(pos.xz * 0.34 + SND_RS_WHITE.xy, 3);
-    float grainSq = grain * grain;
     return pos.y
-    - snd_rs_noise2D(pos.xz, 0) * 0.1
-    - snd_rs_smax0(snd_rs_voronoi2D(pos.xz * vec2(0.2, 0.1) * 1.6, 2), 0.5, 6.0)
     - snd_rs_noise2D(pos.xz * 0.02, 7) * 40.0
-    + 25.0
-    - snd_rs_noise2D(pos.xz * 0.07 + SND_RS_WHITE.xy, 3) * 10.0
-    - grainSq * grainSq * grainSq
-    - snd_rs_noise2D(pos.xz * 0.01, 10) * 40.0 + 20.0
-    - snd_rs_noise2D(pos.xz * 0.0004, 12) * 40.0 + 15.0
-    + 8.8;
+    - snd_rs_noise2D(pos.xz * 0.01, 10) * 40.0
+    - snd_rs_noise2D(pos.xz * 0.0004, 12) * 40.0
+    + 63.0;
 }
 vec3 snd_rs_calcMapNormal(vec3 pos, float height) {
     float hX = height - snd_rs_map(pos + vec3(0.001, 0.0, 0.0));
@@ -396,7 +386,6 @@ vec3 snd_rs_intersectLinePlane(vec3 lp, vec3 lv, vec3 pp, vec3 pn) {
 }
 
 vec3 snd_skyRainbowsSunshines(vec3 dir) {
-    float time = GameTime * 1200.0;
     vec3 rayForward = normalize(dir);
     vec3 camPos = SND_RS_UP * SND_RS_CAMERA_UPWARD;
 
@@ -408,23 +397,18 @@ vec3 snd_skyRainbowsSunshines(vec3 dir) {
 
     float totalDist = 0.0;
     vec3 currentPos = camPos;
-    for (int i = 0; i < 64 && totalDist < SND_RS_MAX_DIST; i++) {
+    for (int i = 0; i < 48 && totalDist < SND_RS_MAX_DIST; i++) {
         if (currentPos.y > 64.0 && rayForward.y > 0.0) {
             totalDist = SND_RS_MAX_DIST;
             break;
         }
         float sdf = snd_rs_map(currentPos);
-        if (sdf < 0.04 + totalDist * 0.0025) {
+        if (sdf < 0.04 + totalDist * 0.004) {
             vec3 normal = snd_rs_calcMapNormal(currentPos, sdf);
             float dotWithSun = dot(normal, SND_RS_SUN_DIRECTION);
             float brightness = mix(0.3, 0.6, dotWithSun);
             float distMul = pow(totalDist / SND_RS_MAX_DIST, 5.0);
-            float noise = pow(snd_rs_noise2D(currentPos.xz * 10.0, 1), 0.1) * 0.5 +
-                          pow(snd_rs_noise2D(currentPos.xz * 20.0, 1), 0.1) * 0.5;
-            float colorRegion = snd_rs_noise2D(currentPos.xz * 0.1, 1) * snd_rs_noise2D(currentPos.xz * 0.01, 1);
-            vec3 yellow = mix(vec3(1.0, 1.0, 0.8), vec3(0.87, 0.62, 0.27), colorRegion);
-            vec3 grainCol = noise * yellow;
-            vec3 sandCol = brightness * grainCol + sunCol * snd_rs_saturate(dotWithSun);
+            vec3 sandCol = brightness * vec3(0.87, 0.62, 0.27) + sunCol * snd_rs_saturate(dotWithSun);
             col = mix(sandCol, col, distMul);
             break;
         }
@@ -432,33 +416,7 @@ vec3 snd_skyRainbowsSunshines(vec3 dir) {
         totalDist += sdf;
     }
 
-    bool hitSky = totalDist >= SND_RS_MAX_DIST;
-    vec3 sunPos = SND_RS_SUN_DIRECTION * 3000.0;
-
-    if (hitSky) {
-        float distToCeiling = (5.0 - camPos.y) / (rayForward.y + 0.00001);
-        vec3 cloudPos = rayForward * distToCeiling;
-        float dist = snd_rs_saturate(1.0 - (length(cloudPos - camPos) / SND_RS_MAX_DIST));
-        float noiseVal = snd_rs_getCloudColor(cloudPos.xz, time);
-        vec3 cloudNormal = snd_rs_calcCloudNormal(cloudPos.xz, noiseVal, time);
-        col += SND_RS_WHITE * noiseVal * dist * 0.2;
-        col += sunCol * snd_rs_saturate(dot(-cloudNormal, normalize(cloudPos - sunPos))) * dist;
-        if (sunDot > SND_RS_SUN_THRESHOLD) {
-            float strength = 1.0 - ((1.0 - sunDot) / (1.0 - SND_RS_SUN_THRESHOLD));
-            strength *= strength;
-            col += SND_RS_WHITE * strength;
-        }
-        vec3 ringPos = snd_rs_intersectLinePlane(camPos, rayForward, SND_RS_RINGS_POS, SND_RS_RINGS_NORMAL);
-        float ringDist = length(SND_RS_RINGS_POS - ringPos);
-        float brightness = snd_rs_saturate(sin(ringDist / 150.0) + sin(ringDist / 300.0) + sin(ringDist / 20.0) + sin(ringDist / 50.0) + sin(ringDist / 1000.0));
-        brightness = brightness * snd_rs_saturate(sin(ringDist / 1500.0)) * 0.6 + brightness * 0.4;
-        brightness *= snd_rs_saturate(1.0 - abs(9300.0 - ringDist) / 8000.0);
-        brightness *= snd_rs_saturate(ringPos.y / 3000.0);
-        col += SND_RS_WHITE * brightness * 0.4;
-    }
-
     col += sunCol * pow(sunDot, 200.0) * 0.2;
-    if (!hitSky) col += sunCol * pow(sunDot, 10.0) * 0.7;
-
+    col += sunCol * pow(sunDot, 10.0) * 0.7;
     return col;
 }

@@ -14,7 +14,7 @@ const configuredMaps: MapConfig[] = [
   {
     structure: 'rhythm_sandstone_garden',
     name: 'Sandstone Garden',
-    skybox: skybox_neon,
+    skybox: skybox_rainbows,
   },
   {
     structure: 'rhythm_frostbound_garden',
