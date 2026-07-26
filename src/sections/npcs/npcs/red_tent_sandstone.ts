@@ -1,6 +1,6 @@
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC } from '../NPC'
-import { PLACEHOLDER_SKIN } from './skins'
+import { PLACEHOLDER_SKIN, ProfileProperties } from './skins'
 
 const redTentDialogue = DialogueTree('red_tent_sandstone', {
     nodes: [{
@@ -23,9 +23,7 @@ const redTentDialogue = DialogueTree('red_tent_sandstone', {
 CreateNPC('red_tent_sandstone', {
     name: 'James',
     skin: {
-        properties: {
-            value: "e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWQwZmEyZWVhNjlmZDNjNWE4NmIyZTM1ODBmY2E4MzJmOTRkYjkyZDM2YmFjMjY2NWJjNWJjNjc0NzQ1N2Y0OCJ9fX0="
-        }
+        properties: ProfileProperties('ad0fa2eea69fd3c5a86b2e3580fca832f94db92d36bac2665bc5bc6747457f48')
     },
     position: [-68, 93, 54],
     lookAt: 'nearest',

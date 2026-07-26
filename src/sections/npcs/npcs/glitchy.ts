@@ -1,7 +1,7 @@
 import { advancement, Selector } from 'sandstone'
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC } from '../NPC'
-import { PLACEHOLDER_SKIN } from './skins'
+import { PLACEHOLDER_SKIN, ProfileProperties } from './skins'
 
 const HIDDEN_STICKER_ADVANCEMENT = 'summit.sticker_book:sandstone_summit_booth/hidden'
 
@@ -50,9 +50,7 @@ const secretDialogue = DialogueTree('glitchy', {
 CreateNPC('glitchy', {
     name: 'glitchy',
     skin: {
-        properties: {
-            value:"e3RleHR1cmVzOntTS0lOOnt1cmw6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTY1YzY3ZTBmYzA1NGU1OTkwMDE4MTU5ZGIxNTFhZDU1YjcwYWVkODFlYWJlODNiMjBkM2YzNTUyOGEwMDI4NSJ9fX0="
-        },
+        properties: ProfileProperties('e65c67e0fc054e5990018159db151ad55b70aed81eabe83b20d3f35528a00285'),
         model: 'slim'
     },
     position: [-82, 104, 48],
