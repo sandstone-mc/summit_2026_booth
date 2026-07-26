@@ -1,11 +1,12 @@
 import { execute, rel, Selector } from 'sandstone'
 import { Targetable } from '../Spells/Common'
+import type { SelectorEntityType } from 'sandstone/variables'
 
 interface HitboxOptions {
-    type?: string;  //default #sandstone_summit_booth:targetable
-    width?: number; // default 0.9
-    height?: number; // default 2.0
-    onHit: () => void
+    type?: SelectorEntityType,  //default #sandstone_summit_booth:targetable
+    width?: number, // default 0.9
+    height?: number, // default 2.0
+    onHit: () => void,
 }
 
 export const checkHit = (opts: HitboxOptions) => {
@@ -15,8 +16,6 @@ export const checkHit = (opts: HitboxOptions) => {
 
     execute.positioned(rel(-w, -h / 2, -w)).run(() => {
         execute.as(
-            // TODO: Sandstone bug
-            /* @ts-ignore */
             Selector('@e', {
                 type,
                 dx: w * 2,

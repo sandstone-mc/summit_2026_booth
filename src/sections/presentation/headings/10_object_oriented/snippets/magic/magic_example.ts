@@ -4,13 +4,13 @@ import { damage, execute, rel, Selector } from 'sandstone'
 
 // == snippet start ==
 import { Targetable } from '../Spells/Common'
-import { Registry } from 'sandstone/arguments';
+import type { SelectorEntityType } from 'sandstone/variables'
 
 type HitboxOptions = {
     /**
      * @default type `#sandstone_summit_booth:targetable`
      */
-    type?: Registry['minecraft:entity_type'],
+    type?: SelectorEntityType,
     /**
      * @default width `0.9`
      */
@@ -28,8 +28,6 @@ export const checkHit = (opts: HitboxOptions) => {
     const type = opts.type || Targetable
 
     execute.positioned(rel(-w, -h / 2, -w)).as(
-        // TODO: Sandstone bug
-        /* @ts-ignore */
         Selector('@e', {
             type,
             dx: w * 2,

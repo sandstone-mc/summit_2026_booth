@@ -1,9 +1,10 @@
 import { Midi } from '@tonejs/midi'
 import { mkdirSync, readdirSync, statSync, unlinkSync } from 'fs'
 import { dirname, join } from 'path'
-import { RawResource, sandstonePack } from 'sandstone'
+import { RawResource, sandstonePack, SoundsIndex } from 'sandstone'
 import { NAMESPACE, PROJECT_ROOT } from '@shared'
 import { rendering } from '..'
+import { SymbolResource } from 'sandstone/arguments'
 
 const FFMPEG = Bun.env.FFMPEG_PATH ?? 'ffmpeg'
 const FFPROBE = Bun.env.FFPROBE_PATH ?? 'ffprobe'
@@ -11,7 +12,7 @@ const FFPROBE = Bun.env.FFPROBE_PATH ?? 'ffprobe'
 const SOUNDFONT = Bun.env.SOUNDFONT ?? '/usr/share/soundfonts/FluidR3_GM.sf2'
 const CACHE_DIR = join(PROJECT_ROOT, 'resources/cache/sounds')
 
-const soundEvents: Record<string, { sounds: { name: string; stream: boolean }[] }> = {}
+const soundEvents: SymbolResource['sounds'] = {}
 
 function rpFile(path: string, file: ReturnType<typeof Bun.file>) {
 	RawResource(
@@ -24,8 +25,7 @@ function rpFile(path: string, file: ReturnType<typeof Bun.file>) {
 export function emitSoundsJson() {
 	if (Object.keys(soundEvents).length === 0) return
 
-	// TODO: Sandstone bug - this should use SoundsClass
-	RawResource(sandstonePack.resourcePack(), `${NAMESPACE}/sounds.json`, JSON.stringify(soundEvents, null, 2))
+	SoundsIndex(soundEvents)
 }
 
 const DURATION_BUCKETS = [0.1, 0.25, 0.5, 1.0, 1.5]
@@ -161,7 +161,7 @@ export async function renderAllSounds(keys: SoundKey[]): Promise<void> {
 
 	for (const key of uniqueKeys) {
 		const name = getSoundName(key)
-		const eventName = getSoundId(key).replace(`${NAMESPACE}:`, '')
+		const eventName = getSoundId(key).replace(`${NAMESPACE}:`, '') as `${any}${string}`
 		soundEvents[eventName] = { sounds: [{ name: `${NAMESPACE}:generated/${name}`, stream: false }] }
 	}
 	console.log(`[render-sounds] Registered ${uniqueKeys.length} sound events`)
@@ -410,7 +410,7 @@ export async function renderFullSongs(songs: SongRenderInput[]): Promise<FullSon
 
 	for (const info of results) {
 		for (let i = 0; i < info.segmentCount; i++) {
-			const eventName = `music.song_${info.safeName}_s${i}`
+			const eventName = `music.song_${info.safeName}_s${i}` as const
 			soundEvents[eventName] = {
 				sounds: [{ name: `${NAMESPACE}:generated/songs/${info.safeName}_s${i}`, stream: true }],
 			}

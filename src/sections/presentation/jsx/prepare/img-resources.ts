@@ -19,7 +19,7 @@ export async function prepareImgResources(trees: VNode[]): Promise<ImgResourceMa
 	for (const tree of trees) {
 		for (const { node } of flatWalk(tree)) {
 			if (!isImgType(node.type)) continue
-			const rawSrc: undefined | string | TextureClass = node.props?.src
+			const rawSrc: undefined | string | TextureClass<'item'> = node.props?.src
 			if (rawSrc === undefined) continue
 			const src = `${rawSrc}`
 			if (!src || seen.has(src)) continue

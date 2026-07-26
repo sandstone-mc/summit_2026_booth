@@ -19,8 +19,7 @@ Enchantment('input/wand_left_click', {
         base: new NBTInt(0),
         per_level_above_first: new NBTInt(0)
     },
-    /* @ts-ignore */
-    effects: { // TODO: Sandstone bug, I really don't understand why this isn't working :not_like_shift:
+    effects: {
         'minecraft:post_piercing_attack': [
             {
                 effect: {

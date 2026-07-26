@@ -1,3 +1,3 @@
 import { Tag } from 'sandstone'
 
-export const Targetable = Tag('entity', 'foo', [], { addToSandstoneCore: false })
+export const Targetable = Tag('entity_type', 'foo', [], { addToSandstoneCore: false })

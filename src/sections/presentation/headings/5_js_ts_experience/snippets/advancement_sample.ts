@@ -27,8 +27,6 @@ export const my_advancement = Advancement('sample/my_advancement', {
     },
     rewards: {
         function: my_func,
-        // TODO: Sandstone bug
-        /* @ts-ignore */
         recipes: [my_recipe],
     }
 })

@@ -159,8 +159,7 @@ export function creditsDialog(title: JSONTextComponent) {
             ...LINKS.map((l) => linkBody(l.name, l.url, l.icon, l.glyph)),
         ],
     }
-    // TODO: Sandstone bug
-    return notice as unknown as DialogClassArguments['json']
+    return notice
 }
 
 /**
