@@ -1,0 +1,2 @@
+execute if entity @s[tag=sandstone_summit_booth.main.fix_blocks.relative] run return run function sandstone_summit_booth:sections/main/fix_blocks/inner
+execute positioned -104 83 81 run function sandstone_summit_booth:sections/main/fix_blocks/inner
