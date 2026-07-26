@@ -10,7 +10,8 @@
 	},
 	"include": [
 		"resourcepack/assets/sandstone_summit_booth/textures/item/balloon/*.png",
-		"resourcepack/assets/sandstone_summit_booth/textures/item/presentation/{docs,magic}.png",
+		"resourcepack/assets/sandstone_summit_booth/textures/item/presentation/docs.png",
+		"resourcepack/assets/sandstone_summit_booth/textures/item/presentation/magic.png",
 		"resourcepack/assets/sandstone_summit_booth/textures/sticker/enter_booth.png"
 	]
 }
