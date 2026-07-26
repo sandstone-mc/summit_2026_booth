@@ -173,17 +173,23 @@ export class SlideShow {
 					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG], type: 'minecraft:text_display' })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(-1))
-					execute.as(Selector('@e', { tag })).run.data.modify
+					execute.as(Selector('@e', { tag, type: 'minecraft:text_display' })).run.data.modify
+						.entity('@s', 'view_range')
+						.set.value(NBT.float(1.0))
+					execute.as(Selector('@e', { tag, type: 'minecraft:item_display' })).run.data.modify
 						.entity('@s', 'view_range')
 						.set.value(NBT.float(1.0))
 				}),
 			)
 			this.hideSlide.push(
 				MCFunction(`sections/presentation/slides/hide/${s}`, () => {
-					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG] })).run.data.modify
+					execute.as(Selector('@e', { tag: [tag, KIND_TEXT_TAG], type: 'minecraft:text_display' })).run.data.modify
 						.entity('@s', 'text_opacity')
 						.set.value(NBT.int(0))
-					execute.as(Selector('@e', { tag })).run.data.modify
+					execute.as(Selector('@e', { tag, type: 'minecraft:text_display' })).run.data.modify
+						.entity('@s', 'view_range')
+						.set.value(NBT.float(0.0))
+					execute.as(Selector('@e', { tag, type: 'minecraft:item_display' })).run.data.modify
 						.entity('@s', 'view_range')
 						.set.value(NBT.float(0.0))
 				}),
@@ -258,6 +264,7 @@ export class SlideShow {
 						// Now `tempOffset` holds the index of the visible chunk.
 						const entitySel = Selector('@e', {
 							tag: [spec.scrollTag, slideTag(idx)],
+							type: 'minecraft:text_display',
 						})
 						for (let ci = 0; ci < chunkCount; ci++) {
 							const chunkValue = buildTextJson(
@@ -353,9 +360,11 @@ export class SlideShow {
 
 						const editorSel = Selector('@e', {
 							tag: [`ac_editor_${spec.autoId}` as `${any}${string}`, slideTag(idx)],
+							type: 'minecraft:text_display',
 						})
 						const cursorSel = Selector('@e', {
 							tag: [`ac_cursor_${spec.autoId}` as `${any}${string}`, slideTag(idx)],
+							type: 'minecraft:text_display',
 						})
 						// The popup is split into consecutive BG-COLOR RUNS —
 						// one text_display per segment (`ac_popup_<autoId>_seg_<s>`).
@@ -372,6 +381,7 @@ export class SlideShow {
 										`ac_popup_${spec.autoId}_seg_${sIdx}` as `${any}${string}`,
 										slideTag(idx),
 									],
+									type: 'minecraft:text_display',
 								}),
 							)
 						}
@@ -573,6 +583,7 @@ export class SlideShow {
 						for (const spec of specs) {
 							const cursorSel = Selector('@e', {
 								tag: [`ac_cursor_${spec.autoId}` as `${any}${string}`, slideTag(idx)],
+								type: 'minecraft:text_display',
 							})
 							execute.as(cursorSel).run.data.modify
 								.entity('@s', 'text_opacity')
@@ -583,6 +594,7 @@ export class SlideShow {
 						for (const spec of specs) {
 							const cursorSel = Selector('@e', {
 								tag: [`ac_cursor_${spec.autoId}` as `${any}${string}`, slideTag(idx)],
+								type: 'minecraft:text_display',
 							})
 							execute.as(cursorSel).run.data.modify
 								.entity('@s', 'text_opacity')
@@ -689,7 +701,8 @@ export class SlideShow {
 			for (let i = 1; i <= this.totalSlides; i++) {
 				schedule.clear(`${loopName}/${i === 1 ? '__sleep' : `__sleep${i}`}`)
 			}
-			execute.run.kill(Selector('@e', { tag: SCENE_TAG }))
+			execute.run.kill(Selector('@e', { tag: SCENE_TAG, type: 'minecraft:text_display' }))
+			execute.run.kill(Selector('@e', { tag: SCENE_TAG, type: 'minecraft:item_display' }))
 		})
 
 		// Rewinds the CURRENT slide's animations to their starting state
@@ -723,7 +736,8 @@ export class SlideShow {
 		}
 		const visible = flatWalk(tree).filter(({ node }) => isVisibleType(node.type))
 		return MCFunction(`sections/presentation/slides/rerender/${index}`, () => {
-			execute.run.kill(Selector('@e', { tag: slideTag(index) }))
+			execute.run.kill(Selector('@e', { tag: slideTag(index), type: 'minecraft:text_display' }))
+			execute.run.kill(Selector('@e', { tag: slideTag(index), type: 'minecraft:item_display' }))
 			summonVisibleElements(
 				visible,
 				this.styles,

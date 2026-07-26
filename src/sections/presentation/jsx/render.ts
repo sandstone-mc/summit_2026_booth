@@ -152,7 +152,8 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
 	}, { runEveryTick: true })
 
 	const unmount = MCFunction('sections/presentation/unmount', () => {
-		execute.run.kill(Selector('@e', { tag: SCENE_TAG }))
+		execute.run.kill(Selector('@e', { tag: SCENE_TAG, type: 'minecraft:text_display' }))
+		execute.run.kill(Selector('@e', { tag: SCENE_TAG, type: 'minecraft:item_display' }))
 	})
 
 	return { mount, tick, unmount }

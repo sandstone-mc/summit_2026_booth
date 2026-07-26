@@ -49,8 +49,8 @@ const start_button_text = Label('sections.presentation.menu.start_text')
 const start_button_entity = Label('sections.presentation.menu.start_button')
 
 function kill_0 () {
-    kill(start_button_text('@e' as '@s'))
-    kill(start_button_entity('@e' as '@s'))
+    kill(start_button_text(Selector('@e', { type: 'minecraft:text_display' })))
+    kill(start_button_entity(Selector('@e', { type: 'minecraft:interaction' })))
 }
 
 const spawn_0 = MCFunction('sections/presentation/menu/spawn_0', () => {
@@ -137,7 +137,7 @@ const start_button = Advancement('sections/presentation/menu/start_button', {
             Tags: [ BOOTH_ENTITY_TAG, small_logo_entity ],
         })
 
-        kill(screen_saver_entity('@e' as '@s'))
+        kill(screen_saver_entity(Selector('@e', { type: 'minecraft:item_display' })))
         kill_0()
 
         spawn_1()
@@ -148,8 +148,8 @@ const next_button_text = Label('sections.presentation.menu.next_text')
 const next_button_entity = Label('sections.presentation.menu.next_button')
 
 function kill_1 () {
-    kill(next_button_text('@e' as '@s'))
-    kill(next_button_entity('@e' as '@s'))
+    kill(next_button_text(Selector('@e', { type: 'minecraft:text_display' })))
+    kill(next_button_entity(Selector('@e', { type: 'minecraft:interaction' })))
 }
 
 const spawn_1 = MCFunction('sections/presentation/menu/spawn_1', () => {
@@ -217,7 +217,7 @@ const next_button = Advancement('sections/presentation/menu/next_button', {
 const credits_button_entity = Label('sections.presentation.menu.credits')
 
 function kill_2() {
-    kill(credits_button_entity('@e' as '@s'))
+    kill(credits_button_entity(Selector('@e', { type: 'minecraft:interaction' })))
 }
 
 const spawn_2 = MCFunction('sections/presentation/menu/spawn_2', () => {
@@ -244,7 +244,7 @@ const credits_display_entity = Label('sections.presentation.menu.credits_display
 const credits_loop = MCFunction('sections/presentation/menu/credits_loop', () => {
     for (let i = 0; i < PAGE_COUNT; i++) {
         data.modify
-            .entity(credits_display_entity(Selector('@e', { limit: 1 })), 'text')
+            .entity(credits_display_entity(Selector('@e', { type: 'minecraft:text_display', limit: 1 })), 'text')
             .set.value(creditsPageContent(i))
         sleep(`${PAGE_SECONDS}s`)
     }
@@ -252,7 +252,7 @@ const credits_loop = MCFunction('sections/presentation/menu/credits_loop', () =>
 })
 
 const kill_credits_display = MCFunction('sections/presentation/menu/credits_display/kill', () => {
-    kill(credits_display_entity('@e' as '@s'))
+    kill(credits_display_entity(Selector('@e', { type: 'minecraft:text_display' })))
     schedule.clear(credits_loop.name)
     schedule.clear(`${credits_loop.name}/schedule`)
     for (let i = 1; i <= PAGE_COUNT; i++) {
@@ -297,7 +297,7 @@ MCFunction('sections/presentation/end', () => {
     schedule.function(() => {
         kill_2()
         kill_credits_display()
-        kill(small_logo_entity('@e' as '@s'))
+        kill(small_logo_entity(Selector('@e', { type: 'minecraft:item_display' })))
 
         spawn_0()
         screen_saver()
@@ -317,8 +317,8 @@ Tag('function', 'summit.booth:sandstone_summit_booth/entities/kill', [
         kill_1()
         kill_2()
         kill_credits_display()
-        kill(small_logo_entity('@e' as '@s'))
-        kill(screen_saver_entity('@e' as '@s'))
+        kill(small_logo_entity(Selector('@e', { type: 'minecraft:item_display' })))
+        kill(screen_saver_entity(Selector('@e', { type: 'minecraft:item_display' })))
         unmount()
     })
 ], { onConflict: 'append' })
