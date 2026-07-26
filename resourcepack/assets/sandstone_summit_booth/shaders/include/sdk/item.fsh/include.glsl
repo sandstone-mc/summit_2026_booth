@@ -302,7 +302,9 @@ vec3 snd_skyAlienPlanet(vec3 dir) {
     return col;
 }
 
+#ifndef RS_PI2
 #define RS_PI2 6.28318530718
+#endif
 const vec3 SND_RS_UP = vec3(0.0, 1.0, 0.0);
 const vec3 SND_RS_WHITE = vec3(1.0, 1.0, 1.0);
 const float SND_RS_CAMERA_UPWARD = 7.0;
