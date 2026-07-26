@@ -1,2 +1,3 @@
-execute as @e[tag=sandstone_summit_booth.slide_14, tag=sandstone_summit_booth.kind.text] run data modify entity @s text_opacity set value 0i
-execute as @e[tag=sandstone_summit_booth.slide_14] run data modify entity @s view_range set value 0f
+execute as @e[type=minecraft:text_display, tag=sandstone_summit_booth.slide_14, tag=sandstone_summit_booth.kind.text] run data modify entity @s text_opacity set value 0i
+execute as @e[type=minecraft:text_display, tag=sandstone_summit_booth.slide_14] run data modify entity @s view_range set value 0f
+execute as @e[type=minecraft:item_display, tag=sandstone_summit_booth.slide_14] run data modify entity @s view_range set value 0f
