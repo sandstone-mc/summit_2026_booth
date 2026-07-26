@@ -35,8 +35,7 @@ const positions = [
 // @extract-blocks:end
 
 const fix_blocks = MCFunction('sections/main/fix_blocks/inner', () => {
-  // TODO: Sandstone bug, missing `air` and fill flags
-  raw('fill ~28 ~-6 ~-39 ~31 ~-7 ~-39 air strict')
+  fill('~28 ~-6 ~-39', '~31 ~-7 ~-39', 'air').strict()
 
   for (const [x, y, z, state] of positions) {
     const block = positionsPalette[state]
