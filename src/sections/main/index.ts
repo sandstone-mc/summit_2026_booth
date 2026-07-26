@@ -3,6 +3,7 @@ import { Font, Model, NBT, Texture, Variant } from 'sandstone'
 
 import monospace from '../../../resources/assets/font/monospace/providers.json'
 
+import './fix_blocks'
 import './showcase'
 
 const asset = (...path: string[]) => Bun.file(
