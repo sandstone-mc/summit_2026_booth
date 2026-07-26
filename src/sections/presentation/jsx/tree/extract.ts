@@ -16,41 +16,41 @@ export const DEFAULT_INLINE_CODE_BG = '#2d2d2d' as const
 // numbers, function-toString, nested VNodes (recurse on their children),
 // arrays joined together. Voids false / null.
 export function extractText(children: any): string {
-	if (children == null || children === false) return ''
-	if (typeof children === 'string' || typeof children === 'number') return String(children)
-	if (typeof children === 'function') return codeSourceFromFunction(children)
-	if (isVNode(children)) return extractText(children.props?.children)
-	if (Array.isArray(children)) return children.map(extractText).join('')
-	return ''
+    if (children == null || children === false) return ''
+    if (typeof children === 'string' || typeof children === 'number') return String(children)
+    if (typeof children === 'function') return codeSourceFromFunction(children)
+    if (isVNode(children)) return extractText(children.props?.children)
+    if (Array.isArray(children)) return children.map(extractText).join('')
+    return ''
 }
 
 // Pull the body of an arrow / regular function back out as a string.
 // Strips the `() => { … }` wrapper, dedents the body, trims leading /
 // trailing blank lines. Lets users keep code snippets type-checked.
 export function codeSourceFromFunction(fn: Function): string {
-	const src = fn.toString()
-	const open = src.indexOf('{')
-	const close = src.lastIndexOf('}')
-	if (open === -1 || close === -1 || close <= open) return src
-	let body = src.slice(open + 1, close)
-	body = dedentBlock(body)
-	body = body.replace(/^\n+/, '').replace(/\n[ \t]*$/, '')
-	return body
+    const src = fn.toString()
+    const open = src.indexOf('{')
+    const close = src.lastIndexOf('}')
+    if (open === -1 || close === -1 || close <= open) return src
+    let body = src.slice(open + 1, close)
+    body = dedentBlock(body)
+    body = body.replace(/^\n+/, '').replace(/\n[ \t]*$/, '')
+    return body
 }
 
 // Remove the longest common leading whitespace from every non-blank line.
 export function dedentBlock(s: string): string {
-	const lines = s.split('\n')
-	let common: number | null = null
-	for (const line of lines) {
-		if (!line.trim()) continue
-		const lead = line.match(/^[ \t]*/)?.[0].length ?? 0
-		if (common === null) common = lead
-		else common = Math.min(common, lead)
-		if (common === 0) break
-	}
-	if (!common) return s
-	return lines.map((l) => l.slice(common!)).join('\n')
+    const lines = s.split('\n')
+    let common: number | null = null
+    for (const line of lines) {
+        if (!line.trim()) continue
+        const lead = line.match(/^[ \t]*/)?.[0].length ?? 0
+        if (common === null) common = lead
+        else common = Math.min(common, lead)
+        if (common === 0) break
+    }
+    if (!common) return s
+    return lines.map((l) => l.slice(common!)).join('\n')
 }
 
 // Resolve a `<code>` element's source. `src` prop (Bun `with { type: 'text' }`)
@@ -65,51 +65,51 @@ export function dedentBlock(s: string): string {
 //   - Each line's leading whitespace count is halved. This shrinks
 //     heavily-indented snippets so they fit the half-slide cell.
 export function extractCodeSource(props: any): string {
-	let src: string
-	if (typeof props?.src === 'string') {
-		src = props.src
-	} else {
-		const child = props?.children
-		if (typeof child === 'string') src = child
-		else if (typeof child === 'function') src = codeSourceFromFunction(child)
-		else if (Array.isArray(child)) src = child.map(extractCodeSource).join('')
-		else return ''
-	}
+    let src: string
+    if (typeof props?.src === 'string') {
+        src = props.src
+    } else {
+        const child = props?.children
+        if (typeof child === 'string') src = child
+        else if (typeof child === 'function') src = codeSourceFromFunction(child)
+        else if (Array.isArray(child)) src = child.map(extractCodeSource).join('')
+        else return ''
+    }
 
-	const startIdx = src.indexOf(SNIPPET_START)
-	const endIdx = src.indexOf(SNIPPET_END)
-	let raw: string
-	if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-		const afterStart = src.indexOf('\n', startIdx)
-		if (afterStart !== -1) {
-			raw = dedentBlock(src.slice(afterStart + 1, endIdx)).replace(/\n+$/, '')
-		} else {
-			raw = src
-		}
-	} else {
-		raw = src
-	}
-	// Step 1: convert each tab to 2 spaces (not 4) so we don't undo the
-	// halving below by inflating tab widths into 4-space counts.
-	// Step 2: per line, count leading whitespace (tab = 2, space = 1) and
-	// halve it. Replace the leading run with that many spaces.
-	return raw
-		.replace(/\t/g, '  ')
-		.split('\n')
-		.map(halfLeadingIndent)
-		.join('\n')
+    const startIdx = src.indexOf(SNIPPET_START)
+    const endIdx = src.indexOf(SNIPPET_END)
+    let raw: string
+    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+        const afterStart = src.indexOf('\n', startIdx)
+        if (afterStart !== -1) {
+            raw = dedentBlock(src.slice(afterStart + 1, endIdx)).replace(/\n+$/, '')
+        } else {
+            raw = src
+        }
+    } else {
+        raw = src
+    }
+    // Step 1: convert each tab to 2 spaces (not 4) so we don't undo the
+    // halving below by inflating tab widths into 4-space counts.
+    // Step 2: per line, count leading whitespace (tab = 2, space = 1) and
+    // halve it. Replace the leading run with that many spaces.
+    return raw
+        .replace(/\t/g, '  ')
+        .split('\n')
+        .map(halfLeadingIndent)
+        .join('\n')
 }
 
 // Halve the leading whitespace of a single line. Tabs (`\t`) count as
 // 2 columns each (matching the conversion in `extractCodeSource`).
 function halfLeadingIndent(line: string): string {
-	const match = line.match(/^[ \t]*/)
-	if (!match) return line
-	const lead = match[0]
-	let visual = 0
-	for (const c of lead) visual += c === '\t' ? 2 : 1
-	const halved = Math.floor(visual / 2)
-	return ' '.repeat(halved) + line.slice(lead.length)
+    const match = line.match(/^[ \t]*/)
+    if (!match) return line
+    const lead = match[0]
+    let visual = 0
+    for (const c of lead) visual += c === '\t' ? 2 : 1
+    const halved = Math.floor(visual / 2)
+    return ' '.repeat(halved) + line.slice(lead.length)
 }
 
 // ── Inline formatting ────────────────────────────────────────────
@@ -137,77 +137,77 @@ function halfLeadingIndent(line: string): string {
 // and passes them through.
 
 export function parseInlineFormatting(
-	s: string,
-	codeColor: `#${string}` = DEFAULT_INLINE_CODE_COLOR,
-	codeBg: `#${string}` = DEFAULT_INLINE_CODE_BG,
+    s: string,
+    codeColor: `#${string}` = DEFAULT_INLINE_CODE_COLOR,
+    codeBg: `#${string}` = DEFAULT_INLINE_CODE_BG,
 ): StyledSegment[] {
-	if (!s) return []
-	const out: StyledSegment[] = []
-	let buf = ''
-	let bold = false
-	let italic = false
-	let inCode = false
+    if (!s) return []
+    const out: StyledSegment[] = []
+    let buf = ''
+    let bold = false
+    let italic = false
+    let inCode = false
 
-	const flush = () => {
-		if (buf.length === 0) return
-		const seg: StyledSegment = { text: buf }
-		if (bold) seg.bold = true
-		if (italic) seg.italic = true
-		if (inCode) {
-			seg.font = INLINE_CODE_FONT
-			seg.color = codeColor
-			seg.background = codeBg
-		}
-		out.push(seg)
-		buf = ''
-	}
+    const flush = () => {
+        if (buf.length === 0) return
+        const seg: StyledSegment = { text: buf }
+        if (bold) seg.bold = true
+        if (italic) seg.italic = true
+        if (inCode) {
+            seg.font = INLINE_CODE_FONT
+            seg.color = codeColor
+            seg.background = codeBg
+        }
+        out.push(seg)
+        buf = ''
+    }
 
-	let i = 0
-	const n = s.length
-	while (i < n) {
-		const ch = s[i]
-		if (!inCode) {
-			// `***` toggles both bold AND italic atomically so `***foo***`
-			// doesn't parse as bold-then-italic-on-empty. Checked before
-			// `**` to claim the leading two stars.
-			if (ch === '*' && s[i + 1] === '*' && s[i + 2] === '*') {
-				flush()
-				bold = !bold
-				italic = !italic
-				i += 3
-				continue
-			}
-			if (ch === '*' && s[i + 1] === '*') {
-				flush()
-				bold = !bold
-				i += 2
-				continue
-			}
-			if (ch === '*') {
-				flush()
-				italic = !italic
-				i += 1
-				continue
-			}
-			if (ch === '`') {
-				flush()
-				inCode = true
-				i += 1
-				continue
-			}
-		} else if (ch === '`') {
-			// Inside a code span: only the closing backtick is special —
-			// every other char (including `*`) is literal text.
-			flush()
-			inCode = false
-			i += 1
-			continue
-		}
-		buf += ch
-		i += 1
-	}
-	flush()
-	return out
+    let i = 0
+    const n = s.length
+    while (i < n) {
+        const ch = s[i]
+        if (!inCode) {
+            // `***` toggles both bold AND italic atomically so `***foo***`
+            // doesn't parse as bold-then-italic-on-empty. Checked before
+            // `**` to claim the leading two stars.
+            if (ch === '*' && s[i + 1] === '*' && s[i + 2] === '*') {
+                flush()
+                bold = !bold
+                italic = !italic
+                i += 3
+                continue
+            }
+            if (ch === '*' && s[i + 1] === '*') {
+                flush()
+                bold = !bold
+                i += 2
+                continue
+            }
+            if (ch === '*') {
+                flush()
+                italic = !italic
+                i += 1
+                continue
+            }
+            if (ch === '`') {
+                flush()
+                inCode = true
+                i += 1
+                continue
+            }
+        } else if (ch === '`') {
+            // Inside a code span: only the closing backtick is special —
+            // every other char (including `*`) is literal text.
+            flush()
+            inCode = false
+            i += 1
+            continue
+        }
+        buf += ch
+        i += 1
+    }
+    flush()
+    return out
 }
 
 // Walk a JSX children subtree and apply `parseInlineFormatting` to
@@ -219,21 +219,21 @@ export function parseInlineFormatting(
 // StyledSegment stream that the segment-aware wrap can measure
 // correctly across font changes.
 export function extractTextAsSegments(
-	children: any,
-	codeColor: `#${string}` = DEFAULT_INLINE_CODE_COLOR,
-	codeBg: `#${string}` = DEFAULT_INLINE_CODE_BG,
+    children: any,
+    codeColor: `#${string}` = DEFAULT_INLINE_CODE_COLOR,
+    codeBg: `#${string}` = DEFAULT_INLINE_CODE_BG,
 ): StyledSegment[] {
-	if (children == null || children === false) return []
-	if (typeof children === 'string') return parseInlineFormatting(children, codeColor, codeBg)
-	if (typeof children === 'number') return parseInlineFormatting(String(children), codeColor, codeBg)
-	if (typeof children === 'function') return parseInlineFormatting(codeSourceFromFunction(children), codeColor, codeBg)
-	if (isVNode(children)) return extractTextAsSegments(children.props?.children, codeColor, codeBg)
-	if (Array.isArray(children)) {
-		const out: StyledSegment[] = []
-		for (const c of children) out.push(...extractTextAsSegments(c, codeColor, codeBg))
-		return out
-	}
-	return []
+    if (children == null || children === false) return []
+    if (typeof children === 'string') return parseInlineFormatting(children, codeColor, codeBg)
+    if (typeof children === 'number') return parseInlineFormatting(String(children), codeColor, codeBg)
+    if (typeof children === 'function') return parseInlineFormatting(codeSourceFromFunction(children), codeColor, codeBg)
+    if (isVNode(children)) return extractTextAsSegments(children.props?.children, codeColor, codeBg)
+    if (Array.isArray(children)) {
+        const out: StyledSegment[] = []
+        for (const c of children) out.push(...extractTextAsSegments(c, codeColor, codeBg))
+        return out
+    }
+    return []
 }
 
 // True when a `StyledSegment[]` would be rendered differently than a
@@ -242,7 +242,7 @@ export function extractTextAsSegments(
 // short-circuit the segment path when this returns false and emit the
 // existing string-based entity.
 export function isFormattedSegments(segs: StyledSegment[]): boolean {
-	if (segs.length !== 1) return true
-	const s = segs[0]
-	return Boolean(s.bold || s.italic || s.font || s.color || s.background)
+    if (segs.length !== 1) return true
+    const s = segs[0]
+    return Boolean(s.bold || s.italic || s.font || s.color || s.background)
 }

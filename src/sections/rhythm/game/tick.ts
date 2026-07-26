@@ -7,13 +7,13 @@ import { parkourTick } from './parkour'
 import { timerTick } from './end'
 
 MCFunction(
-	'sections/rhythm/tick',
-	() => {
-		collisionTick()
-		wallTick()
-		scoringTick()
-		parkourTick()
-		timerTick()
-	},
-	{ tags: [ticking] },
+    'sections/rhythm/tick',
+    () => {
+        collisionTick()
+        wallTick()
+        scoringTick()
+        parkourTick()
+        timerTick()
+    },
+    { tags: [ticking] },
 )

@@ -30,43 +30,43 @@ import './game/debug'
 import './dev'
 
 export const setup = MCFunction(
-	'sections/rhythm/setup',
-	() => {
-		placeMap()
-		spawnLaneBorder()
-		spawnSettingsPanel()
-		spawnLeaderboardPanel()
-		resetGame()
-	},
-	{ lazy: true },
+    'sections/rhythm/setup',
+    () => {
+        placeMap()
+        spawnLaneBorder()
+        spawnSettingsPanel()
+        spawnLeaderboardPanel()
+        resetGame()
+    },
+    { lazy: true },
 )
 
 export const cleanup = MCFunction(
-	'sections/rhythm/clear',
-	() => {
-		resetGame()
-		kill(Selector('@e', { tag: Tags.LANE_BORDER, type: 'minecraft:text_display' }))
-		kill(Selector('@e', { tag: Tags.UI_SETTINGS, type: 'minecraft:text_display' }))
-		kill(Selector('@e', { tag: Tags.UI_SETTINGS, type: 'minecraft:interaction' }))
-		killSkybox()
-		// fill(abs(...arena.mapOrigin), abs(...arena.mapEnd), 'minecraft:air').strict()
-	},
-	{ lazy: true },
+    'sections/rhythm/clear',
+    () => {
+        resetGame()
+        kill(Selector('@e', { tag: Tags.LANE_BORDER, type: 'minecraft:text_display' }))
+        kill(Selector('@e', { tag: Tags.UI_SETTINGS, type: 'minecraft:text_display' }))
+        kill(Selector('@e', { tag: Tags.UI_SETTINGS, type: 'minecraft:interaction' }))
+        killSkybox()
+        // fill(abs(...arena.mapOrigin), abs(...arena.mapEnd), 'minecraft:air').strict()
+    },
+    { lazy: true },
 )
 
 MCFunction('sections/rhythm/init_player', () => {
-	_.if(status.equalTo(GameStatus.WAITING), () => {
-		resetPlayer()
-	})
+    _.if(status.equalTo(GameStatus.WAITING), () => {
+        resetPlayer()
+    })
 })
 
 MCFunction('sections/rhythm/clean_player', () => {
-	execute.if.entity(Selector('@s', { tag: Tags.PLAYER })).run(() => {
-		_.if(status.equalTo(GameStatus.ACTIVE), () => {
-			endGame()
-		}).elseIf(status.equalTo(GameStatus.STARTING), () => {
-			cancelStart()
-		})
-	})
-	resetPlayer()
+    execute.if.entity(Selector('@s', { tag: Tags.PLAYER })).run(() => {
+        _.if(status.equalTo(GameStatus.ACTIVE), () => {
+            endGame()
+        }).elseIf(status.equalTo(GameStatus.STARTING), () => {
+            cancelStart()
+        })
+    })
+    resetPlayer()
 })

@@ -11,17 +11,17 @@ export type { VNode, StyledSegment, RenderOptions, Scene, SlideScene } from './r
 
 export { div, p, h1, h2, center, style, code, img, explorer, autocomplete } from './components'
 export type {
-	CommonProps,
-	DivProps,
-	PProps,
-	H1Props,
-	H2Props,
-	CenterProps,
-	StyleProps,
-	CodeProps,
-	ImgProps,
-	ExplorerProps,
-	AutocompleteProps,
+    CommonProps,
+    DivProps,
+    PProps,
+    H1Props,
+    H2Props,
+    CenterProps,
+    StyleProps,
+    CodeProps,
+    ImgProps,
+    ExplorerProps,
+    AutocompleteProps,
 } from './components'
 
 export { Fragment, jsx, jsxs, jsxDEV } from './jsx-runtime'

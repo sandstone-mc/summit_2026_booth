@@ -3,15 +3,15 @@ import { jsx } from './jsx-runtime'
 import type { VNode } from './render'
 
 export type CommonProps = {
-	class?: string
-	id?: string
-	children?: any
-	/**
-	 * HACK: shift the element's render Y up by N blocks. Positive value
-	 * moves it up. Use sparingly to nudge individual elements on
-	 * per-slide layouts; not a general-purpose knob.
-	 */
-	'shift-up'?: number
+    class?: string
+    id?: string
+    children?: any
+    /**
+     * HACK: shift the element's render Y up by N blocks. Positive value
+     * moves it up. Use sparingly to nudge individual elements on
+     * per-slide layouts; not a general-purpose knob.
+     */
+    'shift-up'?: number
 }
 
 export type DivProps = CommonProps
@@ -44,12 +44,12 @@ export type StyleProps = { children?: string; source?: string }
  *      per-slide layout tightness; not a general-purpose knob.
  */
 export type CodeProps = CommonProps & {
-	lang?: string
-	src?: string
-	'line-numbers'?: boolean
-	scrolling?: boolean
-	'side-padding'?: [number, number]
-	'extra-row'?: boolean
+    lang?: string
+    src?: string
+    'line-numbers'?: boolean
+    scrolling?: boolean
+    'side-padding'?: [number, number]
+    'extra-row'?: boolean
 }
 
 /**
@@ -83,13 +83,13 @@ export type CodeProps = CommonProps & {
  *      case-sensitive, against the entry's basename (not the path).
  */
 export type ExplorerProps = CommonProps & {
-	root: string
-	width?: string
-	'path-start'?: number
-	scrolling?: boolean
-	'side-padding'?: [number, number]
-	'no-dash'?: boolean
-	exclude?: string[]
+    root: string
+    width?: string
+    'path-start'?: number
+    scrolling?: boolean
+    'side-padding'?: [number, number]
+    'no-dash'?: boolean
+    exclude?: string[]
 }
 
 /**
@@ -104,9 +104,9 @@ export type ExplorerProps = CommonProps & {
  * precedence over LESS `height` / `width` declarations when set.
  */
 export type ImgProps = CommonProps & {
-	src: string | TextureClass<any>
-	height?: string
-	width?: string
+    src: string | TextureClass<any>
+    height?: string
+    width?: string
 }
 
 // Component functions. Identity wrappers around jsx() — exist for explicit
@@ -117,8 +117,8 @@ export const h1 = (props: H1Props): VNode => jsx('h1', props, null)
 export const h2 = (props: H2Props): VNode => jsx('h2', props, null)
 export const center = (props: CenterProps): VNode => jsx('center', props, null)
 export const style = (props: StyleProps): VNode => {
-	const source = props.source ?? (typeof props.children === 'string' ? props.children : '')
-	return jsx('style', { source }, null)
+    const source = props.source ?? (typeof props.children === 'string' ? props.children : '')
+    return jsx('style', { source }, null)
 }
 export const code = (props: CodeProps): VNode => jsx('code', props, null)
 export const img = (props: ImgProps): VNode => jsx('img', props, null)
@@ -152,34 +152,34 @@ export const explorer = (props: ExplorerProps): VNode => jsx('explorer', props, 
  *                           source — the `{ ` after the last arg).
  */
 export type AutocompleteProps = CommonProps & {
-	width?: string
-	height?: string
-	lang?: string
-	source?: string
-	'line-numbers'?: boolean
-	'side-padding'?: [number, number]
-	'intellisense-entity-stage'?: number
-	'intellisense-nbt-stage'?: number
+    width?: string
+    height?: string
+    lang?: string
+    source?: string
+    'line-numbers'?: boolean
+    'side-padding'?: [number, number]
+    'intellisense-entity-stage'?: number
+    'intellisense-nbt-stage'?: number
 }
 
 export const autocomplete = (props: AutocompleteProps): VNode =>
-	jsx('autocomplete', props, null)
+    jsx('autocomplete', props, null)
 
 // Augment JSX intrinsics so <div>, <h1> etc. are type-checked in TSX files
 // that import this module (or anything that transitively imports it).
 declare global {
-	namespace JSX {
-		interface IntrinsicElements {
-			div: DivProps
-			p: PProps
-			h1: H1Props
-			h2: H2Props
-			center: CenterProps
-			style: StyleProps
-			code: CodeProps
-			img: ImgProps
-			explorer: ExplorerProps
-			autocomplete: AutocompleteProps
-		}
-	}
+    namespace JSX {
+        interface IntrinsicElements {
+            div: DivProps
+            p: PProps
+            h1: H1Props
+            h2: H2Props
+            center: CenterProps
+            style: StyleProps
+            code: CodeProps
+            img: ImgProps
+            explorer: ExplorerProps
+            autocomplete: AutocompleteProps
+        }
+    }
 }

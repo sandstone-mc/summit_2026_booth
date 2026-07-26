@@ -14,32 +14,32 @@ export type VNode = { type: any; props: any; key: any }
 
 /** One styled chunk of text inside a text_display. */
 export type StyledSegment = {
-	text: string
-	color?: `#${string}`
-	/** Per-segment font override (otherwise inherits from declarations). */
-	font?: `${string}:${string}`
-	/** Per-segment bold override. */
-	bold?: boolean
-	/** Per-segment italic override. */
-	italic?: boolean
-	/**
-	 * Per-segment background (decimal ARGB). Currently visualised at entity
-	 * level only — MC text components have no per-segment background field.
-	 * Stored so callers can override it later without an extra layout pass.
-	 */
-	background?: `#${string}`
+    text: string
+    color?: `#${string}`
+    /** Per-segment font override (otherwise inherits from declarations). */
+    font?: `${string}:${string}`
+    /** Per-segment bold override. */
+    bold?: boolean
+    /** Per-segment italic override. */
+    italic?: boolean
+    /**
+     * Per-segment background (decimal ARGB). Currently visualised at entity
+     * level only — MC text components have no per-segment background field.
+     * Stored so callers can override it later without an extra layout pass.
+     */
+    background?: `#${string}`
 }
 
 export type RenderOptions = {
-	origin: readonly [number, number, number]
-	bounds: readonly [number, number] // [width, height] in meters
+    origin: readonly [number, number, number]
+    bounds: readonly [number, number] // [width, height] in meters
 }
 
 /** Lifecycle MCFunctions. tick is always no-op in this framework. */
 export type Scene = {
-	mount: MCFunctionClass<undefined, undefined>
-	tick: MCFunctionClass<undefined, undefined>
-	unmount: MCFunctionClass<undefined, undefined>
+    mount: MCFunctionClass<undefined, undefined>
+    tick: MCFunctionClass<undefined, undefined>
+    unmount: MCFunctionClass<undefined, undefined>
 }
 
 /**
@@ -49,49 +49,49 @@ export type Scene = {
  * slide with a fresh JSX tree.
  */
 export type SlideScene = Scene & {
-	/** Per-slide show primitives — call to make slide N visible. */
-	showSlide: MCFunctionClass<undefined, undefined>[]
-	/** Per-slide hide primitives. */
-	hideSlide: MCFunctionClass<undefined, undefined>[]
-	/** Combined: hide every other slide, show slide N. */
-	setSlide: (index: number) => MCFunctionClass<undefined, undefined>
-	/** Re-spawn slide N's entities from a new JSX tree (keeps the slide tag). */
-	rerenderSlide: (index: number, tree: VNode) => MCFunctionClass<undefined, undefined>
-	/**
-	 * Cancel the auto-advance loop and step forward one slide from the current.
-	 * Tracks the visible slide via the `presentation.slide_idx` objective; the
-	 * auto-advance loop sets it on each tick, nextSlide reads + increments + wraps.
-	 * Re-mount to restore the auto-advance animation from slide 0.
-	 */
-	nextSlide: MCFunctionClass<undefined, undefined>
-	/** The auto-advance loop. Already kicked off by mount; reschedules itself. */
-	slideLoop: MCFunctionClass<undefined, undefined>
-	/** Display duration (in seconds) for each slide. */
-	durations: number[]
-	/** Total number of slides. */
-	totalSlides: number
+    /** Per-slide show primitives — call to make slide N visible. */
+    showSlide: MCFunctionClass<undefined, undefined>[]
+    /** Per-slide hide primitives. */
+    hideSlide: MCFunctionClass<undefined, undefined>[]
+    /** Combined: hide every other slide, show slide N. */
+    setSlide: (index: number) => MCFunctionClass<undefined, undefined>
+    /** Re-spawn slide N's entities from a new JSX tree (keeps the slide tag). */
+    rerenderSlide: (index: number, tree: VNode) => MCFunctionClass<undefined, undefined>
+    /**
+     * Cancel the auto-advance loop and step forward one slide from the current.
+     * Tracks the visible slide via the `presentation.slide_idx` objective; the
+     * auto-advance loop sets it on each tick, nextSlide reads + increments + wraps.
+     * Re-mount to restore the auto-advance animation from slide 0.
+     */
+    nextSlide: MCFunctionClass<undefined, undefined>
+    /** The auto-advance loop. Already kicked off by mount; reschedules itself. */
+    slideLoop: MCFunctionClass<undefined, undefined>
+    /** Display duration (in seconds) for each slide. */
+    durations: number[]
+    /** Total number of slides. */
+    totalSlides: number
 }
 
 
 // ── LESS → styles map ────────────────────────────────────────────
 
 async function compileStyles(lessSource: string): Promise<Styles> {
-	return Styles.fromLess(lessSource)
+    return Styles.fromLess(lessSource)
 }
 
 // ── Collect passes ───────────────────────────────────────────────
 
 /** Collect LESS source out of `<style>` elements across every tree. */
 function collectLess(trees: VNode[]): string {
-	return trees
-		.flatMap((t) => flatWalk(t))
-		.filter(({ node }) => node.type === 'style')
-		.map(({ node }) => {
-			if (typeof node.props?.source === 'string') return node.props.source
-			return extractText(node.props?.children)
-		})
-		.filter(Boolean)
-		.join('\n')
+    return trees
+        .flatMap((t) => flatWalk(t))
+        .filter(({ node }) => node.type === 'style')
+        .map(({ node }) => {
+            if (typeof node.props?.source === 'string') return node.props.source
+            return extractText(node.props?.children)
+        })
+        .filter(Boolean)
+        .join('\n')
 }
 
 /**
@@ -102,61 +102,61 @@ function collectLess(trees: VNode[]): string {
  * if asked about an unloaded font.
  */
 function collectFonts(trees: VNode[], styles: Styles): Set<string> {
-	const out = new Set<string>([DEFAULT_FONT_ID])
-	for (const tree of trees) {
-		for (const { node, path } of flatWalk(tree)) {
-			if (!isTextType(node.type)) continue
-			if (node.type === 'code' || node.type === 'explorer') {
-				out.add('sandstone_summit_booth:monospace')
-				continue
-			}
-			// Prose elements: scan for inline `` `code` `` markers so the
-			// monospace font is preloaded when a paragraph contains them.
-			const text = extractText(node.props?.children)
-			if (text && /`/.test(text)) out.add('sandstone_summit_booth:monospace')
-			const decs = styles.forPath(path)
-			if (decs.font) out.add(decs.font)
-		}
-	}
-	return out
+    const out = new Set<string>([DEFAULT_FONT_ID])
+    for (const tree of trees) {
+        for (const { node, path } of flatWalk(tree)) {
+            if (!isTextType(node.type)) continue
+            if (node.type === 'code' || node.type === 'explorer') {
+                out.add('sandstone_summit_booth:monospace')
+                continue
+            }
+            // Prose elements: scan for inline `` `code` `` markers so the
+            // monospace font is preloaded when a paragraph contains them.
+            const text = extractText(node.props?.children)
+            if (text && /`/.test(text)) out.add('sandstone_summit_booth:monospace')
+            const decs = styles.forPath(path)
+            if (decs.font) out.add(decs.font)
+        }
+    }
+    return out
 }
 
 // ── Single-tree render ──────────────────────────────────────────
 
 export async function render(tree: VNode, options: RenderOptions): Promise<Scene> {
-	await Promise.all([ensureGrammars(), loadFontMetrics()])
-	const elements = flatWalk(tree)
+    await Promise.all([ensureGrammars(), loadFontMetrics()])
+    const elements = flatWalk(tree)
 
-	const lessSource = collectLess([tree])
-	const styles = await compileStyles(lessSource)
-	await Promise.all([...collectFonts([tree], styles)].map(loadFontMetrics))
-	const visible = elements.filter(({ node }) => isVisibleType(node.type))
+    const lessSource = collectLess([tree])
+    const styles = await compileStyles(lessSource)
+    await Promise.all([...collectFonts([tree], styles)].map(loadFontMetrics))
+    const visible = elements.filter(({ node }) => isVisibleType(node.type))
 
-	// Pre-compute tree-sitter highlights for every `<code>` block. The
-	// returned `WeakMap` is captured in `mount`'s closure so the synchronous
-	// `summonVisibleElements` call never has to await a parse.
-	const rowFlexWidths = prepareRowFlexWidths([visible], styles, options.bounds[0])
-	const codePrecomputed = await prepareCodeHighlights([visible], styles, options.bounds[0], options.bounds[1], rowFlexWidths)
-	const explorerPrecomputed = await prepareExplorerTrees([visible], styles, options.bounds[0], options.bounds[1], rowFlexWidths)
+    // Pre-compute tree-sitter highlights for every `<code>` block. The
+    // returned `WeakMap` is captured in `mount`'s closure so the synchronous
+    // `summonVisibleElements` call never has to await a parse.
+    const rowFlexWidths = prepareRowFlexWidths([visible], styles, options.bounds[0])
+    const codePrecomputed = await prepareCodeHighlights([visible], styles, options.bounds[0], options.bounds[1], rowFlexWidths)
+    const explorerPrecomputed = await prepareExplorerTrees([visible], styles, options.bounds[0], options.bounds[1], rowFlexWidths)
 
-	// Register a `Model` + `ItemModelDefinition` for every distinct `<img>`
-	// src so the summon pass can reference them via `minecraft:item_model`.
-	const imgResources = await prepareImgResources([tree])
+    // Register a `Model` + `ItemModelDefinition` for every distinct `<img>`
+    // src so the summon pass can reference them via `minecraft:item_model`.
+    const imgResources = await prepareImgResources([tree])
 
-	const mount = MCFunction('sections/presentation/mount', () => {
-		summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [], undefined, codePrecomputed, imgResources, SCENE_TAG, rowFlexWidths, explorerPrecomputed)
-	})
+    const mount = MCFunction('sections/presentation/mount', () => {
+        summonVisibleElements(visible, styles, options.bounds[0], options.bounds[1], options.origin, [], undefined, codePrecomputed, imgResources, SCENE_TAG, rowFlexWidths, explorerPrecomputed)
+    })
 
-	const tick = MCFunction('sections/presentation/tick', () => {
-		// no-op
-	}, { runEveryTick: true })
+    const tick = MCFunction('sections/presentation/tick', () => {
+        // no-op
+    }, { runEveryTick: true })
 
-	const unmount = MCFunction('sections/presentation/unmount', () => {
-		execute.run.kill(Selector('@e', { tag: SCENE_TAG, type: 'minecraft:text_display' }))
-		execute.run.kill(Selector('@e', { tag: SCENE_TAG, type: 'minecraft:item_display' }))
-	})
+    const unmount = MCFunction('sections/presentation/unmount', () => {
+        execute.run.kill(Selector('@e', { tag: SCENE_TAG, type: 'minecraft:text_display' }))
+        execute.run.kill(Selector('@e', { tag: SCENE_TAG, type: 'minecraft:item_display' }))
+    })
 
-	return { mount, tick, unmount }
+    return { mount, tick, unmount }
 }
 
 // ── Multi-slide render ──────────────────────────────────────────
@@ -170,151 +170,151 @@ export async function render(tree: VNode, options: RenderOptions): Promise<Scene
  * sleep into chained __sleep child MCFunctions.
  */
 export async function renderSlides(
-	trees: VNode[],
-	options: RenderOptions,
-	timing?: SlidesTiming,
-	/**
-	 * Optional MCFunction fired AFTER the final slide's display duration,
-	 * in place of the default cycle-back reschedule. The loop does NOT
-	 * restart itself when this is set — it stays parked on the last slide
-	 * and the consumer is responsible for any follow-up (typically `unmount`
-	 * or a transition to the next scene). `currentSlide` is left at
-	 * `totalSlides - 1`.
-	 */
-	onPresentationEnd?: MCFunctionClass<undefined, undefined>,
+    trees: VNode[],
+    options: RenderOptions,
+    timing?: SlidesTiming,
+    /**
+     * Optional MCFunction fired AFTER the final slide's display duration,
+     * in place of the default cycle-back reschedule. The loop does NOT
+     * restart itself when this is set — it stays parked on the last slide
+     * and the consumer is responsible for any follow-up (typically `unmount`
+     * or a transition to the next scene). `currentSlide` is left at
+     * `totalSlides - 1`.
+     */
+    onPresentationEnd?: MCFunctionClass<undefined, undefined>,
 ): Promise<SlideScene> {
-	if (trees.length === 0) throw new Error('renderSlides: at least one slide required')
+    if (trees.length === 0) throw new Error('renderSlides: at least one slide required')
 
-	await Promise.all([ensureGrammars(), loadFontMetrics()])
+    await Promise.all([ensureGrammars(), loadFontMetrics()])
 
-	const sceneW = options.bounds[0]
-	const sceneH = options.bounds[1]
+    const sceneW = options.bounds[0]
+    const sceneH = options.bounds[1]
 
-	// Display duration per slide: words/wpm + buffer, clamped.
-	const slideTexts = trees.map((t) =>
-		flatWalk(t).map(({ node }) => extractText(node.props?.children)).join(' '),
-	)
-	const styles = await compileStyles(collectLess(trees))
-	// Pre-load every font any element could resolve to — wrapLines throws
-	// for fonts not loaded yet, and the layout pass is synchronous.
-	await Promise.all([...collectFonts(trees, styles)].map(loadFontMetrics))
+    // Display duration per slide: words/wpm + buffer, clamped.
+    const slideTexts = trees.map((t) =>
+        flatWalk(t).map(({ node }) => extractText(node.props?.children)).join(' '),
+    )
+    const styles = await compileStyles(collectLess(trees))
+    // Pre-load every font any element could resolve to — wrapLines throws
+    // for fonts not loaded yet, and the layout pass is synchronous.
+    await Promise.all([...collectFonts(trees, styles)].map(loadFontMetrics))
 
-	// Pre-compute tree-sitter highlights for every `<code>` block; the
-	// returned `WeakMap` is captured in mount/rerender closures so the
-	// synchronous layout calls never await a parse.
-	const slideVisibles = trees.map((t) =>
-		flatWalk(t).filter(({ node }) => isVisibleType(node.type)),
-	)
-	const rowFlexWidths = prepareRowFlexWidths(slideVisibles, styles, sceneW)
-	const codePrecomputed = await prepareCodeHighlights(slideVisibles, styles, sceneW, sceneH, rowFlexWidths)
-	const explorerPrecomputed = await prepareExplorerTrees(slideVisibles, styles, sceneW, sceneH, rowFlexWidths)
-	const imgResources = await prepareImgResources(trees)
+    // Pre-compute tree-sitter highlights for every `<code>` block; the
+    // returned `WeakMap` is captured in mount/rerender closures so the
+    // synchronous layout calls never await a parse.
+    const slideVisibles = trees.map((t) =>
+        flatWalk(t).filter(({ node }) => isVisibleType(node.type)),
+    )
+    const rowFlexWidths = prepareRowFlexWidths(slideVisibles, styles, sceneW)
+    const codePrecomputed = await prepareCodeHighlights(slideVisibles, styles, sceneW, sceneH, rowFlexWidths)
+    const explorerPrecomputed = await prepareExplorerTrees(slideVisibles, styles, sceneW, sceneH, rowFlexWidths)
+    const imgResources = await prepareImgResources(trees)
 
-	// Off-screen diagnostic — run the placement math per slide once more
-	// (no entity emission) to discover elements whose rendered text would
-	// extend partially or fully outside the slide. Prints warnings via
-	// `console.warn`. Fully off-screen elements are also dropped from
-	// `slideVisibles` so SlideShow never summons them. `resetScrollIds()`
-	// afterward keeps the scroll-tag sequence stable for SlideShow's own
-	// pre-pass + mount emit.
-	const allIssues = [] as ReturnType<typeof diagnosePlacements>['issues']
-	const excludedBySlide: Set<VNode>[] = []
-	for (let i = 0; i < slideVisibles.length; i++) {
-		const { placements } = computeSlideTickSpecs(
-			slideVisibles[i],
-			styles,
-			sceneW,
-			sceneH,
-			options.origin,
-			codePrecomputed,
-			imgResources,
-			rowFlexWidths,
-			explorerPrecomputed,
-		)
-		const result = diagnosePlacements(placements, i, options.origin[0], options.origin[1], sceneW, sceneH)
-		allIssues.push(...result.issues)
-		excludedBySlide.push(result.excludedVNodes)
-		if (Bun.env.DEBUG_JSX_LAYOUT) {
-			const sceneBottom = options.origin[1]
-			const sceneTop = options.origin[1] + sceneH
-			console.log(`[jsx-debug] slide=${i} sceneY=[${sceneBottom}, ${sceneTop}]`)
-			for (const p of placements) {
-				const el: any = p.el
-				const lines = el.wrapBreaksApplied !== undefined
-					? (el.wrapBreaksApplied.length === 0 ? 1 : el.wrapBreaksApplied.length + 1)
-					: (el.kind === 'text' ? 'wrapLines' : 1)
-				const preview = (el.content ?? el.imgSrc ?? '').toString().slice(0, 50)
-				console.log(
-					`  type=${el.type} y=${p.y.toFixed(3)} cellH=${el.cellH.toFixed(3)} ` +
-					`marginTop=${el.marginTop.toFixed(3)} marginBot=${el.marginBottom.toFixed(3)} ` +
-					`scalePx=${el.scalePx} lines=${lines} "${preview}"`,
-				)
-				// Wrap-detail dump for header-type elements so the user can
-				// see exactly where the engine expects MC to break lines.
-				if (Bun.env.DEBUG_JSX_WRAP && el.kind === 'text' && /^h[123]$/.test(el.type)) {
-					const { wrapToLines } = await import('./text-metrics')
-					const wrapWidthPx =
-						(el.width?.px ?? Number.POSITIVE_INFINITY) * el.widthCompensation
-					const bold =
-						el.type === 'h1' || el.type === 'h2' || el.declarations?.bold === 'true'
-					const wrapped = wrapToLines(el.content, wrapWidthPx, bold, el.fontId)
-					console.log(
-						`    [wrap] type=${el.type} scalePx=${el.scalePx} line_width=${Math.round(wrapWidthPx)} ` +
-						`bold=${bold} -> ${wrapped.length} line(s):`,
-					)
-					for (const ln of wrapped) console.log(`      | ${ln}`)
-				}
-			}
-		}
-	}
-	resetScrollIds()
-	resetAutocompleteIds()
-	if (allIssues.length > 0) {
-		const fullyOff = allIssues.filter((i) => i.kind === 'full')
-		const partial = allIssues.filter((i) => i.kind === 'partial')
-		if (partial.length > 0) {
-			console.warn(
-				`\n[sandstone-jsx] [WARN] ${partial.length} element(s) partially off-screen (rendered but clipped):\n${formatIssues(partial)}\n`,
-			)
-		}
-		if (fullyOff.length > 0) {
-			console.warn(
-				`[sandstone-jsx] [WARN] ${fullyOff.length} element(s) fully off-screen — REMOVED from output (no summon command emitted):\n${formatIssues(fullyOff)}\n`,
-			)
-		}
-	}
-	const filteredSlideVisibles = slideVisibles.map((slide, i) =>
-		filterVisibleByVNode(slide, excludedBySlide[i]),
-	)
+    // Off-screen diagnostic — run the placement math per slide once more
+    // (no entity emission) to discover elements whose rendered text would
+    // extend partially or fully outside the slide. Prints warnings via
+    // `console.warn`. Fully off-screen elements are also dropped from
+    // `slideVisibles` so SlideShow never summons them. `resetScrollIds()`
+    // afterward keeps the scroll-tag sequence stable for SlideShow's own
+    // pre-pass + mount emit.
+    const allIssues = [] as ReturnType<typeof diagnosePlacements>['issues']
+    const excludedBySlide: Set<VNode>[] = []
+    for (let i = 0; i < slideVisibles.length; i++) {
+        const { placements } = computeSlideTickSpecs(
+            slideVisibles[i],
+            styles,
+            sceneW,
+            sceneH,
+            options.origin,
+            codePrecomputed,
+            imgResources,
+            rowFlexWidths,
+            explorerPrecomputed,
+        )
+        const result = diagnosePlacements(placements, i, options.origin[0], options.origin[1], sceneW, sceneH)
+        allIssues.push(...result.issues)
+        excludedBySlide.push(result.excludedVNodes)
+        if (Bun.env.DEBUG_JSX_LAYOUT) {
+            const sceneBottom = options.origin[1]
+            const sceneTop = options.origin[1] + sceneH
+            console.log(`[jsx-debug] slide=${i} sceneY=[${sceneBottom}, ${sceneTop}]`)
+            for (const p of placements) {
+                const el: any = p.el
+                const lines = el.wrapBreaksApplied !== undefined
+                    ? (el.wrapBreaksApplied.length === 0 ? 1 : el.wrapBreaksApplied.length + 1)
+                    : (el.kind === 'text' ? 'wrapLines' : 1)
+                const preview = (el.content ?? el.imgSrc ?? '').toString().slice(0, 50)
+                console.log(
+                    `  type=${el.type} y=${p.y.toFixed(3)} cellH=${el.cellH.toFixed(3)} ` +
+                    `marginTop=${el.marginTop.toFixed(3)} marginBot=${el.marginBottom.toFixed(3)} ` +
+                    `scalePx=${el.scalePx} lines=${lines} "${preview}"`,
+                )
+                // Wrap-detail dump for header-type elements so the user can
+                // see exactly where the engine expects MC to break lines.
+                if (Bun.env.DEBUG_JSX_WRAP && el.kind === 'text' && /^h[123]$/.test(el.type)) {
+                    const { wrapToLines } = await import('./text-metrics')
+                    const wrapWidthPx =
+                        (el.width?.px ?? Number.POSITIVE_INFINITY) * el.widthCompensation
+                    const bold =
+                        el.type === 'h1' || el.type === 'h2' || el.declarations?.bold === 'true'
+                    const wrapped = wrapToLines(el.content, wrapWidthPx, bold, el.fontId)
+                    console.log(
+                        `    [wrap] type=${el.type} scalePx=${el.scalePx} line_width=${Math.round(wrapWidthPx)} ` +
+                        `bold=${bold} -> ${wrapped.length} line(s):`,
+                    )
+                    for (const ln of wrapped) console.log(`      | ${ln}`)
+                }
+            }
+        }
+    }
+    resetScrollIds()
+    resetAutocompleteIds()
+    if (allIssues.length > 0) {
+        const fullyOff = allIssues.filter((i) => i.kind === 'full')
+        const partial = allIssues.filter((i) => i.kind === 'partial')
+        if (partial.length > 0) {
+            console.warn(
+                `\n[sandstone-jsx] [WARN] ${partial.length} element(s) partially off-screen (rendered but clipped):\n${formatIssues(partial)}\n`,
+            )
+        }
+        if (fullyOff.length > 0) {
+            console.warn(
+                `[sandstone-jsx] [WARN] ${fullyOff.length} element(s) fully off-screen — REMOVED from output (no summon command emitted):\n${formatIssues(fullyOff)}\n`,
+            )
+        }
+    }
+    const filteredSlideVisibles = slideVisibles.map((slide, i) =>
+        filterVisibleByVNode(slide, excludedBySlide[i]),
+    )
 
-	const show = new SlideShow({
-		trees,
-		slideVisibles: filteredSlideVisibles,
-		sceneW,
-		sceneH,
-		origin: options.origin,
-		styles,
-		slideTexts,
-		timing,
-		codePrecomputed,
-		imgResources,
-		rowFlexWidths,
-		explorerPrecomputed,
-		onPresentationEnd,
-	})
+    const show = new SlideShow({
+        trees,
+        slideVisibles: filteredSlideVisibles,
+        sceneW,
+        sceneH,
+        origin: options.origin,
+        styles,
+        slideTexts,
+        timing,
+        codePrecomputed,
+        imgResources,
+        rowFlexWidths,
+        explorerPrecomputed,
+        onPresentationEnd,
+    })
 
-	return {
-		mount: show.mount,
-		tick: show.tick,
-		unmount: show.unmount,
-		showSlide: show.showSlide,
-		hideSlide: show.hideSlide,
-		setSlide: (i) => show.setSlide(i),
-		rerenderSlide: (i, tree) => show.rerenderSlide(i, tree),
-		nextSlide: show.nextSlide,
-		slideLoop: show.slideLoopFn,
-		durations: show.durations,
-		totalSlides: show.totalSlides,
-	}
+    return {
+        mount: show.mount,
+        tick: show.tick,
+        unmount: show.unmount,
+        showSlide: show.showSlide,
+        hideSlide: show.hideSlide,
+        setSlide: (i) => show.setSlide(i),
+        rerenderSlide: (i, tree) => show.rerenderSlide(i, tree),
+        nextSlide: show.nextSlide,
+        slideLoop: show.slideLoopFn,
+        durations: show.durations,
+        totalSlides: show.totalSlides,
+    }
 }
 

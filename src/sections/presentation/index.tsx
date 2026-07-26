@@ -31,19 +31,19 @@ const PRESENTATION_BOUNDS = [18, 11] as const
 // Wrap every slide with a shared <style> so the LESS rules apply to h1/p
 // wherever they appear in the slide trees.
 const scene = await renderSlides(
-	allSlides.map((slide) => (
-		<>
-			{slide}
-			<style source={styles} />
-		</>
-	)),
-	{
-		origin: PRESENTATION_ORIGIN,
-		bounds: PRESENTATION_BOUNDS,
-	},
-	// Reading-speed timing. Override here if needed.
-	{ wpm: 200, bufferSeconds: 3, minSeconds: 6, maxSeconds: 25 },
-	MCFunction('sections/presentation/end', () => {}, { onConflict: 'append' })
+    allSlides.map((slide) => (
+        <>
+            {slide}
+            <style source={styles} />
+        </>
+    )),
+    {
+        origin: PRESENTATION_ORIGIN,
+        bounds: PRESENTATION_BOUNDS,
+    },
+    // Reading-speed timing. Override here if needed.
+    { wpm: 200, bufferSeconds: 3, minSeconds: 6, maxSeconds: 25 },
+    MCFunction('sections/presentation/end', () => {}, { onConflict: 'append' })
 )
 
 export const { mount, nextSlide, tick, unmount } = scene

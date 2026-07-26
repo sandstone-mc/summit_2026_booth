@@ -10,12 +10,12 @@ export const Z_VISUAL_OFFSET = 0.015625
 // Default scale (in font-pixel units) for each text element when LESS
 // doesn't specify `font-size`. Values sized for typical slide legibility.
 export function defaultFontPx(type: string): number {
-	switch (type) {
-		case 'h1': return 32
-		case 'h2': return 24
-		case 'code': return 8
-		default: return 16 // p and unknown
-	}
+    switch (type) {
+        case 'h1': return 32
+        case 'h2': return 24
+        case 'code': return 8
+        default: return 16 // p and unknown
+    }
 }
 
 // `<img>` fallback when neither `height`/`width` props nor LESS rules
@@ -40,24 +40,24 @@ export const DEFAULT_EXPLORER_FILE_COLOR = '#d4d4d4' as const
 import type { Grammar } from '../highlight/highlighter'
 
 export const GRAMMARS: Record<string, Grammar> = {
-	mcfunction: {
-		wasmPath: 'resources/cache/jsx/parser/tree-sitter-mcfunction.wasm',
-		queryPath: 'resources/cache/jsx/parser/mcfunction.highlights.scm',
-	},
-	typescript: {
-		wasmPath: 'resources/cache/jsx/parser/tree-sitter-typescript.wasm',
-		queryPath: 'resources/cache/jsx/parser/typescript.highlights.scm',
-	},
-	json: {
-		wasmPath: 'resources/cache/jsx/parser/tree-sitter-json.wasm',
-		queryPath: 'resources/cache/jsx/parser/json.highlights.scm',
-	},
+    mcfunction: {
+        wasmPath: 'resources/cache/jsx/parser/tree-sitter-mcfunction.wasm',
+        queryPath: 'resources/cache/jsx/parser/mcfunction.highlights.scm',
+    },
+    typescript: {
+        wasmPath: 'resources/cache/jsx/parser/tree-sitter-typescript.wasm',
+        queryPath: 'resources/cache/jsx/parser/typescript.highlights.scm',
+    },
+    json: {
+        wasmPath: 'resources/cache/jsx/parser/tree-sitter-json.wasm',
+        queryPath: 'resources/cache/jsx/parser/json.highlights.scm',
+    },
 }
 
 export const TEXT_RENDER_OFFSET = 0.1875
 
 export function parityOffset(sceneH: number): number {
-	return sceneH % 2 === 0 ? 0 : 0.25
+    return sceneH % 2 === 0 ? 0 : 0.25
 }
 
 // Vertical gap (in world blocks) reserved at the bottom of a text
@@ -74,14 +74,14 @@ export function parityOffset(sceneH: number): number {
 // `fontMetrics(fontId)` throws pre-load; callers run after
 // `loadFontMetrics()` so the per-call resolution is safe.
 export function getTextDescender(fontId: string, scalePx: number): number {
-	const m = fontMetrics(fontId)
-	const descenderPx = m.measuredDescenderPx
-	// Convert worst-case descender depth from bitmap pixels to MC blocks
-	// at the element's rendering scale. 1 bitmap pixel = `pxToTextScale`
-	// × `1/40` blocks (validated against animated-java's preview math:
-	// `geo.scale(0.4)` × `pos.multiplyScalar(1/16)` = `0.025` blocks/px
-	// at MC scale=1, scaled by `pxToTextScale(scalePx)` for our scale).
-	const blocks = (descenderPx * pxToTextScale(scalePx)) / 40
+    const m = fontMetrics(fontId)
+    const descenderPx = m.measuredDescenderPx
+    // Convert worst-case descender depth from bitmap pixels to MC blocks
+    // at the element's rendering scale. 1 bitmap pixel = `pxToTextScale`
+    // × `1/40` blocks (validated against animated-java's preview math:
+    // `geo.scale(0.4)` × `pos.multiplyScalar(1/16)` = `0.025` blocks/px
+    // at MC scale=1, scaled by `pxToTextScale(scalePx)` for our scale).
+    const blocks = (descenderPx * pxToTextScale(scalePx)) / 40
 
-	return blocks
+    return blocks
 }

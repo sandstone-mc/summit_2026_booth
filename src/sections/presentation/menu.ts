@@ -11,7 +11,7 @@ const ORIGIN = [-76, 76, 42] as const
 const point = (x: number, y: number, z?: number) => [fmt(ORIGIN[0] + x - 0.01), fmt(ORIGIN[1] + y), fmt(ORIGIN[2] + 0.197 + (z ?? 0))] as const
 
 function click_entity(buttonTag: `${any}${string}` | LabelClass) {
-	return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [`${buttonTag}`] } }
+    return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [`${buttonTag}`] } }
 }
 
 const large_logo = ImageDisplayModel(Texture('item', 'presentation/large_logo',
@@ -35,12 +35,12 @@ const screen_saver = MCFunction('sections/presentation/menu/screen_saver', () =>
             components: { 'minecraft:item_model': large_logo }
         },
         transformation: {
-			scale: NBT.float([47 / 4, 30 / 4, 1 / 4]),
-			translation: NBT.float([0, 0, 0]),
-			left_rotation: NBT.float([0, 1, 0, 0]),
-			right_rotation: NBT.float([0, 0, 0, 1]),
-		},
-		brightness: { sky: NBT.int(15), block: NBT.int(15) },
+            scale: NBT.float([47 / 4, 30 / 4, 1 / 4]),
+            translation: NBT.float([0, 0, 0]),
+            left_rotation: NBT.float([0, 1, 0, 0]),
+            right_rotation: NBT.float([0, 0, 0, 1]),
+        },
+        brightness: { sky: NBT.int(15), block: NBT.int(15) },
         Tags: [ BOOTH_ENTITY_TAG, screen_saver_entity ],
     })
 })
@@ -71,8 +71,8 @@ const spawn_0 = MCFunction('sections/presentation/menu/spawn_0', () => {
         transformation: {
             scale: NBT.float([1.25, 1.25, 1]),
             translation: NBT.float([0, 0, 0]),
-			left_rotation: NBT.float([0, 0, 0, 1]),
-			right_rotation: NBT.float([0, 0, 0, 1]),
+            left_rotation: NBT.float([0, 0, 0, 1]),
+            right_rotation: NBT.float([0, 0, 0, 1]),
         }
     })
 
@@ -90,8 +90,8 @@ const spawn_0 = MCFunction('sections/presentation/menu/spawn_0', () => {
         transformation: {
             scale: NBT.float([1.25, 1.25, 1]),
             translation: NBT.float([0, 0, 0]),
-			left_rotation: NBT.float([0, 0, 0, 1]),
-			right_rotation: NBT.float([0, 0, 0, 1]),
+            left_rotation: NBT.float([0, 0, 0, 1]),
+            right_rotation: NBT.float([0, 0, 0, 1]),
         }
     })
     summon('interaction', point(2, .85, -2), {
@@ -111,10 +111,10 @@ const small_logo = ImageDisplayModel(Texture('item', 'presentation/small_logo',
 ))
 
 const start_button = Advancement('sections/presentation/menu/start_button', {
-	criteria: {
-		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(start_button_entity) } },
-	},
-	rewards: { function: MCFunction('sections/presentation/menu/start', () => {
+    criteria: {
+        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(start_button_entity) } },
+    },
+    rewards: { function: MCFunction('sections/presentation/menu/start', () => {
         start_button.revoke('@s')
 
         mount()
@@ -170,8 +170,8 @@ const spawn_1 = MCFunction('sections/presentation/menu/spawn_1', () => {
         transformation: {
             scale: NBT.float([3, 3, 1]),
             translation: NBT.float([0, 0, 0]),
-			left_rotation: NBT.float([0, 0, 0, 1]),
-			right_rotation: NBT.float([0, 0, 0, 1]),
+            left_rotation: NBT.float([0, 0, 0, 1]),
+            right_rotation: NBT.float([0, 0, 0, 1]),
         }
     })
 
@@ -189,8 +189,8 @@ const spawn_1 = MCFunction('sections/presentation/menu/spawn_1', () => {
         transformation: {
             scale: NBT.float([3, 3, 1]),
             translation: NBT.float([0, 0, 0]),
-			left_rotation: NBT.float([0, 0, 0, 1]),
-			right_rotation: NBT.float([0, 0, 0, 1]),
+            left_rotation: NBT.float([0, 0, 0, 1]),
+            right_rotation: NBT.float([0, 0, 0, 1]),
         }
     })
     summon('interaction', point(2, .65, -0.4), {
@@ -204,10 +204,10 @@ const spawn_1 = MCFunction('sections/presentation/menu/spawn_1', () => {
 })
 
 const next_button = Advancement('sections/presentation/menu/next_button', {
-	criteria: {
-		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(next_button_entity) } },
-	},
-	rewards: { function: MCFunction('sections/presentation/menu/next', () => {
+    criteria: {
+        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(next_button_entity) } },
+    },
+    rewards: { function: MCFunction('sections/presentation/menu/next', () => {
         next_button.revoke('@s')
 
         nextSlide()
@@ -279,10 +279,10 @@ const spawn_credits_display = MCFunction('sections/presentation/menu/credits_dis
 })
 
 const credits_button = Advancement('sections/presentation/menu/credits_button', {
-	criteria: {
-		click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(credits_button_entity) } },
-	},
-	rewards: { function: MCFunction('sections/presentation/menu/credits', () => {
+    criteria: {
+        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(credits_button_entity) } },
+    },
+    rewards: { function: MCFunction('sections/presentation/menu/credits', () => {
         credits_button.revoke('@s')
 
         dialog.show('@s', creditsDialog({ text: 'Booth Credits' }))

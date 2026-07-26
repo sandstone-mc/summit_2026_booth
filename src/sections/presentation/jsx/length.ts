@@ -22,39 +22,39 @@ export type Unit = 'px' | 'vh' | 'vw' | '%' | 'fit-content'
 export type Length = { value: number; unit: Unit; px: number; meters: number }
 
 export function parseLength(raw: string, axisSize: number): Length | undefined {
-	if (typeof raw !== 'string') return undefined
-	const trimmed = raw.trim()
-	if (trimmed === 'fit-content') {
-		// Caller resolves actual size based on element content.
-		return { value: 0, unit: 'fit-content', px: 0, meters: 0 }
-	}
-	const m = trimmed.match(/^(-?\d*\.?\d+)\s*(px|vh|vw|%)?$/i)
-	if (!m) return undefined
-	const num = parseFloat(m[1])
-	const unit = (m[2]?.toLowerCase() ?? 'px') as Unit
-	let meters: number
-	switch (unit) {
-		case 'px':
-			meters = num / 16
-			break
-		case 'vh':
-		case 'vw':
-		case '%':
-			meters = (num / 100) * axisSize
-			break
-		default:
-			return undefined
-	}
-	// `px` is the equivalent pixel value (1 m = 16 px). Use this for
-	// pixel-based MC fields like text_display's line_width.
-	return { value: num, unit, px: meters * 16, meters }
+    if (typeof raw !== 'string') return undefined
+    const trimmed = raw.trim()
+    if (trimmed === 'fit-content') {
+        // Caller resolves actual size based on element content.
+        return { value: 0, unit: 'fit-content', px: 0, meters: 0 }
+    }
+    const m = trimmed.match(/^(-?\d*\.?\d+)\s*(px|vh|vw|%)?$/i)
+    if (!m) return undefined
+    const num = parseFloat(m[1])
+    const unit = (m[2]?.toLowerCase() ?? 'px') as Unit
+    let meters: number
+    switch (unit) {
+        case 'px':
+            meters = num / 16
+            break
+        case 'vh':
+        case 'vw':
+        case '%':
+            meters = (num / 100) * axisSize
+            break
+        default:
+            return undefined
+    }
+    // `px` is the equivalent pixel value (1 m = 16 px). Use this for
+    // pixel-based MC fields like text_display's line_width.
+    return { value: num, unit, px: meters * 16, meters }
 }
 
 // `font-size: N px` → text is N actual in-game pixels tall (= N/16 blocks).
 // text_display's default NBT `height` is 0.25 blocks. With default settings,
 // visible quad height = scale * 0.25 blocks. So scale = (N/16) / 0.25 = N/4.
 export function pxToTextScale(px: number): number {
-	return px / 4
+    return px / 4
 }
 
 // Line spacing in blocks for single-line text of given font-size px.
@@ -74,11 +74,11 @@ export function pxToTextScale(px: number): number {
 //
 // `fontMetrics()` throws pre-load; callers run after `loadFontMetrics()`.
 export function pxToTextLineHeight(px: number, fontId: string = DEFAULT_FONT_ID): number {
-	const m = fontMetrics(fontId)
-	// MC text_display renders each line in a fixed-height quad (`scale * 0.25`
-	// blocks). The character + its descender both fit inside that quad, so
-	// per-line spacing == cellHeight alone — adding `measuredDescenderPx`
-	// reserves space MC never uses and shifts multi-line text downward.
-	const lineSpacingPx = m.cellHeight
-	return (lineSpacingPx * pxToTextScale(px)) / 32
+    const m = fontMetrics(fontId)
+    // MC text_display renders each line in a fixed-height quad (`scale * 0.25`
+    // blocks). The character + its descender both fit inside that quad, so
+    // per-line spacing == cellHeight alone — adding `measuredDescenderPx`
+    // reserves space MC never uses and shifts multi-line text downward.
+    const lineSpacingPx = m.cellHeight
+    return (lineSpacingPx * pxToTextScale(px)) / 32
 }

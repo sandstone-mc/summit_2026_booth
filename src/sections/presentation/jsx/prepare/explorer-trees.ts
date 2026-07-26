@@ -51,13 +51,13 @@ const SKIPPED_FILES = new Set(['.exists', '.gitkeep', '.DS_Store'])
 // `element.ts`'s parser so the explorer prepass agrees with the
 // layout pass on the per-row content budget.
 function parseSidePadding(raw: unknown): [number, number] {
-	if (Array.isArray(raw) && raw.length >= 2) {
-		const l = Number(raw[0])
-		const r = Number(raw[1])
-		if (Number.isFinite(l) && Number.isFinite(r)) return [l, r]
-	}
-	if (typeof raw === 'number' && Number.isFinite(raw)) return [raw, raw]
-	return [1, 1]
+    if (Array.isArray(raw) && raw.length >= 2) {
+        const l = Number(raw[0])
+        const r = Number(raw[1])
+        if (Number.isFinite(l) && Number.isFinite(r)) return [l, r]
+    }
+    if (typeof raw === 'number' && Number.isFinite(raw)) return [raw, raw]
+    return [1, 1]
 }
 
 // `<explorer root="...">` paths are project-relative (the same convention
@@ -78,237 +78,237 @@ const EXT_KEEP_CHARS = 3
 const PREFIX_COLOR = DEFAULT_CODE_BORDER_COLOR as `#${string}`
 
 type RowEntry = {
-	display: string
-	isFolder: boolean
-	/** Per-row segments when truncation produced them; otherwise undefined. */
-	segments?: StyledSegment[]
-	/**
-	 * Ancestor-more stack at this row's depth. Used by `wrapExplorerRows`
-	 * to build the continuation prefix (just the ancestor columns, no
-	 * connector). For depth 0, the array is empty.
-	 */
-	ancestorsMore: boolean[]
-	/**
-	 * Whether this row is the last sibling at its depth. The walker
-	 * sets this; `wrapExplorerRows` uses it to decide the current
-	 * depth's continuation column (`  ` for last, `│ ` for non-last).
-	 */
-	isLast: boolean
-	/**
-	 * Tree was rendered with `no-dash`. Connector and ancestor
-	 * columns are 1 char wide (`├` / `│` / ` `) instead of the default
-	 * 2 chars (`├─` / `│ ` / `  `), and the wrap continuation drops
-	 * the extra indent. Carried on the row so `wrapExplorerRows`
-	 * doesn't need the truncation opts at wrap time.
-	 */
-	noDash?: boolean
+    display: string
+    isFolder: boolean
+    /** Per-row segments when truncation produced them; otherwise undefined. */
+    segments?: StyledSegment[]
+    /**
+     * Ancestor-more stack at this row's depth. Used by `wrapExplorerRows`
+     * to build the continuation prefix (just the ancestor columns, no
+     * connector). For depth 0, the array is empty.
+     */
+    ancestorsMore: boolean[]
+    /**
+     * Whether this row is the last sibling at its depth. The walker
+     * sets this; `wrapExplorerRows` uses it to decide the current
+     * depth's continuation column (`  ` for last, `│ ` for non-last).
+     */
+    isLast: boolean
+    /**
+     * Tree was rendered with `no-dash`. Connector and ancestor
+     * columns are 1 char wide (`├` / `│` / ` `) instead of the default
+     * 2 chars (`├─` / `│ ` / `  `), and the wrap continuation drops
+     * the extra indent. Carried on the row so `wrapExplorerRows`
+     * doesn't need the truncation opts at wrap time.
+     */
+    noDash?: boolean
 }
 
 type TruncationOpts = {
-	/** Per-row char budget excluding prefix (the prefix varies per row). */
-	budget: number
-	/** Render connectors as just `├` / `└` (no `─`). */
-	noDash?: boolean
-	colors: {
-		prefix: `#${string}`
-		folder: `#${string}`
-		file: `#${string}`
-	}
-	/**
-	 * Folder basenames whose contents should be hidden. The folder
-	 * itself still renders as a row, but the walker does not descend
-	 * into it. Built once per `<explorer>` from the JSX `exclude` prop.
-	 */
-	exclude?: Set<string>
+    /** Per-row char budget excluding prefix (the prefix varies per row). */
+    budget: number
+    /** Render connectors as just `├` / `└` (no `─`). */
+    noDash?: boolean
+    colors: {
+        prefix: `#${string}`
+        folder: `#${string}`
+        file: `#${string}`
+    }
+    /**
+     * Folder basenames whose contents should be hidden. The folder
+     * itself still renders as a row, but the walker does not descend
+     * into it. Built once per `<explorer>` from the JSX `exclude` prop.
+     */
+    exclude?: Set<string>
 }
 
 export async function prepareExplorerTrees(
-	visiblePerSlide: NodeWithPath[][],
-	styles: Styles,
-	sceneW: number,
-	sceneH: number,
-	rowFlexWidths: WeakMap<VNode, RowFlexWidth> = new WeakMap(),
+    visiblePerSlide: NodeWithPath[][],
+    styles: Styles,
+    sceneW: number,
+    sceneH: number,
+    rowFlexWidths: WeakMap<VNode, RowFlexWidth> = new WeakMap(),
 ): Promise<WeakMap<VNode, Precomputed>> {
-	const map: WeakMap<VNode, Precomputed> = new WeakMap()
+    const map: WeakMap<VNode, Precomputed> = new WeakMap()
 
-	type Entry = {
-		node: VNode
-		rows: RowEntry[]
-		codeLineWraps: CodeLineWrap[]
-	}
-	const entries: Entry[] = []
-	for (const visible of visiblePerSlide) {
-		for (const { node, path: nodePath } of visible) {
-			if (node.type !== 'explorer') continue
-			const rootRel = String(node.props?.root ?? '').trim()
-			if (!rootRel) continue
-			const absRoot = path.resolve(PROJECT_ROOT, rootRel)
-			if (!existsSync(absRoot)) {
-				// Missing root: render an empty box instead of failing the
-				// whole build. Slides referencing placeholder datapacks
-				// (e.g. a TODO dir) shouldn't take the showcase down with
-				// them — the user can fix the path later and the box will
-				// start showing content.
-				console.warn(`[explorer] root "${rootRel}" does not exist (resolved to ${absRoot}); rendering empty box`)
-				continue
-			}
-			const declarations = styles.forPath(nodePath)
-			const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
-			const scalePx = fontSize?.px ?? defaultFontPx('code')
-			const textScale = pxToTextScale(scalePx)
-			const BASELINE_TEXT_SCALE = pxToTextScale(10)
-			const widthCompensation = BASELINE_TEXT_SCALE / textScale
-			// Mirrors `side-padding` / `no-dash` reading in `element.ts`.
-			// `sidePadding` widens the per-row content budget by removing
-			// the 1-char padding inside each `│` border; `noDash` flows
-			// down to `makeTreePrefix` via `opts` so the connector renders
-			// as just `├` / `└`.
-			const sidePadding = parseSidePadding(node.props?.['side-padding'])
-			const noDash = node.props?.['no-dash'] === true
-			// `exclude` accepts a `string[]` of folder basenames. Filter
-			// to non-empty strings so a stray `['', 'shared']` doesn't
-			// match every folder. Built once per `<explorer>` and reused
-			// by every recursive descent into the tree.
-			const excludeRaw = node.props?.exclude
-			const exclude = Array.isArray(excludeRaw)
-				? new Set(excludeRaw.filter((x): x is string => typeof x === 'string' && x.length > 0))
-				: undefined
-			// JSX `width` prop wins over LESS — matches `<img>` /
-			// `<code>`'s resolution order.
-			const widthRaw =
-				(typeof node.props?.width === 'string' && node.props.width) ||
-				declarations.width ||
-				''
-			let width = parseLength(widthRaw, sceneW)
-			// `fit-content`: resolve to the natural width (longest row +
-			// border overhead). Same math the `width === undefined`
-			// fallback uses — fit-content is "shrink to the minimum that
-			// doesn't wrap", which IS the natural width for a tree.
-			//
-			// The pixel value goes through the `widthCompensation` round-
-			// trip (px ↔ default-scale-px) so the wrap math downstream
-			// multiplies by `widthCompensation` and lands back at the
-			// right budget. Earlier code computed `longestChars * 6 + 4`
-			// as a hand-rolled alternative, which truncated to the wrong
-			// char count after `Math.floor( / 6) - 2` and made the longest
-			// line wrap several chars early. Use the helper directly —
-			// it already encodes the +2 bar / +2 internal-overhead math.
-			const fitContent = width === undefined || width.unit === 'fit-content'
-			if (fitContent) {
-				// Pass an opts with a huge budget so the walker applies
-				// `noDash` and `buildRow` produces proper segments (gray `/`
-				// for folders, etc.) — same as the explicit-width path, just
-				// without truncation since the box auto-sizes to fit.
-				const fitOpts: TruncationOpts = {
-					budget: Number.POSITIVE_INFINITY,
-					noDash,
-					exclude,
-					colors: {
-						prefix: DEFAULT_CODE_BORDER_COLOR as `#${string}`,
-						folder: DEFAULT_EXPLORER_FOLDER_COLOR,
-						file: DEFAULT_EXPLORER_FILE_COLOR,
-					},
-				}
-				const rows = collectTreeRows(absRoot, fitOpts)
-				if (rows.length === 0) continue
-				const source = rows.map((r) => r.display).join('\n')
-				// Compute natural width: longest source line + the bordered
-				// row's `sidePadding` + 2 chars for the `│` borders. The
-				// previous `computeMinCodeLineWidthPx(source, 0)` helper
-				// hardcoded the 1-char padding assumption and ignored
-				// `side-padding`, so a `[0, 0]` box rendered too wide.
-				const longestSourceLineLen = source
-					.split('\n')
-					.reduce((max, line) => Math.max(max, line.length), 0)
-				const naturalWidthChars =
-					longestSourceLineLen + sidePadding[0] + sidePadding[1] + 2
-				const minLineWidthPx = naturalWidthChars * DEFAULT_MONO_CHAR_PX
-				const pxInDefault = minLineWidthPx / widthCompensation
-				width = {
-					value: pxInDefault,
-					unit: 'px',
-					px: pxInDefault,
-					meters: pxInDefault / 16,
-				}
-				// Row-flex override: when this `<explorer>` is inside a
-				// `grid-auto-flow: row` block and asked for `width: 100%`,
-				// `prepareRowFlexWidths` recorded the row-distributed value.
-				const flexOverride = rowFlexWidths.get(node)
-				if (flexOverride) {
-					width = {
-						value: flexOverride.widthPx,
-						unit: 'px',
-						px: flexOverride.widthPx,
-						meters: flexOverride.widthMeters,
-					}
-				}
-				const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
-				const maxRowChars = Math.max(10, Math.floor(wrapWidthPx / DEFAULT_MONO_CHAR_PX) - 2)
-				const internalOverhead = sidePadding[0] + sidePadding[1]
-				const maxCodeChars = Math.max(10, maxRowChars - internalOverhead)
-				const wrapCodeChars = Math.max(10, maxCodeChars)
-				const codeLineWraps = wrapCodeLinesWithOffsets(source, wrapCodeChars)
-				entries.push({ node, rows, codeLineWraps })
-				continue
-			}
-			// Explicit width: compute the budget first, then collect rows
-			// with truncation. `wrapExplorerRows` then pre-wraps any rows
-			// that overflow the per-row char budget so continuation lines
-			// align under the original entry's column.
-			// Row-flex override applies here too — the user's `width:
-			// 100%` inside a row-flex container is still an explicit
-			// width, just one sized by the layout engine.
-			const flexOverride = rowFlexWidths.get(node)
-			if (flexOverride) {
-				width = {
-					value: flexOverride.widthPx,
-					unit: 'px',
-					px: flexOverride.widthPx,
-					meters: flexOverride.widthMeters,
-				}
-			}
-			const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
-			// Same formula as `prepareCodeHighlights` for `<code>` with no
-			// gutter. Internal overhead is `paddingL + paddingR` — the
-			// chars of space inside the `│` borders, configured by the
-			// `side-padding` prop (default `[1, 1]`).
-			const maxRowChars = Math.max(10, Math.floor(wrapWidthPx / DEFAULT_MONO_CHAR_PX) - 2)
-			const internalOverhead = sidePadding[0] + sidePadding[1]
-			const maxCodeChars = Math.max(10, maxRowChars - internalOverhead)
-			const opts: TruncationOpts = {
-				budget: maxCodeChars,
-				noDash,
-				exclude,
-				colors: {
-					prefix: DEFAULT_CODE_BORDER_COLOR as `#${string}`,
-					folder: DEFAULT_EXPLORER_FOLDER_COLOR,
-					file: DEFAULT_EXPLORER_FILE_COLOR,
-				},
-			}
-			const rows = collectTreeRows(absRoot, opts)
-			if (rows.length === 0) continue
-			// Pre-wrap so continuation rows line up under the original
-			// entry's column instead of at the left edge of the box.
-			const wrappedRows = wrapExplorerRows(rows, maxCodeChars)
-			const source = wrappedRows.map((r) => r.display).join('\n')
-			const wrapCodeChars = Math.max(10, maxCodeChars)
-			const codeLineWraps = wrapCodeLinesWithOffsets(source, wrapCodeChars)
-			entries.push({ node, rows: wrappedRows, codeLineWraps })
-		}
-	}
+    type Entry = {
+        node: VNode
+        rows: RowEntry[]
+        codeLineWraps: CodeLineWrap[]
+    }
+    const entries: Entry[] = []
+    for (const visible of visiblePerSlide) {
+        for (const { node, path: nodePath } of visible) {
+            if (node.type !== 'explorer') continue
+            const rootRel = String(node.props?.root ?? '').trim()
+            if (!rootRel) continue
+            const absRoot = path.resolve(PROJECT_ROOT, rootRel)
+            if (!existsSync(absRoot)) {
+                // Missing root: render an empty box instead of failing the
+                // whole build. Slides referencing placeholder datapacks
+                // (e.g. a TODO dir) shouldn't take the showcase down with
+                // them — the user can fix the path later and the box will
+                // start showing content.
+                console.warn(`[explorer] root "${rootRel}" does not exist (resolved to ${absRoot}); rendering empty box`)
+                continue
+            }
+            const declarations = styles.forPath(nodePath)
+            const fontSize = parseLength(declarations['font-size'] ?? '', sceneH)
+            const scalePx = fontSize?.px ?? defaultFontPx('code')
+            const textScale = pxToTextScale(scalePx)
+            const BASELINE_TEXT_SCALE = pxToTextScale(10)
+            const widthCompensation = BASELINE_TEXT_SCALE / textScale
+            // Mirrors `side-padding` / `no-dash` reading in `element.ts`.
+            // `sidePadding` widens the per-row content budget by removing
+            // the 1-char padding inside each `│` border; `noDash` flows
+            // down to `makeTreePrefix` via `opts` so the connector renders
+            // as just `├` / `└`.
+            const sidePadding = parseSidePadding(node.props?.['side-padding'])
+            const noDash = node.props?.['no-dash'] === true
+            // `exclude` accepts a `string[]` of folder basenames. Filter
+            // to non-empty strings so a stray `['', 'shared']` doesn't
+            // match every folder. Built once per `<explorer>` and reused
+            // by every recursive descent into the tree.
+            const excludeRaw = node.props?.exclude
+            const exclude = Array.isArray(excludeRaw)
+                ? new Set(excludeRaw.filter((x): x is string => typeof x === 'string' && x.length > 0))
+                : undefined
+            // JSX `width` prop wins over LESS — matches `<img>` /
+            // `<code>`'s resolution order.
+            const widthRaw =
+                (typeof node.props?.width === 'string' && node.props.width) ||
+                declarations.width ||
+                ''
+            let width = parseLength(widthRaw, sceneW)
+            // `fit-content`: resolve to the natural width (longest row +
+            // border overhead). Same math the `width === undefined`
+            // fallback uses — fit-content is "shrink to the minimum that
+            // doesn't wrap", which IS the natural width for a tree.
+            //
+            // The pixel value goes through the `widthCompensation` round-
+            // trip (px ↔ default-scale-px) so the wrap math downstream
+            // multiplies by `widthCompensation` and lands back at the
+            // right budget. Earlier code computed `longestChars * 6 + 4`
+            // as a hand-rolled alternative, which truncated to the wrong
+            // char count after `Math.floor( / 6) - 2` and made the longest
+            // line wrap several chars early. Use the helper directly —
+            // it already encodes the +2 bar / +2 internal-overhead math.
+            const fitContent = width === undefined || width.unit === 'fit-content'
+            if (fitContent) {
+                // Pass an opts with a huge budget so the walker applies
+                // `noDash` and `buildRow` produces proper segments (gray `/`
+                // for folders, etc.) — same as the explicit-width path, just
+                // without truncation since the box auto-sizes to fit.
+                const fitOpts: TruncationOpts = {
+                    budget: Number.POSITIVE_INFINITY,
+                    noDash,
+                    exclude,
+                    colors: {
+                        prefix: DEFAULT_CODE_BORDER_COLOR as `#${string}`,
+                        folder: DEFAULT_EXPLORER_FOLDER_COLOR,
+                        file: DEFAULT_EXPLORER_FILE_COLOR,
+                    },
+                }
+                const rows = collectTreeRows(absRoot, fitOpts)
+                if (rows.length === 0) continue
+                const source = rows.map((r) => r.display).join('\n')
+                // Compute natural width: longest source line + the bordered
+                // row's `sidePadding` + 2 chars for the `│` borders. The
+                // previous `computeMinCodeLineWidthPx(source, 0)` helper
+                // hardcoded the 1-char padding assumption and ignored
+                // `side-padding`, so a `[0, 0]` box rendered too wide.
+                const longestSourceLineLen = source
+                    .split('\n')
+                    .reduce((max, line) => Math.max(max, line.length), 0)
+                const naturalWidthChars =
+                    longestSourceLineLen + sidePadding[0] + sidePadding[1] + 2
+                const minLineWidthPx = naturalWidthChars * DEFAULT_MONO_CHAR_PX
+                const pxInDefault = minLineWidthPx / widthCompensation
+                width = {
+                    value: pxInDefault,
+                    unit: 'px',
+                    px: pxInDefault,
+                    meters: pxInDefault / 16,
+                }
+                // Row-flex override: when this `<explorer>` is inside a
+                // `grid-auto-flow: row` block and asked for `width: 100%`,
+                // `prepareRowFlexWidths` recorded the row-distributed value.
+                const flexOverride = rowFlexWidths.get(node)
+                if (flexOverride) {
+                    width = {
+                        value: flexOverride.widthPx,
+                        unit: 'px',
+                        px: flexOverride.widthPx,
+                        meters: flexOverride.widthMeters,
+                    }
+                }
+                const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
+                const maxRowChars = Math.max(10, Math.floor(wrapWidthPx / DEFAULT_MONO_CHAR_PX) - 2)
+                const internalOverhead = sidePadding[0] + sidePadding[1]
+                const maxCodeChars = Math.max(10, maxRowChars - internalOverhead)
+                const wrapCodeChars = Math.max(10, maxCodeChars)
+                const codeLineWraps = wrapCodeLinesWithOffsets(source, wrapCodeChars)
+                entries.push({ node, rows, codeLineWraps })
+                continue
+            }
+            // Explicit width: compute the budget first, then collect rows
+            // with truncation. `wrapExplorerRows` then pre-wraps any rows
+            // that overflow the per-row char budget so continuation lines
+            // align under the original entry's column.
+            // Row-flex override applies here too — the user's `width:
+            // 100%` inside a row-flex container is still an explicit
+            // width, just one sized by the layout engine.
+            const flexOverride = rowFlexWidths.get(node)
+            if (flexOverride) {
+                width = {
+                    value: flexOverride.widthPx,
+                    unit: 'px',
+                    px: flexOverride.widthPx,
+                    meters: flexOverride.widthMeters,
+                }
+            }
+            const wrapWidthPx = (width?.px ?? Number.POSITIVE_INFINITY) * widthCompensation
+            // Same formula as `prepareCodeHighlights` for `<code>` with no
+            // gutter. Internal overhead is `paddingL + paddingR` — the
+            // chars of space inside the `│` borders, configured by the
+            // `side-padding` prop (default `[1, 1]`).
+            const maxRowChars = Math.max(10, Math.floor(wrapWidthPx / DEFAULT_MONO_CHAR_PX) - 2)
+            const internalOverhead = sidePadding[0] + sidePadding[1]
+            const maxCodeChars = Math.max(10, maxRowChars - internalOverhead)
+            const opts: TruncationOpts = {
+                budget: maxCodeChars,
+                noDash,
+                exclude,
+                colors: {
+                    prefix: DEFAULT_CODE_BORDER_COLOR as `#${string}`,
+                    folder: DEFAULT_EXPLORER_FOLDER_COLOR,
+                    file: DEFAULT_EXPLORER_FILE_COLOR,
+                },
+            }
+            const rows = collectTreeRows(absRoot, opts)
+            if (rows.length === 0) continue
+            // Pre-wrap so continuation rows line up under the original
+            // entry's column instead of at the left edge of the box.
+            const wrappedRows = wrapExplorerRows(rows, maxCodeChars)
+            const source = wrappedRows.map((r) => r.display).join('\n')
+            const wrapCodeChars = Math.max(10, maxCodeChars)
+            const codeLineWraps = wrapCodeLinesWithOffsets(source, wrapCodeChars)
+            entries.push({ node, rows: wrappedRows, codeLineWraps })
+        }
+    }
 
-	for (const entry of entries) {
-		const segmentsPerLine = buildSegmentsPerSourceLine(entry.rows)
-		map.set(entry.node, {
-			codeLines: entry.codeLineWraps.map((w) => w.visualLine),
-			sourceLineOfVisualRow: entry.codeLineWraps.map((w) => w.sourceLine),
-			codeLineWraps: entry.codeLineWraps,
-			highlightedPerSourceLine: segmentsPerLine,
-			leadingLenPerSourceLine: deriveLeadingLens(entry.rows),
-			source: entry.rows.map((r) => r.display).join('\n'),
-		})
-	}
-	return map
+    for (const entry of entries) {
+        const segmentsPerLine = buildSegmentsPerSourceLine(entry.rows)
+        map.set(entry.node, {
+            codeLines: entry.codeLineWraps.map((w) => w.visualLine),
+            sourceLineOfVisualRow: entry.codeLineWraps.map((w) => w.sourceLine),
+            codeLineWraps: entry.codeLineWraps,
+            highlightedPerSourceLine: segmentsPerLine,
+            leadingLenPerSourceLine: deriveLeadingLens(entry.rows),
+            source: entry.rows.map((r) => r.display).join('\n'),
+        })
+    }
+    return map
 }
 
 // Walk `absRoot` recursively, returning one display row per visible file
@@ -329,46 +329,46 @@ export async function prepareExplorerTrees(
 // simple `{ display, isFolder, ancestorsMore }` shape (segments
 // derived later from the display string).
 function collectTreeRows(absRoot: string, opts?: TruncationOpts): RowEntry[] {
-	const out: RowEntry[] = []
-	walk(absRoot, 0, [], opts, out)
-	return out
+    const out: RowEntry[] = []
+    walk(absRoot, 0, [], opts, out)
+    return out
 }
 
 function walk(
-	dirAbs: string,
-	depth: number,
-	ancestorsMore: boolean[],
-	opts: TruncationOpts | undefined,
-	out: RowEntry[],
+    dirAbs: string,
+    depth: number,
+    ancestorsMore: boolean[],
+    opts: TruncationOpts | undefined,
+    out: RowEntry[],
 ): void {
-	let entries: { name: string; isFolder: boolean }[]
-	try {
-		entries = readdirSync(dirAbs, { withFileTypes: true })
-			.filter((e) => !SKIPPED_FILES.has(e.name))
-			.map((e) => ({ name: e.name, isFolder: e.isDirectory() }))
-	} catch {
-		// Unreadable dir — drop silently rather than failing the whole
-		// explorer. Users who care can surface the path manually.
-		return
-	}
-	// Folders first, then files; alphabetical within each group. Stable
-	// ordering across builds.
-	entries.sort((a, b) => {
-		if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1
-		return a.name < b.name ? -1 : a.name > b.name ? 1 : 0
-	})
-	for (let i = 0; i < entries.length; i++) {
-		const e = entries[i]
-		const isLast = i === entries.length - 1
-		const prefix = makeTreePrefix(ancestorsMore, isLast, opts?.noDash)
-		const row = buildRow(prefix, e.name, e.isFolder, ancestorsMore, isLast, opts)
-		out.push(row)
-		// Skip recursion into folders named in `exclude`. The folder
-		// row already rendered above; we just don't enumerate its
-		// children. Cheap match (Set lookup) — happens once per dir.
-		if (e.isFolder && opts?.exclude?.has(e.name)) continue
-		if (e.isFolder) walk(path.join(dirAbs, e.name), depth + 1, [...ancestorsMore, !isLast], opts, out)
-	}
+    let entries: { name: string; isFolder: boolean }[]
+    try {
+        entries = readdirSync(dirAbs, { withFileTypes: true })
+            .filter((e) => !SKIPPED_FILES.has(e.name))
+            .map((e) => ({ name: e.name, isFolder: e.isDirectory() }))
+    } catch {
+        // Unreadable dir — drop silently rather than failing the whole
+        // explorer. Users who care can surface the path manually.
+        return
+    }
+    // Folders first, then files; alphabetical within each group. Stable
+    // ordering across builds.
+    entries.sort((a, b) => {
+        if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1
+        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0
+    })
+    for (let i = 0; i < entries.length; i++) {
+        const e = entries[i]
+        const isLast = i === entries.length - 1
+        const prefix = makeTreePrefix(ancestorsMore, isLast, opts?.noDash)
+        const row = buildRow(prefix, e.name, e.isFolder, ancestorsMore, isLast, opts)
+        out.push(row)
+        // Skip recursion into folders named in `exclude`. The folder
+        // row already rendered above; we just don't enumerate its
+        // children. Cheap match (Set lookup) — happens once per dir.
+        if (e.isFolder && opts?.exclude?.has(e.name)) continue
+        if (e.isFolder) walk(path.join(dirAbs, e.name), depth + 1, [...ancestorsMore, !isLast], opts, out)
+    }
 }
 
 // One column of the tree (ancestor or current depth). With `noDash`,
@@ -379,7 +379,7 @@ function walk(
 // chars — the column visually "ends" at the last sibling, so deeper
 // entries don't carry a trailing 2-char gap before their connector.
 function makeColumn(hasMore: boolean, colW: number): string {
-	return hasMore ? '│'.padEnd(colW) : ''
+    return hasMore ? '│'.padEnd(colW) : ''
 }
 
 // Build the box-drawing prefix for a row given its ancestor stack and
@@ -388,15 +388,15 @@ function makeColumn(hasMore: boolean, colW: number): string {
 // from the connector AND narrows each ancestor column from 2 chars to
 // 1, so the whole tree gets 1 fewer char per depth.
 function makeTreePrefix(
-	ancestorsMore: boolean[],
-	isLast: boolean,
-	noDash: boolean = false,
+    ancestorsMore: boolean[],
+    isLast: boolean,
+    noDash: boolean = false,
 ): string {
-	const colW = noDash ? 1 : 2
-	let prefix = ''
-	for (const more of ancestorsMore) prefix += makeColumn(more, colW)
-	prefix += isLast ? (noDash ? '└' : '└─') : noDash ? '├' : '├─'
-	return prefix
+    const colW = noDash ? 1 : 2
+    let prefix = ''
+    for (const more of ancestorsMore) prefix += makeColumn(more, colW)
+    prefix += isLast ? (noDash ? '└' : '└─') : noDash ? '├' : '├─'
+    return prefix
 }
 
 // Build the continuation prefix for the wrap pass. Ancestor columns
@@ -407,121 +407,121 @@ function makeTreePrefix(
 // dropped — net result is one char shorter per depth, which keeps
 // row 1 and continuation visually aligned.
 function makeContinuationPrefix(
-	ancestorsMore: boolean[],
-	isLast: boolean,
-	noDash: boolean = false,
+    ancestorsMore: boolean[],
+    isLast: boolean,
+    noDash: boolean = false,
 ): string {
-	const colW = noDash ? 1 : 2
-	let prefix = ''
-	for (const more of ancestorsMore) prefix += makeColumn(more, colW)
-	prefix += makeColumn(!isLast, colW)
-	if (!noDash) prefix += ' '
-	return prefix
+    const colW = noDash ? 1 : 2
+    let prefix = ''
+    for (const more of ancestorsMore) prefix += makeColumn(more, colW)
+    prefix += makeColumn(!isLast, colW)
+    if (!noDash) prefix += ' '
+    return prefix
 }
 
 // Build a single row's display + (when truncating) segments. When no
 // truncation opts are passed, returns a plain row with `display` only
 // and the segment builder derives colors later from the display string.
 function buildRow(
-	prefix: string,
-	name: string,
-	isFolder: boolean,
-	ancestorsMore: boolean[],
-	isLast: boolean,
-	opts: TruncationOpts | undefined,
+    prefix: string,
+    name: string,
+    isFolder: boolean,
+    ancestorsMore: boolean[],
+    isLast: boolean,
+    opts: TruncationOpts | undefined,
 ): RowEntry {
-	if (!opts) {
-		const display = isFolder ? `${prefix}${name}/` : `${prefix}${name}`
-		return { display, isFolder, ancestorsMore, isLast }
-	}
-	const noDash = opts.noDash ?? false
-	// Per-row content budget = total budget minus this row's prefix
-	// length. No floor — `truncateMiddle` degrades gracefully for tight
-	// budgets (drops the tail, then the ellipsis, then truncates the
-	// head). The wrap pass will split whatever doesn't fit onto
-	// continuation rows.
-	const rowBudget = opts.budget - prefix.length
-	// Build the display + segments together so the source string stays
-	// in sync with the styled segments.
-	const segs: StyledSegment[] = []
-	if (prefix) segs.push({ text: prefix, color: opts.colors.prefix })
-	const nameColor = (isFolder ? opts.colors.folder : opts.colors.file) as `#${string}`
-	if (isFolder) {
-		// Reserve 1 char from the row budget for the trailing `/` —
-		// it's a structural marker (gray, same role as the box-
-		// drawing prefix) and we always include it. That forces the
-		// name to truncate further than its middle-ellipsis
-		// minimum if it has to (e.g. `fire_raycast/` at rowBudget 7
-		// becomes `fire…/` instead of `fire_r…st`).
-		const nameBudget = Math.max(0, rowBudget - 1)
-		segs.push(...truncateMiddle(name, nameBudget, nameColor, opts.colors.prefix))
-		if (rowBudget >= 1) {
-			segs.push({ text: '/', color: opts.colors.prefix })
-		}
-	} else {
-		const dotIdx = name.lastIndexOf('.')
-		// Hidden files (e.g. `.gitignore`) and files with no extension
-		// fall through to the plain name path.
-		if (dotIdx <= 0 || dotIdx === name.length - 1) {
-			segs.push(...truncateMiddle(name, rowBudget, nameColor, opts.colors.prefix))
-		} else {
-			const base = name.slice(0, dotIdx)
-			const ext = name.slice(dotIdx + 1)
-			const extFullCost = 1 + ext.length // "." + ext
-			// Minimum recognizable extension: first 3 chars + dot +
-			// ellipsis (5 chars total). Short extensions (≤ 3 chars)
-			// stay whole as their own minimum.
-			const minExtCost = ext.length > EXT_KEEP_CHARS ? 1 + EXT_KEEP_CHARS + 1 : extFullCost
+    if (!opts) {
+        const display = isFolder ? `${prefix}${name}/` : `${prefix}${name}`
+        return { display, isFolder, ancestorsMore, isLast }
+    }
+    const noDash = opts.noDash ?? false
+    // Per-row content budget = total budget minus this row's prefix
+    // length. No floor — `truncateMiddle` degrades gracefully for tight
+    // budgets (drops the tail, then the ellipsis, then truncates the
+    // head). The wrap pass will split whatever doesn't fit onto
+    // continuation rows.
+    const rowBudget = opts.budget - prefix.length
+    // Build the display + segments together so the source string stays
+    // in sync with the styled segments.
+    const segs: StyledSegment[] = []
+    if (prefix) segs.push({ text: prefix, color: opts.colors.prefix })
+    const nameColor = (isFolder ? opts.colors.folder : opts.colors.file) as `#${string}`
+    if (isFolder) {
+        // Reserve 1 char from the row budget for the trailing `/` —
+        // it's a structural marker (gray, same role as the box-
+        // drawing prefix) and we always include it. That forces the
+        // name to truncate further than its middle-ellipsis
+        // minimum if it has to (e.g. `fire_raycast/` at rowBudget 7
+        // becomes `fire…/` instead of `fire_r…st`).
+        const nameBudget = Math.max(0, rowBudget - 1)
+        segs.push(...truncateMiddle(name, nameBudget, nameColor, opts.colors.prefix))
+        if (rowBudget >= 1) {
+            segs.push({ text: '/', color: opts.colors.prefix })
+        }
+    } else {
+        const dotIdx = name.lastIndexOf('.')
+        // Hidden files (e.g. `.gitignore`) and files with no extension
+        // fall through to the plain name path.
+        if (dotIdx <= 0 || dotIdx === name.length - 1) {
+            segs.push(...truncateMiddle(name, rowBudget, nameColor, opts.colors.prefix))
+        } else {
+            const base = name.slice(0, dotIdx)
+            const ext = name.slice(dotIdx + 1)
+            const extFullCost = 1 + ext.length // "." + ext
+            // Minimum recognizable extension: first 3 chars + dot +
+            // ellipsis (5 chars total). Short extensions (≤ 3 chars)
+            // stay whole as their own minimum.
+            const minExtCost = ext.length > EXT_KEEP_CHARS ? 1 + EXT_KEEP_CHARS + 1 : extFullCost
 
-			if (base.length + extFullCost <= rowBudget) {
-				// Full filename fits — no truncation at all.
-				segs.push({ text: name, color: nameColor })
-			} else if (base.length + minExtCost <= rowBudget) {
-				// Base fits as-is AND the minimum extension fits. Keep
-				// the base whole; truncate the extension just enough to
-				// fit, preserving as many chars of `ext` as possible
-				// (e.g. `raycast.mcfunction` → `raycast.mcfunc…`,
-				// `chain_strike.mcfunction` → `chain_strike.mcfun…`).
-				segs.push({ text: base, color: nameColor })
-				const remaining = rowBudget - base.length - 1 // after dot
-				if (remaining >= ext.length) {
-					// Shouldn't reach (covered above), but safe.
-					segs.push({ text: '.' + ext, color: nameColor })
-				} else if (remaining >= 2) {
-					// Use ellipsis, keep as many chars as possible.
-					const keepChars = remaining - 1
-					segs.push({ text: '.' + ext.slice(0, keepChars), color: nameColor })
-					segs.push({ text: ELLIPSIS, color: opts.colors.prefix })
-				} else if (remaining >= 1) {
-					// Only 1 char left after the dot — no room for ellipsis.
-					segs.push({ text: '.' + ext.slice(0, 1), color: nameColor })
-				} else {
-					segs.push({ text: '.', color: nameColor })
-				}
-			} else {
-				// Base + min ext doesn't fit. Middle-ellipsis the base
-				// (head + ellipsis + tail, min 7 chars) and pair it with
-				// the minimum extension. The row will likely overflow
-				// `rowBudget` and wrap to continuation rows, but the
-				// minimums stay recognizable (e.g. `fire_raycast.mcfunction`
-				// → `fire_ra…st.mcf…`, `return_run.mcfunction` → wraps to
-				// `retu…un` + `.mcf…`).
-				const baseBudget = Math.max(
-					MIN_HEAD + 1 + MIN_TAIL,
-					rowBudget - minExtCost,
-				)
-				segs.push(...truncateMiddle(base, baseBudget, nameColor, opts.colors.prefix))
-				if (ext.length > EXT_KEEP_CHARS) {
-					segs.push({ text: '.' + ext.slice(0, EXT_KEEP_CHARS), color: nameColor })
-					segs.push({ text: ELLIPSIS, color: opts.colors.prefix })
-				} else {
-					segs.push({ text: '.' + ext, color: nameColor })
-				}
-			}
-		}
-	}
-	const display = segs.map((s) => s.text).join('')
-	return { display, isFolder, segments: segs, ancestorsMore, isLast, noDash }
+            if (base.length + extFullCost <= rowBudget) {
+                // Full filename fits — no truncation at all.
+                segs.push({ text: name, color: nameColor })
+            } else if (base.length + minExtCost <= rowBudget) {
+                // Base fits as-is AND the minimum extension fits. Keep
+                // the base whole; truncate the extension just enough to
+                // fit, preserving as many chars of `ext` as possible
+                // (e.g. `raycast.mcfunction` → `raycast.mcfunc…`,
+                // `chain_strike.mcfunction` → `chain_strike.mcfun…`).
+                segs.push({ text: base, color: nameColor })
+                const remaining = rowBudget - base.length - 1 // after dot
+                if (remaining >= ext.length) {
+                    // Shouldn't reach (covered above), but safe.
+                    segs.push({ text: '.' + ext, color: nameColor })
+                } else if (remaining >= 2) {
+                    // Use ellipsis, keep as many chars as possible.
+                    const keepChars = remaining - 1
+                    segs.push({ text: '.' + ext.slice(0, keepChars), color: nameColor })
+                    segs.push({ text: ELLIPSIS, color: opts.colors.prefix })
+                } else if (remaining >= 1) {
+                    // Only 1 char left after the dot — no room for ellipsis.
+                    segs.push({ text: '.' + ext.slice(0, 1), color: nameColor })
+                } else {
+                    segs.push({ text: '.', color: nameColor })
+                }
+            } else {
+                // Base + min ext doesn't fit. Middle-ellipsis the base
+                // (head + ellipsis + tail, min 7 chars) and pair it with
+                // the minimum extension. The row will likely overflow
+                // `rowBudget` and wrap to continuation rows, but the
+                // minimums stay recognizable (e.g. `fire_raycast.mcfunction`
+                // → `fire_ra…st.mcf…`, `return_run.mcfunction` → wraps to
+                // `retu…un` + `.mcf…`).
+                const baseBudget = Math.max(
+                    MIN_HEAD + 1 + MIN_TAIL,
+                    rowBudget - minExtCost,
+                )
+                segs.push(...truncateMiddle(base, baseBudget, nameColor, opts.colors.prefix))
+                if (ext.length > EXT_KEEP_CHARS) {
+                    segs.push({ text: '.' + ext.slice(0, EXT_KEEP_CHARS), color: nameColor })
+                    segs.push({ text: ELLIPSIS, color: opts.colors.prefix })
+                } else {
+                    segs.push({ text: '.' + ext, color: nameColor })
+                }
+            }
+        }
+    }
+    const display = segs.map((s) => s.text).join('')
+    return { display, isFolder, segments: segs, ancestorsMore, isLast, noDash }
 }
 
 // Middle-ellipsis truncate `s` to `budget` chars. Returns one or more
@@ -530,31 +530,31 @@ function buildRow(
 // When the budget is below the minimum, falls back gracefully: drop
 // the tail first (keep head + ellipsis), then drop the ellipsis.
 function truncateMiddle(
-	s: string,
-	budget: number,
-	mainColor: `#${string}`,
-	grayColor: `#${string}`,
+    s: string,
+    budget: number,
+    mainColor: `#${string}`,
+    grayColor: `#${string}`,
 ): StyledSegment[] {
-	if (s.length <= budget) return [{ text: s, color: mainColor }]
-	if (budget <= 0) return []
-	if (budget < MIN_HEAD) {
-		// Even the minimum head doesn't fit — show what we can of the head.
-		return [{ text: s.slice(0, budget), color: mainColor }]
-	}
-	if (budget < MIN_HEAD + 1 + MIN_TAIL) {
-		// Head + ellipsis fit but no room for the tail minimum.
-		return [
-			{ text: s.slice(0, budget - 1), color: mainColor },
-			{ text: ELLIPSIS, color: grayColor },
-		]
-	}
-	const tail = MIN_TAIL
-	const head = budget - 1 - tail
-	return [
-		{ text: s.slice(0, head), color: mainColor },
-		{ text: ELLIPSIS, color: grayColor },
-		{ text: s.slice(s.length - tail), color: mainColor },
-	]
+    if (s.length <= budget) return [{ text: s, color: mainColor }]
+    if (budget <= 0) return []
+    if (budget < MIN_HEAD) {
+        // Even the minimum head doesn't fit — show what we can of the head.
+        return [{ text: s.slice(0, budget), color: mainColor }]
+    }
+    if (budget < MIN_HEAD + 1 + MIN_TAIL) {
+        // Head + ellipsis fit but no room for the tail minimum.
+        return [
+            { text: s.slice(0, budget - 1), color: mainColor },
+            { text: ELLIPSIS, color: grayColor },
+        ]
+    }
+    const tail = MIN_TAIL
+    const head = budget - 1 - tail
+    return [
+        { text: s.slice(0, head), color: mainColor },
+        { text: ELLIPSIS, color: grayColor },
+        { text: s.slice(s.length - tail), color: mainColor },
+    ]
 }
 
 // One (text, color) pair — the atomic unit for slicing segments
@@ -563,24 +563,24 @@ function truncateMiddle(
 type ColoredChar = { ch: string; color: `#${string}` }
 
 function segmentsToChars(segs: StyledSegment[]): ColoredChar[] {
-	const out: ColoredChar[] = []
-	for (const s of segs) {
-		const color = (s.color ?? '#d4d4d4') as `#${string}`
-		for (const ch of s.text) out.push({ ch, color })
-	}
-	return out
+    const out: ColoredChar[] = []
+    for (const s of segs) {
+        const color = (s.color ?? '#d4d4d4') as `#${string}`
+        for (const ch of s.text) out.push({ ch, color })
+    }
+    return out
 }
 
 function charsToSegments(chars: ColoredChar[]): StyledSegment[] {
-	const out: StyledSegment[] = []
-	let i = 0
-	while (i < chars.length) {
-		const start = i
-		const color = chars[i]!.color
-		while (i < chars.length && chars[i]!.color === color) i++
-		out.push({ text: chars.slice(start, i).map((c) => c.ch).join(''), color })
-	}
-	return out
+    const out: StyledSegment[] = []
+    let i = 0
+    while (i < chars.length) {
+        const start = i
+        const color = chars[i]!.color
+        while (i < chars.length && chars[i]!.color === color) i++
+        out.push({ text: chars.slice(start, i).map((c) => c.ch).join(''), color })
+    }
+    return out
 }
 
 // Pre-wrap each tree entry that overflows `maxRowChars` so continuation
@@ -592,29 +592,29 @@ function charsToSegments(chars: ColoredChar[]): StyledSegment[] {
 // downstream sees each visual row as its own source line (no further
 // wrap needed).
 function wrapExplorerRows(rows: RowEntry[], maxRowChars: number): RowEntry[] {
-	const out: RowEntry[] = []
-	for (const row of rows) {
-		if (!row.segments || row.segments.length === 0) {
-			out.push(row)
-			continue
-		}
-		const prefixSeg = row.segments[0]!
-		if (prefixSeg.color !== PREFIX_COLOR) {
-			// No prefix (depth 0 row); nothing to wrap against.
-			out.push(row)
-			continue
-		}
-		const prefix = prefixSeg.text
-		const contentSegs = row.segments.slice(1)
-		const contentChars = segmentsToChars(contentSegs)
-		const prefixLen = prefix.length
-		const firstRowBudget = maxRowChars - prefixLen
-		if (contentChars.length <= firstRowBudget) {
-			// Fits on one row — nothing to wrap.
-			out.push(row)
-			continue
-		}
-		// Need continuation rows. The continuation prefix is:
+    const out: RowEntry[] = []
+    for (const row of rows) {
+        if (!row.segments || row.segments.length === 0) {
+            out.push(row)
+            continue
+        }
+        const prefixSeg = row.segments[0]!
+        if (prefixSeg.color !== PREFIX_COLOR) {
+            // No prefix (depth 0 row); nothing to wrap against.
+            out.push(row)
+            continue
+        }
+        const prefix = prefixSeg.text
+        const contentSegs = row.segments.slice(1)
+        const contentChars = segmentsToChars(contentSegs)
+        const prefixLen = prefix.length
+        const firstRowBudget = maxRowChars - prefixLen
+        if (contentChars.length <= firstRowBudget) {
+            // Fits on one row — nothing to wrap.
+            out.push(row)
+            continue
+        }
+        // Need continuation rows. The continuation prefix is:
 //   1. ancestor columns (`│ ` or `  ` for each ancestor) — vertical
 //      bars continue down through wrap so the user can trace which
 //      entry the wrapped content belongs to
@@ -629,39 +629,39 @@ function wrapExplorerRows(rows: RowEntry[], maxRowChars: number): RowEntry[] {
 // aligned.
 const contPrefix = makeContinuationPrefix(row.ancestorsMore, row.isLast, row.noDash)
 const contRowBudget = maxRowChars - contPrefix.length
-		let pos = 0
-		let isFirst = true
-		while (pos < contentChars.length) {
-			const budget = isFirst ? firstRowBudget : contRowBudget
-			const take = Math.min(Math.max(1, budget), contentChars.length - pos)
-			const lineChars = contentChars.slice(pos, pos + take)
-			const lineSegs = charsToSegments(lineChars)
-			const linePrefix = isFirst ? prefix : contPrefix
-			const fullSegs: StyledSegment[] = []
-			if (linePrefix) fullSegs.push({ text: linePrefix, color: PREFIX_COLOR })
-			fullSegs.push(...lineSegs)
-			out.push({
-				display: linePrefix + lineChars.map((c) => c.ch).join(''),
-				isFolder: row.isFolder,
-				segments: fullSegs,
-				ancestorsMore: row.ancestorsMore,
-				isLast: row.isLast,
-				noDash: row.noDash,
-			})
-			pos += take
-			isFirst = false
-		}
-		// If the last visual row's content (after the prefix) is
-		// nothing but the ellipsis, drop the row — a `│ │ │    …`
-		// row on its own carries no useful information. We check the
-		// segments (not `display`) because `display` includes the
-		// prefix too.
-		const last = out[out.length - 1]
-		if (last && last.segments && last.segments.length === 2 && last.segments[1].text === ELLIPSIS) {
-			out.pop()
-		}
-	}
-	return out
+        let pos = 0
+        let isFirst = true
+        while (pos < contentChars.length) {
+            const budget = isFirst ? firstRowBudget : contRowBudget
+            const take = Math.min(Math.max(1, budget), contentChars.length - pos)
+            const lineChars = contentChars.slice(pos, pos + take)
+            const lineSegs = charsToSegments(lineChars)
+            const linePrefix = isFirst ? prefix : contPrefix
+            const fullSegs: StyledSegment[] = []
+            if (linePrefix) fullSegs.push({ text: linePrefix, color: PREFIX_COLOR })
+            fullSegs.push(...lineSegs)
+            out.push({
+                display: linePrefix + lineChars.map((c) => c.ch).join(''),
+                isFolder: row.isFolder,
+                segments: fullSegs,
+                ancestorsMore: row.ancestorsMore,
+                isLast: row.isLast,
+                noDash: row.noDash,
+            })
+            pos += take
+            isFirst = false
+        }
+        // If the last visual row's content (after the prefix) is
+        // nothing but the ellipsis, drop the row — a `│ │ │    …`
+        // row on its own carries no useful information. We check the
+        // segments (not `display`) because `display` includes the
+        // prefix too.
+        const last = out[out.length - 1]
+        if (last && last.segments && last.segments.length === 2 && last.segments[1].text === ELLIPSIS) {
+            out.pop()
+        }
+    }
+    return out
 }
 
 // Build per-source-line `StyledSegment[]` for the layout pass. When a
@@ -670,23 +670,23 @@ const contRowBudget = maxRowChars - contPrefix.length
 // string via the box-drawing regex. Folders get the trailing `/`
 // split off as a gray segment so it matches the colored-buildRow path.
 function buildSegmentsPerSourceLine(rows: RowEntry[]): StyledSegment[][] {
-	return rows.map((row) => {
-		if (row.segments) return row.segments
-		const m = row.display.match(/^([│├└─ ]+)/)
-		const prefix = m ? m[1] : ''
-		const rest = m ? row.display.slice(prefix.length) : row.display
-		const isFolder = rest.endsWith('/')
-		const out: StyledSegment[] = []
-		if (prefix) out.push({ text: prefix, color: DEFAULT_CODE_BORDER_COLOR as `#${string}` })
-		if (isFolder) {
-			const base = rest.slice(0, -1)
-			out.push({ text: base, color: DEFAULT_EXPLORER_FOLDER_COLOR as `#${string}` })
-			out.push({ text: '/', color: DEFAULT_CODE_BORDER_COLOR as `#${string}` })
-		} else {
-			out.push({ text: rest, color: DEFAULT_EXPLORER_FILE_COLOR as `#${string}` })
-		}
-		return out
-	})
+    return rows.map((row) => {
+        if (row.segments) return row.segments
+        const m = row.display.match(/^([│├└─ ]+)/)
+        const prefix = m ? m[1] : ''
+        const rest = m ? row.display.slice(prefix.length) : row.display
+        const isFolder = rest.endsWith('/')
+        const out: StyledSegment[] = []
+        if (prefix) out.push({ text: prefix, color: DEFAULT_CODE_BORDER_COLOR as `#${string}` })
+        if (isFolder) {
+            const base = rest.slice(0, -1)
+            out.push({ text: base, color: DEFAULT_EXPLORER_FOLDER_COLOR as `#${string}` })
+            out.push({ text: '/', color: DEFAULT_CODE_BORDER_COLOR as `#${string}` })
+        } else {
+            out.push({ text: rest, color: DEFAULT_EXPLORER_FILE_COLOR as `#${string}` })
+        }
+        return out
+    })
 }
 
 // Same leading-whitespace count per source line as the wrap algorithm
@@ -697,7 +697,7 @@ function buildSegmentsPerSourceLine(rows: RowEntry[]): StyledSegment[][] {
 // continuation columns, which live in the segments (not as
 // whitespace) — so leadingLen is always 0 here.
 function deriveLeadingLens(rows: RowEntry[]): number[] {
-	const out: number[] = []
-	for (const _ of rows) out.push(0)
-	return out
+    const out: number[] = []
+    for (const _ of rows) out.push(0)
+    return out
 }

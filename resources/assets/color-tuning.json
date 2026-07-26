@@ -1,17 +1,17 @@
 {
-	"$schema": "../../scripts/color-tuning.schema.json",
-	"defaults": {
-		"minQuality": 100,
-		"maxQuality": 100,
-		"maxColors": 256,
-		"speed": 1,
-		"skipIfLarger": true,
-		"force": true
-	},
-	"include": [
-		"resourcepack/assets/sandstone_summit_booth/textures/item/balloon/*.png",
-		"resourcepack/assets/sandstone_summit_booth/textures/item/presentation/docs.png",
-		"resourcepack/assets/sandstone_summit_booth/textures/item/presentation/magic.png",
-		"resourcepack/assets/sandstone_summit_booth/textures/sticker/enter_booth.png"
-	]
+    "$schema": "../../scripts/color-tuning.schema.json",
+    "defaults": {
+        "minQuality": 100,
+        "maxQuality": 100,
+        "maxColors": 256,
+        "speed": 1,
+        "skipIfLarger": true,
+        "force": true
+    },
+    "include": [
+        "resourcepack/assets/sandstone_summit_booth/textures/item/balloon/*.png",
+        "resourcepack/assets/sandstone_summit_booth/textures/item/presentation/docs.png",
+        "resourcepack/assets/sandstone_summit_booth/textures/item/presentation/magic.png",
+        "resourcepack/assets/sandstone_summit_booth/textures/sticker/enter_booth.png"
+    ]
 }

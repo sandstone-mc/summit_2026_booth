@@ -16,37 +16,37 @@ const loader = new FontLoader()
 const wrap = new TextWrap(loader)
 
 export async function loadFontMetrics(fontId: string = DEFAULT_FONT_ID): Promise<void> {
-	return loader.load(fontId)
+    return loader.load(fontId)
 }
 
 export function charWidth(ch: string, bold: boolean, fontId: string = DEFAULT_FONT_ID): number {
-	return loader.charWidth(ch, bold, fontId)
+    return loader.charWidth(ch, bold, fontId)
 }
 
 export function textWidth(text: string, bold: boolean, fontId: string = DEFAULT_FONT_ID): number {
-	return loader.textWidth(text, bold, fontId)
+    return loader.textWidth(text, bold, fontId)
 }
 
 export function fontMetrics(fontId: string = DEFAULT_FONT_ID): FontMetrics {
-	return loader.fontMetrics(fontId)
+    return loader.fontMetrics(fontId)
 }
 
 export function wrapLines(
-	text: string,
-	lineWidth: number,
-	bold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
+    text: string,
+    lineWidth: number,
+    bold: boolean,
+    fontId: string = DEFAULT_FONT_ID,
 ): number {
-	return wrap.wrapLines(text, lineWidth, bold, fontId)
+    return wrap.wrapLines(text, lineWidth, bold, fontId)
 }
 
 export function wrapToLines(
-	text: string,
-	lineWidth: number,
-	bold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
+    text: string,
+    lineWidth: number,
+    bold: boolean,
+    fontId: string = DEFAULT_FONT_ID,
 ): string[] {
-	return wrap.wrapToLines(text, lineWidth, bold, fontId)
+    return wrap.wrapToLines(text, lineWidth, bold, fontId)
 }
 
 /**
@@ -56,36 +56,36 @@ export function wrapToLines(
  * font changes correctly.
  */
 export function wrapSegmentedLines(
-	segments: StyledSegment[],
-	lineWidth: number,
-	baseBold: boolean,
-	fontId: string = DEFAULT_FONT_ID,
+    segments: StyledSegment[],
+    lineWidth: number,
+    baseBold: boolean,
+    fontId: string = DEFAULT_FONT_ID,
 ): StyledSegment[][] {
-	return wrap.wrapSegmentedLines(segments, lineWidth, baseBold, fontId)
+    return wrap.wrapSegmentedLines(segments, lineWidth, baseBold, fontId)
 }
 
 export function wrapCodeLinesAsArray(
-	text: string,
-	_maxChars: number,
-	_bold: boolean,
-	_fontId: string = DEFAULT_FONT_ID,
+    text: string,
+    _maxChars: number,
+    _bold: boolean,
+    _fontId: string = DEFAULT_FONT_ID,
 ): string[] {
-	return wrap.wrapCodeLinesAsArrayMonospace(text, _maxChars)
+    return wrap.wrapCodeLinesAsArrayMonospace(text, _maxChars)
 }
 
 /** Same as `wrapCodeLinesAsArray` but each entry also tracks its source line. */
 export function wrapCodeLinesAsTuples(
-	text: string,
-	_maxChars: number,
-	_bold: boolean,
-	_fontId: string = DEFAULT_FONT_ID,
+    text: string,
+    _maxChars: number,
+    _bold: boolean,
+    _fontId: string = DEFAULT_FONT_ID,
 ): { line: string; sourceLine: number }[] {
-	return wrap.wrapCodeLinesAsTuplesMonospace(text, _maxChars)
+    return wrap.wrapCodeLinesAsTuplesMonospace(text, _maxChars)
 }
 
 /** Total visual lines a `<code>` source produces when wrapped in monospace. */
 export function wrapCodeLinesMonospace(text: string, maxChars: number): number {
-	return wrap.wrapCodeLinesMonospace(text, maxChars)
+    return wrap.wrapCodeLinesMonospace(text, maxChars)
 }
 
 /**
@@ -96,5 +96,5 @@ export function wrapCodeLinesMonospace(text: string, maxChars: number): number {
  * without ever splitting a token at the wrap boundary.
  */
 export function wrapCodeLinesWithOffsets(text: string, maxChars: number): CodeLineWrap[] {
-	return wrap.wrapCodeLinesWithOffsets(text, maxChars)
+    return wrap.wrapCodeLinesWithOffsets(text, maxChars)
 }

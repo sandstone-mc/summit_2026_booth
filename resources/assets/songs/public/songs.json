@@ -1,18 +1,18 @@
 [
-	{
-		"file": "hiiragi_magnetite_tetoris.mid",
-		"name": "Tetoris - Hiiragi Magnetite",
-		"difficulty": 5
-	},
-	{
-		"file": "jamiep_machine_love.mid",
-		"name": "Machine Love - Jamie Paige",
-		"difficulty": 5,
-		"audioStart": 30
-	},
-	{
-		"file": "jojo_il_vento_doro_giornos_theme.mid",
-		"name": "Il Vento D'oro (Giorno's Theme) - JoJo",
-		"difficulty": 5
-	}
+    {
+        "file": "hiiragi_magnetite_tetoris.mid",
+        "name": "Tetoris - Hiiragi Magnetite",
+        "difficulty": 5
+    },
+    {
+        "file": "jamiep_machine_love.mid",
+        "name": "Machine Love - Jamie Paige",
+        "difficulty": 5,
+        "audioStart": 30
+    },
+    {
+        "file": "jojo_il_vento_doro_giornos_theme.mid",
+        "name": "Il Vento D'oro (Giorno's Theme) - JoJo",
+        "difficulty": 5
+    }
 ]

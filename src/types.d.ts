@@ -7,16 +7,16 @@
 // the extension isn't standard.
 
 declare module '*.less' {
-	const content: string
-	export default content
+    const content: string
+    export default content
 }
 
 declare module '*.mcfunction' {
-	const content: string
-	export default content
+    const content: string
+    export default content
 }
 
 declare module '*.log' {
-	const content: string
-	export default content
+    const content: string
+    export default content
 }

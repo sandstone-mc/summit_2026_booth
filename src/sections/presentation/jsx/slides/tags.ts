@@ -8,7 +8,7 @@ export const SCENE_TAG = Label('presentation')
 
 /** Tag attached to every entity in slide `index`. */
 export function slideTag(index: number): LabelClass {
-	return Label(`slide_${index}`)
+    return Label(`slide_${index}`)
 }
 
 /**

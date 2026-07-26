@@ -18,59 +18,59 @@ const DEFAULT_TEXT_COLOR = '#ffffff' as const
 // color from `declarations.color`; array of segments → each segment
 // carries its own color/font, falling back to declarations.
 export function buildTextJson(
-	content: string | StyledSegment[],
-	declarations: Record<string, string>,
-	type: string,
+    content: string | StyledSegment[],
+    declarations: Record<string, string>,
+    type: string,
 ): SymbolEntity['text_display']['text'] {
-	if (Array.isArray(content)) {
-		return content.map((seg) => buildSegment(seg, declarations, type)) as SymbolEntity['text_display']['text']
-	}
-	const out: TextComponent = { text: content }
-	if (declarations.color) out.color = declarations.color as `#${string}`
-	if (declarations.bold === 'true') out.bold = true
-	if (declarations.italic === 'true') out.italic = true
-	if (declarations.underline === 'true') out.underlined = true
-	if (declarations.strikethrough === 'true') out.strikethrough = true
-	if (declarations.obfuscated === 'true') out.obfuscated = true
-	if (type === 'h1' || type === 'h2') out.bold = true
-	if (type === 'code' || type === 'explorer' || type === 'autocomplete') out.font = 'sandstone_summit_booth:monospace'
-	if (declarations.font) out.font = declarations.font as `${string}:${string}`
-	return out
+    if (Array.isArray(content)) {
+        return content.map((seg) => buildSegment(seg, declarations, type)) as SymbolEntity['text_display']['text']
+    }
+    const out: TextComponent = { text: content }
+    if (declarations.color) out.color = declarations.color as `#${string}`
+    if (declarations.bold === 'true') out.bold = true
+    if (declarations.italic === 'true') out.italic = true
+    if (declarations.underline === 'true') out.underlined = true
+    if (declarations.strikethrough === 'true') out.strikethrough = true
+    if (declarations.obfuscated === 'true') out.obfuscated = true
+    if (type === 'h1' || type === 'h2') out.bold = true
+    if (type === 'code' || type === 'explorer' || type === 'autocomplete') out.font = 'sandstone_summit_booth:monospace'
+    if (declarations.font) out.font = declarations.font as `${string}:${string}`
+    return out
 }
 
 function buildSegment(
-	seg: StyledSegment,
-	declarations: Record<string, string>,
-	type: string,
+    seg: StyledSegment,
+    declarations: Record<string, string>,
+    type: string,
 ): TextComponent {
-	const out: TextComponent = { text: seg.text }
-	// Color, bold, italic, font are ALL set explicitly on every
-	// segment. Minecraft's text component system merges sibling styles
-	// when a later segment leaves a field unset — the field carries
-	// over from the previous segment. Without an explicit reset, a
-	// plain-text segment following a `` `code` `` span would inherit
-	// the code span's gray color / monospace font. Defaults below
-	// match MC's own defaults (`#ffffff` text, `false` bold/italic,
-	// `minecraft:default` font).
-	out.color = (seg.color ?? declarations.color ?? DEFAULT_TEXT_COLOR) as `#${string}`
-	if (seg.bold === true) out.bold = true
-	else if (seg.bold === false) out.bold = false
-	else if (declarations.bold === 'true') out.bold = true
-	else if (type === 'h1' || type === 'h2') out.bold = true
-	else out.bold = false
-	if (seg.italic === true) out.italic = true
-	else if (seg.italic === false) out.italic = false
-	else if (declarations.italic === 'true') out.italic = true
-	else out.italic = false
-	out.font = (seg.font ?? declarations.font ?? (type === 'code' || type === 'explorer' || type === 'autocomplete' ? 'sandstone_summit_booth:monospace' : DEFAULT_FONT_ID)) as `${string}:${string}`
-	// `seg.background` is stored but NOT rendered as a per-segment
-	// field — MC text components have no per-component `background`.
-	// The LESS `inline-code-bg` declaration is stored on the segment
-	// for future per-entity fan-out (multiple item_display boxes
-	// behind a single text_display entity to simulate per-span
-	// highlights). For now, callers that want to render an inline-code
-	// background will need the layout to emit highlight entities.
-	return out
+    const out: TextComponent = { text: seg.text }
+    // Color, bold, italic, font are ALL set explicitly on every
+    // segment. Minecraft's text component system merges sibling styles
+    // when a later segment leaves a field unset — the field carries
+    // over from the previous segment. Without an explicit reset, a
+    // plain-text segment following a `` `code` `` span would inherit
+    // the code span's gray color / monospace font. Defaults below
+    // match MC's own defaults (`#ffffff` text, `false` bold/italic,
+    // `minecraft:default` font).
+    out.color = (seg.color ?? declarations.color ?? DEFAULT_TEXT_COLOR) as `#${string}`
+    if (seg.bold === true) out.bold = true
+    else if (seg.bold === false) out.bold = false
+    else if (declarations.bold === 'true') out.bold = true
+    else if (type === 'h1' || type === 'h2') out.bold = true
+    else out.bold = false
+    if (seg.italic === true) out.italic = true
+    else if (seg.italic === false) out.italic = false
+    else if (declarations.italic === 'true') out.italic = true
+    else out.italic = false
+    out.font = (seg.font ?? declarations.font ?? (type === 'code' || type === 'explorer' || type === 'autocomplete' ? 'sandstone_summit_booth:monospace' : DEFAULT_FONT_ID)) as `${string}:${string}`
+    // `seg.background` is stored but NOT rendered as a per-segment
+    // field — MC text components have no per-component `background`.
+    // The LESS `inline-code-bg` declaration is stored on the segment
+    // for future per-entity fan-out (multiple item_display boxes
+    // behind a single text_display entity to simulate per-span
+    // highlights). For now, callers that want to render an inline-code
+    // background will need the layout to emit highlight entities.
+    return out
 }
 
 // Unit-rotation quaternion components `(0, 0, 0, 1)` — every display
@@ -82,18 +82,18 @@ const ZERO_TRANSLATION = NBT.float([0, 0, 0])
 // original render.ts call sites — `NBT.float` returns an array; we
 // wrap it three times so the encoder emits one axis each.
 export function buildIdentityTransform(s: number) {
-	const sf = NBT.float(s)
-	return {
-		scale: [sf, sf, sf],
-		translation: ZERO_TRANSLATION,
-		left_rotation: ROTATION_QUATERNION,
-		right_rotation: ROTATION_QUATERNION,
-	}
+    const sf = NBT.float(s)
+    return {
+        scale: [sf, sf, sf],
+        translation: ZERO_TRANSLATION,
+        left_rotation: ROTATION_QUATERNION,
+        right_rotation: ROTATION_QUATERNION,
+    }
 }
 
 // Parse a `#RRGGBB` color into the int text_display wants.
 export function applyBackgroundColor(decs: Record<string, string>, nbt: { background?: NBTInt }): void {
-	const bg = decs.background ? parseColorInt(decs.background) : undefined
+    const bg = decs.background ? parseColorInt(decs.background) : undefined
 
-	nbt.background = NBT.int(bg || 0x00000000)
+    nbt.background = NBT.int(bg || 0x00000000)
 }

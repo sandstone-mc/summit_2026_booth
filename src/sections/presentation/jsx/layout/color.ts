@@ -7,7 +7,7 @@
 // unless they explicitly opt into transparency.
 
 export function parseColorInt(hex: string): number | undefined {
-	const m = hex.trim().match(/^#?([0-9a-fA-F]{6})$/)
-	if (!m) return undefined
-	return 0xff000000 | parseInt(m[1], 16)
+    const m = hex.trim().match(/^#?([0-9a-fA-F]{6})$/)
+    if (!m) return undefined
+    return 0xff000000 | parseInt(m[1], 16)
 }

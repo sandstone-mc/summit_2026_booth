@@ -40,12 +40,12 @@ MCFunction('sections/magic/input/on_wand_left_click', () => {
 const wandCooldown = Objective.create('wand_cooldown')
 
 const cooldownAdvancement = Advancement('input/wand_use_cooldown', {
-	criteria: { 
+    criteria: { 
         tick: {
-		    trigger: 'minecraft:tick'
-	    }
+            trigger: 'minecraft:tick'
+        }
     },
-	rewards: {
+    rewards: {
         function: MCFunction('sections/magic/input/wand_use_cooldown', () => {
             wandCooldown('@s').remove(1)
             _.if(wandCooldown('@s').greaterThanOrEqualTo(1), () => {
@@ -58,15 +58,15 @@ const cooldownAdvancement = Advancement('input/wand_use_cooldown', {
 })
 
 const useWandAdvancement = Advancement('input/wand_use', {
-	'criteria': { 'use_item': {
-		'trigger': 'minecraft:using_item',
-		'conditions': { 'item': {
+    'criteria': { 'use_item': {
+        'trigger': 'minecraft:using_item',
+        'conditions': { 'item': {
             'predicates': {
                 'minecraft:custom_data': { 'sandstone_summit_booth.item_type': 'wand' }
             }
         } }
-	}},
-	'rewards': { 'function': 'sandstone_summit_booth:sections/magic/input/wand_use' }
+    }},
+    'rewards': { 'function': 'sandstone_summit_booth:sections/magic/input/wand_use' }
 })
 
 MCFunction('sections/magic/input/wand_use', () => {
