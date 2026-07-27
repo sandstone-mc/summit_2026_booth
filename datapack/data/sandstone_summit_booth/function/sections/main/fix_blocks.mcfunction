@@ -1,2 +1,2 @@
-execute if entity @s[tag=sandstone_summit_booth.main.fix_blocks.relative] run return run function sandstone_summit_booth:sections/main/fix_blocks/inner
-execute positioned -104 83 81 run function sandstone_summit_booth:sections/main/fix_blocks/inner
+execute if score anon_WnYlBycD_5 __sandstone matches 0 run function sandstone_summit_booth:sections/main/fix_blocks/if/if
+scoreboard players set anon_WnYlBycD_5 __sandstone 1

@@ -1,0 +1,23 @@
+execute unless block ~49 ~-20 ~ minecraft:oxidized_copper_trapdoor[facing=north,half=bottom,open=true,powered=false,waterlogged=false] run return 1
+execute unless block ~47 ~-19 ~1 minecraft:barrier[waterlogged=false] run return 1
+execute unless block ~47 ~-19 ~2 minecraft:oxidized_copper_trapdoor[facing=east,half=bottom,open=true,powered=false,waterlogged=false] run return 1
+execute unless block ~49 ~-19 ~3 minecraft:leaf_litter[facing=north,segment_amount=2] run return 1
+execute unless block ~51 ~-19 ~4 minecraft:leaf_litter[facing=south,segment_amount=2] run return 1
+execute unless block ~46 ~-19 ~5 minecraft:leaf_litter[facing=south,segment_amount=3] run return 1
+execute unless block ~47 ~-19 ~6 minecraft:leaf_litter[facing=east,segment_amount=2] run return 1
+execute unless block ~49 ~-19 ~7 minecraft:leaf_litter[facing=east,segment_amount=3] run return 1
+execute unless block ~46 ~-19 ~8 minecraft:leaf_litter[facing=west,segment_amount=3] run return 1
+execute unless block ~47 ~-19 ~9 minecraft:leaf_litter[facing=west,segment_amount=2] run return 1
+execute unless block ~49 ~-19 ~10 minecraft:leaf_litter[facing=north,segment_amount=3] run return 1
+execute unless block ~19 ~-18 ~11 minecraft:black_wall_banner[facing=east] run return 1
+execute unless block ~21 ~-18 ~12 minecraft:black_wall_banner[facing=west] run return 1
+execute unless block ~51 ~-18 ~13 minecraft:bell[attachment=single_wall,facing=north,powered=false] run return 1
+execute unless block ~48 ~-16 ~14 minecraft:black_wall_banner[facing=south] run return 1
+execute unless block ~47 ~-15 ~15 minecraft:oxidized_copper_trapdoor[facing=east,half=top,open=true,powered=false,waterlogged=false] run return 1
+execute unless block ~45 ~-8 ~16 minecraft:bell[attachment=single_wall,facing=east,powered=false] run return 1
+execute unless block ~20 ~-5 ~17 minecraft:waxed_oxidized_copper_trapdoor[facing=south,half=bottom,open=true,powered=false,waterlogged=false] run return 1
+execute unless block ~28 ~-5 ~18 minecraft:waxed_oxidized_copper_trapdoor[facing=south,half=top,open=true,powered=false,waterlogged=false] run return 1
+execute unless block ~20 ~13 ~19 minecraft:leaf_litter[facing=south,segment_amount=1] run return 1
+execute unless block ~20 ~13 ~20 minecraft:leaf_litter[facing=west,segment_amount=1] run return 1
+execute unless block ~33 ~15 ~21 minecraft:leaf_litter[facing=north,segment_amount=1] run return 1
+return 0

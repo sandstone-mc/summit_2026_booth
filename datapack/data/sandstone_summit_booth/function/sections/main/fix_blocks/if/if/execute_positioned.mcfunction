@@ -1,0 +1,1 @@
+execute if function sandstone_summit_booth:sections/main/fix_blocks/or_check2 run function sandstone_summit_booth:sections/main/fix_blocks/inner
