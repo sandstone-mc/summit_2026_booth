@@ -5,21 +5,24 @@
  * TypeScript array literal.
  *
  * Usage:
- *   bun run scripts/extract-blocks.ts <schem> <block-id[,block-id...]> [--out path.ts] [--origin x,y,z] [--name exportName]
+ *   bun run scripts/extract-blocks.ts <schem> <block-id[,block-id...]> [--out path.ts] [--origin x,y,z] [--name exportName] [--regions name[,name...]] [--booth-def path.json]
  *
  * Examples:
  *   bun run scripts/extract-blocks.ts sandstone_booth.schem minecraft:black_banner
  *   bun run scripts/extract-blocks.ts foo.schem minecraft:stone,minecraft:dirt --out src/sections/main/positions.ts
  *   bun run scripts/extract-blocks.ts foo.schem minecraft:stone --origin 100,64,-200 --name stonePositions
+ *   bun run scripts/extract-blocks.ts foo.schem minecraft:stone --regions showcase,castle --out src/sections/main/showcase.ts
+ *   bun run scripts/extract-blocks.ts foo.schem minecraft:stone --regions '*' --out src/sections/main/positions.ts
  */
 
 import nbt from 'prismarine-nbt'
 import { readFileSync, writeFileSync } from 'fs'
+import { join } from 'path'
 
 // ---------- Args ----------
 const argv = process.argv.slice(2)
 if (argv.length < 3 || argv.includes('--help') || argv.includes('-h')) {
-    console.error('Usage: bun run scripts/extract-blocks.ts <schem> <block-id[,block-id...]> --out path.ts [--origin x,y,z] [--name exportName]')
+    console.error('Usage: bun run scripts/extract-blocks.ts <schem> <block-id[,block-id...]> --out path.ts [--origin x,y,z] [--name exportName] [--regions name[,name...]] [--booth-def path.json]')
     process.exit(1)
 }
 
@@ -29,6 +32,8 @@ let origin: [number, number, number] = [0, 0, 0]
 let outPath: string | undefined
 let exportName = 'positions'
 let append = false
+let regionNames: string[] | undefined
+let boothDefPath = join(process.cwd(), 'resources/booth_definition.json')
 
 for (let i = 2; i < argv.length; i++) {
     const a = argv[i]
@@ -39,11 +44,45 @@ for (let i = 2; i < argv.length; i++) {
     }
     else if (a === '--name') exportName = argv[++i]
     else if (a === '--append') append = true
+    else if (a === '--regions') regionNames = argv[++i].split(',').map(s => s.trim()).filter(Boolean)
+    else if (a === '--booth-def') boothDefPath = argv[++i]
 }
 
 if (!outPath) {
     console.error('Error: --out path.ts is required')
     process.exit(1)
+}
+
+// ---------- Region filter (loads booth_definition.json if --regions is set) ----------
+type Cuboid = { xMin: number; xMax: number; yMin: number; yMax: number; zMin: number; zMax: number }
+let boothCuboids: Cuboid[] | undefined
+
+if (regionNames) {
+    const def = JSON.parse(readFileSync(boothDefPath, 'utf-8'))
+    const bbs = def?.bounding_boxes ?? {}
+    if (regionNames.length === 1 && (regionNames[0] === '*' || regionNames[0] === 'all')) {
+        regionNames = Object.keys(bbs)
+        console.error(`[regions] shorthand expanded to all ${regionNames.length} region(s)`)
+    }
+    for (const name of regionNames) {
+        const bb = bbs[name]
+        const p = bb?.position
+        if (!p) throw new Error(`Region "${name}" not found in ${boothDefPath}`)
+        boothCuboids ??= []
+        boothCuboids.push({
+            xMin: p.x.min, xMax: p.x.max,
+            yMin: p.y.min, yMax: p.y.max,
+            zMin: p.z.min, zMax: p.z.max,
+        })
+    }
+    console.error(`[regions] ${regionNames.length} region(s) from ${boothDefPath}: ${regionNames.join(', ')}`)
+}
+
+function inAnyCuboid(cs: Cuboid[], x: number, y: number, z: number): boolean {
+    for (const c of cs) {
+        if (x >= c.xMin && x <= c.xMax && y >= c.yMin && y <= c.yMax && z >= c.zMin && z <= c.zMax) return true
+    }
+    return false
 }
 
 // ---------- Full simplify (unwraps primitives too) ----------
@@ -287,6 +326,7 @@ for (let i = 0; i < total; i++) {
     const out_x = x + xOff + ox
     const out_y = y + yOff + oy
     const out_z = z + zOff + oz
+    if (boothCuboids && !inAnyCuboid(boothCuboids, x + xOff + copyAnchor[0], y + yOff + copyAnchor[1], z + zOff + copyAnchor[2])) continue
     const ent = entityByPos.get(`${x}|${y}|${z}`)
     const pe: PaletteEntry = {
         name: idOf(state),

@@ -22,4 +22,6 @@ MCFunction('init_player', () => {
 
     // grant the visit sticker advancement
     advancement.grant(player).only('summit.sticker_book:sandstone_summit_booth/enter_booth')
+}, {
+    onConflict: 'append'
 })
