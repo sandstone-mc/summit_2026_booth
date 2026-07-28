@@ -1,4 +1,4 @@
-import { _, abs, Advancement, advancement, execute, kill, Label, MCFunction, NBT, particle, raw, rel, Selector, summon, tellraw, title } from 'sandstone'
+import { _, abs, execute, kill, Label, MCFunction, NBT, particle, raw, rel, Selector, summon, tellraw, title } from 'sandstone'
 import { SpellLibrary } from '../spellbook/SpellLibrary'
 import { ShowcaseMarker } from '.'
 import { STATES, GlobalState, SessionPlayer, ShowcaseMobs, startSelection, spawnChangeSchoolButton, ChangeSchoolButtonEntities } from './ShowcaseState'
@@ -33,18 +33,10 @@ function clickEntity(buttonTag: `${any}${string}`) {
   return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [buttonTag] } }
 }
 
-const SELECT_ADVANCEMENTS = PEDESTALS.map(ped => `showcase_select_${ped.schoolId}` as const)
-
-// Per-school click handlers, one advancement (left+right click) per pedestal
 for (const ped of PEDESTALS) {
   const school = SpellLibrary[ped.schoolId]
-  const schoolTag = `sandstone_summit_booth.showcase.pedestal.${ped.schoolId}` as `${any}${string}`
-  const advancementName = `showcase_select_${ped.schoolId}` as const
 
-  const selectSchool = MCFunction(`sections/magic/showcase/selection/select/${ped.schoolId}`, () => {
-    // @s is the clicking player, per player_interacted_with_entity/player_hurt_entity reward semantics
-    advancement.revoke('@s').only(`${NAMESPACE}:${advancementName}`)
-
+  MCFunction(`sections/magic/showcase/selection/select/${ped.schoolId}`, () => {
     setSchoolTrigger('@s').set(school.uid)
 
     title(SessionPlayer).title([{ text: school.name, color: ped.color, bold: true } as any])
@@ -73,12 +65,6 @@ for (const ped of PEDESTALS) {
     ] as any)
   })
 }
-
-MCFunction('sections/magic/showcase/selection/load', () => {
-  for (const name of SELECT_ADVANCEMENTS) {
-    advancement.revoke('@a').only(`${NAMESPACE}:${name}`)
-  }
-}, { runOnLoad: true })
 
 // Called from ShowcaseState.startSelection via raw
 MCFunction('sections/magic/showcase/selection/spawn_pedestals', () => {
@@ -117,7 +103,6 @@ MCFunction('sections/magic/showcase/selection/spawn_pedestals', () => {
         },
       })
 
-      // Clickable hitbox — click detected via the showcase_select_<school> advancement
       summon('interaction', rel(ped.x, ped.y, ped.z), {
         Tags: [commonTag, schoolTag, BOOTH_ENTITY_TAG, 'summit.static', 'summit.interactable'],
         width: NBT.float(1.0),

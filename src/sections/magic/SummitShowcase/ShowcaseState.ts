@@ -408,9 +408,6 @@ MCFunction('sections/magic/showcase/tick', () => {
 MCFunction('sections/magic/showcase/load', () => {
     GlobalState.set(STATES.IDLE)
     scoreboard.players.enable('@s', resetTrigger)
-
-    advancement.revoke('@a').only(`${NAMESPACE}:showcase_reset_click`)
-    advancement.revoke('@a').only(`${NAMESPACE}:showcase_change_school_click`)
 }, { runOnLoad: true })
 
 // Summit compliance: kill all booth entities (ShowcaseMarker, mobs, buttons, pedestals)

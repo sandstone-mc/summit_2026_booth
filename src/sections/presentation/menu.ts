@@ -95,12 +95,18 @@ const spawn_0 = MCFunction('sections/presentation/menu/spawn_0', () => {
         }
     })
     summon('interaction', point(2, .85, -2), {
-        Tags: [ BOOTH_ENTITY_TAG, start_button_entity ],
+        Tags: [ BOOTH_ENTITY_TAG, start_button_entity, 'summit.interactable' ],
         interaction: {},
         attack: {},
         response: true,
         width: NBT.float(3.75),
         height: NBT.float(0.3),
+        data: {
+            summit_interactable: {
+                on_right_click: `function sandstone_summit_booth:sections/presentation/menu/start`,
+                on_left_click: `function sandstone_summit_booth:sections/presentation/menu/start`,
+            }
+        }
     })
 })
 
@@ -110,39 +116,32 @@ const small_logo = ImageDisplayModel(Texture('item', 'presentation/small_logo',
     await Bun.file(join(process.cwd(), 'resources', 'assets', 'small_logo.png')).arrayBuffer() as unknown as Buffer<ArrayBufferLike>
 ))
 
-const start_button = Advancement('sections/presentation/menu/start_button', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(start_button_entity) } },
-    },
-    rewards: { function: MCFunction('sections/presentation/menu/start', () => {
-        start_button.revoke('@s')
+MCFunction('sections/presentation/menu/start', () => {
+    mount()
 
-        mount()
+    summon('item_display', point(-6.25, 13.5, -0.195), {
+        item: {
+            id: 'paper',
+            count: NBT.int(1),
+            components: {
+                'minecraft:item_model': small_logo
+            }
+        },
+        transformation: {
+            scale: NBT.float([23 / 20, 13 / 20, 1 / 4]),
+            translation: NBT.float([0, 0, 0]),
+            left_rotation: NBT.float([0, 1, 0, 0]),
+            right_rotation: NBT.float([0, 0, 0, 1]),
+        },
+        brightness: { sky: NBT.int(15), block: NBT.int(15) },
+        Tags: [ BOOTH_ENTITY_TAG, small_logo_entity ],
+    })
 
-        summon('item_display', point(-6.25, 13.5, -0.195), {
-            item: {
-                id: 'paper',
-                count: NBT.int(1),
-                components: {
-                    'minecraft:item_model': small_logo
-                }
-            },
-            transformation: {
-                scale: NBT.float([23 / 20, 13 / 20, 1 / 4]),
-                translation: NBT.float([0, 0, 0]),
-                left_rotation: NBT.float([0, 1, 0, 0]),
-                right_rotation: NBT.float([0, 0, 0, 1]),
-            },
-            brightness: { sky: NBT.int(15), block: NBT.int(15) },
-            Tags: [ BOOTH_ENTITY_TAG, small_logo_entity ],
-        })
+    kill(screen_saver_entity(Selector('@e', { type: 'minecraft:item_display' })))
+    kill_0()
 
-        kill(screen_saver_entity(Selector('@e', { type: 'minecraft:item_display' })))
-        kill_0()
-
-        spawn_1()
-    }) }
-})
+    spawn_1()
+}) 
 
 const next_button_text = Label('sections.presentation.menu.next_text')
 const next_button_entity = Label('sections.presentation.menu.next_button')
@@ -194,24 +193,19 @@ const spawn_1 = MCFunction('sections/presentation/menu/spawn_1', () => {
         }
     })
     summon('interaction', point(2, .65, -0.4), {
-        Tags: [ BOOTH_ENTITY_TAG, next_button_entity ],
+        Tags: [ BOOTH_ENTITY_TAG, next_button_entity, 'summit.interactable' ],
         interaction: {},
         attack: {},
         response: true,
         width: NBT.float(1.2),
         height: NBT.float(.75),
+        data: {
+            summit_interactable: {
+                on_right_click: `function ${nextSlide.name}`,
+                on_left_click: `function ${nextSlide.name}`
+            }
+        }
     })
-})
-
-const next_button = Advancement('sections/presentation/menu/next_button', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(next_button_entity) } },
-    },
-    rewards: { function: MCFunction('sections/presentation/menu/next', () => {
-        next_button.revoke('@s')
-
-        nextSlide()
-    }) }
 })
 
 const credits_button_entity = Label('sections.presentation.menu.credits')
@@ -225,12 +219,18 @@ const spawn_2 = MCFunction('sections/presentation/menu/spawn_2', () => {
         kill_2()
     }
     summon('interaction', point(2, 0.4, -2), {
-        Tags: [ BOOTH_ENTITY_TAG, credits_button_entity ],
+        Tags: [ BOOTH_ENTITY_TAG, credits_button_entity, 'summit.interactable' ],
         interaction: {},
         attack: {},
         response: true,
         width: NBT.float(4.1),
         height: NBT.float(1.25),
+        data: {
+            summit_interactable: {
+                on_right_click: 'execute on target run function sandstone_summit_booth:sections/presentation/menu/credits',
+                on_left_click: 'execute on attacker run function sandstone_summit_booth:sections/presentation/menu/credits'
+            }
+        }
     })
 
     spawn_credits_display()
@@ -278,15 +278,8 @@ const spawn_credits_display = MCFunction('sections/presentation/menu/credits_dis
     schedule.function(credits_loop, '1t', 'replace')
 })
 
-const credits_button = Advancement('sections/presentation/menu/credits_button', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: click_entity(credits_button_entity) } },
-    },
-    rewards: { function: MCFunction('sections/presentation/menu/credits', () => {
-        credits_button.revoke('@s')
-
-        dialog.show('@s', creditsDialog({ text: 'Booth Credits' }))
-    }) }
+MCFunction('sections/presentation/menu/credits', () => {
+    dialog.show('@s', creditsDialog({ text: 'Booth Credits' }))
 })
 
 MCFunction('sections/presentation/end', () => {
