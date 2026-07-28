@@ -1,8 +1,4 @@
+scoreboard players set anon_WnYlBycD_9 __sandstone 0
 scoreboard players set anon_WnYlBycD_10 __sandstone 0
-scoreboard players set anon_WnYlBycD_11 __sandstone 0
-scoreboard players set anon_WnYlBycD_40 __sandstone 0
-advancement revoke @a only sandstone_summit_booth:ui_lb_song
-advancement revoke @a only sandstone_summit_booth:ui_lb_song_back
-advancement revoke @a only sandstone_summit_booth:ui_lb_cat
-advancement revoke @a only sandstone_summit_booth:ui_lb_my
+scoreboard players set anon_WnYlBycD_39 __sandstone 0
 function sandstone_summit_booth:sections/rhythm/leaderboard/update

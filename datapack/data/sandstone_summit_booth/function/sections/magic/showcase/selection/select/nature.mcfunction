@@ -1,4 +1,3 @@
-advancement revoke @s only sandstone_summit_booth:showcase_select_nature
 scoreboard players set @s sandstone_summit_booth.set_school_trigger 4
 title @a[tag=sandstone_summit_booth.showcase.player] title [{"text":"Nature","color":"green","bold":true}]
 title @a[tag=sandstone_summit_booth.showcase.player] subtitle [{"text":"School selected!","color":"gray","italic":true}]

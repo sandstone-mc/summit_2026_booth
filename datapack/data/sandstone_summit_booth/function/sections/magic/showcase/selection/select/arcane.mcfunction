@@ -1,4 +1,3 @@
-advancement revoke @s only sandstone_summit_booth:showcase_select_arcane
 scoreboard players set @s sandstone_summit_booth.set_school_trigger 2
 title @a[tag=sandstone_summit_booth.showcase.player] title [{"text":"Arcane","color":"light_purple","bold":true}]
 title @a[tag=sandstone_summit_booth.showcase.player] subtitle [{"text":"School selected!","color":"gray","italic":true}]

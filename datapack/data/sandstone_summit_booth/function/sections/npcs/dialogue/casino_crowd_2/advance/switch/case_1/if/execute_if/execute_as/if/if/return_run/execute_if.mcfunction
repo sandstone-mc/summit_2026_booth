@@ -1,0 +1,1 @@
+execute as @e[type=minecraft:mannequin, tag=sandstone_summit_booth.npc.casino_crowd_2] run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_2/line_2/show

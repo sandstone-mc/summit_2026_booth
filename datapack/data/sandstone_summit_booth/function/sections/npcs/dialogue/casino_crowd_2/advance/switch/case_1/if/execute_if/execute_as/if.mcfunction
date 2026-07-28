@@ -1,0 +1,2 @@
+execute unless score @s sandstone_summit_booth.npc.balloon_cooldown > anon_WnYlBycD_47 __sandstone run return run execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_2.interactor] run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_2/advance/switch/case_1/if/execute_if/execute_as/if/if/return_run/execute_if
+execute if entity @s[tag=sandstone_summit_booth.npc.casino_crowd_2.interactor] run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_2/advance/switch/case_1/if/execute_if/execute_as/if/execute_if

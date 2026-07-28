@@ -1,2 +1,2 @@
-summon interaction -74.01 76.4 40.197 {Tags:['summit.booth_entity.sandstone_summit_booth','sandstone_summit_booth.sections.presentation.menu.credits'],interaction:{},attack:{},response:true,width:4.1f,height:1.25f}
+summon interaction -74.01 76.4 40.197 {Tags:['summit.booth_entity.sandstone_summit_booth','sandstone_summit_booth.sections.presentation.menu.credits','summit.interactable'],interaction:{},attack:{},response:true,width:4.1f,height:1.25f,data:{summit_interactable:{on_right_click:'execute on target run function sandstone_summit_booth:sections/presentation/menu/credits',on_left_click:'execute on attacker run function sandstone_summit_booth:sections/presentation/menu/credits'}}}
 function sandstone_summit_booth:sections/presentation/menu/credits_display/spawn

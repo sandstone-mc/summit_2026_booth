@@ -1,0 +1,1 @@
+execute as @e[type=minecraft:text_display, tag=sandstone_summit_booth.npc.display, distance=0..2] run data merge entity @s {text:''}

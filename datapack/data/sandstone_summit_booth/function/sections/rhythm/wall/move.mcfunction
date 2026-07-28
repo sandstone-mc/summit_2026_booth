@@ -1,2 +1,2 @@
 execute as @e[type=#sandstone_summit_booth:rhythm_wall, tag=snd.rhythm.wall, tag=snd.rhythm.wall.hit, tag=!snd.rhythm.wall.init, tag=!snd.rhythm.wall.wait] at @s run function sandstone_summit_booth:sections/rhythm/wall/move/execute_as
-execute if score anon_WnYlBycD_9 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/wall/move/if
+execute if score anon_WnYlBycD_8 __sandstone matches 1 run function sandstone_summit_booth:sections/rhythm/wall/move/if

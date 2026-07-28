@@ -1,3 +1,2 @@
-advancement revoke @s only sandstone_summit_booth:sections/elevator/inside_button_1
 execute at @e[type=minecraft:block_display, limit=1, tag=sandstone_summit_booth.elevator.car] positioned ~-2.5 ~0.53125 ~-2.5 as @a[dx=5, dy=5, dz=5, tag=!sandstone_summit_booth.elevator.rider] run tag @s add sandstone_summit_booth.elevator.rider
 execute if entity @a[tag=sandstone_summit_booth.elevator.rider] run function sandstone_summit_booth:sections/elevator/inside_button_reward/1/if

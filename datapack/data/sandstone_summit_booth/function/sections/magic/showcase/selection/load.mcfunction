@@ -1,5 +1,0 @@
-advancement revoke @a only sandstone_summit_booth:showcase_select_fire
-advancement revoke @a only sandstone_summit_booth:showcase_select_ice
-advancement revoke @a only sandstone_summit_booth:showcase_select_arcane
-advancement revoke @a only sandstone_summit_booth:showcase_select_lightning
-advancement revoke @a only sandstone_summit_booth:showcase_select_nature

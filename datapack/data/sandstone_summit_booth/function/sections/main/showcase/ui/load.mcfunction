@@ -1,1 +1,0 @@
-advancement revoke @a only sandstone_summit_booth:showcase_change_click

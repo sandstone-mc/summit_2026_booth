@@ -1,0 +1,1 @@
+execute as @a[tag=sandstone_summit_booth.npc.casino_crowd_2.interactor, limit=1] run function sandstone_summit_booth:sections/npcs/dialogue/casino_crowd_2/advance/switch/case_1/if/execute_if/execute_as

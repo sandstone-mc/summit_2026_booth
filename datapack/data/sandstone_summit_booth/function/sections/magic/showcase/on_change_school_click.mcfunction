@@ -1,2 +1,0 @@
-advancement revoke @s only sandstone_summit_booth:showcase_change_school_click
-function sandstone_summit_booth:sections/magic/showcase/selection/change_school
