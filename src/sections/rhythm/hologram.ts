@@ -1,4 +1,4 @@
-import { abs, data, NBT, summon } from 'sandstone'
+import { abs, data, MCFunctionClass, NBT, summon } from 'sandstone'
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { type Tags, boothTags } from './game/state'
 import { type PanelConfig } from './config'
@@ -84,9 +84,13 @@ export function spawnClick(
     panel: PanelConfig,
     xOffset: number,
     y: number,
-    tags: Tags[],
+    tags: (Tags | string)[],
     width: number,
     yOffset = 0,
+    onClick: {
+        left?: MCFunctionClass,
+        right?: MCFunctionClass
+    },
     height?: number,
 ) {
     const clickHeight = height ?? lineHeight(panel)
@@ -100,10 +104,21 @@ export function spawnClick(
     const interactionX = Math.round((panel.x + Math.cos(rad) * xOffset + Math.sin(rad) * forward) * 1000) / 1000
     const interactionZ = Math.round((panel.z + Math.sin(rad) * xOffset - Math.cos(rad) * forward) * 1000) / 1000
 
+    const clickCallbacks: {
+        on_left_click?: string;
+        on_right_click?: string;
+    } = {};
+
+    if (onClick.right) clickCallbacks.on_right_click = `execute on target run function ${onClick.right.name}`
+    if (onClick.left) clickCallbacks.on_left_click = `execute on attacker run function ${onClick.left.name}`
+
     summon('minecraft:interaction', abs(interactionX, y - clickHeight / 2 + yOffset, interactionZ), {
         Tags: boothTags(...tags),
         width: NBT.float(width),
         height: NBT.float(clickHeight),
         response: true,
+        data: {
+            summit_interactable: clickCallbacks
+        }
     })
 }

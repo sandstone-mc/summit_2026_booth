@@ -449,122 +449,6 @@ const onMapCycleBack = MCFunction(
     { lazy: true },
 )
 
-// every button is reward-triggered
-function clickEntity(buttonTag: Tags) {
-    return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [buttonTag] } }
-}
-
-Advancement('ui_song_cycle', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_SONG_INT) } },
-    },
-    rewards: { function: onSongCycle },
-})
-
-Advancement('ui_song_cycle_back', {
-    criteria: {
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_SONG_INT) } },
-    },
-    rewards: { function: onSongCycleBack },
-})
-
-Advancement('ui_lives_cycle', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_LIVES_INT) } },
-    },
-    rewards: { function: onLivesCycle },
-})
-
-Advancement('ui_lives_cycle_back', {
-    criteria: {
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_LIVES_INT) } },
-    },
-    rewards: { function: onLivesCycleBack },
-})
-
-Advancement('ui_map_cycle', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_MAP_INT) } },
-    },
-    rewards: { function: onMapCycle },
-})
-
-Advancement('ui_map_cycle_back', {
-    criteria: {
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_MAP_INT) } },
-    },
-    rewards: { function: onMapCycleBack },
-})
-
-Advancement('ui_ms_down', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_MS_DOWN_INT) } },
-    },
-    rewards: { function: onMsDown },
-})
-
-Advancement('ui_ms_down_big', {
-    criteria: {
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_MS_DOWN_INT) } },
-    },
-    rewards: { function: onMsDownBig },
-})
-
-Advancement('ui_ms_up', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_MS_UP_INT) } },
-    },
-    rewards: { function: onMsUp },
-})
-
-Advancement('ui_ms_up_big', {
-    criteria: {
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_MS_UP_INT) } },
-    },
-    rewards: { function: onMsUpBig },
-})
-
-Advancement('ui_interp_cycle', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_INTERP_INT) } },
-    },
-    rewards: { function: onInterpCycle },
-})
-
-Advancement('ui_start_game', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_START_INT) } },
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_START_INT) } },
-    },
-    requirements: [
-        [ 'hit', 'click' ]
-    ],
-    rewards: { function: onStartGame },
-})
-
-MCFunction(
-    'sections/rhythm/settings/init',
-    () => {
-        for (const adv of [
-            'ui_song_cycle',
-            'ui_song_cycle_back',
-            'ui_lives_cycle',
-            'ui_lives_cycle_back',
-            'ui_map_cycle',
-            'ui_map_cycle_back',
-            'ui_ms_down',
-            'ui_ms_down_big',
-            'ui_ms_up',
-            'ui_ms_up_big',
-            'ui_interp_cycle',
-            'ui_start_game',
-        ]) {
-            advancement.revoke('@a').only(`${NAMESPACE}:${adv}`)
-        }
-    },
-    { runOnLoad: true },
-)
-
 const BACKDROP_TEXT: JSONTextComponent = [
     { text: `SETTINGS${panels.padding}`, color: 'white', bold: true },
     { text: `\n\n\n\n\n\n\n\n\n\n\n\n${panels.ruler}` },
@@ -587,23 +471,23 @@ export const spawnSettingsPanel = MCFunction(
         updateSettingsPanel()
 
         const songY = lineY(panels.settings, TOTAL_LINES, 2)
-        spawnClick(panels.settings, 0, songY, [Tags.UI_SETTINGS, Tags.UI_SONG_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
+        spawnClick(panels.settings, 0, songY, [Tags.UI_SETTINGS, Tags.UI_SONG_INT, 'summit.interactable'], CLICK_WIDTH, CLICK_Y_OFFSET, { right: onSongCycle, left: onSongCycleBack })
 
         const livesY = lineY(panels.settings, TOTAL_LINES, 4)
-        spawnClick(panels.settings, 0, livesY, [Tags.UI_SETTINGS, Tags.UI_LIVES_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
+        spawnClick(panels.settings, 0, livesY, [Tags.UI_SETTINGS, Tags.UI_LIVES_INT, 'summit.interactable'], CLICK_WIDTH, CLICK_Y_OFFSET, { right: onLivesCycle, left: onLivesCycleBack })
 
         const mapY = lineY(panels.settings, TOTAL_LINES, 6)
-        spawnClick(panels.settings, 0, mapY, [Tags.UI_SETTINGS, Tags.UI_MAP_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
+        spawnClick(panels.settings, 0, mapY, [Tags.UI_SETTINGS, Tags.UI_MAP_INT, 'summit.interactable'], CLICK_WIDTH, CLICK_Y_OFFSET, { right: onMapCycle, left: onMapCycleBack })
 
         const calY = lineY(panels.settings, TOTAL_LINES, CAL_LINE)
-        spawnClick(panels.settings, 0.18, calY, [Tags.UI_SETTINGS, Tags.UI_MS_DOWN_INT], CLICK_HALF_WIDTH, CLICK_Y_OFFSET)
-        spawnClick(panels.settings, 1.68, calY, [Tags.UI_SETTINGS, Tags.UI_MS_UP_INT], CLICK_HALF_WIDTH, CLICK_Y_OFFSET)
+        spawnClick(panels.settings, 0.18, calY, [Tags.UI_SETTINGS, Tags.UI_MS_DOWN_INT, 'summit.interactable'], CLICK_HALF_WIDTH, CLICK_Y_OFFSET, { right: onMsDown, left: onMsDownBig })
+        spawnClick(panels.settings, 1.68, calY, [Tags.UI_SETTINGS, Tags.UI_MS_UP_INT, 'summit.interactable'], CLICK_HALF_WIDTH, CLICK_Y_OFFSET, { right: onMsUp, left: onMsUpBig })
 
         const interpY = lineY(panels.settings, TOTAL_LINES, INTERP_LINE)
-        spawnClick(panels.settings, 0, interpY, [Tags.UI_SETTINGS, Tags.UI_INTERP_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
+        spawnClick(panels.settings, 0, interpY, [Tags.UI_SETTINGS, Tags.UI_INTERP_INT, 'summit.interactable'], CLICK_WIDTH, CLICK_Y_OFFSET, { right: onInterpCycle, left: onInterpCycle })
 
         const startY = lineY(panels.settings, TOTAL_LINES, BUTTON_LINE)
-        spawnClick(panels.settings, 0, startY, [Tags.UI_SETTINGS, Tags.UI_START_INT], CLICK_WIDTH, CLICK_Y_OFFSET)
+        spawnClick(panels.settings, 0, startY, [Tags.UI_SETTINGS, Tags.UI_START_INT, 'summit.interactable'], CLICK_WIDTH, CLICK_Y_OFFSET, { right: onStartGame, left: onStartGame })
     },
     { lazy: true },
 )

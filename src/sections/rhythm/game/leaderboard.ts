@@ -335,45 +335,6 @@ const onMyScore = MCFunction(
     { lazy: true },
 )
 
-/*
- * same reward-driven pattern as settings.ts: right-click via player_interacted_with_entity,
- * left-click via player_hurt_entity. Attacking an interaction entity fires player_hurt_entity
- * even though it has no health - see https://minecraft.wiki/w/Interaction#Advancement_triggers.
- * No per-tick polling needed - the reward runs as/at the clicking player and revokes itself.
- */
-function clickEntity(buttonTag: Tags) {
-    return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [`${buttonTag}`] } }
-}
-
-Advancement('ui_lb_song', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_LB_SONG_INT) } },
-    },
-    rewards: { function: onSongCycle },
-})
-
-Advancement('ui_lb_song_back', {
-    criteria: {
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(Tags.UI_LB_SONG_INT) } },
-    },
-    rewards: { function: onSongCycleBack },
-})
-
-// cat toggle doesn't distinguish click direction - either click fires the same reward
-Advancement('ui_lb_cat', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_LB_CAT_INT) } },
-    },
-    rewards: { function: onCatToggle },
-})
-
-Advancement('ui_lb_my', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(Tags.UI_LB_MY_INT) } },
-    },
-    rewards: { function: onMyScore },
-})
-
 export const saveLeaderboard = MCFunction(
     'sections/rhythm/leaderboard/save',
     () => {
@@ -428,10 +389,6 @@ MCFunction(
         leaderboardCategoryView.set(0)
         scrollPos.set(0)
 
-        for (const adv of ['ui_lb_song', 'ui_lb_song_back', 'ui_lb_cat', 'ui_lb_my']) {
-            advancement.revoke('@a').only(`${NAMESPACE}:${adv}`)
-        }
-
         updateDisplay()
     },
     { runOnLoad: true },
@@ -469,11 +426,11 @@ export const spawnLeaderboardPanel = MCFunction(
         updateDisplay()
 
         const btnY = lineY(panels.leaderboard, TOTAL_LINES, 13)
-        spawnClick(panels.leaderboard, -0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_SONG_INT], 1.5, CLICK_Y_OFFSET)
-        spawnClick(panels.leaderboard, 0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_CAT_INT], 1.5, CLICK_Y_OFFSET)
+        spawnClick(panels.leaderboard, -0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_SONG_INT, 'summit.interactable'], 1.5, CLICK_Y_OFFSET, { right: onSongCycle, left: onSongCycleBack })
+        spawnClick(panels.leaderboard, 0.75, btnY, [Tags.UI_LEADERBOARD, Tags.UI_LB_CAT_INT, 'summit.interactable'], 1.5, CLICK_Y_OFFSET, { right: onCatToggle, left: onCatToggle })
 
         const myY = lineY(panels.leaderboard, TOTAL_LINES, 14)
-        spawnClick(panels.leaderboard, 0, myY, [Tags.UI_LEADERBOARD, Tags.UI_LB_MY_INT], 3, CLICK_Y_OFFSET)
+        spawnClick(panels.leaderboard, 0, myY, [Tags.UI_LEADERBOARD, Tags.UI_LB_MY_INT, 'summit.interactable'], 3, CLICK_Y_OFFSET, { right: onMyScore, left: onMyScore })
     },
     { lazy: true },
 )
