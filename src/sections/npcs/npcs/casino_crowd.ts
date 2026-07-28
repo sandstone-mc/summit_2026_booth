@@ -1,7 +1,15 @@
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC, NPCHeldItemWithComponents, type NPCOptions } from '../NPC'
 import { ProfileProperties } from './skins'
-import { functionCmd, NBT } from 'sandstone'
+import { _, execute, functionCmd, NBT, Objective, Variable } from 'sandstone'
+
+// how often a player can be given a balloon by the merch NPC
+const BALLOON_COOLDOWN_TICKS = 20 * 60 * 20 // 20 minutes
+
+// gametime a player next qualifies for a balloon; unset = never claimed one
+const BalloonReadyAt = Objective.create('npc.balloon_cooldown')
+// scratch score, restamped with the current gametime right before each check
+const currentGametime = Variable(0)
 
 const presentationWatcherDialogue = DialogueTree('casino_crowd_1', {
     nodes: [{
@@ -42,7 +50,15 @@ const merchFiendDialogue = DialogueTree('casino_crowd_2', {
         lines: [
             { text: "Talk to me again and I might just let you have one of these extra balloons I got." }
         ],
-        next: 'balloon'
+        next: {
+            condition: () => {
+                execute.store.result.score(currentGametime).run.time.query('gametime')
+                // unset (never claimed) counts as ready
+                return _.not(BalloonReadyAt('@s').greaterThan(currentGametime))
+            },
+            then: 'balloon',
+            else: 'balloon_cooldown',
+        },
     },
     {
         id: 'balloon',
@@ -52,8 +68,17 @@ const merchFiendDialogue = DialogueTree('casino_crowd_2', {
                 text: 'Here you go.',
                 onComplete: () => {
                     functionCmd('summit.balloon:give/sandstone_summit_booth/sand_castle')
+                    execute.store.result.score(BalloonReadyAt('@s')).run.time.query('gametime')
+                    BalloonReadyAt('@s').add(BALLOON_COOLDOWN_TICKS)
                 }
             }
+        ]
+    },
+    {
+        id: 'balloon_cooldown',
+        advance: 'auto',
+        lines: [
+            { text: "Ah, you already got one from me recently. Come back later for another balloon!" }
         ]
     }],
 })

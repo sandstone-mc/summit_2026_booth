@@ -54,7 +54,8 @@ export interface DialogueNode {
     advance?: 'click' | 'auto'
     autoDelay?: number
     // Auto-continue to this node once the last line finishes.
-    next?: string
+    // Pass an object to branch to a different node depending on a condition,
+    next?: string | { condition: Condition | (() => Condition), then: string, else: string }
 }
 
 export interface DialogueTreeOptions {
@@ -166,6 +167,16 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
         throw new Error(`DialogueTree "${id}": start node "${startNodeId}" does not exist`)
     }
 
+    for (const node of nodes) {
+        if (node.next && typeof node.next !== 'string') {
+            for (const branchId of [node.next.then, node.next.else]) {
+                if (!(branchId in nodeFirstIndex)) {
+                    throw new Error(`DialogueTree "${id}": node "${node.id}" branches to "${branchId}", which does not exist`)
+                }
+            }
+        }
+    }
+
     // NPCs this tree is actually attached to via CreateNPC
     function owners() {
         return registry.filter((npc) => npc.dialogue?.id === id)
@@ -206,8 +217,22 @@ export function DialogueTree(id: string, options: DialogueTreeOptions): Dialogue
             return () => showFns[targetIndex]()
         }
         if (f.node.next) {
-            const nextNodeId = f.node.next
-            return () => showFns[nodeFirstIndex[nextNodeId]]()
+            if (typeof f.node.next === 'string') {
+                const nextNodeId = f.node.next
+                return () => showFns[nodeFirstIndex[nextNodeId]]()
+            }
+            const { condition, then: thenId, else: elseId } = f.node.next
+            const thenIndex = nodeFirstIndex[thenId]
+            const elseIndex = nodeFirstIndex[elseId]
+            return () => {
+                runAsPlayer(() => {
+                    _.if(typeof condition === 'function' ? condition() : condition, () => {
+                        runAsMyNpc(() => showFns[thenIndex]())
+                    }).else(() => {
+                        runAsMyNpc(() => showFns[elseIndex]())
+                    })
+                })
+            }
         }
         return () => end()
     })
