@@ -620,6 +620,7 @@ const positions = [
 const fix_blocks_inner = MCFunction('sections/main/fix_blocks/inner', () => {
   fill(rel(28, -6, -39), rel(31, -7, -39), 'air').strict()
   fill(rel(51, -18, -31), rel(51, -15, -31), 'air').strict()
+  fill(rel(-59, 86, 44), rel(-59, 86, 47), 'air').strict()
 
   for (const [x, y, z, state] of positions) {
     const block = positionsPalette[state]
