@@ -22,7 +22,7 @@
     "@types/bun": "latest",
     "@types/less": "^3.0.8",
     "adm-zip": "^0.5.17",
-    "sandstone-cli": "^2.4.4",
+    "sandstone-cli": "^2.5.3",
     "typescript": "^5.9.3"
   },
   "dependencies": {
@@ -30,7 +30,7 @@
     "@tonejs/midi": "^2.0.28",
     "less": "^4.6.7",
     "postcss-selector-parser": "^7.1.4",
-    "sandstone": "1.1.6",
+    "sandstone": "^1.1.6",
     "sharp": "^0.35.3",
     "socket.io-client": "^4.8.3",
     "web-tree-sitter": "^0.26.7"
