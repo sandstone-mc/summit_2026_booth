@@ -72,15 +72,6 @@ for (const ped of PEDESTALS) {
       ]),
     ] as any)
   })
-
-  Advancement(advancementName, {
-    criteria: {
-      click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(schoolTag) } },
-      hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(schoolTag) } },
-    },
-    requirements: [['click', 'hit']],
-    rewards: { function: selectSchool },
-  })
 }
 
 MCFunction('sections/magic/showcase/selection/load', () => {
@@ -128,10 +119,16 @@ MCFunction('sections/magic/showcase/selection/spawn_pedestals', () => {
 
       // Clickable hitbox — click detected via the showcase_select_<school> advancement
       summon('interaction', rel(ped.x, ped.y, ped.z), {
-        Tags: [commonTag, schoolTag, BOOTH_ENTITY_TAG, 'summit.static'],
+        Tags: [commonTag, schoolTag, BOOTH_ENTITY_TAG, 'summit.static', 'summit.interactable'],
         width: NBT.float(1.0),
         height: NBT.float(2.5),
         response: true,
+        data: {
+          summit_interactable: {
+            on_right_click: `execute on target run function sandstone_summit_booth:sections/magic/showcase/selection/select/${ped.schoolId}`,
+            on_left_click: `execute on attacker run function sandstone_summit_booth:sections/magic/showcase/selection/select/${ped.schoolId}`
+          }
+        }
       })
     }
   })

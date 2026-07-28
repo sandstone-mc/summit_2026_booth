@@ -233,10 +233,16 @@ const spawnButtons = MCFunction('sections/magic/showcase/spawn_buttons', () => {
             brightness: { sky: NBT.int(15), block: NBT.int(15) },
         })
         summon('interaction', rel(9.5, 0, 26), {
-            Tags: [buttonTag, ResetButtonTag.fullName, BOOTH_ENTITY_TAG],
+            Tags: [buttonTag, ResetButtonTag.fullName, BOOTH_ENTITY_TAG, 'summit.interactable'],
             width: NBT.float(2.5),
             height: NBT.float(3.0),
             response: true,
+            data: {
+                summit_interactable: {
+                    on_right_click: `execute on target run function ${reset.name}`,
+                    on_left_click: `execute on attacker run function ${reset.name}`
+                }
+            }
         })
 
 
@@ -270,41 +276,19 @@ export const spawnChangeSchoolButton = MCFunction('sections/magic/showcase/spawn
             },
         })
         summon('interaction', CENTER_PEDESTAL_POS, {
-            Tags: [buttonTag, ChangeSchoolButtonTag.fullName, BOOTH_ENTITY_TAG],
+            Tags: [buttonTag, ChangeSchoolButtonTag.fullName, BOOTH_ENTITY_TAG, 'summit.interactable'],
             width: NBT.float(2.5),
             height: NBT.float(3.0),
             response: true,
+            data: {
+                summit_interactable: {
+                    on_right_click: `execute on target run function ${changeSchool.name}`,
+                    on_left_click: `execute on attacker run function ${changeSchool.name}`
+                }
+            }
         })
     })
 }, { lazy: true })
-
-Advancement('showcase_reset_click', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(ResetButtonTag) } },
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(ResetButtonTag) } },
-    },
-    requirements: [['click', 'hit']],
-    rewards: {
-        function: MCFunction('sections/magic/showcase/on_reset_click', () => {
-            advancement.revoke('@s').only(`${NAMESPACE}:showcase_reset_click`)
-            reset()
-        })
-    }
-})
-
-Advancement('showcase_change_school_click', {
-    criteria: {
-        click: { trigger: 'minecraft:player_interacted_with_entity', conditions: { entity: clickEntity(ChangeSchoolButtonTag) } },
-        hit: { trigger: 'minecraft:player_hurt_entity', conditions: { entity: clickEntity(ChangeSchoolButtonTag) } },
-    },
-    requirements: [['click', 'hit']],
-    rewards: {
-        function: MCFunction('sections/magic/showcase/on_change_school_click', () => {
-            advancement.revoke('@s').only(`${NAMESPACE}:showcase_change_school_click`)
-            changeSchool()
-        })
-    }
-})
 
 const intro = MCFunction('sections/magic/showcase/intro', () => {
     GlobalState.set(STATES.INTRO)

@@ -206,8 +206,8 @@ const spawnChangeShowcaseButton = MCFunction('sections/main/showcase/ui/spawn_bu
         response: true,
         data: {
             summit_interactable: {
-                on_right_click: `execute on target run function ${cycleShowcase.name}`,
-                on_left_click: `execute on attacker run function ${cycleShowcase.name}`
+                on_right_click: `function ${cycleShowcase.name}`,
+                on_left_click: `function ${cycleShowcase.name}`
             }
         }
     })
