@@ -448,24 +448,9 @@ detectBell(-59, 75, 47, 1)
 detectBell(-59, 85, 48, 0)
 
 function detectInsideButton(floorIdx: number) {
-    const clicked = Advancement(`sections/elevator/inside_button_${floorIdx}`, {
-        criteria: {
-            click: {
-                trigger: 'minecraft:player_interacted_with_entity',
-                conditions: {
-                    entity: { entity_type: 'minecraft:interaction', entity_tags: { all_of: [ButtonFloorLabels[floorIdx].fullName] } },
-                },
-            },
-        },
-        rewards: {
-            function: MCFunction(`sections/elevator/inside_button_reward/${floorIdx}`, () => {
-                clicked.revoke('@s')
-
-                tagFootprintRiders()
-
-                _.if(_.entity(Riders), () => requestFloor(floorIdx))
-            })
-        }
+    MCFunction(`sections/elevator/inside_button_reward/${floorIdx}`, () => {
+        tagFootprintRiders()
+        _.if(_.entity(Riders), () => requestFloor(floorIdx))
     })
 }
 
@@ -521,10 +506,16 @@ export const spawnElevator = MCFunction('sections/elevator/spawn', () => {
         const [ex, ey, ez] = FLOORS[STARTING_FLOOR].elevator_pos
 
         summon('minecraft:interaction', abs(ex + ox, ey + oy, ez + oz), {
-            Tags: [ButtonFloorLabels[floorIdx].fullName, CarPartLabel.fullName, BOOTH_ENTITY_TAG],
+            Tags: [ButtonFloorLabels[floorIdx].fullName, CarPartLabel.fullName, BOOTH_ENTITY_TAG, 'summit.interactable'],
             width: NBT.float(0.25),
             height: NBT.float(0.25),
             response: true,
+            data: {
+                summit_interactable: {
+                    on_right_click: `function sandstone_summit_booth:sections/elevator/inside_button_reward/${floorIdx}`,
+                    on_left_click: `function sandstone_summit_booth:sections/elevator/inside_button_reward/${floorIdx}`,
+                }
+            }
         })
     }
 
