@@ -22,7 +22,7 @@
     "@types/bun": "latest",
     "@types/less": "^3.0.8",
     "adm-zip": "^0.5.17",
-    "sandstone-cli": "^2.5.2",
+    "sandstone-cli": "^2.5.3",
     "typescript": "^5.9.3"
   },
   "dependencies": {

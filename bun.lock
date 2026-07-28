@@ -19,7 +19,7 @@
         "@types/bun": "latest",
         "@types/less": "^3.0.8",
         "adm-zip": "^0.5.17",
-        "sandstone-cli": "^2.5.2",
+        "sandstone-cli": "^2.5.3",
         "typescript": "^5.9.3",
       },
     },
@@ -416,7 +416,7 @@
 
     "sandstone": ["sandstone@1.1.6", "", { "dependencies": { "@sinclair/typebox": "^0.34.52", "@smithed-mc/data-types": "^0.3.1", "@types/bun": "^1.3.14", "@types/nearley": "^2.11.5", "adm-zip": "^0.6.0", "fs-extra": "^11.3.6", "lodash": "^4.18.1", "nearley": "^2.20.1", "prismarine-nbt": "^2.8.0", "semver": "^7.8.5" } }, "sha512-rTMlbxR+95PHTcQLQ5TC7a4difrsr1VCsDj1nWcqbCTAQNkCTpCJlOB/OEskPL9HT8VDo4rQTRblc5S2lQ1idQ=="],
 
-    "sandstone-cli": ["sandstone-cli@2.5.2", "", { "dependencies": { "@inquirer/prompts": "^8.5.2", "@parcel/watcher": "^2.5.6", "@sandstone-mc/hot-hook": "^0.1.0", "adm-zip": "^0.6.0", "chalk": "^5.6.2", "chalk-template": "^1.1.2", "commander": "^15.0.0", "figlet": "^1.11.0", "fs-extra": "^11.3.5", "ink": "^7.1.1", "ink-spinner": "^5.0.0", "nanoid": "^6.0.0", "obliterator": "^2.0.5", "react": "^19.2.7", "semver": "^7.8.5", "source-map-js": "^1.2.1" }, "bin": { "sand": "lib/index.js", "create-sandstone": "lib/create.js" } }, "sha512-QpC7EFlEQq0eDBIo1ycnQ5gNC7Q3+toCVS0TtwBTYB79ZE3Rzb0JQhTgL3SGOYlyz0mZCFFuIhttcK56Ax58pA=="],
+    "sandstone-cli": ["sandstone-cli@2.5.3", "", { "dependencies": { "@inquirer/prompts": "^8.5.2", "@parcel/watcher": "^2.5.6", "@sandstone-mc/hot-hook": "^0.1.0", "adm-zip": "^0.6.0", "chalk": "^5.6.2", "chalk-template": "^1.1.2", "commander": "^15.0.0", "figlet": "^1.11.0", "fs-extra": "^11.3.5", "ink": "^7.1.1", "ink-spinner": "^5.0.0", "nanoid": "^6.0.0", "obliterator": "^2.0.5", "react": "^19.2.7", "semver": "^7.8.5", "source-map-js": "^1.2.1" }, "bin": { "sand": "lib/index.js", "create-sandstone": "lib/create.js" } }, "sha512-QjaDJqm87ZpH/onCfRzVwN6Y+G1cfm4gACLK8/F8WRpY3pwamDhDmDJBwyxChuEUvm/QRoXq385mPr9uMKH44Q=="],
 
     "sax": ["sax@1.6.1", "", {}, "sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q=="],
 
