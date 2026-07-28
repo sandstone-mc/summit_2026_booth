@@ -2,7 +2,6 @@ import {
     Variable,
     _,
     advancement,
-    Advancement,
     execute,
     MCFunction,
     type MCFunctionClass,
@@ -264,7 +263,6 @@ const onSongCycle = MCFunction(
             updateDisplay()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_song`)
     },
     { lazy: true },
 )
@@ -280,7 +278,6 @@ const onSongCycleBack = MCFunction(
             updateDisplay()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_song_back`)
     },
     { lazy: true },
 )
@@ -297,7 +294,6 @@ const onCatToggle = MCFunction(
             updateDisplay()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_cat`)
     },
     { lazy: true },
 )
@@ -330,7 +326,6 @@ const onMyScore = MCFunction(
         )
         mergeDisplayText(youLineSel, YOU_TEXT)
         execute.at('@s').run.playsound('minecraft:entity.player.levelup', 'master', '@s')
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_lb_my`)
     },
     { lazy: true },
 )

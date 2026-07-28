@@ -3,7 +3,6 @@ import {
     advancement,
     type Score,
     Variable,
-    Advancement,
     execute,
     MCFunction,
     type MCFunctionClass,
@@ -271,7 +270,6 @@ const onSongCycle = MCFunction(
             updateSongLine()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_song_cycle`)
     },
     { lazy: true },
 )
@@ -287,7 +285,6 @@ const onLivesCycle = MCFunction(
             updateLivesLine()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_lives_cycle`)
     },
     { lazy: true },
 )
@@ -306,7 +303,6 @@ const onMapCycle = MCFunction(
             updateMapLine()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_map_cycle`)
     },
     { lazy: true },
 )
@@ -323,7 +319,6 @@ const onInterpCycle = MCFunction(
             updateInterpLine()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_interp_cycle`)
     },
     { lazy: true },
 )
@@ -336,7 +331,6 @@ const onMsDown = MCFunction(
             showMsOffset()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_ms_down`)
     },
     { lazy: true },
 )
@@ -349,7 +343,6 @@ const onMsDownBig = MCFunction(
             showMsOffset()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_ms_down_big`)
     },
     { lazy: true },
 )
@@ -362,7 +355,6 @@ const onMsUp = MCFunction(
             showMsOffset()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_ms_up`)
     },
     { lazy: true },
 )
@@ -375,7 +367,6 @@ const onMsUpBig = MCFunction(
             showMsOffset()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_ms_up_big`)
     },
     { lazy: true },
 )
@@ -392,7 +383,6 @@ const onStartGame = MCFunction(
             updateSettingsPanel()
         })
         execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_start_game`)
     },
     { lazy: true },
 )
@@ -409,7 +399,6 @@ const onSongCycleBack = MCFunction(
             updateSongLine()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_song_cycle_back`)
     },
     { lazy: true },
 )
@@ -425,7 +414,6 @@ const onLivesCycleBack = MCFunction(
             updateLivesLine()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_lives_cycle_back`)
     },
     { lazy: true },
 )
@@ -444,7 +432,6 @@ const onMapCycleBack = MCFunction(
             updateMapLine()
             execute.at('@s').run.playsound('minecraft:ui.button.click', 'master', '@s')
         })
-        advancement.revoke('@s').only(`${NAMESPACE}:ui_map_cycle_back`)
     },
     { lazy: true },
 )

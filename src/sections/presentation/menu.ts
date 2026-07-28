@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { abs, Advancement, data, Data, dialog, execute, kill, Label, type LabelClass, MCFunction, NBT, say, schedule, Selector, sleep, summon, Tag, Texture } from 'sandstone'
+import { abs, data, Data, dialog, execute, kill, Label, type LabelClass, MCFunction, NBT, say, schedule, Selector, sleep, summon, Tag, Texture } from 'sandstone'
 import { ImageDisplayModel } from './utils'
 import { BOOTH_ENTITY_TAG, fmt } from '@shared'
 import { mount, nextSlide, unmount } from '.'
