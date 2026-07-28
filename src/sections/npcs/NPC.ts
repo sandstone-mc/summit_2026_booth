@@ -1,4 +1,4 @@
-import { _, abs, Advancement, Data, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, Selector, summon, Tag } from 'sandstone'
+import { _, abs, Advancement, Data, execute, kill, Label, MCFunction, NBT, Objective, raw, ride, say, Selector, summon, Tag } from 'sandstone'
 import type { MCDocToJSON, SymbolDataComponent, SymbolEntity } from 'sandstone/arguments'
 import type { DialogueTree } from './DialogueTree'
 
@@ -154,45 +154,35 @@ const spawnNpcs = MCFunction('sections/npcs/spawn', () => {
             const dialogue = npc.dialogue
             const npcSelector = Selector('@e', { tag: npc.instanceTag, type: 'minecraft:mannequin' })
 
+            const onClick = MCFunction(`sections/npcs/interact_reward/${npc.id}`, () => {
+                // track which player is talking to this NPC DialogueTree's
+                // runAsPlayer/runAsMyNpc helpers switch context using this tag
+                raw(`tag @a[tag=${npc.interactorTag}] remove ${npc.interactorTag}`)
+                raw(`tag @s add ${npc.interactorTag}`)
+
+                execute.as(npcSelector).run(() => {
+                    _.if(_.not(InteractCooldown('@s').greaterThan(0)), () => {
+                        InteractCooldown('@s').set(INTERACT_COOLDOWN_TICKS)
+                        _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
+                            dialogue.advance()
+                        }).else(() => {
+                            dialogue.start()
+                        })
+                    })
+                })
+            })
+
             // invisible hitbox that catches right-clicks on the NPC
             summon('minecraft:interaction', abs(x, y, z), {
-                Tags: [npc.instanceTag, BOOTH_ENTITY_TAG],
+                Tags: [npc.instanceTag, BOOTH_ENTITY_TAG, 'summit.static', 'summit.interactable'],
                 width: NBT.float(0.8),
                 height: NBT.float(2),
                 response: true,
-            })
-
-            // click detection lives entirely in the reward function
-            const interactAdvancement = Advancement(`npcs/interact/${npc.id}`, {
-                criteria: {
-                    click: {
-                        trigger: 'minecraft:player_interacted_with_entity',
-                        conditions: {
-                            entity: { entity_type: 'minecraft:interaction', entity_tags: { all_of: [npc.instanceTag] } },
-                        },
-                    },
-                },
-                rewards: {
-                    // runs "as and at" the clicking player
-                    function: MCFunction(`sections/npcs/interact_reward/${npc.id}`, () => {
-                        // track which player is talking to this NPC DialogueTree's
-                        // runAsPlayer/runAsMyNpc helpers switch context using this tag
-                        raw(`tag @a[tag=${npc.interactorTag}] remove ${npc.interactorTag}`)
-                        raw(`tag @s add ${npc.interactorTag}`)
-                        interactAdvancement.revoke('@s')
-
-                        execute.as(npcSelector).run(() => {
-                            _.if(_.not(InteractCooldown('@s').greaterThan(0)), () => {
-                                InteractCooldown('@s').set(INTERACT_COOLDOWN_TICKS)
-                                _.if(DialogueLineIndex('@s').greaterThanOrEqualTo(0), () => {
-                                    dialogue.advance()
-                                }).else(() => {
-                                    dialogue.start()
-                                })
-                            })
-                        })
-                    }),
-                },
+                data: {
+                    summit_interactable: {
+                        on_right_click: `execute on target run function ${onClick.name}`
+                    }
+                }
             })
         }
     }
