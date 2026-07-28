@@ -1,5 +1,6 @@
 fill ~28 ~-6 ~-39 ~31 ~-7 ~-39 air strict
 fill ~51 ~-18 ~-31 ~51 ~-15 ~-31 air strict
+fill ~-59 ~86 ~44 ~-59 ~86 ~47 air strict
 setblock ~49 ~-20 ~-33 minecraft:oxidized_copper_trapdoor[facing=north,half=bottom,open=true,powered=false,waterlogged=false] strict
 setblock ~50 ~-20 ~-33 minecraft:oxidized_copper_trapdoor[facing=north,half=bottom,open=true,powered=false,waterlogged=false] strict
 setblock ~47 ~-19 ~-37 minecraft:barrier[waterlogged=false] strict
