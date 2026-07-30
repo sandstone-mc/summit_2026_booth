@@ -18,7 +18,7 @@ import { wallMovement } from '@rhythm/config/internal/derived'
 import { arena } from '@rhythm/config/internal/arena'
 import { wallAge, wallDepth } from './spawning'
 import { GameStatus, Tags, WallEntityType, gamePlayer, interpSetting, status, voidPark } from '@rhythm/game/state'
-import { NAMESPACE, ticking } from '@shared'
+import { NAMESPACE } from '@shared'
 import { calibrationDepth } from '../..';
 
 const wallPos = Objective.create('rhythm.wall.pos', 'dummy')

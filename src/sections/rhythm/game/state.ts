@@ -28,7 +28,6 @@ export enum Tags {
     PLAYER = 'snd.rhythm.player',
     CALIBRATOR = 'snd.rhythm.cal.player',
     CAL_PAD = 'snd.rhythm.cal.pad',
-    NEW_PB = 'snd.rhythm.pb',
 
     WALL = 'snd.rhythm.wall',
     WALL_NEW = 'snd.rhythm.wall.new',
@@ -58,23 +57,12 @@ export enum Tags {
     UI_LIVES_INT = 'snd.ui.set.li',
     UI_START_INT = 'snd.ui.set.gi',
 
-    UI_LEADERBOARD = 'snd.ui.lb',
-    UI_LB_TXT = 'snd.ui.lb.txt',
-    UI_LB_SONG_TXT = 'snd.ui.lb.song',
-    UI_LB_ROWS_TXT = 'snd.ui.lb.rows',
-    UI_LB_YOU_TXT = 'snd.ui.lb.you',
-    UI_LB_SONG_INT = 'snd.ui.lb.si',
-    UI_LB_CAT_INT = 'snd.ui.lb.ci',
-    UI_LB_MY_INT = 'snd.ui.lb.mi',
-
     UI_MAP_INT = 'snd.ui.set.mi',
     UI_INTERP_INT = 'snd.ui.set.ii',
     UI_MS_DOWN_INT = 'snd.ui.set.md',
     UI_MS_UP_INT = 'snd.ui.set.mu',
 
     SKYBOX = 'snd.rhythm.skybox',
-
-    LB_SELECTION = 'snd.lb.sel',
 }
 
 const BOOTH_ENTITY_TAG = `summit.booth_entity.${NAMESPACE}`
@@ -86,9 +74,6 @@ export const status = Variable(GameStatus.WAITING)
 export const songSelect = Variable(0)
 export const mapSelect = Variable(0)
 export const interpSetting = Variable(0)
-
-export const leaderboardSongView = Variable(0)
-export const leaderboardCategoryView = Variable(0)
 
 export const gamePlayer = Selector('@a', { tag: Tags.PLAYER })
 

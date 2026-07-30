@@ -29,7 +29,6 @@ import { wallLives, wallHitCooldown } from './walls/collision'
 import { points, combo } from './scoring'
 import { GameStatus, Tags, WallEntityType, boothTags, gamePlayer, status } from './state'
 import { scoreSwitch } from '@rhythm/flow'
-import { ticking } from '@shared'
 import { calibrationDepth } from '..'
 
 const PARKOUR_IMMUNITY_TICKS = 61

@@ -1,10 +1,9 @@
 import { _, execute, MCFunction, Objective, playsound, Selector, tellraw, title } from 'sandstone'
-import { GameStatus, Tags, gamePlayer, status } from './state'
+import { GameStatus, gamePlayer, status } from './state'
 import { beatFlag } from './walls/ticking'
 import { wallLives } from './walls/collision'
 import { hitTick } from './walls/collision'
 import { beatLaneEffect } from './lane-effects'
-import { ticking } from '@shared'
 import { gameplay } from '@rhythm/config'
 
 export const points = Objective.create('rhythm.points', 'dummy')
