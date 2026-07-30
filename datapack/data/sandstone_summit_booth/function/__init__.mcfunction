@@ -65,7 +65,11 @@ scoreboard players set anon_WnYlBycD_17 __sandstone 0
 scoreboard players set anon_WnYlBycD_18 __sandstone 0
 scoreboard players set anon_WnYlBycD_19 __sandstone 0
 scoreboard players set anon_WnYlBycD_20 __sandstone 0
-scoreboard players set magic.tick_counter_0_WnYlBycD __sandstone 0
+scoreboard players set magic.tick_counter.fire_0_WnYlBycD __sandstone 0
+scoreboard players set magic.tick_counter.ice_0_WnYlBycD __sandstone 0
+scoreboard players set magic.tick_counter.arcane_0_WnYlBycD __sandstone 0
+scoreboard players set magic.tick_counter.lightning_0_WnYlBycD __sandstone 0
+scoreboard players set magic.tick_counter.nature_0_WnYlBycD __sandstone 0
 scoreboard players set anon_WnYlBycD_23 __sandstone 0
 scoreboard players set anon_WnYlBycD_24 __sandstone 0
 scoreboard players set anon_WnYlBycD_25 __sandstone 0
