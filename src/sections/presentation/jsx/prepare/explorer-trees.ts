@@ -40,6 +40,7 @@ import type { Styles } from '../style'
 import { defaultFontPx, DEFAULT_CODE_BORDER_COLOR, DEFAULT_EXPLORER_FOLDER_COLOR, DEFAULT_EXPLORER_FILE_COLOR } from '../layout/constants'
 import { DEFAULT_MONO_CHAR_PX, type Precomputed } from '../layout/code-borders'
 import type { RowFlexWidth } from './row-flex'
+import { sandstonePack } from 'sandstone'
 
 // Marker files inside a datapack dir that mean "this folder exists" but
 // don't carry content. They're noise in a tree view, so we drop them.
@@ -140,10 +141,10 @@ export async function prepareExplorerTrees(
     for (const visible of visiblePerSlide) {
         for (const { node, path: nodePath } of visible) {
             if (node.type !== 'explorer') continue
-            const rootRel = String(node.props?.root ?? '').trim()
+            const rootRel = Array.isArray(node.props?.root) ? node.props.root as [string, string] : String(node.props?.root)
             if (!rootRel) continue
-            const absRoot = path.resolve(PROJECT_ROOT, rootRel)
-            if (!existsSync(absRoot)) {
+            const absRoot = Array.isArray(rootRel) ? rootRel : path.resolve(PROJECT_ROOT, rootRel)
+            if (!Array.isArray(rootRel) && !existsSync(absRoot as string)) {
                 // Missing root: render an empty box instead of failing the
                 // whole build. Slides referencing placeholder datapacks
                 // (e.g. a TODO dir) shouldn't take the showcase down with
@@ -328,9 +329,27 @@ export async function prepareExplorerTrees(
 // filled in with the styled output. Rows that already fit use the
 // simple `{ display, isFolder, ancestorsMore }` shape (segments
 // derived later from the display string).
-function collectTreeRows(absRoot: string, opts?: TruncationOpts): RowEntry[] {
+function collectTreeRows(absRoot: string | [string, string], opts?: TruncationOpts): RowEntry[] {
     const out: RowEntry[] = []
-    walk(absRoot, 0, [], opts, out)
+    if (Array.isArray(absRoot)) {
+        const prefixLen = absRoot[1].split('/').length
+        const matched: string[][] = []
+        sandstonePack.core.resourceNodes.forEach(({ resource }) => {
+            if (resource._resourceType !== absRoot[0]) return
+            if (!resource.path.join('/').startsWith(absRoot[1])) return
+            const relPath = resource.path.slice(prefixLen)
+            if (relPath.length === 0) return
+            // Reattach the file extension — sandstone stores paths
+            // without the dot-suffix, but the tree display mirrors the
+            // filesystem walker which sees the full filename (e.g.
+            // `intro.mcfunction`).
+            relPath[relPath.length - 1] += `.${resource.fileExtension}`
+            matched.push(relPath)
+        })
+        walkVirtual(matched, [], opts, out)
+    } else {
+        walk(absRoot, 0, [], opts, out)
+    }
     return out
 }
 
@@ -368,6 +387,57 @@ function walk(
         // children. Cheap match (Set lookup) — happens once per dir.
         if (e.isFolder && opts?.exclude?.has(e.name)) continue
         if (e.isFolder) walk(path.join(dirAbs, e.name), depth + 1, [...ancestorsMore, !isLast], opts, out)
+    }
+}
+
+// Virtual mirror of `walk()` for `<explorer root={['type', 'prefix']}>`
+// — operates on sandstone's resource tree instead of the filesystem.
+// Each entry's `relPath` is the resource path with the prefix stripped;
+// the walker groups by the leading segment to build folder rows, then
+// recurses on the remainder. Same pre-order / folders-first /
+// alphabetical / no-dash / exclude semantics as `walk()`, so
+// `buildRow` sees an identical input shape.
+function walkVirtual(
+    matched: string[][],
+    ancestorsMore: boolean[],
+    opts: TruncationOpts | undefined,
+    out: RowEntry[],
+): void {
+    if (matched.length === 0) return
+    // Group by leading segment. A group is a folder iff any of its
+    // resources still has segments beyond the head — promote to folder
+    // even if a single-segment name happens to also appear as a leaf.
+    type Group = { isFolder: boolean; children: string[][] }
+    const groups = new Map<string, Group>()
+    for (const rel of matched) {
+        const head = rel[0]
+        const rest = rel.slice(1)
+        let g = groups.get(head)
+        if (!g) {
+            g = { isFolder: rest.length > 0, children: [] }
+            groups.set(head, g)
+        }
+        if (rest.length > 0) {
+            g.isFolder = true
+            g.children.push(rest)
+        }
+    }
+    const entries = [...groups.entries()]
+        .map(([name, g]) => ({ name, isFolder: g.isFolder, children: g.children }))
+        .sort((a, b) => {
+            if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1
+            return a.name < b.name ? -1 : a.name > b.name ? 1 : 0
+        })
+    for (let i = 0; i < entries.length; i++) {
+        const e = entries[i]
+        const isLast = i === entries.length - 1
+        const prefix = makeTreePrefix(ancestorsMore, isLast, opts?.noDash)
+        const row = buildRow(prefix, e.name, e.isFolder, ancestorsMore, isLast, opts)
+        out.push(row)
+        if (e.isFolder && opts?.exclude?.has(e.name)) continue
+        if (e.isFolder && e.children.length > 0) {
+            walkVirtual(e.children, [...ancestorsMore, !isLast], opts, out)
+        }
     }
 }
 

@@ -83,7 +83,7 @@ export type CodeProps = CommonProps & {
  *      case-sensitive, against the entry's basename (not the path).
  */
 export type ExplorerProps = CommonProps & {
-    root: string
+    root: string | [string, string]
     width?: string
     'path-start'?: number
     scrolling?: boolean

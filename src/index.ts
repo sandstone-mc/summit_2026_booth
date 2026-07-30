@@ -1,7 +1,5 @@
 import './check-tools'
-import { advancement, MCFunction, sandstonePack, Selector } from 'sandstone'
-
-import './sections/presentation'
+import { advancement, MCFunction, Selector } from 'sandstone'
 
 if (!(Bun.env.DISABLE_SHOWCASE === undefined ? false : Bun.env.DISABLE_SHOWCASE === 'true')) {
     await import('./sections/elevator')
@@ -10,6 +8,8 @@ if (!(Bun.env.DISABLE_SHOWCASE === undefined ? false : Bun.env.DISABLE_SHOWCASE 
     await import('./sections/rhythm/index')
     await import('./sections/magic/index')
 }
+
+import './sections/presentation'
 
 if (Bun.env.DEV_HELPERS === 'true') {
     await import('./version')
