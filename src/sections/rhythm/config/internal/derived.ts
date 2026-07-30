@@ -55,7 +55,7 @@ function panelFrom(offset: [number, number, number], facing: number, scale = 1):
 
 export const panels = {
 	settings: panelFrom(config.panels.settingsOffset, config.panels.settingsFacing),
-	leaderboard: panelFrom(config.panels.leaderboardOffset, config.panels.leaderboardFacing),
+	info: panelFrom(config.panels.infoOffset, config.panels.infoFacing),
 	maxNameLength: config.panels.maxNameLength,
 	scrollSpeed: config.panels.scrollSpeed,
 	padding: config.panels.padding,

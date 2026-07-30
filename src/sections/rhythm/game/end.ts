@@ -6,9 +6,7 @@ import { computeScores } from './scoring'
 import { wallLives } from './walls/collision'
 import { parkourCleanup } from './parkour'
 import { clearLaneHighlight } from './lane-effects'
-import { saveLeaderboard } from './leaderboard'
 import { updateSettingsPanel } from './settings'
-import { ticking } from '@shared'
 import { boothReturn } from '@rhythm/config/internal/derived'
 import { endShowcaseSession } from 'src/sections/main/showcase'
 import { timer } from './active'
@@ -55,7 +53,6 @@ export const endGame = MCFunction(
 		stopSong()
 		stopWalls()
 		computeScores()
-		saveLeaderboard()
 
 		cleanup.schedule.function('3s', 'replace')
 	},

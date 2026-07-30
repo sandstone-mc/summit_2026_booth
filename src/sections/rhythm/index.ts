@@ -3,7 +3,6 @@ import { arena } from './config/internal/arena'
 import { killSkybox, placeMap } from './game/arena-map'
 import { endGame, resetGame, resetPlayer } from './game/end'
 import { spawnLaneBorder } from './game/lane-effects'
-import { spawnLeaderboardPanel } from './game/leaderboard'
 import { spawnSettingsPanel } from './game/settings'
 import { cancelStart } from './game/start'
 import { GameStatus, Tags, status } from './game/state'
@@ -23,7 +22,6 @@ import './game/start'
 import './game/active'
 import './game/end'
 import './game/settings'
-import './game/leaderboard'
 import './game/lane-effects'
 import './game/arena-map'
 import './game/debug'
@@ -35,7 +33,6 @@ export const setup = MCFunction(
         placeMap()
         spawnLaneBorder()
         spawnSettingsPanel()
-        spawnLeaderboardPanel()
         resetGame()
     },
     { lazy: true },

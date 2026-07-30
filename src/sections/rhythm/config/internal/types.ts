@@ -1,5 +1,3 @@
-import { TextColor } from 'sandstone/arguments'
-
 export type RenderingMode = 'extended' | 'compressed'
 
 export enum Difficulty {
@@ -186,24 +184,16 @@ export interface RhythmConfig {
 		}
 	}
 
-	/** Leaderboard display. */
-	leaderboard: {
-		/** Number of entries shown. */
-		size: number
-		/** Colors used for the top ranks. */
-		rankColors: readonly TextColor[]
-	}
-
 	/** Booth UI panels. Offsets are relative to the gold line. */
 	panels: {
 		/** Settings panel offset from the gold line. */
 		settingsOffset: [number, number, number]
 		/** Yaw of the settings panel front: 0 = south, 90 = west, 180 = north, 270 = east. */
 		settingsFacing: number
-		/** Leaderboard panel offset from the gold line. */
-		leaderboardOffset: [number, number, number]
-		/** Yaw of the leaderboard panel front. */
-		leaderboardFacing: number
+		/** "About this showcase" info panel offset from the gold line. */
+		infoOffset: [number, number, number]
+		/** Yaw of the info panel front. */
+		infoFacing: number
 		/** Character width of the song/lives/map value lines on the panels; longer song names scroll. */
 		maxNameLength: number
 		/** Scroll speed for long text. */

@@ -90,15 +90,11 @@ const config: RhythmConfig = {
 		volume: 1,
 		hearable: { dx: 24, dy: 16, dz: 32 },
 	},
-	leaderboard: {
-		size: 10,
-		rankColors: ['gold', 'gray', 'red', 'dark_gray'],
-	},
 	panels: {
 		settingsOffset: [-22, 2.5, -11],
 		settingsFacing: 90,
-		leaderboardOffset: [-18.001, 1.875, -15],
-		leaderboardFacing: 180,
+		infoOffset: [-18.001, 2.25, -15],
+		infoFacing: 180,
 		maxNameLength: 18,
 		scrollSpeed: 4,
 		padding: '  ',
@@ -118,4 +114,3 @@ export const mapLayout = config.mapLayout
 export const gameplay = config.gameplay
 export const visuals = config.visuals
 export const music = config.music
-export const leaderboard = config.leaderboard

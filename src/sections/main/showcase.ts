@@ -2,12 +2,12 @@ import { _, abs, Advancement, advancement, execute, fill, kill, MCFunction, NBT,
 import { panels } from '@rhythm/config/internal/derived'
 import { Tags as RhythmTags } from '@rhythm/game/state'
 import { spawnSettingsPanel } from '@rhythm/game/settings'
-import { spawnLeaderboardPanel } from '@rhythm/game/leaderboard'
 
 import { setup as rhythmSetup, cleanup as rhythmCleanup } from '../rhythm'
 import { setup as magicSetup, cleanup as magicCleanup } from '../magic'
 import { NAMESPACE } from 'src/shared'
 import { join } from 'path'
+import { BLANK_INFO_TEXT, MAGIC_INFO_TEXT, RHYTHM_INFO_TEXT } from './showcase_info'
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth' as `${any}${string}`
 
@@ -67,6 +67,35 @@ const SHOWCASE_SETUP: Record<(typeof SHOWCASE_ORDER)[number], () => void> = {
     [ShowcaseId.MAGIC]: magicSetup,
 }
 
+// static "about this showcase" wall — same spot the rhythm leaderboard used to occupy
+const INFO_PANEL_TAG = 'sandstone_summit_booth.showcase.info_panel' as `${any}${string}`
+
+const INFO_TEXT_BY_SHOWCASE: Record<ShowcaseId, typeof RHYTHM_INFO_TEXT> = {
+    [ShowcaseId.NONE]: BLANK_INFO_TEXT,
+    [ShowcaseId.RHYTHM]: RHYTHM_INFO_TEXT,
+    [ShowcaseId.MAGIC]: MAGIC_INFO_TEXT,
+}
+
+const killInfoPanel = () => {
+    kill(Selector('@e', { tag: INFO_PANEL_TAG }))
+}
+
+const updateInfoPanel = (target: ShowcaseId) => {
+    killInfoPanel()
+    summon('minecraft:text_display', abs(panels.info.x, panels.info.y + 0.001, panels.info.z), {
+        Tags: [INFO_PANEL_TAG, BOOTH_ENTITY_TAG, 'summit.static'],
+        text: INFO_TEXT_BY_SHOWCASE[target],
+        alignment: 'center',
+        billboard: 'fixed',
+        Rotation: NBT.float([panels.info.facing, 0]),
+        background: NBT.int(panels.background),
+        line_width: NBT.int(300),
+        text_opacity: NBT.byte(-1),
+        shadow: true,
+        see_through: false,
+    })
+}
+
 function swapShowcase(target: ShowcaseId, setup: () => void) {
     _.if(showcaseActive.equalTo(0), () => {
         // clear anyone still standing in the shared area before it gets wiped out from under them
@@ -74,18 +103,20 @@ function swapShowcase(target: ShowcaseId, setup: () => void) {
             tp('@s', RESET_POS, RESET_ROTATION)
         })
 
+        killPlaceholder()
+
         _.switch(currentShowcase, [
-            ['case', ShowcaseId.NONE, () => killPlaceholder()] as const,
             ['case', ShowcaseId.RHYTHM, () => rhythmCleanup()] as const,
             ['case', ShowcaseId.MAGIC, () => magicCleanup()] as const,
         ])
-        
+
         fill(...SHOWCASE_BOUNDS, 'minecraft:air').strict()
 
         setup()
 
         currentShowcase.set(target)
         showcaseIdleTicks.set(0)
+        updateInfoPanel(target)
     })
 }
 
@@ -221,21 +252,17 @@ const killSettingsPanel = MCFunction('sections/main/showcase/ui/kill_settings', 
     kill(Selector('@e', { tag: RhythmTags.UI_SETTINGS }))
 })
 
-const killLeaderboardPanel = MCFunction('sections/main/showcase/ui/kill_leaderboard', () => {
-    kill(Selector('@e', { tag: RhythmTags.UI_LEADERBOARD }))
-})
-
 // Summit compliance:
 const spawnShowcaseUI = MCFunction('sections/main/showcase/ui/spawn', () => {
     spawnChangeShowcaseButton()
     spawnSettingsPanel()
-    spawnLeaderboardPanel()
+    updateInfoPanel(ShowcaseId.NONE)
 })
 
 const killShowcaseUI = MCFunction('sections/main/showcase/ui/kill', () => {
     killChangeShowcaseButton()
     killSettingsPanel()
-    killLeaderboardPanel()
+    killInfoPanel()
 })
 
 Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [spawnShowcaseUI], { onConflict: 'append' })
