@@ -1,9 +1,9 @@
-import { type JSONTextComponent } from 'sandstone/arguments'
+import { type JSONTextComponent, type TextColor } from 'sandstone/arguments'
 import { panels } from '@rhythm/config/internal/derived'
 
 // text_display entities don't support click_event — these are plain
 // (non-clickable) labels, just colored to read as a link/handle.
-function handle(label: string, color = 'aqua'): JSONTextComponent {
+function handle(label: string, color: TextColor = 'aqua'): JSONTextComponent {
     return { text: label, color }
 }
 

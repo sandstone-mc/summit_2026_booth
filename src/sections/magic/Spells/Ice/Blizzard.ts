@@ -18,7 +18,7 @@ const spawnStorm = MCFunction(`sections/magic/${spellPath}/spawn_bolt`, () => {
     })
 })
 
-MCFunction(`sections/magic/${spellPath}/update_storms`, () => {
+export const updateStorms = MCFunction(`sections/magic/${spellPath}/update_storms`, () => {
     const StormSelector = Selector('@e', {
         type: 'minecraft:marker',
         tag: Storm
@@ -38,7 +38,7 @@ MCFunction(`sections/magic/${spellPath}/update_storms`, () => {
             effect.give('@s', 'minecraft:blindness', 2, 1, true)
         })
     })
-}, { runEvery: 5 })
+}, { lazy: true })
 
 MCFunction(`sections/magic/${spellPath}/cast`, () => {
     castSpell('blizzard', 'ice', () => spawnStorm())

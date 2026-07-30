@@ -75,10 +75,6 @@ const ResetButtonTag = Label('showcase.button.reset')
 const ChangeSchoolButtonTag = Label('showcase.button.change_school')
 export const ChangeSchoolButtonEntities = Selector('@e', { tag: ChangeSchoolButtonTag })
 
-function clickEntity(buttonTag: { fullName: string }) {
-    return { entity_type: 'minecraft:interaction' as const, entity_tags: { all_of: [buttonTag.fullName] } }
-}
-
 // showcase mobs
 const ShowcaseMobLabel = Label('showcase.mob')
 export const ShowcaseMobs = Selector('@e', {
@@ -407,7 +403,6 @@ MCFunction('sections/magic/showcase/tick', () => {
 
 MCFunction('sections/magic/showcase/load', () => {
     GlobalState.set(STATES.IDLE)
-    scoreboard.players.enable('@s', resetTrigger)
 }, { runOnLoad: true })
 
 // Summit compliance: kill all booth entities (ShowcaseMarker, mobs, buttons, pedestals)

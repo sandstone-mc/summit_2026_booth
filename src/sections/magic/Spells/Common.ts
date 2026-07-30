@@ -1,4 +1,4 @@
-import { Label, MCFunction, Objective, Selector, Tag, _, abs, data, Data, execute, kill, rel, rotate, tellraw, tp, LabelClass, advancement } from 'sandstone'
+import { Label, MCFunction, Objective, Selector, Tag, _, abs, data, Data, execute, kill, rel, rotate, tellraw, tp, LabelClass, advancement, type MCFunctionClass } from 'sandstone'
 import { SpellLibrary, SchoolID } from '../spellbook/SpellLibrary'
 
 import * as player from '../player_handler'
@@ -49,11 +49,14 @@ export interface ProjectileSpellOptions {
   projectile: Omit<ProjectileOptions, 'tag'>
 }
 
+// per-tick update functions for every projectile spell; called from the magic section's single tick loop (see `../tick`)
+export const spellUpdaters: MCFunctionClass[] = []
+
 export function createProjectileUpdater(
   path: string,
   opts: ProjectileOptions
 ) {
-  return MCFunction(`sections/magic/${path}/update`, () => {
+  const update = MCFunction(`sections/magic/${path}/update`, () => {
     const Proj = Selector('@e', { type: 'minecraft:marker', tag: opts.tag })
     execute.as(Proj).at('@s').run(() => {
       // Visuals
@@ -100,7 +103,10 @@ export function createProjectileUpdater(
         })
       }
     })
-  }, { runEveryTick: true })
+  }, { lazy: true })
+
+  spellUpdaters.push(update)
+  return update
 }
 
 export function createProjectileSpell(opts: ProjectileSpellOptions) {

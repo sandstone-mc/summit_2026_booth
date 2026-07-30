@@ -39,7 +39,7 @@ export const cycleSpell = MCFunction('sections/magic/spellbook/cycle_spell', () 
   saveSelf()
 })
 
-MCFunction('sections/magic/spellbook/triggers', () => {
+export const spellbookTriggersTick = MCFunction('sections/magic/spellbook/triggers', () => {
   execute.as(SessionPlayer).run(() => {
     _.if(setSchoolTrigger('@s').greaterThanOrEqualTo(0), () => {
       getSelf()
@@ -50,6 +50,4 @@ MCFunction('sections/magic/spellbook/triggers', () => {
       scoreboard.players.enable('@s', setSchoolTrigger)
     })
   })
-}, {
-  runEveryTick: true
-})
+}, { lazy: true })

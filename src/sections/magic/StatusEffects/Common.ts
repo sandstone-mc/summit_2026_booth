@@ -1,5 +1,6 @@
-import { MCFunction, Label, Objective, execute, Selector, damage, Score, Macro, _ } from 'sandstone'
+import { MCFunction, Label, Objective, execute, Selector, damage, Score, Macro, _, type MCFunctionClass } from 'sandstone'
 import { Registry } from 'sandstone/arguments'
+import { Targetable } from '../Spells/Common'
 
 interface StatusEffectOptions {
     name: string
@@ -19,6 +20,9 @@ export const ParticleViewerSelector = Selector('@a', {
   distance: [0, 24]
 })
 
+// per-tick update functions for every status effect; called from the magic section's single tick loop (see `../tick`)
+export const statusUpdaters: MCFunctionClass[] = []
+
 export function createStatusEffect(opts: StatusEffectOptions) {
   const statusTag = Label(`status.${opts.name}`)
   const statusTime = Objective.create(`status.${opts.name}_timer`)
@@ -36,8 +40,8 @@ export function createStatusEffect(opts: StatusEffectOptions) {
     opts.onEnd?.()
   })
 
-  MCFunction(`sections/magic/status/${opts.name}/update`, () => {
-    execute.as(Selector('@e', { tag: statusTag })).at('@s').run(() => {
+  const update = MCFunction(`sections/magic/status/${opts.name}/update`, () => {
+    execute.as(Selector('@e', { tag: statusTag, type: Targetable })).at('@s').run(() => {
       opts.particles()
       opts.onTick?.()
 
@@ -48,7 +52,8 @@ export function createStatusEffect(opts: StatusEffectOptions) {
 
       statusTime('@s').remove(1)
     })
-  }, { runEveryTick: true })
+  }, { lazy: true })
+  statusUpdaters.push(update)
 
   return { apply, end, statusTag, statusTime }
 }

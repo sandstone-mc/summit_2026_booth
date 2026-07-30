@@ -1,6 +1,6 @@
 {
   "namespace": "sandstone_summit_booth",
-  "booth_name": "Sandstone Pre-compiler",
+  "booth_name": "Sandstone Precompiler",
   "bounding_boxes": {
     "castle": {
       "position":{

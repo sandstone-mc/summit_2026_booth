@@ -11,6 +11,7 @@ import { abs, execute, kill, MCFunction, NBT, place, RawResource, Selector, summ
 import { type JSONTextComponent } from 'sandstone/arguments'
 import { panels } from '@rhythm/config/internal/derived'
 import { summonMarker, killMarker } from './SummitShowcase'
+import { startMagicTick, stopMagicTick } from './tick'
 import { NAMESPACE } from 'src/shared.ts'
 import { join } from 'path'
 
@@ -53,10 +54,14 @@ export const setup = MCFunction('sections/magic/setup', () => {
         background: NBT.int(0),
         brightness: { sky: NBT.int(15), block: NBT.int(15) },
     })
+
+    startMagicTick()
 })
 
 // Clean up when swapping out magic game
 export const cleanup = MCFunction('sections/magic/cleanup', () => {
     killMarker()
     kill(Selector('@e', { tag: INFO_PANEL_TAG, type: 'minecraft:text_display' }))
+
+    stopMagicTick()
 })

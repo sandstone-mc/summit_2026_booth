@@ -16,7 +16,7 @@ function scoreText(score: Score, color: string): JSONTextComponent {
     return { score: { name: `${score.target}`, objective: score.objective.name }, color } as JSONTextComponent
 }
 
-MCFunction('sections/magic/mana_manager', () => {
+export const manaManagerTick = MCFunction('sections/magic/mana_manager', () => {
     execute.as(SessionPlayer).run(() => {
         // if their mana is below max, regen it
         _.if(mana('@s').lessThan(maxMana('@s')), () => {
@@ -60,6 +60,4 @@ MCFunction('sections/magic/mana_manager', () => {
             })
         })
     })
-}, {
-    runEveryTick: true
-})
+}, { lazy: true })

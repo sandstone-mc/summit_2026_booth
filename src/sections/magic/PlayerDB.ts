@@ -11,7 +11,7 @@ MCFunction('sections/magic/playerdb/load', () => {
   _.if(nextId.equalTo(0), () => nextId.set(1))
 }, { runOnLoad: true })
 
-MCFunction('sections/magic/playerdb/tick', () => {
+export const playerDbTick = MCFunction('sections/magic/playerdb/tick', () => {
   execute
     .as(Selector('@a', { scores: { 'sandstone_summit_booth.pdb.uid': [null, 0] } }))
     .run(() => {
@@ -19,7 +19,7 @@ MCFunction('sections/magic/playerdb/tick', () => {
       nextId.add(1)
       _callWithUID(_initEntry)
     })
-}, { runEveryTick: true })
+}, { lazy: true })
 
 // Macro functions: raw $ lines, invoked via `function X with storage sandstone_summit_booth:macro`
 const _initEntry = MCFunction('sections/magic/playerdb/_init_entry', () => {
