@@ -33,7 +33,7 @@ const pngKeys: string[] = []
 // `outputDir` is `.sandstone/output/resourcepack` but cache.json keys
 // include the `resourcepack/` segment (Sandstone prefixes every entry
 // with its output subdir). Prepend it so the manifest lookup matches.
-for await (const path of pngGlob.scan(outputDir)) pngKeys.push(`resourcepack/${path}`)
+for await (const path of pngGlob.scan(outputDir)) pngKeys.push(`resourcepack/${path.replaceAll('\\', '/')}`)
 if (pngKeys.length > 0) {
     const optipng = process.env.OPTIPNG_PATH ?? 'optipng'
     if (!Bun.which(optipng)) {
@@ -55,8 +55,10 @@ if (pngKeys.length > 0) {
         tunedFiles?: Record<string, string>
         tuningStamp?: string
     }
-    const sandstoneHashes: Record<string, string> =
+    const rawSandstoneHashes: Record<string, string> =
         (await Bun.file(cacheJsonPath).json().catch(() => ({})) as Manifest).files ?? {}
+    const sandstoneHashes: Record<string, string> = {}
+    for (const [key, hash] of Object.entries(rawSandstoneHashes)) sandstoneHashes[key.replaceAll('\\', '/')] = hash
     const optipngManifest: Manifest = await Bun.file(optipngManifestPath).json().catch(() => ({}))
     const optipngHashes: Record<string, string> = optipngManifest.files ?? {}
     const tunedHashes: Record<string, string> = optipngManifest.tunedFiles ?? {}
