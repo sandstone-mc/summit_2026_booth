@@ -1,1 +1,2 @@
+scoreboard players set #global sandstone_summit_booth.showcase.state 0
 execute align xyz run summon marker ~ ~ ~ {Tags:['sandstone_summit_booth.showcase.marker','summit.booth_entity.sandstone_summit_booth','summit.static']}

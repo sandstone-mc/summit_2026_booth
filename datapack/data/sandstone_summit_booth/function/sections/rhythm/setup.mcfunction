@@ -1,5 +1,4 @@
 function sandstone_summit_booth:sections/rhythm/arena/place_map
 function sandstone_summit_booth:sections/rhythm/lane/border_spawn
 function sandstone_summit_booth:sections/rhythm/settings/spawn
-function sandstone_summit_booth:sections/rhythm/leaderboard/spawn
 function sandstone_summit_booth:sections/rhythm/reset

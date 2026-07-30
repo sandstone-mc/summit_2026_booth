@@ -1,1 +1,0 @@
-execute if score anon_WnYlBycD_5 __sandstone matches 0 run function sandstone_summit_booth:sections/rhythm/leaderboard/on_cat/if

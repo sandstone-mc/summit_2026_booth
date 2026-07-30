@@ -1,2 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/leaderboard/song_line/switch/case_1/if
-schedule function sandstone_summit_booth:sections/rhythm/leaderboard/scroll_loop 4t replace

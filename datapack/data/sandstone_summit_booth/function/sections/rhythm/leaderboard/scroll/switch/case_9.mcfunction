@@ -1,1 +1,0 @@
-data merge entity @e[type=minecraft:text_display, tag=snd.ui.lb.song, limit=1] {text:[{text:'  ♪ ',color:'gold'},{text:' Hiiragi Magnetite',color:'yellow',font:'sandstone_summit_booth:monospace'},{text:' - ',color:'gray'},{text:'Best Score  ',color:'gold'}]}

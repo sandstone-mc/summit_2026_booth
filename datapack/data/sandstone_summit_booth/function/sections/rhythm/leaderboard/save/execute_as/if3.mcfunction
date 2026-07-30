@@ -1,2 +1,0 @@
-function sandstone_summit_booth:sections/rhythm/leaderboard/save/execute_as/if3/if
-execute if score @s sandstone_summit_booth.rhythm.hits matches 0 run function sandstone_summit_booth:sections/rhythm/leaderboard/save/execute_as/if3/if2/if

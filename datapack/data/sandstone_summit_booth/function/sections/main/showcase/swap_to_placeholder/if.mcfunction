@@ -1,4 +1,5 @@
 execute as @a[x=-80, y=63, z=21, dx=20, dy=9, dz=30] run tp @s -69.5 64 53 180 0
+kill @e[tag=sandstone_summit_booth.showcase.placeholder]
 function sandstone_summit_booth:sections/main/showcase/swap_to_placeholder/switch
 fill -80 63 21 -60 72 51 minecraft:air strict
 summon minecraft:text_display -70 65.375 52.01 {Tags:["summit.static","summit.booth_entity.sandstone_summit_booth","sandstone_summit_booth.showcase.placeholder"],Passengers: [{alignment: "center", background: -16777216, default_background: 0b, id: "minecraft:text_display",Tags:["summit.static","summit.booth_entity.sandstone_summit_booth","sandstone_summit_booth.showcase.placeholder"], line_width: 300, see_through: 0b, shadow: 0b, text: {bold: 0b, color: "gray", text: "         (Start one using the controls to the right)           "}, text_opacity: -1b, transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [0.377f, 0.375f, 0.375f], translation: [0.012287293f, -0.0625f, 0.0f]}}], alignment: "center", background: -16777216, default_background: 0b, line_width: 300, see_through: 0b, shadow: 0b, text: {bold: 0b, color: "aqua", text: "Minigame Inactive"}, text_opacity: -1b, transformation: {left_rotation: [0.0f, 0.0f, 0.0f, 1.0f], right_rotation: [0.0f, 0.0f, 0.0f, 1.0f], scale: [1.3125f, 1.3125f, 1.3125f], translation: [0.0f, 0.0f, 0.0f]}}
@@ -6,3 +7,5 @@ summon minecraft:block_display -80.0 64 45.0 {Tags:["summit.static","summit.boot
 execute positioned -80 63 22 run place template sandstone_summit_booth:facade ~ ~ ~ none none 1 0
 scoreboard players set main.showcase.current_0_WnYlBycD __sandstone 0
 scoreboard players set main.showcase.idle_ticks_0_WnYlBycD __sandstone 0
+kill @e[tag=sandstone_summit_booth.showcase.info_panel]
+summon minecraft:text_display -53.998999999999995 65.251 56.95 {Tags:['sandstone_summit_booth.showcase.info_panel','summit.booth_entity.sandstone_summit_booth','summit.static'],text:{text:' '},alignment:'center',billboard:'fixed',Rotation:[180f,0f],background:1409286144i,line_width:300i,text_opacity:-1b,shadow:true,see_through:false}
