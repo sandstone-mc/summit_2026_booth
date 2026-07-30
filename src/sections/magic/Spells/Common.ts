@@ -49,11 +49,14 @@ export interface ProjectileSpellOptions {
   projectile: Omit<ProjectileOptions, 'tag'>
 }
 
-// per-tick update functions for every projectile spell; called from the magic section's single tick loop (see `../tick`)
-export const spellUpdaters: MCFunctionClass[] = []
+// per-tick update functions for every projectile spell, grouped by school, only the active school's loop runs (see `../tick`)
+export const spellUpdatersBySchool: Record<SchoolID, MCFunctionClass[]> = {
+  fire: [], ice: [], arcane: [], lightning: [], nature: [],
+}
 
 export function createProjectileUpdater(
   path: string,
+  schoolId: SchoolID,
   opts: ProjectileOptions
 ) {
   const update = MCFunction(`sections/magic/${path}/update`, () => {
@@ -105,7 +108,7 @@ export function createProjectileUpdater(
     })
   }, { lazy: true })
 
-  spellUpdaters.push(update)
+  spellUpdatersBySchool[schoolId].push(update)
   return update
 }
 
@@ -129,7 +132,7 @@ export function createProjectileSpell(opts: ProjectileSpellOptions) {
     })
   })
 
-  createProjectileUpdater(spellPath, {
+  createProjectileUpdater(spellPath, opts.schoolId, {
     tag: Projectile,
     ...opts.projectile
   })

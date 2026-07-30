@@ -7,7 +7,7 @@ import { mana, maxMana, manaRegen } from '../player_handler'
 import { setSchoolTrigger } from '../pack_setup'
 import { SymbolEntity } from 'sandstone/arguments';
 import { endShowcaseSession, PlayersInShowcase, startShowcaseSession } from 'src/sections/main/showcase'
-import { AllPedestals, changeSchool } from './Selection';
+import { AllPedestals, changeSchool, stopAllSchoolTicks } from './Selection';
 
 export const State = Objective.create('showcase.state', 'dummy')
 export const GlobalState = State('#global')
@@ -174,6 +174,7 @@ export const reset = MCFunction('sections/magic/showcase/reset', () => {
         })
     })
 
+    stopAllSchoolTicks()
     endShowcaseSession()
 })
 

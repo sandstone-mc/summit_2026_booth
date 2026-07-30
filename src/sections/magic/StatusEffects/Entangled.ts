@@ -3,6 +3,7 @@ import { particle, rel, abs, attribute } from 'sandstone'
 
 const status = createStatusEffect({
     name: 'entangled',
+    schoolId: 'nature',
     damageType: 'cactus',
     damageAmount: 1,
     damageInterval: 15,

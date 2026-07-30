@@ -1,4 +1,4 @@
-import { _, abs, execute, kill, Label, MCFunction, NBT, particle, raw, rel, Selector, summon, tellraw, title } from 'sandstone'
+import { _, abs, execute, functionCmd, kill, Label, MCFunction, NBT, particle, raw, rel, schedule, Selector, summon, tellraw, title } from 'sandstone'
 import { SpellLibrary } from '../spellbook/SpellLibrary'
 import { ShowcaseMarker } from '.'
 import { STATES, GlobalState, SessionPlayer, ShowcaseMobs, startSelection, spawnChangeSchoolButton, ChangeSchoolButtonEntities } from './ShowcaseState'
@@ -17,6 +17,14 @@ interface Pedestal {
 }
 
 const BOOTH_ENTITY_TAG = 'summit.booth_entity.sandstone_summit_booth'
+
+const schoolTickFunction = (schoolId: string) => `sandstone_summit_booth:sections/magic/tick/school/${schoolId}` as const
+
+export function stopAllSchoolTicks() {
+  for (const id of Object.keys(SpellLibrary)) {
+    schedule.clear(schoolTickFunction(id))
+  }
+}
 
 const PEDESTALS: Pedestal[] = [
   { schoolId: 'fire',      x: 5,    y: 0, z: 22,   color: 'red',          particleType: 'flame',          item: 'minecraft:blaze_rod' },
@@ -46,6 +54,8 @@ for (const ped of PEDESTALS) {
     raw('loot give @s loot sandstone_summit_booth:items/magic_wand')
     GlobalState.set(STATES.FIGHTING)
     spawnChangeSchoolButton()
+
+    functionCmd(schoolTickFunction(ped.schoolId))
 
     tellraw(SessionPlayer, [
       { text: '\n' },
@@ -138,6 +148,7 @@ export const changeSchool = MCFunction('sections/magic/showcase/selection/change
     kill(ShowcaseMobs)
     kill(AllPedestals)
     kill(ChangeSchoolButtonEntities)
+    stopAllSchoolTicks()
     startSelection()
   })
 })

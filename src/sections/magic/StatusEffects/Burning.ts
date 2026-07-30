@@ -4,6 +4,7 @@ import { particle, rel, abs } from 'sandstone'
 
 const status = createStatusEffect({
     name: 'burning',
+    schoolId: 'fire',
     damageType: 'on_fire',
     damageAmount: 1,
     damageInterval: 20,

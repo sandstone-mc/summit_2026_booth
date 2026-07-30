@@ -1,9 +1,11 @@
 import { MCFunction, Label, Objective, execute, Selector, damage, Score, Macro, _, type MCFunctionClass } from 'sandstone'
 import { Registry } from 'sandstone/arguments'
 import { Targetable } from '../Spells/Common'
+import { type SchoolID } from '../spellbook/SpellLibrary'
 
 interface StatusEffectOptions {
     name: string
+    schoolId: SchoolID
     damageType: Registry['minecraft:damage_type']
     damageAmount: number
     damageInterval: number // ticks
@@ -20,8 +22,10 @@ export const ParticleViewerSelector = Selector('@a', {
   distance: [0, 24]
 })
 
-// per-tick update functions for every status effect; called from the magic section's single tick loop (see `../tick`)
-export const statusUpdaters: MCFunctionClass[] = []
+// per-tick update functions for every status effect, grouped by school, only the ctive school's loop runs (see `../tick`)
+export const statusUpdatersBySchool: Record<SchoolID, MCFunctionClass[]> = {
+  fire: [], ice: [], arcane: [], lightning: [], nature: [],
+}
 
 export function createStatusEffect(opts: StatusEffectOptions) {
   const statusTag = Label(`status.${opts.name}`)
@@ -53,7 +57,7 @@ export function createStatusEffect(opts: StatusEffectOptions) {
       statusTime('@s').remove(1)
     })
   }, { lazy: true })
-  statusUpdaters.push(update)
+  statusUpdatersBySchool[opts.schoolId].push(update)
 
   return { apply, end, statusTag, statusTime }
 }

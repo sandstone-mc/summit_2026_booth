@@ -3,6 +3,7 @@ import { particle, rel, abs, attribute } from 'sandstone'
 
 const status = createStatusEffect({
     name: 'stunned',
+    schoolId: 'lightning',
     damageType: 'generic',
     damageAmount: 0,
     damageInterval: 1000,

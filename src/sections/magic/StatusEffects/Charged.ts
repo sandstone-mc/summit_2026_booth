@@ -47,6 +47,7 @@ const arcToTarget = MCFunction(`sections/magic/status/${EffectName}/arc_to_targe
 
 const status = createStatusEffect({
     name: EffectName,
+    schoolId: 'lightning',
     damageType: 'lightning_bolt',
     damageAmount: 1,
     damageInterval: 30,

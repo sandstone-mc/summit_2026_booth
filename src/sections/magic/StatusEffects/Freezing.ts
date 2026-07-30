@@ -3,6 +3,7 @@ import { createStatusEffect, ParticleViewerSelector } from './Common'
 
 const status = createStatusEffect({
     name: 'freezing',
+    schoolId: 'ice',
     damageType: 'freeze',
     damageAmount: 1,
     damageInterval: 20,
