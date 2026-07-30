@@ -21,8 +21,6 @@ import { wallMovement } from '@rhythm/config/internal/derived'
 import { combo } from '@rhythm/game/scoring'
 import { endGame } from '@rhythm/game/end'
 import { GameStatus, Tags, WallEntityType, gamePlayer, boothListeners, status, voidPark } from '@rhythm/game/state'
-import { ticking } from '@shared'
-import { boothReturn } from '@rhythm/config/internal/derived'
 
 const isSneaking = Predicate('is_sneaking', {
 	condition: 'minecraft:entity_properties',
@@ -78,8 +76,6 @@ const onHit = MCFunction(
 		_.if(wallLives('@s').lessThanOrEqualTo(0), () => {
 			effect.clear('@s')
 			title('@s').actionbar({ text: 'You died! Better luck next time.', color: 'red' })
-			const [x, y, z] = boothReturn
-			tp('@s', abs(x, y, z))
 			endGame()
 			// 1t later so endGame's stopsound doesn't cut it
 			deathSound.schedule.function('1t', 'replace')
