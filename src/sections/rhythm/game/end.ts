@@ -7,8 +7,15 @@ import { parkourCleanup } from './parkour'
 import { clearLaneHighlight } from './lane-effects'
 import { updateSettingsPanel } from './settings'
 import { boothReturn } from '@rhythm/config/internal/derived'
-import { endShowcaseSession } from 'src/sections/main/showcase'
+import { endShowcaseSession, PlayersInShowcase } from 'src/sections/main/showcase'
 import { timer, grantSticker } from './active'
+
+function gamePlayerInShowcase() {
+	return Selector('@a', {
+		tag: Tags.PLAYER,
+		...PlayersInShowcase.arguments,
+	})
+}
 
 export const resetPlayer = MCFunction('sections/rhythm/reset_player', () => {
 	effect.clear('@s')
@@ -81,8 +88,9 @@ export const timerTick = MCFunction(
 	'sections/rhythm/timer/tick',
 	() => {
 		_.if(status.equalTo(GameStatus.ACTIVE), () => {
-			// a vanished player (disconnect without the clean hook) must not strand the match
-			execute.unless.entity(gamePlayer).run(() => {
+			// a vanished player (disconnect without the clean hook) or one who wandered out of
+			// the showcase area (glitch, teleport, etc.) must not strand the match
+			execute.unless.entity(gamePlayerInShowcase()).run(() => {
 				endGame()
 			})
 			timer.remove(1)

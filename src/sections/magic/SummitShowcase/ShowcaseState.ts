@@ -339,6 +339,10 @@ MCFunction('sections/magic/showcase/tick', () => {
     })
 
     _.if(GlobalState.equalTo(STATES.IDLE), () => {
+        execute.as(Selector('@a', { tag: [InBoothLabel, SessionPlayerLabel] })).run(() => {
+            SessionPlayerLabel('@s').remove()
+        })
+
         execute.as(Selector('@a', {
             tag: [InBoothLabel, `!sandstone_summit_booth.${SessionPlayerLabel.name}` as `${any}${string}`],
             gamemode: "!spectator"
