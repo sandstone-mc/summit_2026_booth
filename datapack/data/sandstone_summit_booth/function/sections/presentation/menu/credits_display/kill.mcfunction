@@ -6,3 +6,4 @@ schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__
 schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep3
 schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep4
 schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep5
+schedule clear sandstone_summit_booth:sections/presentation/menu/credits_loop/__sleep6

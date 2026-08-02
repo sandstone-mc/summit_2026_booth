@@ -1,0 +1,1 @@
+schedule function sandstone_summit_booth:sections/presentation/menu/credits_loop/schedule 1t replace

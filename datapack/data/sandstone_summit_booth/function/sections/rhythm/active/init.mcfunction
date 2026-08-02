@@ -6,3 +6,4 @@ function sandstone_summit_booth:sections/rhythm/lane/border_spawn
 function sandstone_summit_booth:sections/rhythm/songs/play
 function sandstone_summit_booth:sections/rhythm/songs/schedule_walls
 function sandstone_summit_booth:sections/rhythm/settings/update
+schedule function sandstone_summit_booth:sections/rhythm/active/grant_sticker 30s replace

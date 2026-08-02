@@ -1,0 +1,1 @@
+advancement grant @a[tag=snd.rhythm.player] only summit.sticker_book:sandstone_summit_booth/rhythm
