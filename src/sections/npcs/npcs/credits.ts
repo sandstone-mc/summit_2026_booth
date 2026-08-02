@@ -2,7 +2,6 @@ import { dialog, NBT } from 'sandstone'
 import { DialogueTree } from '../DialogueTree'
 import { CreateNPC } from '../NPC'
 import { JSONTextComponent } from 'sandstone/arguments'
-import { DialogClassArguments } from 'sandstone/core'
 import { ProfileProperties } from './skins'
 
 function uuidToIntArray(uuid: string): [number, number, number, number] {
@@ -24,7 +23,7 @@ interface SocialLink {
 
 interface CreditMember {
     name: string
-    minecraft?: string
+    minecraft?: { uuid: string } | { hash: string }
     role?: string
     socials?: SocialLink[]
 }
@@ -38,35 +37,35 @@ export const CREDITS: CreditSection[] = [
     {
         section: 'Development & Leadership',
         members: [
-            { name: 'Origaming', minecraft: '75c4fe91-1f0f-4b98-b34d-0b630b2a4257', socials: [{ type: 'github', url: 'https://github.com/OrigamingWasTaken' }], role: 'Rhythm Game Showcase' },
-            { name: 'Lilspartan', minecraft: '65574243-8a4d-48e8-9341-9655db14b122', socials: [{ type: 'modrinth', url: 'https://modrinth.com/user/Lilspartan' }, { type: 'github', url: 'https://github.com/Lilspartan' }], role: 'Magic Showcase, Elevator, NPCs' },
-            { name: 'MulverineX', minecraft: '87f0b42b-7777-442b-9be3-d134c6727cf8', socials: [{type: 'modrinth', url: 'https://modrinth.com/user/MulverineX' }, { type: 'github', url: 'https://github.com/MulverineX' }], role: 'Sandstone Owner, Presentation, Booth Design' },
+            { name: 'Origaming', minecraft: { uuid: '75c4fe91-1f0f-4b98-b34d-0b630b2a4257' }, socials: [{ type: 'github', url: 'https://github.com/OrigamingWasTaken' }], role: 'Rhythm Game Showcase' },
+            { name: 'Lilspartan', minecraft: { uuid: '65574243-8a4d-48e8-9341-9655db14b122' }, socials: [{ type: 'modrinth', url: 'https://modrinth.com/user/Lilspartan' }, { type: 'github', url: 'https://github.com/Lilspartan' }], role: 'Magic Showcase, Elevator, NPCs' },
+            { name: 'MulverineX', minecraft: { uuid: '87f0b42b-7777-442b-9be3-d134c6727cf8' }, socials: [{type: 'modrinth', url: 'https://modrinth.com/user/MulverineX' }, { type: 'github', url: 'https://github.com/MulverineX' }], role: 'Sandstone Owner, Presentation, Booth Design' },
         ],
     },
     {
         section: 'Building & Art',
         members: [
-            { name: 'Comqote', minecraft: '7b3a539b-224c-40b5-96a5-2f81835980fe', socials: [{ type: 'instagram', url: 'https://www.instagram.com/comqote/' }], role: 'Castle & Canal builds' },
-            { name: 'Ewwwwwan', minecraft: '5a10b42b-926d-4b35-b282-72e6aa206e7e', role: 'Casino Interior & Magic Showcase builds, Logo, Stickers, Balloon' },
-            { name: 'Tofetta', minecraft: '88e07a01-5212-405a-bab6-7425f373b1c1', role: 'Rhythm Showcase builds' }
+            { name: 'Comqote', minecraft: { uuid: '7b3a539b-224c-40b5-96a5-2f81835980fe' }, socials: [{ type: 'instagram', url: 'https://www.instagram.com/comqote/' }], role: 'Castle & Canal builds' },
+            { name: 'Ewwwwwan', minecraft: { uuid: '5a10b42b-926d-4b35-b282-72e6aa206e7e' }, role: 'Casino Interior & Magic Showcase builds, Logo, Stickers, Balloon' },
+            { name: 'Tofetta', minecraft: { uuid: '88e07a01-5212-405a-bab6-7425f373b1c1' }, role: 'Rhythm Showcase builds' }
         ],
     },
     {
         section: 'Shader Development',
         members: [
-            { name: 'Meek', minecraft: '8c0fd7d2-bed5-411f-91b6-eed5558f55cc', socials: [{ type: 'website', url: 'https://meekhasto.rest/' }, { type: 'github', url: 'https://github.com/Meekiavelique' }], role: 'Skybox Shaders for the Rhythm Game Showcase' },
+            { name: 'Meek', minecraft: { uuid: '8c0fd7d2-bed5-411f-91b6-eed5558f55cc' }, socials: [{ type: 'website', url: 'https://meekhasto.rest/' }, { type: 'github', url: 'https://github.com/Meekiavelique' }], role: 'Skybox Shaders for the Rhythm Game Showcase' },
         ],
     },
     {
         section: 'Prior Art',
         members: [
-            { name: 'SnaveSutit', minecraft: '10360b5a-27d5-480f-b335-4c58e679072b', socials: [{ type: 'website', url: 'https://animated-java.dev/' }, { type: 'github', url: 'https://github.com/SnaveSutit' }], role: 'Text Display Rendering in Animated Java' },
+            { name: 'SnaveSutit', minecraft: { uuid: '10360b5a-27d5-480f-b335-4c58e679072b' }, socials: [{ type: 'website', url: 'https://animated-java.dev/' }, { type: 'github', url: 'https://github.com/SnaveSutit' }], role: 'Text Display Rendering in Animated Java' },
         ],
     },
     {
         section: 'Music',
         members: [
-            { name: 'Symarol', minecraft: 'bd8a4b30-2f86-4da0-b444-2c7a9b096d23', socials: [{ type: 'instagram', url: 'https://www.instagram.com/symarol/' }, { type: 'bluesky', url: 'https://bsky.app/profile/symarol.bsky.social' }], role: 'Noteblock arrangements of the Porter Robinson tracks' },
+            { name: 'Symarol', minecraft: { uuid: 'bd8a4b30-2f86-4da0-b444-2c7a9b096d23' }, socials: [{ type: 'instagram', url: 'https://www.instagram.com/symarol/' }, { type: 'bluesky', url: 'https://bsky.app/profile/symarol.bsky.social' }], role: 'Noteblock arrangements of the Porter Robinson tracks' },
             { name: 'Porter Robinson', socials: [{ type: 'instagram', url: 'https://www.instagram.com/porterrobinson' }, { type: 'bluesky', url: 'https://bsky.app/profile/porterrobinson.com' }] },
             { name: 'Jamie Paige', socials: [{ type: 'website', url: 'https://jamies.page/' }, { type: 'bluesky', url: 'https://bsky.app/profile/jamies.page' }] },
         ],
@@ -86,11 +85,13 @@ const LINKS: ResourceLink[] = [
     { name: 'Java Minecraft Scripting Discord', url: 'https://discord.com/invite/4tzM5aXDRe', icon: 'summit_icons.discord' },
 ]
 
-function avatarComponent(uuid: string) {
+function avatarComponent(uuidOrHash: { uuid: string } | { hash: string }): JSONTextComponent {
     return {
         type: 'object',
         object: 'player',
-        player: { id: NBT.intArray(uuidToIntArray(uuid)) },
+        player: 'uuid' in uuidOrHash ? 
+            { id: NBT.intArray(uuidToIntArray(uuidOrHash.uuid)) } :
+            { properties: ProfileProperties(uuidOrHash.hash) },
         hat: true,
     }
 }
