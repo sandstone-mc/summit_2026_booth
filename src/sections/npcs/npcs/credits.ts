@@ -233,9 +233,9 @@ const creditsDialogue = DialogueTree('credits', {
 })
 
 CreateNPC('credits', {
-    name: 'Carl',
+    name: 'Carla',
     skin: {
-        properties: ProfileProperties('adff4babe7f7c6478c72750003c815230704f35602530c1eec073a19834b651a')
+        properties: ProfileProperties('507c0c6cd4b86baa3f45ee7979da30ace0e827a06314b7f6d825447d946456a4')
     },
     position: [-75, 93, 63],
     lookAt: 'nearest',

@@ -18,7 +18,7 @@ const blueTentDialogue = DialogueTree('blue_tent_guide', {
 CreateNPC('blue_tent_guide', {
     name: 'Greg',
     skin: {
-        properties: ProfileProperties('ca717f75e4d6a9a034e318e0d6b12994d575cb387bbdad97ebcaac2b653316a4'),
+        properties: ProfileProperties('3cb978a6709823e1b887cccaef82f8e7385b1969e0225c49186de55776bbc92b'),
         model: 'slim'
     },
     position: [-60, 93, 59],
