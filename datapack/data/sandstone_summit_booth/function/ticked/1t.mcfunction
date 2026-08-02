@@ -1,7 +1,7 @@
-function sandstone_summit_booth:sections/npcs/tick
-function sandstone_summit_booth:sections/presentation/tick
 function sandstone_summit_booth:sections/elevator/step
 function sandstone_summit_booth:sections/magic/showcase/selection/tick
 function sandstone_summit_booth:sections/magic/showcase/tick
 function sandstone_summit_booth:sections/rhythm/tick
 function sandstone_summit_booth:sections/main/showcase/tick
+function sandstone_summit_booth:sections/npcs/tick
+function sandstone_summit_booth:sections/presentation/tick

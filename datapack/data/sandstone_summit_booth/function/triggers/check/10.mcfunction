@@ -1,0 +1,1 @@
+execute as @a[scores={ssb.skip_credits=1..}] at @s run function sandstone_summit_booth:triggers/check/10/execute_as

@@ -2,4 +2,4 @@ kill @e[type=minecraft:interaction, tag=sandstone_summit_booth.sections.presenta
 function sandstone_summit_booth:sections/presentation/menu/credits_display/kill
 kill @e[type=minecraft:item_display, tag=sandstone_summit_booth.presentation.menu.small_logo]
 function sandstone_summit_booth:sections/presentation/menu/spawn_0
-return run function sandstone_summit_booth:sections/presentation/menu/screen_saver
+function sandstone_summit_booth:sections/presentation/menu/screen_saver

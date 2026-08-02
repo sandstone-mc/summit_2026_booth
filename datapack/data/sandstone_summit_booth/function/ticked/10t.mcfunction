@@ -1,0 +1,1 @@
+function sandstone_summit_booth:triggers/check/10
