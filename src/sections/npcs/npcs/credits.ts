@@ -15,7 +15,7 @@ function uuidToIntArray(uuid: string): [number, number, number, number] {
     return parts as [number, number, number, number]
 }
 
-type SocialType = 'github' | 'modrinth' | 'discord' | 'website' | 'instagram'
+type SocialType = 'github' | 'modrinth' | 'discord' | 'website' | 'instagram' | 'bluesky'
 
 interface SocialLink {
     type: SocialType
@@ -24,7 +24,7 @@ interface SocialLink {
 
 interface CreditMember {
     name: string
-    minecraft: string
+    minecraft?: string
     role?: string
     socials?: SocialLink[]
 }
@@ -61,6 +61,14 @@ export const CREDITS: CreditSection[] = [
         section: 'Prior Art',
         members: [
             { name: 'SnaveSutit', minecraft: '10360b5a-27d5-480f-b335-4c58e679072b', socials: [{ type: 'website', url: 'https://animated-java.dev/' }, { type: 'github', url: 'https://github.com/SnaveSutit' }], role: 'Text Display Rendering in Animated Java' },
+        ],
+    },
+    {
+        section: 'Music',
+        members: [
+            { name: 'Symarol', minecraft: 'bd8a4b30-2f86-4da0-b444-2c7a9b096d23', socials: [{ type: 'instagram', url: 'https://www.instagram.com/symarol/' }, { type: 'bluesky', url: 'https://bsky.app/profile/symarol.bsky.social' }], role: 'NBS Transcriptions of Porter Robinson & Jamie Paige tracks' },
+            { name: 'Porter Robinson', socials: [{ type: 'instagram', url: 'https://www.instagram.com/porterrobinson' }, { type: 'bluesky', url: 'https://bsky.app/profile/porterrobinson.com' }] },
+            { name: 'Jamie Paige', socials: [{ type: 'website', url: 'https://jamies.page/' }, { type: 'bluesky', url: 'https://bsky.app/profile/jamies.page' }] },
         ],
     },
 ]
@@ -107,7 +115,7 @@ function memberBody(member: CreditMember) {
     return {
         type: 'minecraft:plain_message',
         contents: [
-            avatarComponent(member.minecraft),
+            ...(member.minecraft ? [avatarComponent(member.minecraft)] : []),
             nameText,
             ...socials.flatMap((social, i) => {
                 const icon = social.type === 'website'
