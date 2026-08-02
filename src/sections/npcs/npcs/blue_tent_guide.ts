@@ -19,7 +19,6 @@ CreateNPC('blue_tent_guide', {
     name: 'Greg',
     skin: {
         properties: ProfileProperties('3cb978a6709823e1b887cccaef82f8e7385b1969e0225c49186de55776bbc92b'),
-        model: 'slim'
     },
     position: [-60, 93, 59],
     lookAt: 'nearest',
