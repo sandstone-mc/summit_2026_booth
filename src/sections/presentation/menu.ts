@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { abs, data, Data, dialog, execute, kill, Label, type LabelClass, MCFunction, NBT, say, schedule, Selector, sleep, summon, Tag, Texture } from 'sandstone'
+import { abs, data, Data, dialog, execute, kill, Label, type LabelClass, MCFunction, NBT, say, schedule, scoreboard, Selector, sleep, summon, Tag, Texture, Trigger } from 'sandstone'
 import { ImageDisplayModel } from './utils'
 import { BOOTH_ENTITY_TAG, fmt } from '@shared'
 import { mount, nextSlide, unmount } from '.'
@@ -282,19 +282,25 @@ MCFunction('sections/presentation/menu/credits', () => {
     dialog.show('@s', creditsDialog({ text: 'Booth Credits' }))
 })
 
+const credits_over = MCFunction('sections/presentation/end/credits_over', () => {
+    kill_2()
+    kill_credits_display()
+    kill(small_logo_entity(Selector('@e', { type: 'minecraft:item_display' })))
+
+    spawn_0()
+    screen_saver()
+})
+
+const skip_credits = Trigger('ssb.skip_credits', () => schedule.function(credits_over, '1t', 'replace'), 10)
+
 MCFunction('sections/presentation/end', () => {
     kill_1()
 
     spawn_2()
 
-    schedule.function(() => {
-        kill_2()
-        kill_credits_display()
-        kill(small_logo_entity(Selector('@e', { type: 'minecraft:item_display' })))
+    scoreboard.players.enable(skip_credits.objective(Selector('@a', { tag: 'summit.in_booth.sandstone_summit_booth' })))
 
-        spawn_0()
-        screen_saver()
-    }, `${60 * 5}s`)
+    schedule.function(credits_over.name, `${60 * 5}s`)
 }, { onConflict: 'append' })
 
 Tag('function', 'summit.booth:sandstone_summit_booth/entities/summon', [

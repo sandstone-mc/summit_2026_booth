@@ -6,8 +6,7 @@
   "module": "src/index.ts",
   "scripts": {
     "dev:watch": "sand watch",
-    "dev:build": "sand build && bun run scripts/minify-resourcepack.ts",
-    "dev:build:force": "FORCE_RENDER=1 bun dev:build",
+    "dev:build": "sand build && sand build && bun run scripts/minify-resourcepack.ts",
     "dev:diff:check": "bun run scripts/diff-build.ts",
     "dev:diff:snapshot": "bun run scripts/diff-build.ts snapshot",
     "dev:history:generate": "bun run scripts/generate-build-history.ts",

@@ -9,7 +9,7 @@ if (!(Bun.env.DISABLE_SHOWCASE === undefined ? false : Bun.env.DISABLE_SHOWCASE 
     await import('./sections/magic/index')
 }
 
-import './sections/presentation'
+await import('./sections/presentation')
 
 if (Bun.env.DEV_HELPERS === 'true') {
     await import('./version')

@@ -32,7 +32,7 @@ export const slides = [
             <explorer
                 width="35vw"
                 path-start={3}
-                root={['function', 'sections/rhythm/songs']}
+                root=".sandstone/output/datapack/data/sandstone_summit_booth/function/sections/rhythm/songs"
                 scrolling={true}
                 no-dash={true}
                 exclude={['shared']}
@@ -50,7 +50,7 @@ export const slides = [
             <explorer
                 width="35vw"
                 path-start={3}
-                root={['function', 'sections/magic/spells/lightning/thunderbolt']}
+                root=".sandstone/output/datapack/data/sandstone_summit_booth/function/sections/magic/spells/lightning/thunderbolt"
                 scrolling={true}
                 no-dash={true}
             />

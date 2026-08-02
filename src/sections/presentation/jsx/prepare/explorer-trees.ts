@@ -332,13 +332,44 @@ export async function prepareExplorerTrees(
 function collectTreeRows(absRoot: string | [string, string], opts?: TruncationOpts): RowEntry[] {
     const out: RowEntry[] = []
     if (Array.isArray(absRoot)) {
-        const prefixLen = absRoot[1].split('/').length
+        // Sandstone stores each resource's path as `[namespace, type,
+        // ...nameSegments]` (e.g. `['sandstone_summit_booth',
+        // 'function', 'sections', 'rhythm', 'songs', 'play']`). The
+        // `<explorer root={['function', 'sections/...']}>` JSX only
+        // names the type + name prefix, so we prepend the type to the
+        // match prefix and skip both the namespace and the `type`
+        // segment when slicing the relative path.
+        const prefixLen = absRoot[1].split('/').length + 1
+        const fullPrefix = `${absRoot[0]}/${absRoot[1]}`
         const matched: string[][] = []
+        const dropped: string[][] = []
+        const sampleNonMatches: string[] = []
+        let scannedForType = 0
+        let passedType = 0
+        let passedPrefix = 0
         sandstonePack.core.resourceNodes.forEach(({ resource }) => {
-            if (resource._resourceType !== absRoot[0]) return
-            if (!resource.path.join('/').startsWith(absRoot[1])) return
-            const relPath = resource.path.slice(prefixLen)
-            if (relPath.length === 0) return
+            scannedForType++
+            if (resource._resourceType !== absRoot[0]) {
+                if (sampleNonMatches.length < 3) {
+                    sampleNonMatches.push(`type=${resource._resourceType} !== ${absRoot[0]}`)
+                }
+                return
+            }
+            passedType++
+            const tail = resource.path.slice(1)
+            const joined = tail.join('/')
+            if (!joined.startsWith(fullPrefix)) {
+                if (sampleNonMatches.length < 6) {
+                    sampleNonMatches.push(`tail="${joined}" does NOT startsWith "${fullPrefix}"`)
+                }
+                return
+            }
+            passedPrefix++
+            const relPath = tail.slice(prefixLen)
+            if (relPath.length === 0) {
+                dropped.push(resource.path.slice())
+                return
+            }
             // Reattach the file extension — sandstone stores paths
             // without the dot-suffix, but the tree display mirrors the
             // filesystem walker which sees the full filename (e.g.
@@ -346,7 +377,20 @@ function collectTreeRows(absRoot: string | [string, string], opts?: TruncationOp
             relPath[relPath.length - 1] += `.${resource.fileExtension}`
             matched.push(relPath)
         })
+        console.warn(
+            `[explorer-debug] root=${JSON.stringify(absRoot)} prefixLen=${prefixLen} ` +
+            `scanned=${scannedForType} type-match=${passedType} prefix-match=${passedPrefix} ` +
+            `kept=${matched.length} dropped-zero-relPath=${dropped.length}`,
+        )
+        for (const nm of sampleNonMatches) console.warn(`[explorer-debug]   ${nm}`)
+        if (dropped.length) {
+            console.warn(`[explorer-debug]   dropped (relPath===[] after slice): ${JSON.stringify(dropped)}`)
+        }
+        if (matched.length) {
+            console.warn(`[explorer-debug]   first matched: ${JSON.stringify(matched.slice(0, 5))}`)
+        }
         walkVirtual(matched, [], opts, out)
+        console.warn(`[explorer-debug]   walkVirtual output rows=${out.length}`)
     } else {
         walk(absRoot, 0, [], opts, out)
     }
