@@ -1,15 +1,14 @@
-import { _, abs, advancement, attribute, effect, execute, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
+import { _, abs, attribute, effect, execute, MCFunction, Selector, stopsound, tag, tp } from 'sandstone'
 import { GameStatus, Tags, WallEntityType, gamePlayer, boothListeners, status, songSelect } from './state'
 import { clearWalls } from './walls/spawning'
 import { stopAllSongs, stopAllWalls, stopSong, stopWalls } from './songs'
 import { computeScores } from './scoring'
-import { wallLives } from './walls/collision'
 import { parkourCleanup } from './parkour'
 import { clearLaneHighlight } from './lane-effects'
 import { updateSettingsPanel } from './settings'
 import { boothReturn } from '@rhythm/config/internal/derived'
 import { endShowcaseSession } from 'src/sections/main/showcase'
-import { timer } from './active'
+import { timer, grantSticker } from './active'
 
 export const resetPlayer = MCFunction('sections/rhythm/reset_player', () => {
 	effect.clear('@s')
@@ -44,11 +43,7 @@ export const endGame = MCFunction(
 	() => {
 		status.set(GameStatus.ENDING)
 
-		_.if(timer.lessThanOrEqualTo(0), () => {
-			advancement
-				.grant(Selector('@a', { tag: Tags.PLAYER, scores: { [wallLives.name]: [1, Infinity] } }))
-				.only('summit.sticker_book:sandstone_summit_booth/rhythm')
-		})
+		grantSticker.schedule.clear()
 
 		stopSong()
 		stopWalls()

@@ -1,4 +1,4 @@
-import { _, abs, attribute, effect, execute, MCFunction, playsound, tp, Variable } from 'sandstone'
+import { _, abs, advancement, attribute, effect, execute, MCFunction, playsound, tp, Variable } from 'sandstone'
 import { arena } from '@rhythm/config/internal/arena'
 import { songCount, songDurations } from '@rhythm/config/internal/songs'
 import { GameStatus, Tags, gamePlayer, status, songSelect } from './state'
@@ -9,6 +9,14 @@ import { playSong, scheduleWalls } from './songs'
 import { spawnLaneHighlight, spawnLaneBorder } from './lane-effects'
 
 export const timer = Variable(0)
+
+export const grantSticker = MCFunction(
+	'sections/rhythm/active/grant_sticker',
+	() => {
+		advancement.grant(gamePlayer).only('summit.sticker_book:sandstone_summit_booth/rhythm')
+	},
+	{ lazy: true },
+)
 
 export const setActive = MCFunction(
 	'sections/rhythm/active/init',
@@ -46,6 +54,8 @@ export const setActive = MCFunction(
 		playSong()
 		scheduleWalls()
 		updateSettingsPanel()
+
+		grantSticker.schedule.function('30s', 'replace')
 	},
 	{ lazy: true },
 )
