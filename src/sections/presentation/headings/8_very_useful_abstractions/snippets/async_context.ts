@@ -4,7 +4,7 @@ import { MCFunction, say, sleep } from 'sandstone'
 MCFunction('explode_countdown', () => {
     say('I will explode in...')
     for (let i = 10; i > 0; i--) {
-        say('10')
+        say(`${i}`)
         sleep('1s')
     }
     say('BOOOOOOM')
