@@ -1,3 +1,3 @@
-execute unless entity @a[tag=snd.rhythm.player] run function sandstone_summit_booth:sections/rhythm/end/run
+execute unless entity @a[tag=snd.rhythm.player, x=-80, y=63, z=21, dx=20, dy=9, dz=30] run function sandstone_summit_booth:sections/rhythm/end/run
 scoreboard players remove anon_WnYlBycD_23 __sandstone 1
 execute if score anon_WnYlBycD_23 __sandstone matches ..0 unless entity @e[type=#sandstone_summit_booth:rhythm_wall, tag=snd.rhythm.wall] run function sandstone_summit_booth:sections/rhythm/end/run
